@@ -1,0 +1,20 @@
+# This file contains a list of files that should be ignored by Git.
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Minecraft / Fabric
+run/
+logs/
+
+# Generated / cache
+*.log
