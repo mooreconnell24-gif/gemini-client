@@ -14,7 +14,7 @@ public final class SpeedModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Movement bypass profile (Verus, Vulcan, GrimCollide, and Strafe mirror LiquidBounce Nextgen)",
+         "Speed bypass mode",
          "Vulcan",
          "Vulcan",
          "Verus",
@@ -27,13 +27,14 @@ public final class SpeedModule extends Module {
          "YPort"
       )
    );
-   private final NumberSetting multiplier = this.addSetting(new NumberSetting("Multiplier", "Speed relative to normal movement", 1.25, 1.05, 4.0, 0.05));
-   private final BooleanSetting inAir = this.addSetting(new BooleanSetting("Air Boost", "Keep the boost while airborne", true));
-   private final BooleanSetting sneakStops = this.addSetting(new BooleanSetting("Not While Sneaking", "Disable while crouching", true));
+   private final NumberSetting multiplier = this.addSetting(new NumberSetting("Multiplier", "Horizontal speed multiplier", 1.25, 1.05, 4.0, 0.05));
+   private final BooleanSetting inAir = this.addSetting(new BooleanSetting("Air Boost", "Maintain speed boost while airborne", true));
+   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Pause", "Pause boost briefly after server lagback", true));
+   private final BooleanSetting sneakStops = this.addSetting(new BooleanSetting("Pause Sneak", "Disable speed boost while sneaking", true));
    private boolean shortenedHop;
 
    public SpeedModule() {
-      super("Speed", "Move faster with LiquidBounce Nextgen Verus, Vulcan, GrimCollide, and Strafe modes.", Category.MOVEMENT);
+      super("Speed", "Faster movement with Vulcan.", Category.MOVEMENT);
    }
 
    @Override
@@ -49,6 +50,11 @@ public final class SpeedModule extends Module {
          && !player.onClimbable()
          && !player.isPassenger()
          && (!this.sneakStops.get() || !player.isCrouching())) {
+         if (this.setbackPause.get() && MoveUtil.hasRecentSetback()) {
+            this.shortenedHop = false;
+            return;
+         }
+
          if (!MoveUtil.hasInput(player)) {
             this.shortenedHop = false;
          } else {
@@ -62,7 +68,7 @@ public final class SpeedModule extends Module {
                }
 
                if (collisions > 0) {
-                  MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * (1.0 + Math.min(0.32, collisions * 0.08)));
+                  MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * (1.0 + Math.min(0.34, collisions * 0.085)));
                }
 
                return;
@@ -79,18 +85,17 @@ public final class SpeedModule extends Module {
                this.shortenedHop = true;
             }
 
-            if (this.mode.is("YPort") && !player.onGround()) {
-               player.setDeltaMovement(player.getDeltaMovement().x, -1.0, player.getDeltaMovement().z);
+            if (this.mode.is("YPort") && !player.onGround() && player.getDeltaMovement().y < 0.15) {
+               player.setDeltaMovement(player.getDeltaMovement().x, -0.42, player.getDeltaMovement().z);
             }
 
-            boolean air = this.inAir.get() || this.mode.is("Strafe") || this.mode.is("LowHop") || this.mode.is("YPort") || this.mode.is("Verus");
+            boolean air = this.inAir.get() || this.mode.is("Strafe") || this.mode.is("LowHop") || this.mode.is("YPort") || this.mode.is("Verus") || this.mode.is("Vulcan");
             if (player.onGround() || air) {
-               String var7 = this.mode.get();
-
-               double boost = switch (var7) {
+               String currentMode = this.mode.get();
+               double boost = switch (currentMode) {
                   case "Strict" -> Math.min(this.multiplier.get(), player.onGround() ? 1.32 : 1.14);
-                  case "Vulcan" -> player.onGround() ? 1.28 : 1.08;
-                  case "Verus" -> player.onGround() ? 1.36 : 1.18;
+                  case "Vulcan" -> player.onGround() ? 1.3 : 1.09;
+                  case "Verus" -> player.onGround() ? 1.36 : 1.19;
                   default -> this.multiplier.get();
                };
                MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * boost);

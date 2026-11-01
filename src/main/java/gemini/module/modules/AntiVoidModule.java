@@ -1,5 +1,6 @@
 package gemini.module.modules;
 
+import gemini.util.VersionBridge;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -20,7 +21,7 @@ public final class AntiVoidModule extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && client.level != null && !player.getAbilities().flying) {
-         double floor = client.level.getMinY() - this.depth.get();
+         double floor = VersionBridge.minWorldY(client.level) - this.depth.get();
          if (!(player.getY() >= floor + 2.0)) {
             Vec3 motion = player.getDeltaMovement();
             if (motion.y < this.boost.get()) {

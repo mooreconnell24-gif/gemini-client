@@ -14,7 +14,8 @@ public abstract class FluidRendererMixin {
    @Inject(
       method = {"isFaceOccludedByState"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private static void gemini$xrayFluidSides(Direction direction, float height, BlockState state, CallbackInfoReturnable<Boolean> cir) {
       XrayConfig config = XrayConfig.current();

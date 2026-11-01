@@ -23,7 +23,7 @@ public abstract class Module {
    private final Category category;
    private final List<Setting<?>> settings = new ArrayList<>();
    private final ModeSetting bindMode = new ModeSetting(
-      "Bind Mode", "Toggle flips the module; Hold keeps it on while the key is down", "Toggle", "Toggle", "Hold"
+      "Bind Mode", "Toggle flips the module", "Toggle", "Toggle", "Hold"
    );
    private final BooleanSetting listed = new BooleanSetting("Show In List", "Show this module in the HUD module list", true);
    private List<Setting<?>> exposedSettings;

@@ -18,6 +18,7 @@ import gemini.ui.clickgui.ClickGuiScreen;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.SingleplayerGate;
+import gemini.util.VersionBridge;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -128,6 +129,11 @@ public final class CommandManager {
                      case "menu":
                         this.openGui();
                         break;
+                     case "version":
+                     case "ver":
+                     case "protocol":
+                        this.handleVersion(parts);
+                        break;
                      default:
                         String rest = trimmed.substring(parts[0].length()).trim();
                         if (!this.utilities.run(command, parts, rest) && !this.handleModuleCommand(command, parts)) {
@@ -152,11 +158,23 @@ public final class CommandManager {
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
          if (player != null && client.level != null) {
+            String fullCommand = String.join(" ", args);
             String sub = args[0].toLowerCase(Locale.ROOT);
+            if (BaritoneBridge.hasExternalBaritone()
+               && !sub.equals("status")
+               && !sub.equals("pause")
+               && !sub.equals("resume")
+               && !sub.equals("stop")
+               && !sub.equals("cancel")
+               && BaritoneBridge.executeCommand(fullCommand)) {
+               feedback("§bBaritone (Native API) §7executed: §f#" + fullCommand);
+               return;
+            }
+
             switch (sub) {
                case "stop":
                case "cancel":
-                  BuiltInBaritone.stop();
+                  BaritoneBridge.stopAll();
                   feedback("§bBaritone §7stopped all tasks.");
                   break;
                case "pause":
@@ -169,16 +187,35 @@ public final class CommandManager {
                   feedback("§bBaritone §7resumed.");
                   break;
                case "status":
-                  feedback("§bBaritone §7status: §f" + BuiltInBaritone.statusSummary());
+                  feedback("§bBaritone §7status: §f" + BaritoneBridge.statusSummary());
+                  break;
+               case "come":
+                  BlockPos camPos = client.gameRenderer != null && client.gameRenderer.mainCamera() != null
+                     ? client.gameRenderer.mainCamera().blockPosition()
+                     : player.blockPosition();
+                  BaritoneBridge.gotoBlock(camPos);
+                  feedback("§bBaritone §7pathing to §f" + camPos.toShortString() + "§7.");
+                  break;
+               case "surface":
+               case "top":
+                  int surfY = BuiltInBaritone.findSurfaceY(client.level, player.getBlockX(), player.getBlockZ(), player.getBlockY());
+                  BaritoneBridge.gotoBlock(new BlockPos(player.getBlockX(), surfY, player.getBlockZ()));
+                  feedback("§bBaritone §7climbing to surface Y=§f" + surfY + "§7.");
+                  break;
+               case "set":
+                  if (BaritoneBridge.hasExternalBaritone() && BaritoneBridge.executeCommand(fullCommand)) {
+                     feedback("§bBaritone §7updated setting: §f" + fullCommand);
+                  } else {
+                     feedback("§bBaritone §7built-in engine auto-tunes sprint, parkour, mining, and bridging.");
+                  }
                   break;
                case "goto":
                   if (args.length == 3) {
                      try {
                         int x = Integer.parseInt(args[1]);
                         int z = Integer.parseInt(args[2]);
-                        int y = BuiltInBaritone.findSurfaceY(client.level, x, z, player.getBlockY());
-                        BuiltInBaritone.gotoBlock(new BlockPos(x, y, z));
-                        feedback("§bBaritone §7pathing to §f" + x + " " + y + " " + z + "§7.");
+                        BaritoneBridge.gotoXZ(x, z);
+                        feedback("§bBaritone §7pathing to XZ §f" + x + " " + z + "§7.");
                      } catch (NumberFormatException var15) {
                         feedback("§cUsage: §f#goto <x> [y] <z>");
                      }
@@ -187,7 +224,7 @@ public final class CommandManager {
                         int x = Integer.parseInt(args[1]);
                         int y = Integer.parseInt(args[2]);
                         int z = Integer.parseInt(args[3]);
-                        BuiltInBaritone.gotoBlock(new BlockPos(x, y, z));
+                        BaritoneBridge.gotoBlock(new BlockPos(x, y, z));
                         feedback("§bBaritone §7pathing to §f" + x + " " + y + " " + z + "§7.");
                      } catch (NumberFormatException var14) {
                         feedback("§cUsage: §f#goto <x> <y> <z>");
@@ -201,22 +238,88 @@ public final class CommandManager {
                      feedback("§cUsage: §f#mine <block1> [block2...] §7(e.g. §f#mine diamond_ore§7)");
                   } else {
                      String[] names = Arrays.copyOfRange(args, 1, args.length);
-                     if (BuiltInBaritone.mineByNames(names)) {
+                     if (BaritoneBridge.mineByNames(names)) {
                         feedback("§bBaritone §7mining §f" + String.join(", ", names) + "§7.");
                      } else {
-                        feedback("§cNo matching blocks found for: §f" + String.join(", ", names));
+                        feedback("§cNo matching blocks found nearby for: §f" + String.join(", ", names));
                      }
                   }
                   break;
                case "follow":
                   if (args.length >= 2 && !args[1].equalsIgnoreCase("players") && !args[1].equalsIgnoreCase("mobs")) {
                      String targetName = args[args.length - 1];
-                     BuiltInBaritone.follow(e -> e.getName().getString().equalsIgnoreCase(targetName));
+                     BaritoneBridge.follow(e -> e.getName().getString().equalsIgnoreCase(targetName));
                      feedback("§bBaritone §7following §f" + targetName + "§7.");
                   } else {
                      boolean onlyPlayers = args.length < 2 || !args[1].equalsIgnoreCase("mobs");
-                     BuiltInBaritone.follow(e -> onlyPlayers ? e instanceof Player : true);
+                     BaritoneBridge.follow(e -> onlyPlayers ? e instanceof Player : true);
                      feedback("§bBaritone §7following nearest " + (onlyPlayers ? "player" : "entity") + ".");
+                  }
+                  break;
+               case "goal":
+                  if (args.length >= 2 && (args[1].equalsIgnoreCase("clear") || args[1].equalsIgnoreCase("none"))) {
+                     BuiltInBaritone.setGoalOnly(null);
+                     feedback("§bBaritone §7goal cleared.");
+                  } else if (args.length >= 4) {
+                     try {
+                        BlockPos gp = new BlockPos(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+                        BuiltInBaritone.setGoalOnly(gp);
+                        feedback("§bBaritone §7goal set to §f" + gp.toShortString() + "§7. Type §f#path §7to start.");
+                     } catch (NumberFormatException ignored) {
+                        feedback("§cUsage: §f#goal [x y z | clear]");
+                     }
+                  } else {
+                     BuiltInBaritone.setGoalOnly(player.blockPosition());
+                     feedback("§bBaritone §7goal set to current position §f" + player.blockPosition().toShortString() + "§7.");
+                  }
+                  break;
+               case "path":
+                  if (BuiltInBaritone.pathToCurrentGoal()) {
+                     feedback("§bBaritone §7pathing to goal §f" + BuiltInBaritone.goal().toShortString() + "§7.");
+                  } else {
+                     feedback("§cNo goal set. Use §f#goal <x> <y> <z> §cor §f#goto <x> <z>§c.");
+                  }
+                  break;
+               case "thisway":
+               case "forward":
+                  int dist = 100;
+                  if (args.length >= 2) {
+                     try {
+                        dist = Integer.parseInt(args[1]);
+                     } catch (NumberFormatException ignored) {
+                     }
+                  }
+                  BuiltInBaritone.thisWay(player, dist);
+                  BuiltInBaritone.pathToCurrentGoal();
+                  feedback("§bBaritone §7heading §f" + dist + "m §7in look direction.");
+                  break;
+               case "axis":
+                  BuiltInBaritone.gotoAxis(player);
+                  feedback("§bBaritone §7aligning to nearest cardinal axis.");
+                  break;
+               case "invert":
+                  if (BuiltInBaritone.invertGoal(player)) {
+                     feedback("§bBaritone §7inverted goal away from target.");
+                  } else {
+                     feedback("§cNo active goal to invert.");
+                  }
+                  break;
+               case "sel":
+               case "selection":
+                  if (args.length >= 2 && (args[1].equalsIgnoreCase("1") || args[1].equalsIgnoreCase("pos1"))) {
+                     BuiltInBaritone.setSelection(1, player.blockPosition());
+                     feedback("§bBaritone §7pos1 set to §f" + player.blockPosition().toShortString() + "§7.");
+                  } else if (args.length >= 2 && (args[1].equalsIgnoreCase("2") || args[1].equalsIgnoreCase("pos2"))) {
+                     BuiltInBaritone.setSelection(2, player.blockPosition());
+                     feedback("§bBaritone §7pos2 set to §f" + player.blockPosition().toShortString() + "§7.");
+                  } else if (args.length >= 2 && (args[1].equalsIgnoreCase("ca") || args[1].equalsIgnoreCase("cleararea"))) {
+                     if (BuiltInBaritone.clearSelectionArea()) {
+                        feedback("§bBaritone §7clearing selected region.");
+                     } else {
+                        feedback("§cSet §f#sel 1 §cand §f#sel 2 §cfirst.");
+                     }
+                  } else {
+                     feedback("§cUsage: §f#sel 1 §7| §f#sel 2 §7| §f#sel cleararea");
                   }
                   break;
                case "tunnel":
@@ -228,15 +331,15 @@ public final class CommandManager {
                      }
                   }
 
-                  BuiltInBaritone.startTunnel(player.getDirection(), len);
+                  BaritoneBridge.startTunnel(player.getDirection(), len);
                   feedback("§bBaritone §7tunneling §f" + len + "§7 blocks " + player.getDirection().getName() + ".");
                   break;
                case "farm":
-                  BuiltInBaritone.startFarm();
-                  feedback("§bBaritone §7farming ripe crops nearby.");
+                  BaritoneBridge.startFarm(36);
+                  feedback("§bBaritone §7farming and replanting crops nearby.");
                   break;
                case "explore":
-                  BuiltInBaritone.startExplore(player.blockPosition());
+                  BaritoneBridge.startExplore(player.blockPosition());
                   feedback("§bBaritone §7exploring outward from current position.");
                   break;
                case "excavate":
@@ -257,31 +360,34 @@ public final class CommandManager {
                   }
 
                   BlockPos p = player.blockPosition();
-                  BuiltInBaritone.startExcavate(p.offset(-r, -d, -r), p.offset(r, 2, r));
+                  BaritoneBridge.startExcavate(p.offset(-r, -d, -r), p.offset(r, 2, r));
                   feedback("§bBaritone §7excavating radius §f" + r + "§7, depth §f" + d + "§7.");
                   break;
                default:
-                  feedback("§cUnknown Baritone command. Type §f#help §cfor a list.");
+                  if (!BaritoneBridge.executeCommand(fullCommand)) {
+                     feedback("§cUnknown Baritone command. Type §f#help §cfor a list.");
+                  }
             }
          } else {
             feedback("§cJoin a world first.");
          }
       } else {
-         feedback("§bBuilt-In Baritone §7commands (use §f#<cmd> §7or §f.b <cmd>§7):");
-         feedback("§f#goto <x> [y] <z> §7- A* pathfind to coordinates");
-         feedback("§f#mine <block1> [block2...] §7- scan & mine target ores/blocks");
+         String mode = BaritoneBridge.hasExternalBaritone() ? "Native Baritone API + Built-In 3D A*" : "Built-In 3D A* Engine";
+         feedback("§bBaritone §7(" + mode + ") commands (use §f#<cmd> §7or §f.b <cmd>§7):");
+         feedback("§f#goto <x> [y] <z> §7- 3D A* pathfind to coordinates (with mining & bridging)");
+         feedback("§f#mine <block1> [block2...] §7- scan, tunnel & mine target ores/blocks");
          feedback("§f#follow [playerName|players|mobs] §7- follow players or entities");
          feedback("§f#tunnel [length] §7- dig a 1x2 tunnel ahead");
-         feedback("§f#farm §7- harvest ripe crops nearby");
+         feedback("§f#farm §7- harvest and replant ripe crops nearby");
          feedback("§f#explore §7- spiral outward exploring chunks");
          feedback("§f#excavate [radius] [depth] §7- clear an area around you");
-         feedback("§f#pause §7/ §f#resume §7/ §f#stop §7/ §f#status");
+         feedback("§f#come §7/ §f#surface §7/ §f#pause §7/ §f#resume §7/ §f#stop §7/ §f#status");
       }
    }
 
    private void sendHelp() {
       feedback("§bGemini Client §7commands:");
-      feedback("§f#<cmd> §7or §f.b <cmd> §7- Built-in Baritone (§f#goto§7, §f#mine§7, §f#follow§7, §f#tunnel§7, §f#farm§7, §f#explore§7, §f#stop§7)");
+      feedback("§f#<cmd> §7or §f.b <cmd> §7- Baritone (§f#goto§7, §f#mine§7, §f#follow§7, §f#tunnel§7, §f#farm§7, §f#explore§7, §f#stop§7)");
       feedback("§f.toggle <module> [on|off] §7- toggle a module (or just §f.<module>§7)");
       feedback("§f.set <module> <setting> <value> §7- change a setting (§f_ §7stands for a space)");
       feedback("§f.set <module> <list> add|remove|toggle|set|clear|list <items> §7- edit block, item and entity lists");
@@ -764,6 +870,16 @@ public final class CommandManager {
          default:
             List<String> profiles = this.configManager.profiles();
             feedback(profiles.isEmpty() ? "§7No saved profiles yet. Use §f.config save <name>" : "§bProfiles: §f" + String.join(", ", profiles));
+      }
+   }
+
+   private void handleVersion(String[] parts) {
+      if (parts.length < 2) {
+         feedback("§bActive Version Protocol: §f" + VersionBridge.activeVersionLabel() + " §7(Use §f.version <auto|1.7|1.8|1.12|1.16|1.18|1.19|1.20|1.21|26.2>§7)");
+      } else if (VersionBridge.setForcedProfileByName(parts[1])) {
+         feedback("§aVersion protocol set to §f" + VersionBridge.activeVersionLabel() + "§a.");
+      } else {
+         feedback("§cUnknown version. Supported: §fauto, 1.7.10, 1.8.9, 1.12.2, 1.16.5, 1.18.2, 1.19.4, 1.20.6, 1.21.4, 26.2");
       }
    }
 

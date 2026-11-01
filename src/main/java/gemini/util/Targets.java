@@ -1,5 +1,7 @@
 package gemini.util;
 
+import gemini.module.modules.misc.MiscExtras;
+import gemini.module.modules.misc.MiscModules;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,7 +31,18 @@ public final class Targets {
       } else if (!invisible && living.isInvisible()) {
          return false;
       } else if (living instanceof Player player) {
-         return players && !player.isSpectator();
+         if (!players || player.isSpectator()) {
+            return false;
+         }
+         MiscModules.AntiBot antiBot = MiscModules.AntiBot.instance;
+         if (antiBot != null && antiBot.isEnabled() && antiBot.isBot(player)) {
+            return false;
+         }
+         MiscExtras.Teams teams = MiscExtras.Teams.instance;
+         if (teams != null && teams.isEnabled() && teams.isTeammate(self, player)) {
+            return false;
+         }
+         return true;
       } else if (living instanceof TamableAnimal pet && pet.isOwnedBy(self)) {
          return false;
       } else {

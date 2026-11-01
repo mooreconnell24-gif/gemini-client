@@ -16,7 +16,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractVignette"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noVignette(GuiGraphicsExtractor graphics, Entity camera, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -28,7 +29,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractPortalOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noPortal(GuiGraphicsExtractor graphics, float alpha, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -40,7 +42,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractConfusionOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noNausea(GuiGraphicsExtractor graphics, float alpha, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -52,7 +55,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractSpyglassOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noSpyglass(GuiGraphicsExtractor graphics, float scale, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -64,7 +68,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractTextureOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noTextureOverlay(GuiGraphicsExtractor graphics, Identifier texture, float alpha, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -76,7 +81,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractBossOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noBossBars(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -88,7 +94,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractScoreboardSidebar"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noScoreboard(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -100,7 +107,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractTitle"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noTitle(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -112,7 +120,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractOverlayMessage"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noActionBar(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -124,7 +133,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractEffects"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noEffects(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -136,7 +146,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractSelectedItemName"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noHeldName(GuiGraphicsExtractor graphics, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -148,7 +159,8 @@ public abstract class HudMixin {
    @Inject(
       method = {"extractSleepOverlay"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noSleep(GuiGraphicsExtractor graphics, DeltaTracker tracker, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();

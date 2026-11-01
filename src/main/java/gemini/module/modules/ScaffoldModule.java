@@ -6,8 +6,12 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
+import gemini.util.InventoryUtil;
 import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -20,21 +24,24 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class ScaffoldModule extends Module {
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between placements", 0.0, 0.0, 6.0, 1.0));
-   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Also bridge this many blocks ahead", 0.0, 0.0, 4.0, 1.0));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between block placements", 0.0, 0.0, 6.0, 1.0));
+   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks bridged ahead", 0.0, 0.0, 4.0, 1.0));
    private final ModeSetting sprintMode = this.addSetting(
       new ModeSetting(
          "Sprint",
-         "Godbridge/Breeze keeps sprint active with bypass rhythm; Legit cancels sprint on place",
+         "Sprinting bridge style",
          "Godbridge",
          "Telly",
          "Godbridge",
          "Breeze",
+         "Eagle",
          "Normal",
          "Legit",
          "Off"
@@ -43,7 +50,7 @@ public final class ScaffoldModule extends Module {
    private final ModeSetting rotate = this.addSetting(
       new ModeSetting(
          "Rotate",
-         "Multi-axis rotation locking: Silent aims in packets so you can look away; Godbridge locks 45-degree pitch/yaw",
+         "Aim mode: Silent packet rotations",
          "Silent",
          "Silent",
          "Godbridge",
@@ -53,22 +60,29 @@ public final class ScaffoldModule extends Module {
       )
    );
    private final NumberSetting turnSpeed = this.addSetting(
-      new NumberSetting("Turn Speed", "Rotation speed in degrees per tick (180 = instant)", 85.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
+      new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
    );
    private final ModeSetting towerMode = this.addSetting(
-      new ModeSetting("Tower", "Vertical tower motion bypass while holding jump", "Bypass", "Bypass", "Motion", "Jump", "Off")
+      new ModeSetting("Tower", "Vertical tower motion while holding Jump", "Bypass", "Bypass", "Motion", "Constant", "Jump", "Off")
    );
    private final NumberSetting towerSpeed = this.addSetting(
-      new NumberSetting("Tower Motion", "Upward velocity when towering", 0.42, 0.25, 0.6, 0.02).showIf(() -> !this.towerMode.is("Off"))
+      new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02).showIf(() -> !this.towerMode.is("Off"))
    );
    private final BooleanSetting keepY = this.addSetting(
-      new BooleanSetting("Keep Y", "Stay on the height you started at (auto-jumps while sprint-bridging)", false)
+      new BooleanSetting("Keep Y", "Lock placement height to starting Y level", false)
    );
-   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Sneak at edges so you do not fall off", false));
-   private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand when placing", true));
-   private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to your previous slot after placing", true));
-   private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause When Sneaking", "Don't place while crouching", false));
-   private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight Block", "Render a 3D highlight on the active scaffold block", true));
+   private final BooleanSetting clutchSearch = this.addSetting(
+      new BooleanSetting("Clutch Search", "Search up to 3 blocks away for diagonal/air support", true)
+   );
+   private final BooleanSetting autoRefill = this.addSetting(
+      new BooleanSetting("Auto Refill", "Refill hotbar blocks from inventory automatically", true)
+   );
+   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Prevent walking off block edges", true));
+   private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing hand on block placement", true));
+   private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Restore original hotbar slot after placing", false));
+   private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause Sneak", "Pause placement while manually sneaking", false));
+   private final BooleanSetting downwards = this.addSetting(new BooleanSetting("Downwards", "Place blocks 1 level lower when sneaking", false));
+   private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight", "Render 3D box on active scaffold block", true));
    private int cooldown;
    private int startY;
    private int towerTicks;
@@ -77,13 +91,13 @@ public final class ScaffoldModule extends Module {
    private BlockPos lastPlacedPos;
 
    public ScaffoldModule() {
-      super("Scaffold", "Place blocks under your feet with multi-axis rotation locking, Godbridge/Breeze sprinting, and tower bypass.", Category.WORLD);
+      super("Scaffold", "Fast block bridging with clutch search.", Category.WORLD);
    }
 
    @Override
    public void onEnable() {
       LocalPlayer player = Minecraft.getInstance().player;
-      this.startY = player == null ? 0 : player.getBlockY();
+      this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01) - 1;
       this.sneaking = false;
       this.towerTicks = 0;
       this.breezeTick = 0;
@@ -100,7 +114,7 @@ public final class ScaffoldModule extends Module {
    public String info() {
       Minecraft client = Minecraft.getInstance();
       int blocks = client.player == null ? 0 : countBlocks(client.player);
-      boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown();
+      boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown() && !MoveUtil.hasInput(client.player);
       return (towering ? "Tower" : this.sprintMode.get()) + " · " + blocks;
    }
 
@@ -109,119 +123,159 @@ public final class ScaffoldModule extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && client.level != null && client.gameMode != null && client.gui.screen() == null && !player.isSpectator()) {
-         this.applySprintControl(player);
-         if (this.safeWalk.get()) {
+         if (this.autoRefill.get() && findBlockSlot(player) == -1) {
+            refillHotbarBlocks(client, player);
+         }
+
+         int slot = findBlockSlot(player);
+         if (slot == -1) {
+            this.releaseSneak();
+            return;
+         }
+
+         if (player.onGround() && !this.keepY.get() && !this.sprintMode.is("Telly")) {
+            this.startY = Mth.floor(player.getY() - 0.01) - 1;
+         } else if (player.getY() < this.startY) {
+            this.startY = Mth.floor(player.getY() - 0.01) - 1;
+         }
+
+         boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown() && (!MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly"));
+         if (!towering) {
+            this.towerTicks = 0;
+         }
+
+         this.applySprintControl(client, player, towering);
+         if ((this.safeWalk.get() || this.sprintMode.is("Eagle")) && !towering) {
             this.holdEdge(client, player);
          } else {
             this.releaseSneak();
          }
 
-         if (this.keepY.get() && MoveUtil.hasInput(player) && player.onGround() && !client.options.keyJump.isDown()) {
+         if ((this.keepY.get() || this.sprintMode.is("Telly")) && MoveUtil.hasInput(player) && player.onGround() && !client.options.keyJump.isDown()) {
             player.jumpFromGround();
-         }
-
-         boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown() && !MoveUtil.hasInput(player);
-         if (!towering) {
-            this.towerTicks = 0;
-         }
-
-         if (!this.rotate.is("None") && MoveUtil.hasInput(player)) {
-            float[] lockedRot = this.computeBridgeRotation(player, null);
-            boolean quiet = !this.rotate.is("Snap");
-            RotationManager.request(player, lockedRot[0], lockedRot[1], this.turnSpeed.floatValue(), quiet, 5, 8.0F);
          }
 
          if (this.cooldown > 0) {
             this.cooldown--;
-         } else if (!this.sneakPause.get() || !player.isCrouching() || this.sneaking) {
-            double placeY = towering ? player.getY() - 0.1 : (this.keepY.get() ? this.startY - 0.5 : player.getY() - 0.5);
-            BlockPos feet = BlockPos.containing(player.getX(), placeY, player.getZ());
-            BlockPos target = feet;
-            if (this.expand.intValue() > 0 && MoveUtil.hasInput(player) && !towering) {
-               Vec3 motion = player.getDeltaMovement();
-               double length = Math.hypot(motion.x, motion.z);
-               if (length > 0.01) {
-                  BlockPos ahead = BlockPos.containing(
-                     player.getX() + motion.x / length * this.expand.intValue(), placeY, player.getZ() + motion.z / length * this.expand.intValue()
-                  );
-                  if (!replaceable(client.level, feet) && replaceable(client.level, ahead)) {
-                     target = ahead;
-                  }
+            return;
+         }
+
+         if (this.sneakPause.get() && MoveUtil.physicalKeyDown(client.options.keyShift) && !this.downwards.get()) {
+            return;
+         }
+
+         int targetY;
+         if (towering) {
+            targetY = Mth.floor(player.getY() - 0.05) - 1;
+         } else if (this.downwards.get() && MoveUtil.physicalKeyDown(client.options.keyShift)) {
+            targetY = Mth.floor(player.getY() - 0.01) - 2;
+            this.startY = targetY;
+         } else if (this.keepY.get() || this.sprintMode.is("Telly")) {
+            targetY = this.startY;
+         } else {
+            targetY = Mth.floor(player.getY() - 0.01) - 1;
+         }
+
+         BlockPos feet = new BlockPos(Mth.floor(player.getX()), targetY, Mth.floor(player.getZ()));
+         List<BlockPos> targets = new ArrayList<>();
+         targets.add(feet);
+
+         Vec3 moveDir = MoveUtil.direction(player);
+         if (moveDir != null && !towering) {
+            BlockPos aheadHalf = new BlockPos(Mth.floor(player.getX() + moveDir.x * 0.45), targetY, Mth.floor(player.getZ() + moveDir.z * 0.45));
+            if (!targets.contains(aheadHalf)) {
+               targets.add(aheadHalf);
+            }
+
+            int exp = this.expand.intValue();
+            for (int i = 1; i <= exp; i++) {
+               BlockPos expPos = new BlockPos(Mth.floor(player.getX() + moveDir.x * i), targetY, Mth.floor(player.getZ() + moveDir.z * i));
+               if (!targets.contains(expPos)) {
+                  targets.add(expPos);
+               }
+            }
+         }
+
+         PlacementPlan plan = null;
+         for (BlockPos candidate : targets) {
+            if (replaceable(client.level, candidate)) {
+               plan = findPlacementWithClutch(client.level, player, candidate, this.clutchSearch.get() ? 3 : 1);
+               if (plan != null) {
+                  break;
+               }
+            }
+         }
+
+         if (plan == null && !this.rotate.is("None") && MoveUtil.hasInput(player)) {
+            float[] idleRot = this.computeBridgeRotation(player, null);
+            RotationManager.request(player, idleRot[0], idleRot[1], this.turnSpeed.floatValue(), !this.rotate.is("Snap"), 5, 10.0F);
+         }
+
+         if (plan != null) {
+            if (!this.rotate.is("None")) {
+               boolean quiet = !this.rotate.is("Snap");
+               float[] placeRot = this.computeBridgeRotation(player, plan.hit);
+               boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, 6, 16.0F);
+               if (!ready && this.rotate.is("Strict")) {
+                  return;
                }
             }
 
-            if (replaceable(client.level, target)) {
-               int slot = findBlockSlot(player);
-               if (slot >= 0) {
-                  BlockHitResult hit = findPlacement(client.level, target);
-                  if (hit != null) {
-                     if (!this.rotate.is("None")) {
-                        boolean quiet = !this.rotate.is("Snap");
-                        float[] placeRot = this.computeBridgeRotation(player, hit);
-                        if (!RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, 5, 12.0F)
-                           && this.rotate.is("Strict")) {
-                           return;
-                        }
-                     }
-
-                     if (this.sprintMode.is("Legit") && player.isSprinting()) {
-                        player.setSprinting(false);
-                     }
-
-                     int previous = player.getInventory().getSelectedSlot();
-                     player.getInventory().setSelectedSlot(slot);
-                     client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
-                     if (this.swing.get()) {
-                        player.swing(InteractionHand.MAIN_HAND);
-                     }
-
-                     if (this.keepSlot.get()) {
-                        player.getInventory().setSelectedSlot(previous);
-                     }
-
-                     this.lastPlacedPos = target.immutable();
-                     if (towering) {
-                        this.applyTowerMotion(player, target);
-                     }
-
-                     this.cooldown = this.delay.intValue();
-                  }
-               }
+            if (this.sprintMode.is("Legit") && player.isSprinting()) {
+               player.setSprinting(false);
             }
+
+            int previous = player.getInventory().getSelectedSlot();
+            if (previous != slot) {
+               player.getInventory().setSelectedSlot(slot);
+            }
+
+            client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, plan.hit);
+            if (this.swing.get()) {
+               player.swing(InteractionHand.MAIN_HAND);
+            }
+
+            if (this.keepSlot.get() && previous != slot) {
+               player.getInventory().setSelectedSlot(previous);
+            }
+
+            this.lastPlacedPos = plan.placePos.immutable();
+            if (towering) {
+               this.applyTowerMotion(player, plan.placePos);
+            }
+
+            this.cooldown = this.delay.intValue();
          }
       } else {
          this.releaseSneak();
       }
    }
 
-   private void applySprintControl(LocalPlayer player) {
-      if (MoveUtil.hasInput(player) && !MoveUtil.hasRecentSetback()) {
+   private void applySprintControl(Minecraft client, LocalPlayer player, boolean towering) {
+      if (MoveUtil.hasInput(player) && !MoveUtil.hasRecentSetback() && !towering) {
          String mode = this.sprintMode.get();
          switch (mode) {
             case "Off":
+            case "Eagle":
                player.setSprinting(false);
                break;
             case "Breeze":
                player.setSprinting(true);
                this.breezeTick++;
-               if (player.onGround() && this.breezeTick % 4 == 0) {
+               if (player.onGround() && this.breezeTick % 3 == 0) {
                   Vec3 motion = player.getDeltaMovement();
-                  double side = (this.breezeTick / 4 % 2 == 0 ? 1.0 : -1.0) * 0.035;
-                  double yawRad = Math.toRadians(player.getYRot() + 90.0F);
-                  player.setDeltaMovement(motion.x + Math.cos(yawRad) * side, motion.y, motion.z + Math.sin(yawRad) * side);
+                  double side = (this.breezeTick / 3 % 2 == 0 ? 1.0 : -1.0) * 0.042;
+                  double strafeRad = Math.toRadians(movementYaw(player) + 90.0F);
+                  player.setDeltaMovement(motion.x - Math.sin(strafeRad) * side, motion.y, motion.z + Math.cos(strafeRad) * side);
                }
                break;
             case "Telly":
-               player.setSprinting(true);
-               if (player.onGround()) {
-                  player.jumpFromGround();
-               }
-               break;
             case "Godbridge":
             case "Normal":
                if (!player.isCrouching()) {
                   player.setSprinting(true);
                }
+               break;
          }
       }
    }
@@ -229,13 +283,19 @@ public final class ScaffoldModule extends Module {
    private float[] computeBridgeRotation(LocalPlayer player, BlockHitResult hit) {
       if (this.rotate.is("Godbridge")) {
          float moveYaw = movementYaw(player);
-         return new float[]{Mth.wrapDegrees(moveYaw + 135.0F), 75.6F};
-      } else if (hit != null && this.rotate.is("Strict")) {
-         return RotationManager.toward(player, hit.getLocation());
+         float pitch = hit != null ? Mth.clamp(RotationManager.toward(player, hit.getLocation())[1], 74.0F, 79.5F) : 75.6F;
+         return new float[]{Mth.wrapDegrees(moveYaw + 135.0F), pitch};
+      } else if (hit != null) {
+         float[] exact = RotationManager.toward(player, hit.getLocation());
+         if (this.rotate.is("Strict")) {
+            return exact;
+         }
+         float moveYaw = MoveUtil.hasInput(player) ? Mth.wrapDegrees(movementYaw(player) + 180.0F) : exact[0];
+         float blendedYaw = moveYaw + Mth.wrapDegrees(exact[0] - moveYaw) * 0.65F;
+         return new float[]{Mth.wrapDegrees(blendedYaw), Mth.clamp(exact[1], 70.0F, 88.5F)};
       } else {
          float moveYaw = movementYaw(player);
-         float pitch = hit != null ? RotationManager.toward(player, hit.getLocation())[1] : 79.5F;
-         return new float[]{Mth.wrapDegrees(moveYaw + 180.0F), Mth.clamp(pitch, 72.0F, 86.0F)};
+         return new float[]{Mth.wrapDegrees(moveYaw + 180.0F), 79.5F};
       }
    }
 
@@ -247,18 +307,20 @@ public final class ScaffoldModule extends Module {
    private void applyTowerMotion(LocalPlayer player, BlockPos target) {
       this.towerTicks++;
       Vec3 motion = player.getDeltaMovement();
+      double horizScale = MoveUtil.hasInput(player) ? 0.65 : 0.15;
       if (this.towerMode.is("Bypass")) {
-         if (this.towerTicks % 9 == 0) {
-            player.setDeltaMovement(motion.x * 0.2, -0.08, motion.z * 0.2);
+         if (this.towerTicks % 8 == 0) {
+            player.setDeltaMovement(motion.x * horizScale, -0.0784, motion.z * horizScale);
             this.towerTicks = 0;
          } else {
-            player.setDeltaMovement(motion.x * 0.25, this.towerSpeed.get(), motion.z * 0.25);
+            player.setDeltaMovement(motion.x * horizScale, this.towerSpeed.get(), motion.z * horizScale);
          }
       } else if (this.towerMode.is("Motion")) {
-         if (player.getY() - target.getY() > 0.85) {
-            player.setDeltaMovement(motion.x * 0.3, this.towerSpeed.get(), motion.z * 0.3);
-            player.setPos(player.getX(), target.getY() + 1.0, player.getZ());
+         if (player.getY() - (target.getY() + 1.0) > -0.15) {
+            player.setDeltaMovement(motion.x * horizScale, this.towerSpeed.get(), motion.z * horizScale);
          }
+      } else if (this.towerMode.is("Constant")) {
+         player.setDeltaMovement(motion.x * horizScale, this.towerSpeed.get(), motion.z * horizScale);
       } else if (this.towerMode.is("Jump") && player.onGround()) {
          player.jumpFromGround();
       }
@@ -269,20 +331,9 @@ public final class ScaffoldModule extends Module {
          this.releaseSneak();
       } else {
          Level level = client.level;
-         double y = player.getY() - 0.5;
-         double half = player.getBbWidth() / 2.0 + 0.25;
-         boolean air = true;
-
-         for (double dx : new double[]{-half, half}) {
-            for (double dz : new double[]{-half, half}) {
-               BlockPos pos = BlockPos.containing(player.getX() + dx, y, player.getZ() + dz);
-               if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
-                  air = false;
-               }
-            }
-         }
-
-         if (air) {
+         BlockPos belowCenter = new BlockPos(Mth.floor(player.getX()), Mth.floor(player.getY() - 0.05) - 1, Mth.floor(player.getZ()));
+         boolean overAir = replaceable(level, belowCenter);
+         if (overAir) {
             this.sneaking = true;
             client.options.keyShift.setDown(true);
          } else {
@@ -311,26 +362,82 @@ public final class ScaffoldModule extends Module {
       return state.isAir() || state.canBeReplaced();
    }
 
-   private static BlockHitResult findPlacement(Level level, BlockPos target) {
-      Direction[] order = new Direction[]{Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
+   private static boolean solidSupport(Level level, BlockPos pos) {
+      BlockState state = level.getBlockState(pos);
+      return !state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
+   }
 
-      for (Direction direction : order) {
-         BlockPos neighbour = target.relative(direction);
-         BlockState state = level.getBlockState(neighbour);
-         if (!state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, neighbour).isEmpty() && state.getFluidState().isEmpty()) {
-            Direction face = direction.getOpposite();
-            Vec3 location = Vec3.atCenterOf(neighbour).add(face.getStepX() * 0.5, face.getStepY() * 0.5, face.getStepZ() * 0.5);
-            return new BlockHitResult(location, face, neighbour, false);
+   private static PlacementPlan findPlacementWithClutch(Level level, LocalPlayer player, BlockPos goal, int maxRadius) {
+      BlockHitResult direct = findDirectHit(level, player, goal);
+      if (direct != null) {
+         return new PlacementPlan(goal, direct);
+      }
+
+      if (maxRadius <= 1) {
+         return null;
+      }
+
+      List<BlockPos> candidates = new ArrayList<>();
+      for (int dx = -maxRadius; dx <= maxRadius; dx++) {
+         for (int dy = -2; dy <= 0; dy++) {
+            for (int dz = -maxRadius; dz <= maxRadius; dz++) {
+               if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= maxRadius) {
+                  BlockPos pos = goal.offset(dx, dy, dz);
+                  if (replaceable(level, pos) && findDirectHit(level, player, pos) != null) {
+                     candidates.add(pos);
+                  }
+               }
+            }
+         }
+      }
+
+      candidates.sort(Comparator.comparingDouble(pos -> pos.distSqr(goal)));
+      for (BlockPos bridgeStep : candidates) {
+         BlockHitResult stepHit = findDirectHit(level, player, bridgeStep);
+         if (stepHit != null) {
+            return new PlacementPlan(bridgeStep, stepHit);
          }
       }
 
       return null;
    }
 
+   private static BlockHitResult findDirectHit(Level level, LocalPlayer player, BlockPos target) {
+      Direction[] order = new Direction[]{Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
+      Vec3 eye = player.getEyePosition();
+      BlockHitResult best = null;
+      double bestDist = Double.MAX_VALUE;
+
+      for (Direction direction : order) {
+         BlockPos neighbour = target.relative(direction);
+         if (solidSupport(level, neighbour)) {
+            Direction face = direction.getOpposite();
+            Vec3 hitVec = Vec3.atCenterOf(neighbour).add(face.getStepX() * 0.5, face.getStepY() * 0.5, face.getStepZ() * 0.5);
+            double dist = eye.distanceToSqr(hitVec);
+            if (dist <= 22.5 && dist < bestDist) {
+               bestDist = dist;
+               best = new BlockHitResult(hitVec, face, neighbour, false);
+            }
+         }
+      }
+
+      return best;
+   }
+
+   private static void refillHotbarBlocks(Minecraft client, LocalPlayer player) {
+      for (int i = 9; i < 36; i++) {
+         ItemStack stack = player.getInventory().getItem(i);
+         if (usable(stack)) {
+            InventoryUtil.moveToHotbar(client, player, i, player.getInventory().getSelectedSlot());
+            return;
+         }
+      }
+   }
+
    private static int countBlocks(LocalPlayer player) {
       int total = 0;
 
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 36; i++) {
          ItemStack stack = player.getInventory().getItem(i);
          if (usable(stack)) {
             total += stack.getCount();
@@ -345,22 +452,33 @@ public final class ScaffoldModule extends Module {
       if (usable(player.getInventory().getItem(selected))) {
          return selected;
       } else {
+         int bestSlot = -1;
+         int bestCount = 0;
          for (int i = 0; i < 9; i++) {
-            if (usable(player.getInventory().getItem(i))) {
-               return i;
+            ItemStack stack = player.getInventory().getItem(i);
+            if (usable(stack) && stack.getCount() > bestCount) {
+               bestCount = stack.getCount();
+               bestSlot = i;
             }
          }
 
-         return -1;
+         return bestSlot;
       }
    }
 
    private static boolean usable(ItemStack stack) {
       if (!stack.isEmpty() && stack.getItem() instanceof BlockItem blockItem) {
          Block block = blockItem.getBlock();
-         return !(block instanceof EntityBlock) && !(block instanceof FallingBlock) && block.defaultBlockState().isSolidRender();
+         return !(block instanceof EntityBlock)
+            && !(block instanceof FallingBlock)
+            && !(block instanceof SlabBlock)
+            && !(block instanceof StairBlock)
+            && block.defaultBlockState().isSolidRender();
       } else {
          return false;
       }
+   }
+
+   private record PlacementPlan(BlockPos placePos, BlockHitResult hit) {
    }
 }

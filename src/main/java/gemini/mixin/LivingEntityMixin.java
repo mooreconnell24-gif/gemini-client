@@ -14,7 +14,8 @@ public abstract class LivingEntityMixin {
    @Inject(
       method = {"getCurrentSwingDuration"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$swingDuration(CallbackInfoReturnable<Integer> cir) {
       if (Gemini.getInstance() != null) {

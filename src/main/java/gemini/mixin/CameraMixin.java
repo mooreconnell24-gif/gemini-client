@@ -30,7 +30,8 @@ public abstract class CameraMixin {
    @Inject(
       method = {"calculateFov"},
       at = {@At("RETURN")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$fov(float partialTicks, CallbackInfoReturnable<Float> cir) {
       float fov = cir.getReturnValueF();
@@ -83,7 +84,8 @@ public abstract class CameraMixin {
 
    @Inject(
       method = {"alignWithEntity"},
-      at = {@At("RETURN")}
+      at = {@At("RETURN")},
+      require = 0
    )
    private void gemini$freecam(float partialTicks, CallbackInfo ci) {
       CameraModules.Freecam freecam = CameraModules.Freecam.instance;
@@ -110,7 +112,8 @@ public abstract class CameraMixin {
    @Inject(
       method = {"getMaxZoom"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$clip(float distance, CallbackInfoReturnable<Float> cir) {
       CameraModules.CameraTweaks tweaks = CameraModules.CameraTweaks.instance;

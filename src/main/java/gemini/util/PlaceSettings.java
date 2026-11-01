@@ -24,7 +24,7 @@ public final class PlaceSettings {
       this.perTick = module.addSetting(new NumberSetting("Blocks Per Tick", "Most blocks placed in one burst", defaultPerTick, 1.0, 8.0, 1.0));
       this.range = module.addSetting(new NumberSetting("Place Range", "Farthest block you will place", defaultRange, 1.5, 6.0, 0.1));
       this.swing = module.addSetting(new BooleanSetting("Swing", "Swing your hand when placing", true));
-      this.airPlace = module.addSetting(new BooleanSetting("Air Place", "Place against empty space when no neighbouring block exists", false));
+      this.airPlace = module.addSetting(new BooleanSetting("Air Place", "Place against empty space when no neighbouring", false));
       this.rotate = module.addSetting(new BooleanSetting("Silent Aim", "Face each block in packets only while placing", true));
    }
 

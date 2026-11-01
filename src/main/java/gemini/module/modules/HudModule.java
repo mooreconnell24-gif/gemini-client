@@ -37,7 +37,7 @@ public final class HudModule extends Module {
       new BooleanSetting("Side Bar", "Gradient accent bar on the screen-facing edge", true).showIf(this.arraylist::get)
    );
    private final BooleanSetting glowOutline = this.addSetting(
-      new BooleanSetting("Glow Outline", "Draw a sleek contour outline and glow around the ArrayList", true).showIf(this.arraylist::get)
+      new BooleanSetting("Glow Outline", "Draw a glowing contour outline around the ArrayList", true).showIf(this.arraylist::get)
    );
    private final BooleanSetting slideAnimations = this.addSetting(
       new BooleanSetting("Slide Animations", "Smoothly slide modules in and out when toggled", true).showIf(this.arraylist::get)
@@ -50,7 +50,7 @@ public final class HudModule extends Module {
       new BooleanSetting("Module Info", "Show a module's mode or status next to its name", true).showIf(this.arraylist::get)
    );
    private final ModeSetting tagStyle = this.addSetting(
-      new ModeSetting("Tag Style", "Formatting style for module mode tags in the ArrayList", "Plain", "Plain", "Brackets [Info]", "Dot · Info", "Angle <Info>")
+      new ModeSetting("Tag Style", "Formatting style for module mode tags in ArrayList", "Plain", "Plain", "Brackets [Info]", "Dot · Info", "Angle <Info>")
          .showIf(this.arraylist::get)
    );
    private final BooleanSetting lowercase = this.addSetting(

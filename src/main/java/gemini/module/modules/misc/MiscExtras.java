@@ -59,7 +59,7 @@ public final class MiscExtras {
       private int timeout;
 
       public AutoGG() {
-         super("AutoGG", "Automatically say GG when a player you recently fought dies.", Category.CLIENT);
+         super("AutoGG", "Auto-say GG when a player you recently fought dies.", Category.CLIENT);
       }
 
       @Override
@@ -94,7 +94,7 @@ public final class MiscExtras {
       private final ModeSetting action = this.addSetting(new ModeSetting("Action", "How to escape", "HubCommand", "HubCommand", "SpawnCommand"));
 
       public AutoLeave() {
-         super("AutoLeave", "Automatically send /hub or /spawn when your health drops critically low.", Category.COMBAT);
+         super("AutoLeave", "Auto-send /hub or /spawn when your health drops.", Category.COMBAT);
       }
 
       @Override
@@ -142,7 +142,7 @@ public final class MiscExtras {
       private float yaw;
 
       public Derp() {
-         super("Derp", "Spin your server-side head rotations wildly while keeping your camera steady.", Category.PLAYER);
+         super("Derp", "Spin server-side head rotations without moving camera.", Category.PLAYER);
       }
 
       @Override
@@ -163,7 +163,7 @@ public final class MiscExtras {
       private int timer;
 
       public FakeLag() {
-         super("FakeLag", "Hold and burst movement packets in short pulses like LiquidBounce FakeLag.", Category.COMBAT);
+         super("FakeLag", "Hold and burst movement packets in short pulses.", Category.COMBAT);
       }
 
       @Override
@@ -218,7 +218,7 @@ public final class MiscExtras {
       private final Set<UUID> seenPlayers = new HashSet<>();
 
       public Notifier() {
-         super("Notifier", "Alert on totem pops and when players enter or leave your visual range.", Category.CLIENT);
+         super("Notifier", "Alert on totem pops and visual range changes.", Category.CLIENT);
       }
 
       @Override
@@ -271,7 +271,7 @@ public final class MiscExtras {
 
       public Presets() {
          super(
-            "Presets", "Turn on a curated bundle of modules for LiquidBounce, Performance/AntiLag, PvP, exploring, building, or travelling.", Category.CLIENT
+            "Presets", "One-click module bundles for PvP, FPS, and travel.", Category.CLIENT
          );
       }
 
@@ -355,7 +355,7 @@ public final class MiscExtras {
       private int hops;
 
       public ResetVL() {
-         super("ResetVL", "Perform micro-hops on ground to decay movement violation levels.", Category.MOVEMENT);
+         super("ResetVL", "Perform ground micro-hops to decay anti-cheat VL.", Category.MOVEMENT);
       }
 
       @Override
@@ -386,7 +386,7 @@ public final class MiscExtras {
       private int index;
 
       public Spammer() {
-         super("Spammer", "Automatically send customizable messages in chat with an anti-spam bypass suffix.", Category.CLIENT);
+         super("Spammer", "Send rotating chat messages with anti-spam tags.", Category.CLIENT);
       }
 
       @Override
@@ -405,11 +405,13 @@ public final class MiscExtras {
    }
 
    public static final class Teams extends Module {
+      public static MiscExtras.Teams instance;
       private final BooleanSetting scoreboardTeam = this.addSetting(new BooleanSetting("Scoreboard Team", "Check vanilla scoreboard team", true));
       private final BooleanSetting nameColor = this.addSetting(new BooleanSetting("Name Prefix", "Check matching display name color", true));
 
       public Teams() {
-         super("Teams", "Identify teammates by scoreboard team or display color.", Category.COMBAT);
+         super("Teams", "Skip teammates by scoreboard team or name color.", Category.COMBAT);
+         instance = this;
       }
 
       public boolean isTeammate(LocalPlayer self, Entity other) {

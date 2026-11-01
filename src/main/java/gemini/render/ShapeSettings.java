@@ -29,7 +29,7 @@ public final class ShapeSettings {
             .showIf(() -> visible.getAsBoolean() && !this.mode.is("Lines"))
       );
       this.throughWalls = module.addSetting(
-         new BooleanSetting("Through Walls", "Draw on top of terrain so it stays visible behind blocks", defaultThroughWalls).showIf(visible)
+         new BooleanSetting("Through Walls", "Draw on top of terrain so it stays visible behind", defaultThroughWalls).showIf(visible)
       );
    }
 

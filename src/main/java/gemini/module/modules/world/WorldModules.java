@@ -146,7 +146,7 @@ public final class WorldModules {
       private int cooldown;
 
       public AirPlace() {
-         super("Air Place", "Place the block in your hand anywhere you aim, even with nothing to build on.", Category.WORLD);
+         super("Air Place", "Place the block in your hand anywhere you aim.", Category.WORLD);
       }
 
       private BlockPos target(LocalPlayer player, float partialTick) {
@@ -201,7 +201,7 @@ public final class WorldModules {
       private int cooldown;
 
       public AutoBreed() {
-         super("Auto Breed", "Feed nearby animals with the food in your hotbar so they breed.", Category.WORLD);
+         super("Auto Breed", "Feed nearby animals with the food in your hotbar so.", Category.WORLD);
       }
 
       @Override
@@ -284,7 +284,7 @@ public final class WorldModules {
       private final BooleanSetting stalks = this.addSetting(new BooleanSetting("Sugar Cane And Cactus", "Cut everything above the bottom block", true));
       private final BooleanSetting replant = this.addSetting(new BooleanSetting("Replant", "Plant the same seed again after harvesting", true));
       private final BooleanSetting boneMeal = this.addSetting(
-         new BooleanSetting("Bone Meal", "Use bone meal from your hotbar on crops that are still growing", false)
+         new BooleanSetting("Bone Meal", "Apply hotbar bone meal to unripe crops nearby", false)
       );
       private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while working", true));
       private final Map<BlockPos, Item> seeds = new LinkedHashMap<>();
@@ -293,7 +293,7 @@ public final class WorldModules {
       private int cooldown;
 
       public AutoFarm() {
-         super("Auto Farm", "Harvest ripe crops around you, replant them and optionally bone meal the rest.", Category.WORLD);
+         super("Auto Farm", "Harvest ripe crops around you.", Category.WORLD);
       }
 
       @Override
@@ -533,7 +533,7 @@ public final class WorldModules {
       private boolean warned;
 
       public AutoNametag() {
-         super("Auto Nametag", "Name every nearby unnamed mob using a renamed name tag from your hotbar.", Category.WORLD);
+         super("Auto Nametag", "Name every nearby unnamed mob using a renamed name.", Category.WORLD);
       }
 
       @Override
@@ -663,12 +663,12 @@ public final class WorldModules {
 
    public static final class EndermanLook extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Look Away: never meet their eyes. Look At: stare at the closest one", "Look Away", "Look Away", "Look At")
+         new ModeSetting("Mode", "Look Away avoids Endermen; Look At aggros them", "Look Away", "Look Away", "Look At")
       );
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far away Endermen matter", 32.0, 4.0, 64.0, 1.0));
 
       public EndermanLook() {
-         super("Enderman Look", "Look away from Endermen so they stay calm, or stare at them on purpose.", Category.WORLD);
+         super("Enderman Look", "Look away from Endermen so they stay calm.", Category.WORLD);
       }
 
       @Override
@@ -724,12 +724,12 @@ public final class WorldModules {
       private final PlaceSettings placing = new PlaceSettings(this, 1, 2, 4.5);
       private final ModeSetting liquid = this.addSetting(new ModeSetting("Liquid", "Which liquid gets covered", "Both", "Both", "Water", "Lava"));
       private final BooleanSetting sourcesOnly = this.addSetting(
-         new BooleanSetting("Only Sources", "Skip flowing liquid; it dries up once its source is covered", true)
+         new BooleanSetting("Only Sources", "Skip flowing liquid", true)
       );
       private final ListSetting blocks = this.addSetting(
          new ListSetting(
             "Blocks",
-            "Blocks used to cover the liquid (leave empty to use any solid block)",
+            "Blocks used to cover the liquid",
             ListSetting.Kind.BLOCK,
             "minecraft:cobblestone",
             "minecraft:dirt",
@@ -743,7 +743,7 @@ public final class WorldModules {
       );
 
       public LiquidFiller() {
-         super("Liquid Filler", "Cover water and lava around you with blocks from your hotbar.", Category.WORLD);
+         super("Liquid Filler", "Fill nearby water and lava source blocks automatically.", Category.WORLD);
       }
 
       @Override
@@ -813,7 +813,7 @@ public final class WorldModules {
    public static final class SpawnProofer extends Module {
       private final PlaceSettings placing = new PlaceSettings(this, 3, 1, 4.0);
       private final NumberSetting maxLight = this.addSetting(
-         new NumberSetting("Max Light", "Floor with at most this much block light counts as spawnable", 0.0, 0.0, 14.0, 1.0)
+         new NumberSetting("Max Light", "Maximum block light level treated as monster-spawnable", 0.0, 0.0, 14.0, 1.0)
       );
       private final ListSetting blocks = this.addSetting(
          new ListSetting(
@@ -825,7 +825,7 @@ public final class WorldModules {
       private int tick;
 
       public SpawnProofer() {
-         super("Spawn Proofer", "Cover dark floor around you with torches or buttons so monsters cannot spawn.", Category.WORLD);
+         super("Spawn Proofer", "Cover dark floor around you with torches or buttons.", Category.WORLD);
       }
 
       @Override
@@ -923,7 +923,7 @@ public final class WorldModules {
       private int stuck;
 
       public VeinMiner() {
-         super("Vein Miner", "Mine a whole ore vein or tree after breaking one block of it.", Category.WORLD);
+         super("Vein Miner", "Mine a whole ore vein or tree after breaking one.", Category.WORLD);
       }
 
       @Override

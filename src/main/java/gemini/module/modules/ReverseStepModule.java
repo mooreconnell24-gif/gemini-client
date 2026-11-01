@@ -26,8 +26,16 @@ public final class ReverseStepModule extends Module {
          this.wasOnGround = player.onGround();
          Vec3 motion = player.getDeltaMovement();
          if (leftGround && !(motion.y > 0.0) && !player.isInWater() && !player.isInLava() && !player.getAbilities().flying && !player.isFallFlying()) {
-            AABB box = player.getBoundingBox().move(0.0, -this.height.get(), 0.0);
-            if (!client.level.noCollision(player, box)) {
+            double maxDrop = this.height.get();
+            boolean groundBelow = false;
+            for (double dy = 0.5; dy <= maxDrop + 0.05; dy += 0.5) {
+               AABB box = player.getBoundingBox().move(0.0, -dy, 0.0);
+               if (!client.level.noCollision(player, box)) {
+                  groundBelow = true;
+                  break;
+               }
+            }
+            if (groundBelow) {
                player.setDeltaMovement(motion.x, -this.speed.get(), motion.z);
             }
          }

@@ -23,7 +23,7 @@ import net.minecraft.world.level.Level;
 
 public final class NoFallModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Packet sends an on-ground update, Spoof rewrites movement packets, MLG places water", "Packet", "Packet", "Spoof", "MLG")
+      new ModeSetting("Mode", "Packet spoofs ground; Spoof rewrites moves; MLG clutches", "Packet", "Packet", "Spoof", "MLG")
    );
    private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Start preventing damage after falling this far", 2.5, 1.5, 10.0, 0.5));
    private boolean replacing;
@@ -42,7 +42,7 @@ public final class NoFallModule extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && player.connection != null && !player.getAbilities().flying && !player.isFallFlying()) {
+      if (player != null && player.connection != null && client.level != null && !player.getAbilities().flying && !player.isFallFlying()) {
          if (this.pickup <= 0) {
             if (!(player.fallDistance <= this.distance.get())
                && !(player.getDeltaMovement().y > -0.3)
@@ -105,7 +105,7 @@ public final class NoFallModule extends Module {
    }
 
    private boolean placeWater(Minecraft client, LocalPlayer player) {
-      if (client.gui.screen() == null && Inventories.findHotbar(player, stack -> stack.is(Items.WATER_BUCKET)) >= 0) {
+      if (client.level != null && client.gui.screen() == null && Inventories.findHotbar(player, stack -> stack.is(Items.WATER_BUCKET)) >= 0) {
          int gap = 0;
          BlockPos feet = player.blockPosition();
 
@@ -137,7 +137,7 @@ public final class NoFallModule extends Module {
 
    private void scoop(Minecraft client, LocalPlayer player) {
       int slot = Inventories.findHotbar(player, stack -> stack.is(Items.BUCKET));
-      if (slot >= 0) {
+      if (slot >= 0 && client.gameMode != null) {
          int previous = player.getInventory().getSelectedSlot();
          player.getInventory().setSelectedSlot(slot);
          client.gameMode.useItem(player, InteractionHand.MAIN_HAND);

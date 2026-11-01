@@ -12,10 +12,12 @@ import gemini.render.Render3D;
 import gemini.util.BlockPlacer;
 import gemini.util.Damage;
 import gemini.util.Inventories;
+import gemini.util.MoveUtil;
 import gemini.util.PlaceSettings;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
+import gemini.util.VersionBridge;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -83,26 +85,29 @@ public final class CombatModules {
    }
 
    public static final class AutoCrystal extends Module {
-      private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Distance to scan for enemies", 10.0, 4.0, 16.0, 0.5));
+      private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy scan distance", 10.0, 4.0, 16.0, 0.5));
       private final NumberSetting placeRange = this.addSetting(new NumberSetting("Place Range", "Max crystal placement reach", 4.5, 2.0, 6.0, 0.1));
       private final NumberSetting breakRange = this.addSetting(new NumberSetting("Break Range", "Max crystal attack reach", 4.5, 2.0, 6.0, 0.1));
       private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Max reach through walls", 3.2, 0.0, 6.0, 0.1));
-      private final NumberSetting minDamage = this.addSetting(new NumberSetting("Min Damage", "Minimum damage dealt to target", 6.0, 1.0, 20.0, 0.5));
-      private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Maximum damage allowed to yourself", 8.0, 1.0, 20.0, 0.5));
+      private final NumberSetting minDamage = this.addSetting(new NumberSetting("Min Damage", "Minimum damage dealt to enemy", 6.0, 1.0, 20.0, 0.5));
+      private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Maximum self-damage allowed", 8.0, 1.0, 20.0, 0.5));
       private final BooleanSetting antiSuicide = this.addSetting(
-         new BooleanSetting("Anti Suicide", "Never place or break crystals that could pop/kill you", true)
+         new BooleanSetting("Anti Suicide", "Avoid crystals that could pop or kill you", true)
       );
       private final NumberSetting placeDelay = this.addSetting(new NumberSetting("Place Delay", "Ticks between crystal placements", 1.0, 0.0, 10.0, 1.0));
       private final NumberSetting breakDelay = this.addSetting(new NumberSetting("Break Delay", "Ticks between crystal attacks", 1.0, 0.0, 10.0, 1.0));
-      private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predictive Raycast", "Predict target movement ticks ahead", true));
+      private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predictive Raycast", "Predict enemy movement ticks ahead", true));
       private final NumberSetting predictTicks = this.addSetting(
          new NumberSetting("Predict Ticks", "Movement ticks to project target ahead", 3.0, 1.0, 8.0, 1.0).showIf(this.predict::get)
       );
-      private final ModeSetting autoSwitch = this.addSetting(
-         new ModeSetting("Switch", "How to select End Crystals from your hotbar", "Silent", "None", "Normal", "Silent")
+      private final BooleanSetting supportPlace = this.addSetting(
+         new BooleanSetting("Support Obsidian", "Place obsidian base if none is available", false)
       );
-      private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Route rotations through Packet RotationManager", true));
-      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight the best crystal base and damage", true));
+      private final ModeSetting autoSwitch = this.addSetting(
+         new ModeSetting("Switch", "Hotbar crystal selection mode", "Silent", "None", "Normal", "Silent")
+      );
+      private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets without moving camera", true));
+      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight active crystal base and damage", true));
       private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 280).showIf(this.render::get));
       private int placeTimer;
       private int breakTimer;
@@ -110,7 +115,7 @@ public final class CombatModules {
       private float renderDamage;
 
       public AutoCrystal() {
-         super("AutoCrystal", "Automatically place and detonate End Crystals using predictive raycasting and packet rotations.", Category.COMBAT);
+         super("AutoCrystal", "Predictive End Crystal placement and detonation.", Category.COMBAT);
       }
 
       @Override
@@ -140,7 +145,7 @@ public final class CombatModules {
                   Entity bestCrystal = this.findBestCrystal(level, player, target);
                   if (bestCrystal != null) {
                      float[] rot = RotationManager.toward(player, bestCrystal);
-                     if (RotationManager.request(player, rot, 90.0F, this.silentRotate.get(), 10)) {
+                     if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), 10)) {
                         client.gameMode.attack(player, bestCrystal);
                         player.swing(InteractionHand.MAIN_HAND);
                         this.breakTimer = this.breakDelay.intValue();
@@ -151,7 +156,14 @@ public final class CombatModules {
                if (this.placeTimer > 0) {
                   this.placeTimer--;
                } else {
-                  BlockPos bestBase = this.findBestBase(level, player, target);
+                  BlockPos bestBase = this.findBestBase(level, player, target, false);
+                  if (bestBase == null && this.supportPlace.get()) {
+                     BlockPos support = this.findBestBase(level, player, target, true);
+                     if (support != null && BlockPlacer.place(client, support, stack -> stack.is(Items.OBSIDIAN), true, this.silentRotate.get(), true)) {
+                        bestBase = support;
+                     }
+                  }
+
                   this.renderPos = bestBase;
                   if (bestBase != null) {
                      InteractionHand hand = player.getOffhandItem().is(Items.END_CRYSTAL) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
@@ -164,7 +176,7 @@ public final class CombatModules {
 
                      Vec3 hitVec = Vec3.atCenterOf(bestBase).add(0.0, 0.5, 0.0);
                      float[] rot = RotationManager.toward(player, hitVec);
-                     if (RotationManager.request(player, rot, 90.0F, this.silentRotate.get(), 10)) {
+                     if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), 10)) {
                         int prev = player.getInventory().getSelectedSlot();
                         boolean swapped = false;
                         if (hand == InteractionHand.MAIN_HAND && !player.getMainHandItem().is(Items.END_CRYSTAL)) {
@@ -216,7 +228,7 @@ public final class CombatModules {
          return best;
       }
 
-      private BlockPos findBestBase(Level level, LocalPlayer player, LivingEntity target) {
+      private BlockPos findBestBase(Level level, LocalPlayer player, LivingEntity target, boolean allowReplaceableBase) {
          int r = (int)Math.ceil(this.placeRange.get());
          BlockPos eyeBlock = BlockPos.containing(player.getEyePosition());
          MutableBlockPos cursor = new MutableBlockPos();
@@ -230,7 +242,7 @@ public final class CombatModules {
             for (int dy = -r; dy <= r; dy++) {
                for (int dz = -r; dz <= r; dz++) {
                   cursor.set(eyeBlock.getX() + dx, eyeBlock.getY() + dy, eyeBlock.getZ() + dz);
-                  if (canPlaceCrystal(level, cursor)) {
+                  if (canPlaceCrystal(level, cursor, allowReplaceableBase)) {
                      Vec3 topCenter = new Vec3(cursor.getX() + 0.5, cursor.getY() + 1.0, cursor.getZ() + 0.5);
                      double d2 = player.getEyePosition().distanceToSqr(topCenter);
                      boolean lineOfSight = canSeeSpot(level, player.getEyePosition(), topCenter);
@@ -249,7 +261,9 @@ public final class CombatModules {
             }
          }
 
-         this.renderDamage = best != null ? bestDmg : 0.0F;
+         if (!allowReplaceableBase) {
+            this.renderDamage = best != null ? bestDmg : 0.0F;
+         }
          return best;
       }
 
@@ -263,13 +277,15 @@ public final class CombatModules {
          }
       }
 
-      private static boolean canPlaceCrystal(Level level, BlockPos base) {
+      private static boolean canPlaceCrystal(Level level, BlockPos base, boolean allowReplaceableBase) {
          BlockState state = level.getBlockState(base);
-         if (!state.is(Blocks.OBSIDIAN) && !state.is(Blocks.BEDROCK)) {
+         if (!allowReplaceableBase && !state.is(Blocks.OBSIDIAN) && !state.is(Blocks.BEDROCK)) {
+            return false;
+         } else if (allowReplaceableBase && (!BlockPlacer.replaceable(level, base) || BlockPlacer.findPlacement(level, base, false) == null)) {
             return false;
          } else {
             BlockPos above = base.above();
-            if (!level.getBlockState(above).isAir()) {
+            if (!VersionBridge.canPlaceCrystalSpace(level, base)) {
                return false;
             } else {
                AABB box = new AABB(above.getX(), above.getY(), above.getZ(), above.getX() + 1.0, above.getY() + 2.0, above.getZ() + 1.0);
@@ -294,14 +310,15 @@ public final class CombatModules {
 
    public static final class AutoTrap extends Module {
       private final PlaceSettings placer = new PlaceSettings(this, 1, 3, 4.8);
-      private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Which blocks to encase", "Full", "Full", "Head", "Feet"));
-      private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "How far to search for an enemy to trap", 5.0, 2.0, 7.0, 0.2));
+      private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Trap block coverage", "Full", "Full", "Head", "Feet"));
+      private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy search range", 5.0, 2.0, 7.0, 0.2));
       private final NumberSetting predictTicks = this.addSetting(new NumberSetting("Predict Ticks", "Predict enemy movement ticks ahead", 2.0, 0.0, 6.0, 1.0));
-      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight trap blocks being placed", true));
+      private final BooleanSetting antiStep = this.addSetting(new BooleanSetting("Anti Step", "Cap top of trap to block stepping out", true));
+      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight queued trap blocks", true));
       private final List<BlockPos> currentPlan = new ArrayList<>();
 
       public AutoTrap() {
-         super("AutoTrap", "Encase nearby enemies in obsidian using predictive placement and packet rotations.", Category.COMBAT);
+         super("AutoTrap", "Encase nearby enemies in obsidian with predictive aim.", Category.COMBAT);
       }
 
       @Override
@@ -335,6 +352,9 @@ public final class CombatModules {
                if (!this.mode.is("Feet")) {
                   this.currentPlan.add(base.above().relative(Direction.NORTH).above());
                   this.currentPlan.add(base.above(2));
+                  if (this.antiStep.get()) {
+                     this.currentPlan.add(base.above(3));
+                  }
                }
 
                if (this.placer.ready()) {
@@ -361,13 +381,13 @@ public final class CombatModules {
 
    public static final class AutoWeapon extends Module {
       private final ModeSetting prefer = this.addSetting(
-         new ModeSetting("Prefer", "Which weapon to switch to; Best compares damage per second", "Best", "Best", "Sword", "Axe", "Mace", "Trident")
+         new ModeSetting("Prefer", "Preferred weapon type (Best compares DPS)", "Best", "Best", "Sword", "Axe", "Mace", "Trident")
       );
-      private final BooleanSetting antiBreak = this.addSetting(new BooleanSetting("Anti Break", "Skip weapons that are about to break", true));
-      private final BooleanSetting keepCurrent = this.addSetting(new BooleanSetting("Keep Current", "Stay on what you hold when it is already a weapon", false));
+      private final BooleanSetting antiBreak = this.addSetting(new BooleanSetting("Anti Break", "Skip weapons near 0 durability", true));
+      private final BooleanSetting keepCurrent = this.addSetting(new BooleanSetting("Keep Current", "Keep current slot if already holding a weapon", false));
 
       public AutoWeapon() {
-         super("Auto Weapon", "Switch to your best weapon when you attack.", Category.COMBAT);
+         super("Auto Weapon", "Switch to your best hotbar weapon on attack.", Category.COMBAT);
       }
 
       @Override
@@ -431,13 +451,13 @@ public final class CombatModules {
 
    public static final class Hitboxes extends Module {
       public static CombatModules.Hitboxes instance;
-      private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks added around every hitbox", 0.25, 0.0, 1.5, 0.05));
-      private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Widen player hitboxes", true));
-      private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Widen hostile mob hitboxes", false));
-      private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Widen animal hitboxes", false));
+      private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks added to target hitboxes", 0.25, 0.0, 1.5, 0.05));
+      private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Expand player hitboxes", true));
+      private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Expand hostile mob hitboxes", false));
+      private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Expand animal hitboxes", false));
 
       public Hitboxes() {
-         super("Hitboxes", "Make entity hitboxes bigger so they are easier to hit.", Category.COMBAT);
+         super("Hitboxes", "Expand entity hitboxes for easier melee hits.", Category.COMBAT);
          instance = this;
       }
 
@@ -458,41 +478,50 @@ public final class CombatModules {
 
    public static final class KillAura extends Module {
       private final ModeSetting targetMode = this.addSetting(
-         new ModeSetting("Target Mode", "Single locks one target; Switch cycles across valid targets", "Switch", "Single", "Switch")
+         new ModeSetting("Target Mode", "Single locks one target; Switch cycles targets", "Switch", "Single", "Switch")
       );
       private final ModeSetting priority = this.addSetting(
-         new ModeSetting("Priority", "How targets are ranked", "Distance", "Distance", "Health", "Angle", "Armor")
+         new ModeSetting("Priority", "Target sorting priority", "Distance", "Distance", "Health", "Angle", "Armor")
       );
       private final ModeSetting bypass = this.addSetting(
-         new ModeSetting("Bypass Mode", "Rotation and timing checks for anti-cheats", "Vulcan", "Strict", "Vulcan", "Matrix", "Vanilla")
+         new ModeSetting("Bypass Mode", "Anti-cheat rotation & timing profile", "Vulcan", "Grim", "Strict", "Vulcan", "Matrix", "Vanilla")
+      );
+      private final ModeSetting versionMode = this.addSetting(
+         new ModeSetting("Version", "Combat version mechanics (1.8 CPS vs 1.9+ Cooldown)", "Auto", "Auto", "1.9+ Cooldown", "1.8 Legacy CPS")
+      );
+      private final NumberSetting legacyCps = this.addSetting(
+         new NumberSetting("Legacy CPS", "Clicks per second in 1.8/1.7 combat mode", 14.0, 4.0, 20.0, 1.0)
       );
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum attack reach", 4.2, 2.5, 6.0, 0.1));
       private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Maximum reach through walls", 3.0, 0.0, 6.0, 0.1));
-      private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view to scan for targets", 180.0, 30.0, 360.0, 5.0));
+      private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view scan cone", 180.0, 30.0, 360.0, 5.0));
       private final NumberSetting turnSpeed = this.addSetting(
-         new NumberSetting("Turn Speed", "Maximum rotation degrees per tick (180 = instant)", 75.0, 15.0, 180.0, 5.0)
+         new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 85.0, 15.0, 180.0, 5.0)
       );
-      private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Rotate in packets without moving your camera", true));
-      private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Verify line-of-sight to the target hitbox", false));
+      private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Rotate in packets without moving camera", true));
+      private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Require clear line-of-sight to target", false));
+      private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "Wait for falling window when airborne for crits", true));
+      private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Maintain sprint state while attacking", true));
       private final BooleanSetting smartSwitch = this.addSetting(
-         new BooleanSetting("Smart Switch", "Switch to best sword/axe only when attacking (axes break shields)", true)
+         new BooleanSetting("Smart Switch", "Auto-select best sword or shield-breaking axe", true)
       );
       private final BooleanSetting lagComp = this.addSetting(
-         new BooleanSetting("Lag Compensation", "Interpolate target position ahead by ping and velocity", true)
+         new BooleanSetting("Lag Comp", "Lead moving targets by ping and velocity", true)
       );
       private final NumberSetting predictTicks = this.addSetting(
-         new NumberSetting("Predict Ticks", "Base ticks to project target movement ahead", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
+         new NumberSetting("Predict Ticks", "Base movement ticks to lead target", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
       );
       private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players", true));
       private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Attack hostile mobs", true));
       private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Attack passive animals", false));
-      private final BooleanSetting renderTarget = this.addSetting(new BooleanSetting("Highlight Target", "Render a 3D box around the active target", true));
+      private final BooleanSetting renderTarget = this.addSetting(new BooleanSetting("Highlight", "Render 3D box on active target", true));
       private LivingEntity currentTarget;
       private int switchIndex;
       private int switchTimer;
+      private long lastLegacyAttackMs;
 
       public KillAura() {
-         super("KillAura", "Automatically attack nearby targets with smoothed packet rotations and lag compensation.", Category.COMBAT);
+         super("KillAura", "Attack nearby enemies with smooth rotations and lag.", Category.COMBAT);
       }
 
       @Override
@@ -530,17 +559,31 @@ public final class CombatModules {
 
                   double pred = this.effectivePredictionTicks(client, player);
                   float[] rotation = Rotations.face(player, this.currentTarget, pred);
-                  if (this.bypass.is("Vulcan") || this.bypass.is("Matrix")) {
-                     float jitter = (float)Math.sin(player.tickCount * 0.7) * 0.65F;
+                  if (this.bypass.is("Vulcan") || this.bypass.is("Matrix") || this.bypass.is("Grim")) {
+                     float jitter = (float)Math.sin(player.tickCount * 0.75) * 0.55F;
                      rotation[0] = Mth.wrapDegrees(rotation[0] + jitter);
-                     rotation[1] = Mth.clamp(rotation[1] + jitter * 0.5F, -89.5F, 89.5F);
+                     rotation[1] = Mth.clamp(rotation[1] + jitter * 0.45F, -89.5F, 89.5F);
                   }
 
                   float speed = this.bypass.is("Vanilla") ? 180.0F : this.turnSpeed.floatValue();
-                  boolean aimed = RotationManager.request(player, rotation[0], rotation[1], speed, this.silentRotate.get(), 10, 6.0F);
+                  boolean aimed = RotationManager.request(player, rotation[0], rotation[1], speed, this.silentRotate.get(), 10, 8.0F);
                   if (aimed || this.bypass.is("Vanilla")) {
-                     float cooldownRequired = this.bypass.is("Strict") ? 0.95F : 0.9F;
-                     if (player.getAttackStrengthScale(0.0F) >= cooldownRequired) {
+                     boolean useLegacy = this.versionMode.is("1.8 Legacy CPS") || (this.versionMode.is("Auto") && VersionBridge.isLegacyCombat());
+                     float cooldownRequired = this.bypass.is("Strict") || this.bypass.is("Grim") ? 0.94F : 0.9F;
+                     long nowMs = System.currentTimeMillis();
+                     long minDelayMs = (long)Math.max(45.0, 1000.0 / Math.max(1.0, this.legacyCps.get()));
+                     boolean readyToHit = useLegacy ? (nowMs - this.lastLegacyAttackMs >= minDelayMs) : (player.getAttackStrengthScale(0.0F) >= cooldownRequired);
+                     if (readyToHit) {
+                        this.lastLegacyAttackMs = nowMs;
+                        if (this.autoCrit.get()
+                           && !player.onGround()
+                           && !player.isInWater()
+                           && !player.onClimbable()
+                           && player.getDeltaMovement().y > -0.03
+                           && player.fallDistance < 1.2F) {
+                           return;
+                        }
+
                         int prevSlot = player.getInventory().getSelectedSlot();
                         if (this.smartSwitch.get()) {
                            int weaponSlot = this.pickSmartWeapon(player, this.currentTarget);
@@ -549,8 +592,12 @@ public final class CombatModules {
                            }
                         }
 
+                        boolean wasSprinting = player.isSprinting();
                         client.gameMode.attack(player, this.currentTarget);
                         player.swing(InteractionHand.MAIN_HAND);
+                        if (this.keepSprint.get() && wasSprinting && MoveUtil.hasInput(player)) {
+                           player.setSprinting(true);
+                        }
                      }
                   }
                }
@@ -644,20 +691,20 @@ public final class CombatModules {
 
    public static final class Offhand extends Module {
       private final ModeSetting item = this.addSetting(
-         new ModeSetting("Item", "What to hold in the offhand", "Totem", "Totem", "Golden Apple", "Enchanted Golden Apple", "End Crystal", "Shield")
+         new ModeSetting("Item", "Preferred offhand item", "Totem", "Totem", "Golden Apple", "Enchanted Golden Apple", "End Crystal", "Shield")
       );
       private final NumberSetting totemHealth = this.addSetting(
-         new NumberSetting("Totem Health", "Switch to a totem at or below this health (0 = never)", 10.0, 0.0, 20.0, 1.0)
+         new NumberSetting("Totem Health", "Force totem at or below this health", 10.0, 0.0, 20.0, 1.0)
       );
       private final BooleanSetting swordGapple = this.addSetting(
-         new BooleanSetting("Sword Gapple", "Hold a golden apple while right-clicking with a sword", false)
+         new BooleanSetting("Sword Gapple", "Hold golden apple while right-clicking with sword", false)
       );
-      private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only take items from the hotbar", false));
-      private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between swaps", 2.0, 0.0, 20.0, 1.0));
+      private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only pull items from hotbar slots", false));
+      private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between offhand swaps", 2.0, 0.0, 20.0, 1.0));
       private int cooldown;
 
       public Offhand() {
-         super("Offhand", "Keep your offhand stocked with totems, apples or crystals.", Category.COMBAT);
+         super("Offhand", "Keep your offhand stocked with totems.", Category.COMBAT);
       }
 
       @Override
@@ -720,16 +767,16 @@ public final class CombatModules {
 
    public static final class Surround extends Module {
       private final PlaceSettings placer = new PlaceSettings(this, 0, 4, 4.5);
-      private final BooleanSetting center = this.addSetting(new BooleanSetting("Auto Center", "Snap to the center of your block on enable", true));
+      private final BooleanSetting center = this.addSetting(new BooleanSetting("Auto Center", "Snap to block center on enable", true));
       private final BooleanSetting support = this.addSetting(
-         new BooleanSetting("Support Blocks", "Place support blocks underneath when standing on an edge", true)
+         new BooleanSetting("Support Blocks", "Place support blocks under air edges", true)
       );
-      private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only On Ground", "Only place while on the ground", true));
-      private final BooleanSetting disableOnJump = this.addSetting(new BooleanSetting("Disable On Jump", "Turn off when you jump upward out of the hole", true));
+      private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only Ground", "Only place while standing on ground", true));
+      private final BooleanSetting disableOnJump = this.addSetting(new BooleanSetting("Disable On Jump", "Disable when jumping out of hole", true));
       private int startY;
 
       public Surround() {
-         super("Surround", "Quickly surround your feet with obsidian to block crystal damage.", Category.COMBAT);
+         super("Surround", "Surround your feet with obsidian to block crystal.", Category.COMBAT);
       }
 
       @Override
@@ -762,7 +809,7 @@ public final class CombatModules {
 
             if (this.placer.ready()) {
                BlockPos feet = player.blockPosition();
-               List<BlockPos> targets = new ArrayList<>(9);
+               List<BlockPos> targets = new ArrayList<>(10);
                targets.add(feet.below());
 
                for (Direction dir : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {

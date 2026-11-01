@@ -200,7 +200,7 @@ public final class WorldExtras {
       private final PlaceSettings placer = new PlaceSettings(this, 1, 3, 4.5);
 
       public BedDefender() {
-         super("BedDefender", "Automatically surround nearby beds with solid defensive blocks from your hotbar.", Category.WORLD);
+         super("BedDefender", "Surround nearby beds with defensive hotbar blocks.", Category.WORLD);
       }
 
       @Override
@@ -231,7 +231,7 @@ public final class WorldExtras {
       private final PlaceSettings placer = new PlaceSettings(this, 0, 4, 4.5);
 
       public BlockIn() {
-         super("BlockIn", "Rapidly build a full 1x2 protective shell around yourself.", Category.WORLD);
+         super("BlockIn", "Rapidly build a full 1x2 protective shell around.", Category.WORLD);
       }
 
       @Override
@@ -333,7 +333,7 @@ public final class WorldExtras {
       private final BooleanSetting cobweb = this.addSetting(new BooleanSetting("Cobwebs", "Treat cobwebs as solid", false));
       private final BooleanSetting lava = this.addSetting(new BooleanSetting("Lava", "Treat lava as solid and walk over it", false));
       private final BooleanSetting ignoreSneak = this.addSetting(
-         new BooleanSetting("Off While Sneaking", "Use vanilla collisions while sneaking so you can still step down", true)
+         new BooleanSetting("Off While Sneaking", "Use normal block collisions while sneaking", true)
       );
       private static final VoxelShape RAISED = Shapes.box(0.0, 0.0, 0.0, 1.0, 1.25, 1.0);
 
@@ -407,7 +407,7 @@ public final class WorldExtras {
       private int wait;
 
       public Flamethrower() {
-         super("Flamethrower", "Set the ground on fire under nearby enemies with a flint and steel.", Category.WORLD);
+         super("Flamethrower", "Ignite the ground beneath nearby enemies.", Category.WORLD);
       }
 
       @Override
@@ -453,7 +453,7 @@ public final class WorldExtras {
       private final BooleanSetting cakes = this.addSetting(new BooleanSetting("Cakes", "Break cakes", false));
 
       public Fucker() {
-         super("Fucker", "Automatically break nearby Beds, Dragon Eggs, or Cakes through walls like LiquidBounce Fucker.", Category.WORLD);
+         super("Fucker", "Break nearby Beds, Dragon Eggs, or Cakes through walls.", Category.WORLD);
       }
 
       @Override
@@ -486,7 +486,7 @@ public final class WorldExtras {
       private final BooleanSetting cobwebs = this.addSetting(new BooleanSetting("Cobwebs", "Break cobwebs when holding a sword or shears", true));
 
       public LawnMower() {
-         super("LawnMower", "Automatically clear tall grass, ferns, dead bushes, and cobwebs that obstruct crystal or block placement.", Category.WORLD);
+         super("LawnMower", "Clear tall grass, ferns, and cobwebs around you.", Category.WORLD);
       }
 
       @Override
@@ -524,7 +524,7 @@ public final class WorldExtras {
       private BlockPos targetPos;
 
       public PacketMine() {
-         super("PacketMine", "Mine a clicked block silently in the background without holding attack.", Category.WORLD);
+         super("PacketMine", "Mine clicked blocks silently in the background.", Category.WORLD);
       }
 
       @Override
@@ -562,7 +562,7 @@ public final class WorldExtras {
       private int trackedId = -1;
 
       public StrongholdFinder() {
-         super("StrongholdFinder", "Track thrown Eyes of Ender and report their heading vector in chat.", Category.WORLD);
+         super("StrongholdFinder", "Track Eye of Ender flight angles to locate strongholds.", Category.WORLD);
       }
 
       @Override

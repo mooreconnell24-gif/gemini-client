@@ -17,7 +17,8 @@ public abstract class LiquidBlockMixin {
    @Inject(
       method = {"getCollisionShape"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$walkOnFluid(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
       if (JesusModule.active()) {

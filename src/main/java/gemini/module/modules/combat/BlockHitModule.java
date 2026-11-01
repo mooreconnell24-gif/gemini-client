@@ -15,11 +15,11 @@ import net.minecraft.world.item.Items;
 public final class BlockHitModule extends Module {
    private static boolean holding;
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Instant raises as the hit lands. Lag waits a couple of ticks so the swing finishes first", "Lag", "Instant", "Lag")
+      new ModeSetting("Mode", "Instant blocks on hit; Lag waits for swing completion", "Lag", "Instant", "Lag")
    );
    private final NumberSetting chance = this.addSetting(new NumberSetting("Chance", "Percent of your hits that raise the shield", 80.0, 0.0, 100.0, 5.0));
    private final NumberSetting hold = this.addSetting(
-      new NumberSetting("Hold Ticks", "How long to keep the shield up (a shield needs about 5 ticks before it blocks)", 8.0, 2.0, 15.0, 1.0)
+      new NumberSetting("Hold Ticks", "Ticks to hold shield up per block-hit", 8.0, 2.0, 15.0, 1.0)
    );
    private final NumberSetting lag = this.addSetting(
       new NumberSetting("Lag Ticks", "Ticks to wait after the hit before raising", 1.0, 1.0, 5.0, 1.0).showIf(() -> this.mode.is("Lag"))
@@ -31,7 +31,7 @@ public final class BlockHitModule extends Module {
    private boolean armedThisTick;
 
    public BlockHitModule() {
-      super("BlockHit", "Raise your shield right after a hit so the counter lands on it.", Category.COMBAT);
+      super("BlockHit", "Raise your shield right after a hit so the counter.", Category.COMBAT);
    }
 
    public static boolean wantsShield() {

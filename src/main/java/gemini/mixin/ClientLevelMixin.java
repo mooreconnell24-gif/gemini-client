@@ -13,7 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ClientLevelMixin {
    @Inject(
       method = {"setBlocksDirty"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      require = 0
    )
    private void gemini$trackChanges(BlockPos pos, BlockState oldState, BlockState newState, CallbackInfo ci) {
       ChunkChanges.blockChanged(pos);

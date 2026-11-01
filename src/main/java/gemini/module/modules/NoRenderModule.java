@@ -9,7 +9,7 @@ public final class NoRenderModule extends Module {
    private static volatile NoRenderModule instance;
    private final BooleanSetting fire = this.addSetting(new BooleanSetting("Fire", "Hide the fire overlay on your screen", true));
    private final BooleanSetting water = this.addSetting(new BooleanSetting("Water Overlay", "Hide the blue tint when your eyes are underwater", true));
-   private final BooleanSetting wall = this.addSetting(new BooleanSetting("Wall Overlay", "Hide the black screen when your head is inside a block", true));
+   private final BooleanSetting wall = this.addSetting(new BooleanSetting("Wall Overlay", "Hide suffocation overlay when inside solid blocks", true));
    private final BooleanSetting pumpkin = this.addSetting(new BooleanSetting("Pumpkin Overlay", "Hide the carved pumpkin blur", true));
    private final BooleanSetting powderSnow = this.addSetting(new BooleanSetting("Powder Snow Overlay", "Hide the frozen screen border", true));
    private final BooleanSetting spyglass = this.addSetting(new BooleanSetting("Spyglass Overlay", "Hide the spyglass scope circle", false));
@@ -22,7 +22,7 @@ public final class NoRenderModule extends Module {
    private final BooleanSetting titles = this.addSetting(new BooleanSetting("Titles", "Hide big title and subtitle text", false));
    private final BooleanSetting actionBar = this.addSetting(new BooleanSetting("Action Bar", "Hide the text above the hotbar", false));
    private final BooleanSetting effects = this.addSetting(new BooleanSetting("Status Effects", "Hide the potion effect icons", false));
-   private final BooleanSetting heldName = this.addSetting(new BooleanSetting("Held Item Name", "Hide the item name that pops up when you switch slots", false));
+   private final BooleanSetting heldName = this.addSetting(new BooleanSetting("Held Item Name", "Hide the item name that pops up when you switch", false));
    private final BooleanSetting sleeping = this.addSetting(new BooleanSetting("Sleep Overlay", "Hide the dark fade while sleeping", false));
 
    public NoRenderModule() {

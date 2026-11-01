@@ -96,8 +96,9 @@ public final class AutoArmorModule extends Module {
                }
             }
 
+            double enchants = stack.isEnchanted() ? 1.5 : 0.0;
             double durability = stack.isDamageableItem() ? 1.0 - (double)stack.getDamageValue() / Math.max(1, stack.getMaxDamage()) : 1.0;
-            return armor + toughness * 0.5 + durability * 0.1;
+            return armor + toughness * 0.5 + enchants + durability * 0.1;
          } else {
             return -1.0;
          }

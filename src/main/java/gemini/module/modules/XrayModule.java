@@ -96,24 +96,24 @@ public final class XrayModule extends Module {
       )
    );
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Hide removes every block except the targets; Ghost keeps the world as a see-through shell", "Hide", "Hide", "Ghost")
+      new ModeSetting("Mode", "Hide strips non-ores; Ghost renders translucent terrain", "Hide", "Hide", "Ghost")
          .onChange(this::markDirty)
    );
    private final NumberSetting opacity = this.addSetting(
-      new NumberSetting("Opacity", "How visible the rest of the world stays in Ghost mode, in percent", 12.0, 2.0, 80.0, 1.0)
+      new NumberSetting("Opacity", "World terrain opacity percentage in Ghost mode", 12.0, 2.0, 80.0, 1.0)
          .showIf(() -> this.mode.is("Ghost"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting exposedOnly = this.addSetting(
-      new BooleanSetting("Exposed Only", "Only show targets that touch air or fluid, which skips ores buried deep in solid rock", false)
+      new BooleanSetting("Exposed Only", "Only show ores touching air or fluid (anti-antixray)", false)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting fullbright = this.addSetting(
-      new BooleanSetting("Fullbright", "Light targets at full brightness so they glow in the dark", true).onChange(this::markDirty)
+      new BooleanSetting("Fullbright", "Render Xray target blocks at full brightness", true).onChange(this::markDirty)
    );
    private final BooleanSetting lava = this.addSetting(
-      new BooleanSetting("Show Lava", "Keep lava visible in Hide mode so you can see where it is", true)
+      new BooleanSetting("Show Lava", "Keep lava visible while Xray Hide mode is active", true)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
@@ -124,7 +124,7 @@ public final class XrayModule extends Module {
    private final ListSetting custom = this.addSetting(
       new ListSetting("Custom Blocks", "Extra blocks to reveal, picked from the block list", ListSetting.Kind.BLOCK).onChange(this::markDirty)
    );
-   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw boxes around nearby targets on top of the terrain", false));
+   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw 3D outline boxes around nearby target ores", false));
    private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines from the crosshair to the nearest targets", false));
    private final ShapeSettings shape = new ShapeSettings(this, "Lines", true, () -> this.outlines.get() || this.tracers.get());
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far outlines, tracers and counts look", 48.0, 8.0, 128.0, 4.0));
@@ -151,7 +151,7 @@ public final class XrayModule extends Module {
    private final LongArrayList scan = new LongArrayList();
 
    public XrayModule() {
-      super("Xray", "See ores and other blocks through the terrain by removing everything else from the chunk mesh.", Category.RENDER);
+      super("Xray", "Render target ores and blocks through solid terrain.", Category.RENDER);
 
       for (int i = 0; i < PRESETS.size(); i++) {
          XrayModule.Preset preset = PRESETS.get(i);

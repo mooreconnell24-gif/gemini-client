@@ -12,7 +12,8 @@ public abstract class FramerateLimitTrackerMixin {
    @Inject(
       method = {"getFramerateLimit"},
       at = {@At("RETURN")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$backgroundCap(CallbackInfoReturnable<Integer> cir) {
       CameraModules.UnfocusedCpu cpu = CameraModules.UnfocusedCpu.instance;

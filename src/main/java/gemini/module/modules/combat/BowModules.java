@@ -38,13 +38,13 @@ final class BowModules {
    }
 
    static final class ArrowDodge extends Module {
-      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Only react to arrows this close", 24.0, 6.0, 48.0, 1.0));
+      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max arrow detection range", 24.0, 6.0, 48.0, 1.0));
       private final NumberSetting lookahead = this.addSetting(new NumberSetting("Lookahead", "Ticks of arrow flight to predict", 14.0, 4.0, 40.0, 1.0));
-      private final NumberSetting strength = this.addSetting(new NumberSetting("Dodge Speed", "Sideways speed of the dodge", 0.55, 0.2, 1.5, 0.05));
+      private final NumberSetting strength = this.addSetting(new NumberSetting("Dodge Speed", "Horizontal dodge velocity", 0.55, 0.2, 1.5, 0.05));
       private final BooleanSetting inAir = this.addSetting(new BooleanSetting("While Airborne", "Also dodge while jumping or falling", true));
 
       ArrowDodge() {
-         super("Arrow Dodge", "Sidestep arrows that are flying towards you.", Category.COMBAT);
+         super("Arrow Dodge", "Sidestep incoming arrows automatically.", Category.COMBAT);
       }
 
       @Override
@@ -101,41 +101,78 @@ final class BowModules {
    }
 
    static final class AutoRod extends Module {
-      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Distance to throw fishing rod at enemies", 6.5, 3.0, 10.0, 0.5));
-      private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between rod casts", 10.0, 4.0, 30.0, 1.0));
+      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max distance to rod enemies", 6.8, 3.0, 10.0, 0.5));
+      private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between rod casts", 12.0, 4.0, 30.0, 1.0));
       private int wait;
+      private int retractTicks;
+      private int previousSlot = -1;
 
       AutoRod() {
-         super("AutoRod", "Automatically cast a fishing rod at approaching enemies for combo knockback.", Category.COMBAT);
+         super("AutoRod", "Cast a fishing rod at enemies for combo knockback.", Category.COMBAT);
+      }
+
+      @Override
+      public void onDisable() {
+         this.restore(Minecraft.getInstance().player);
+      }
+
+      private void restore(LocalPlayer player) {
+         if (player != null && this.previousSlot >= 0) {
+            player.getInventory().setSelectedSlot(this.previousSlot);
+         }
+         this.previousSlot = -1;
+         this.retractTicks = 0;
       }
 
       @Override
       public void onTick() {
          Minecraft client = Minecraft.getInstance();
-         if (CombatModules.ready(client) && client.gui.screen() == null && this.wait-- <= 0) {
+         if (CombatModules.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
+            if (this.retractTicks > 0) {
+               this.retractTicks--;
+               if (this.retractTicks == 0) {
+                  if (player.getMainHandItem().is(Items.FISHING_ROD) && player.fishing != null) {
+                     client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                  }
+                  this.restore(player);
+               }
+               return;
+            }
+
+            if (this.wait > 0) {
+               this.wait--;
+               return;
+            }
+
             LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), false);
-            if (enemy != null && player.distanceTo(enemy) > 3.2) {
+            if (enemy != null && player.distanceTo(enemy) > 3.1) {
                int slot = Inventories.findHotbar(player, s -> s.is(Items.FISHING_ROD));
                if (slot >= 0) {
-                  float[] rot = Rotations.face(player, enemy, 2.0);
-                  if (RotationManager.request(player, rot, 90.0F, true, 5)) {
-                     CombatExtras.withSlot(player, s -> s.is(Items.FISHING_ROD), () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
+                  float[] rot = Rotations.face(player, enemy, 2.5);
+                  if (RotationManager.request(player, rot, 95.0F, true, 5)) {
+                     this.previousSlot = player.getInventory().getSelectedSlot();
+                     player.getInventory().setSelectedSlot(slot);
+                     client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                     player.swing(InteractionHand.MAIN_HAND);
+                     this.retractTicks = 3;
                      this.wait = this.delay.intValue();
                   }
                }
             }
+         } else {
+            this.restore(client.player);
          }
       }
    }
 
    static final class BowSpam extends Module {
       private final NumberSetting charge = this.addSetting(
-         new NumberSetting("Charge", "Ticks to draw before each release (20 = full power)", 5.0, 3.0, 20.0, 1.0)
+         new NumberSetting("Charge", "Ticks to draw before firing (20 = full draw)", 5.0, 3.0, 20.0, 1.0)
       );
 
       BowSpam() {
-         super("Bow Spam", "Fire a bow as fast as it can be drawn.", Category.COMBAT);
+         super("Bow Spam", "Rapidly release and redraw your bow.", Category.COMBAT);
       }
 
       @Override
@@ -160,12 +197,12 @@ final class BowModules {
    }
 
    static final class ProjectileAimbot extends Module {
-      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max target distance", 42.0, 10.0, 80.0, 2.0));
+      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max target distance", 45.0, 10.0, 80.0, 2.0));
       private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets only", true));
-      private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predict Motion", "Lead moving targets", true));
+      private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predict Motion", "Lead moving targets by flight time", true));
 
       ProjectileAimbot() {
-         super("ProjectileAimbot", "Calculate ballistic gravity arcs to aim Bows, Crossbows, and Tridents at moving targets.", Category.COMBAT);
+         super("ProjectileAimbot", "Ballistic arc aimbot for Bows, Crossbows, and Tridents.", Category.COMBAT);
       }
 
       @Override
@@ -173,16 +210,40 @@ final class BowModules {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
-            boolean holdingRanged = player.isUsingItem() && (player.getUseItem().getItem() instanceof BowItem || player.getUseItem().is(Items.TRIDENT))
-               || player.getMainHandItem().getItem() instanceof CrossbowItem && CrossbowItem.isCharged(player.getMainHandItem());
-            if (holdingRanged) {
+            boolean usingBow = player.isUsingItem() && player.getUseItem().getItem() instanceof BowItem;
+            boolean usingTrident = player.isUsingItem() && player.getUseItem().is(Items.TRIDENT);
+            boolean holdingCrossbow = player.getMainHandItem().getItem() instanceof CrossbowItem && CrossbowItem.isCharged(player.getMainHandItem());
+            if (usingBow || usingTrident || holdingCrossbow) {
                LivingEntity target = CombatExtras.nearestEnemy(client, player, this.range.get(), true);
                if (target != null) {
+                  float velocity = usingBow
+                     ? Math.max(0.6F, BowItem.getPowerForTime(player.getTicksUsingItem()) * 3.0F)
+                     : (usingTrident ? 2.5F : 3.15F);
                   double dist = player.distanceTo(target);
-                  double ticks = this.predict.get() ? dist / 2.8 : 0.0;
-                  float[] base = Rotations.face(player, target, ticks);
-                  float gravityComp = (float)(dist * 0.14);
-                  RotationManager.request(player, base[0], Mth.clamp(base[1] - gravityComp, -90.0F, 90.0F), 90.0F, this.silent.get(), 10, 3.0F);
+                  double flightTicks = this.predict.get() ? dist / Math.max(0.5, velocity) : 0.0;
+                  Vec3 motion = target.getDeltaMovement().scale(flightTicks);
+                  Vec3 eye = player.getEyePosition();
+                  Vec3 aimPoint = new Vec3(
+                     target.getX() + motion.x,
+                     target.getY() + target.getBbHeight() * 0.72 + motion.y,
+                     target.getZ() + motion.z
+                  );
+                  double dx = aimPoint.x - eye.x;
+                  double dy = aimPoint.y - eye.y;
+                  double dz = aimPoint.z - eye.z;
+                  double horizDist = Math.sqrt(dx * dx + dz * dz);
+                  float yaw = (float)(Mth.atan2(dz, dx) * (180.0 / Math.PI)) - 90.0F;
+                  float g = 0.05F;
+                  double v2 = velocity * velocity;
+                  double v4 = v2 * v2;
+                  double root = v4 - g * (g * horizDist * horizDist + 2.0 * dy * v2);
+                  float pitch;
+                  if (root >= 0.0 && horizDist > 1.0E-3) {
+                     pitch = (float)(-Math.toDegrees(Math.atan((v2 - Math.sqrt(root)) / (g * horizDist))));
+                  } else {
+                     pitch = (float)(-(Mth.atan2(dy, horizDist) * (180.0 / Math.PI)));
+                  }
+                  RotationManager.request(player, Mth.wrapDegrees(yaw), Mth.clamp(pitch, -90.0F, 90.0F), 95.0F, this.silent.get(), 10, 2.5F);
                }
             }
          }
@@ -190,10 +251,10 @@ final class BowModules {
    }
 
    static final class Quiver extends Module {
-      private final NumberSetting charge = this.addSetting(new NumberSetting("Charge Ticks", "Ticks to pull bow upward", 4.0, 3.0, 10.0, 1.0));
+      private final NumberSetting charge = this.addSetting(new NumberSetting("Charge Ticks", "Ticks to draw bow upward", 4.0, 3.0, 10.0, 1.0));
 
       Quiver() {
-         super("Quiver", "Shoot beneficial tipped arrows straight up to buff yourself.", Category.COMBAT);
+         super("Quiver", "Shoot beneficial tipped arrows upward to buff yourself.", Category.COMBAT);
       }
 
       @Override

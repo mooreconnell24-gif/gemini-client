@@ -15,7 +15,8 @@ public abstract class BlockMixin {
    @Inject(
       method = {"shouldRenderFace"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private static void gemini$xrayFaces(BlockState state, BlockState neighbor, Direction direction, CallbackInfoReturnable<Boolean> cir) {
       XrayConfig config = XrayConfig.current();
@@ -27,12 +28,13 @@ public abstract class BlockMixin {
    @Inject(
       method = {"getFriction"},
       at = {@At("RETURN")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$slippy(CallbackInfoReturnable<Float> cir) {
       MovementModules.Slippy slippy = MovementModules.Slippy.instance;
       if (slippy != null && slippy.isEnabled()) {
-         cir.setReturnValue(slippy.override((Block)(Object)this, cir.getReturnValue()));
+         cir.setReturnValue(slippy.override((Block)(Object)this, (Float)cir.getReturnValue()));
       }
    }
 }

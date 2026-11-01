@@ -15,7 +15,8 @@ public abstract class ParticleEngineMixin {
    @Inject(
       method = {"createParticle"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$blockParticle(
       ParticleOptions options, double x, double y, double z, double xa, double ya, double za, CallbackInfoReturnable<Particle> cir

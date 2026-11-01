@@ -50,6 +50,27 @@ public final class RotationManager {
       return Rotations.face(player, entity);
    }
 
+   private static float mouseGcdStep() {
+      Minecraft client = Minecraft.getInstance();
+      double sens = client.options != null ? client.options.sensitivity().get() : 0.5;
+      double f = sens * 0.6 + 0.2;
+      return (float)(f * f * f * 1.2);
+   }
+
+   private static float smoothDelta(float delta, float maxSpeed) {
+      float abs = Math.abs(delta);
+      if (abs <= 0.001F) {
+         return 0.0F;
+      }
+      float eased = abs < maxSpeed ? abs * 0.78F + Math.min(abs * 0.22F, 1.25F) : maxSpeed;
+      float step = Math.copySign(Math.min(abs, eased), delta);
+      float gcd = mouseGcdStep();
+      if (gcd > 1.0E-4F) {
+         step = Math.round(step / gcd) * gcd;
+      }
+      return step;
+   }
+
    public static boolean request(LocalPlayer player, float yaw, float pitch, float speed, boolean quiet, int level, float tolerance) {
       if (requested && level < priority) {
          return false;
@@ -59,11 +80,20 @@ public final class RotationManager {
          float stepYaw;
          float stepPitch;
          if (!(speed <= 0.0F) && !(speed >= 180.0F)) {
-            stepYaw = Mth.wrapDegrees(fromYaw + Mth.clamp(Mth.wrapDegrees(yaw - fromYaw), -speed, speed));
-            stepPitch = Mth.clamp(fromPitch + Mth.clamp(pitch - fromPitch, -speed, speed), -90.0F, 90.0F);
+            float yawDelta = Mth.wrapDegrees(yaw - fromYaw);
+            float pitchDelta = pitch - fromPitch;
+            stepYaw = Mth.wrapDegrees(fromYaw + smoothDelta(yawDelta, speed));
+            stepPitch = Mth.clamp(fromPitch + smoothDelta(pitchDelta, speed * 0.85F), -90.0F, 90.0F);
          } else {
-            stepYaw = Mth.wrapDegrees(yaw);
-            stepPitch = Mth.clamp(pitch, -90.0F, 90.0F);
+            float gcd = mouseGcdStep();
+            float yawDelta = Mth.wrapDegrees(yaw - fromYaw);
+            float pitchDelta = pitch - fromPitch;
+            if (gcd > 1.0E-4F) {
+               yawDelta = Math.round(yawDelta / gcd) * gcd;
+               pitchDelta = Math.round(pitchDelta / gcd) * gcd;
+            }
+            stepYaw = Mth.wrapDegrees(fromYaw + yawDelta);
+            stepPitch = Mth.clamp(fromPitch + pitchDelta, -90.0F, 90.0F);
          }
 
          active = true;

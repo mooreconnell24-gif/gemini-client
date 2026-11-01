@@ -23,7 +23,8 @@ public abstract class ScreenEffectRendererMixin {
    @Inject(
       method = {"submitFire"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private static void gemini$noFire(PoseStack poseStack, SubmitNodeCollector collector, TextureAtlasSprite sprite, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -35,7 +36,8 @@ public abstract class ScreenEffectRendererMixin {
    @Inject(
       method = {"submitWater"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private static void gemini$noWater(Minecraft minecraft, PoseStack poseStack, SubmitNodeCollector collector, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();
@@ -47,7 +49,8 @@ public abstract class ScreenEffectRendererMixin {
    @Inject(
       method = {"getViewBlockingState"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private static void gemini$noWallOverlay(Player player, CallbackInfoReturnable<BlockState> cir) {
       XrayConfig xray = XrayConfig.current();
@@ -64,7 +67,8 @@ public abstract class ScreenEffectRendererMixin {
    @Inject(
       method = {"displayItemActivation"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$noTotemPop(ItemStack stack, RandomSource random, CallbackInfo ci) {
       NoRenderModule module = NoRenderModule.running();

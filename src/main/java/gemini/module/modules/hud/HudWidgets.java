@@ -12,6 +12,8 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
+import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.HudOverlay;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
@@ -494,7 +496,7 @@ public final class HudWidgets {
       private final ListSetting entries = this.addSetting(
          new ListSetting(
             "Lines",
-            "One entry per line. Placeholders: {fps} {ping} {x} {y} {z} {player} {health} {food} {biome} {facing} {speed} {server} {time} {online}",
+            "Custom HUD lines ({fps} {ping} {x} {y} {z} {speed} {health})",
             ListSetting.Kind.TEXT,
             "Gemini {version}",
             "{fps} FPS  ·  {x} {y} {z}"
@@ -830,7 +832,7 @@ public final class HudWidgets {
 
    static final class KeybindList extends HudWidget {
       private final BooleanSetting onlyActive = this.addSetting(
-         new BooleanSetting("Only Active", "Only list keybound modules that are currently enabled", false)
+         new BooleanSetting("Only Active", "Only show keybound modules that are currently active", false)
       );
 
       KeybindList() {
@@ -895,6 +897,7 @@ public final class HudWidgets {
    static final class Keystrokes extends HudWidget {
       private final BooleanSetting mouse = this.addSetting(new BooleanSetting("Mouse", "Show the mouse buttons", true));
       private final BooleanSetting space = this.addSetting(new BooleanSetting("Space Bar", "Show the jump key", true));
+      private final float[] keyAnims = new float[7];
 
       Keystrokes() {
          super("Keystrokes", "WASD, jump and mouse buttons as they are pressed.", "Left Center", 6, 40);
@@ -910,9 +913,14 @@ public final class HudWidgets {
          return 48 + (this.space.get() ? 14 : 0) + (this.mouse.get() ? 22 : 0) + 2;
       }
 
-      private void key(HudContext hud, int x, int y, int width, int height, String label, boolean down) {
-         hud.graphics.fill(x, y, x + width, y + height, down ? GeminiMark.withAlpha(hud.accent, 190) : GeminiMark.withAlpha(-14011324, 190));
-         hud.graphics.text(hud.font, label, x + (width - hud.font.width(label)) / 2, y + (height - 8) / 2, down ? -16052458 : -1511689, false);
+      private void key(HudContext hud, int idx, int x, int y, int width, int height, String label, boolean down) {
+         float target = down ? 1.0F : 0.0F;
+         this.keyAnims[idx] = Mth.lerp(0.28F, this.keyAnims[idx], target);
+         float a = this.keyAnims[idx];
+         int bg = HudOverlay.lerp(-14011324, hud.accent, a);
+         hud.graphics.fill(x, y, x + width, y + height, GeminiMark.withAlpha(bg, 195));
+         hud.graphics.fill(x, y + height - 1, x + width, y + height, GeminiMark.withAlpha(hud.accent2, Math.round(80.0F + 175.0F * a)));
+         hud.graphics.text(hud.font, label, x + (width - hud.font.width(label)) / 2, y + (height - 8) / 2, a > 0.55F ? -1 : -1511689, false);
       }
 
       @Override
@@ -920,19 +928,19 @@ public final class HudWidgets {
          Options options = hud.client.options;
          int x = 4;
          int y = 4;
-         this.key(hud, x + 22, y, 20, 20, "W", options.keyUp.isDown());
-         this.key(hud, x, y + 22, 20, 20, "A", options.keyLeft.isDown());
-         this.key(hud, x + 22, y + 22, 20, 20, "S", options.keyDown.isDown());
-         this.key(hud, x + 44, y + 22, 20, 20, "D", options.keyRight.isDown());
+         this.key(hud, 0, x + 22, y, 20, 20, "W", options.keyUp.isDown());
+         this.key(hud, 1, x, y + 22, 20, 20, "A", options.keyLeft.isDown());
+         this.key(hud, 2, x + 22, y + 22, 20, 20, "S", options.keyDown.isDown());
+         this.key(hud, 3, x + 44, y + 22, 20, 20, "D", options.keyRight.isDown());
          int below = y + 44;
          if (this.space.get()) {
-            this.key(hud, x, below, 64, 12, "SPACE", options.keyJump.isDown());
+            this.key(hud, 4, x, below, 64, 12, "SPACE", options.keyJump.isDown());
             below += 14;
          }
 
          if (this.mouse.get()) {
-            this.key(hud, x, below, 31, 20, "LMB", options.keyAttack.isDown());
-            this.key(hud, x + 33, below, 31, 20, "RMB", options.keyUse.isDown());
+            this.key(hud, 5, x, below, 31, 20, "LMB", options.keyAttack.isDown());
+            this.key(hud, 6, x + 33, below, 31, 20, "RMB", options.keyUse.isDown());
          }
       }
    }
@@ -1306,13 +1314,20 @@ public final class HudWidgets {
       }
 
       @Override
+      protected boolean shouldRenderContent(HudContext hud) {
+         return hud.client.gui.screen() instanceof ClickGuiScreen || this.findTarget(hud.client.player) != null;
+      }
+
+      @Override
       protected void paint(HudContext hud, int w, int h) {
          LocalPlayer self = hud.client.player;
          LivingEntity target = this.findTarget(self);
          if (target == null) {
-            hud.graphics.text(hud.font, "TargetHUD · Standby", 8, 8, -6641995, hud.shadow);
-            hud.graphics.fill(8, 22, w - 8, 28, -14142908);
-            hud.graphics.fill(8, 22, w - 8, 28, hud.accent);
+            hud.graphics.text(hud.font, "TargetHUD · Preview", 8, 6, -1, hud.shadow);
+            hud.graphics.text(hud.font, "20.0 HP  ·  0.0m  ·  WIN", 8, 16, -6641995, false);
+            int barY = this.showGear.get() ? 42 : 27;
+            hud.graphics.fill(8, barY, w - 8, barY + 6, -14142908);
+            hud.graphics.fill(8, barY, w - 28, barY + 6, hud.accent);
          } else {
             float hp = target.getHealth() + target.getAbsorptionAmount();
             float maxHp = Math.max(1.0F, target.getMaxHealth() + target.getAbsorptionAmount());

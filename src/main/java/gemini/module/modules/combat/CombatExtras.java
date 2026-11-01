@@ -15,6 +15,7 @@ import gemini.util.PlaceSettings;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
+import gemini.util.VersionBridge;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,11 +136,11 @@ public final class CombatExtras {
    public static final class AimAssist extends Module {
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max target distance", 4.5, 2.0, 6.0, 0.1));
       private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view cone", 90.0, 15.0, 180.0, 5.0));
-      private final NumberSetting speed = this.addSetting(new NumberSetting("Smooth Speed", "Degrees per tick to assist camera", 14.0, 2.0, 45.0, 1.0));
+      private final NumberSetting speed = this.addSetting(new NumberSetting("Smooth Speed", "Camera assist speed in deg/tick", 14.0, 2.0, 45.0, 1.0));
       private final BooleanSetting weaponOnly = this.addSetting(new BooleanSetting("Weapon Only", "Only assist while holding a weapon", true));
 
       public AimAssist() {
-         super("AimAssist", "Smoothly guide your crosshair toward nearby targets inside your FOV.", Category.COMBAT);
+         super("AimAssist", "Smoothly guide your crosshair toward nearby targets.", Category.COMBAT);
       }
 
       @Override
@@ -162,11 +163,12 @@ public final class CombatExtras {
 
    public static final class AnchorAura extends Module {
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Target and placement range", 4.5, 2.0, 6.0, 0.5));
+      private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Max allowed self explosion damage", 9.0, 2.0, 18.0, 1.0));
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between anchor actions", 2.0, 0.0, 10.0, 1.0));
       private int wait;
 
       public AnchorAura() {
-         super("AnchorAura", "Place, charge with glowstone, and detonate Respawn Anchors near enemies.", Category.COMBAT);
+         super("AnchorAura", "Place, charge, and detonate Respawn Anchors on enemies.", Category.COMBAT);
       }
 
       @Override
@@ -178,16 +180,27 @@ public final class CombatExtras {
             LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), false);
             if (enemy != null) {
                BlockPos targetPos = enemy.blockPosition().above(2);
+               if (!BlockPlacer.inReach(player, targetPos, this.range.get())) {
+                  targetPos = enemy.blockPosition().above();
+               }
+
+               float selfDmg = Damage.crystal(player, Vec3.atCenterOf(targetPos));
+               if (selfDmg > this.maxSelf.floatValue() || selfDmg + 1.5F >= Damage.health(player)) {
+                  return;
+               }
+
                BlockState state = client.level.getBlockState(targetPos);
+               BlockPos finalPos = targetPos;
                if (state.is(Blocks.RESPAWN_ANCHOR)) {
+                  RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, 8);
                   int charges = (Integer)state.getValue(RespawnAnchorBlock.CHARGE);
                   if (charges == 0) {
-                     CombatExtras.withSlot(player, s -> s.is(Items.GLOWSTONE), () -> CombatExtras.click(client, player, targetPos, Direction.UP));
+                     CombatExtras.withSlot(player, s -> s.is(Items.GLOWSTONE), () -> CombatExtras.click(client, player, finalPos, Direction.UP));
                   } else {
-                     CombatExtras.withSlot(player, s -> !s.is(Items.GLOWSTONE), () -> CombatExtras.click(client, player, targetPos, Direction.UP));
+                     CombatExtras.withSlot(player, s -> !s.is(Items.GLOWSTONE), () -> CombatExtras.click(client, player, finalPos, Direction.UP));
                   }
-               } else if (BlockPlacer.replaceable(client.level, targetPos)) {
-                  BlockPlacer.place(client, targetPos, s -> s.is(Items.RESPAWN_ANCHOR), true, true, true);
+               } else if (BlockPlacer.replaceable(client.level, finalPos)) {
+                  BlockPlacer.place(client, finalPos, s -> s.is(Items.RESPAWN_ANCHOR), true, true, true);
                }
             }
          }
@@ -196,14 +209,14 @@ public final class CombatExtras {
 
    public static final class AutoExp extends Module {
       private final NumberSetting threshold = this.addSetting(
-         new NumberSetting("Durability %", "Repair when any armor piece is below this", 60.0, 5.0, 99.0, 1.0)
+         new NumberSetting("Durability %", "Repair when armor durability is below %", 60.0, 5.0, 99.0, 1.0)
       );
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between throws", 2.0, 1.0, 20.0, 1.0));
-      private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Look down only in the packets, keep your camera", true));
+      private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim down in packets only", true));
       private int wait;
 
       public AutoExp() {
-         super("Auto EXP", "Throw experience bottles at your feet while your armor is damaged.", Category.COMBAT);
+         super("Auto EXP", "Throw XP bottles at your feet when armor is damaged.", Category.COMBAT);
       }
 
       @Override
@@ -223,11 +236,11 @@ public final class CombatExtras {
    }
 
    public static final class AutoPearl extends Module {
-      private final NumberSetting health = this.addSetting(new NumberSetting("Panic Health", "Throw pearl when health drops below this", 6.0, 1.0, 16.0, 1.0));
+      private final NumberSetting health = this.addSetting(new NumberSetting("Panic Health", "Throw pearl below this health", 6.0, 1.0, 16.0, 1.0));
       private int cooldown;
 
       public AutoPearl() {
-         super("AutoPearl", "Automatically throw an Ender Pearl away when your health drops critically low.", Category.COMBAT);
+         super("AutoPearl", "Throw an Ender Pearl when health drops critically low.", Category.COMBAT);
       }
 
       @Override
@@ -245,14 +258,14 @@ public final class CombatExtras {
    }
 
    public static final class AutoPot extends Module {
-      private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw when at or below this", 10.0, 1.0, 20.0, 0.5));
+      private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw potion at or below this health", 10.0, 1.0, 20.0, 0.5));
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between throws", 10.0, 1.0, 60.0, 1.0));
-      private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim down only in the packets", true));
-      private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Only use potions that heal or regenerate", true));
+      private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets only", true));
+      private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Use only healing/regen potions", true));
       private int wait;
 
       public AutoPot() {
-         super("Auto Pot", "Splash a healing potion at your feet when you are low.", Category.COMBAT);
+         super("Auto Pot", "Splash healing potions at your feet when low on HP.", Category.COMBAT);
       }
 
       @Override
@@ -296,10 +309,10 @@ public final class CombatExtras {
 
    public static final class AutoSoup extends Module {
       private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat soup at or below this health", 12.0, 2.0, 19.0, 1.0));
-      private final BooleanSetting dropBowl = this.addSetting(new BooleanSetting("Drop Bowl", "Drop the empty bowl after drinking", true));
+      private final BooleanSetting dropBowl = this.addSetting(new BooleanSetting("Drop Bowl", "Drop empty bowl after eating", true));
 
       public AutoSoup() {
-         super("AutoSoup", "Instantly consume mushroom stew when low on health on kit-PvP servers.", Category.COMBAT);
+         super("AutoSoup", "Instantly eat mushroom stew when low on health.", Category.COMBAT);
       }
 
       @Override
@@ -318,13 +331,13 @@ public final class CombatExtras {
    }
 
    public static final class Backtrack extends Module {
-      private final NumberSetting maxTicks = this.addSetting(new NumberSetting("History Ticks", "How many ticks of positions to retain", 8.0, 2.0, 20.0, 1.0));
-      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Box", "Draw the delayed backtrack hitbox in 3D", true));
+      private final NumberSetting maxTicks = this.addSetting(new NumberSetting("History Ticks", "Ticks of target positions to retain", 8.0, 2.0, 20.0, 1.0));
+      private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Box", "Draw delayed backtrack hitbox in 3D", true));
       private final ArrayDeque<AABB> history = new ArrayDeque<>();
       private LivingEntity tracked;
 
       public Backtrack() {
-         super("Backtrack", "Track delayed enemy positions to hit targets where they were a few ticks ago.", Category.COMBAT);
+         super("Backtrack", "Track delayed enemy hitboxes across recent ticks.", Category.COMBAT);
       }
 
       @Override
@@ -375,12 +388,12 @@ public final class CombatExtras {
    }
 
    public static final class BedAura extends Module {
-      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Distance to place and detonate beds", 4.5, 2.0, 6.0, 0.5));
+      private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Bed placement and detonation reach", 4.5, 2.0, 6.0, 0.5));
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between bed actions", 3.0, 1.0, 15.0, 1.0));
       private int wait;
 
       public BedAura() {
-         super("BedAura", "Automatically place and detonate beds in the Nether or End.", Category.COMBAT);
+         super("BedAura", "Place and detonate beds near enemies in Nether or End.", Category.COMBAT);
       }
 
       @Override
@@ -393,6 +406,7 @@ public final class CombatExtras {
             if (enemy != null) {
                BlockPos pos = enemy.blockPosition().above();
                if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {
+                  RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, 8);
                   CombatExtras.click(client, player, pos, Direction.UP);
                } else {
                   BlockPlacer.place(client, pos, stack -> stack.is(ItemTags.BEDS), true, true, true, false);
@@ -406,7 +420,7 @@ public final class CombatExtras {
       private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets", true));
 
       public Burrow() {
-         super("Burrow", "Lag-jump and place an obsidian or ender-chest block inside your feet.", Category.COMBAT);
+         super("Burrow", "Lag-place obsidian or ender chest inside your feet.", Category.COMBAT);
       }
 
       @Override
@@ -421,7 +435,8 @@ public final class CombatExtras {
          ClientPacketListener conn = client.getConnection();
          if (CombatModules.ready(client) && conn != null && player.onGround()) {
             BlockPos feet = player.blockPosition();
-            int slot = Inventories.findHotbar(player, CombatModules.obsidianOrResistant());
+            Predicate<ItemStack> burrowBlock = CombatModules.obsidianOrResistant().or(s -> s.is(Items.ANVIL) || s.is(Items.CHIPPED_ANVIL));
+            int slot = Inventories.findHotbar(player, burrowBlock);
             if (slot >= 0) {
                double x = player.getX();
                double y = player.getY();
@@ -434,7 +449,7 @@ public final class CombatExtras {
                   RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, 10, 5.0F);
                }
 
-               BlockPlacer.place(client, feet, CombatModules.obsidianOrResistant(), true, true, true, false);
+               BlockPlacer.place(client, feet, burrowBlock, true, true, true, false);
                conn.send(new Pos(x, y + 2.34, z, false, false));
             }
          }
@@ -445,11 +460,11 @@ public final class CombatExtras {
 
    public static final class HoleFiller extends Module {
       private final PlaceSettings placer = new PlaceSettings(this, 1, 3, 4.8);
-      private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Search radius for holes", 5.0, 2.0, 6.0, 1.0));
-      private final BooleanSetting smart = this.addSetting(new BooleanSetting("Smart Only", "Only fill holes near an enemy player", true));
+      private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Hole scan radius", 5.0, 2.0, 6.0, 1.0));
+      private final BooleanSetting smart = this.addSetting(new BooleanSetting("Smart Only", "Only fill holes close to an enemy", true));
 
       public HoleFiller() {
-         super("HoleFiller", "Automatically fill nearby bedrock and obsidian holes so enemies cannot use them.", Category.COMBAT);
+         super("HoleFiller", "Fill nearby safe holes before enemies can enter them.", Category.COMBAT);
       }
 
       @Override
@@ -478,16 +493,16 @@ public final class CombatExtras {
 
    public static final class KeepRange extends Module {
       private final NumberSetting minDistance = this.addSetting(
-         new NumberSetting("Min Distance", "Back away if target gets closer than this", 2.6, 1.5, 4.0, 0.1)
+         new NumberSetting("Min Distance", "Back up if target is closer than this", 2.6, 1.5, 4.0, 0.1)
       );
-      private final NumberSetting maxDistance = this.addSetting(new NumberSetting("Max Distance", "Engage within this distance", 3.6, 2.5, 5.5, 0.1));
+      private final NumberSetting maxDistance = this.addSetting(new NumberSetting("Max Distance", "Max engagement distance", 3.6, 2.5, 5.5, 0.1));
       private final BooleanSetting onlyDuringCooldown = this.addSetting(
-         new BooleanSetting("Wait On Cooldown", "Only back up while weapon attack cooldown is recharging", true)
+         new BooleanSetting("Wait Cooldown", "Only back up while attack is recharging", true)
       );
       private boolean backingUp;
 
       public KeepRange() {
-         super("KeepRange", "Maintain optimal melee spacing from your target to land hits outside their reach.", Category.COMBAT);
+         super("KeepRange", "Keep optimal melee spacing from your combat target.", Category.COMBAT);
       }
 
       @Override
@@ -534,7 +549,7 @@ public final class CombatExtras {
       private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Simulated fall height in blocks", 6.0, 2.0, 22.0, 1.0));
 
       public MaceKill() {
-         super("MaceKill", "Spoof a vertical drop packet when attacking with a Mace to trigger smash damage.", Category.COMBAT);
+         super("MaceKill", "Spoof a vertical drop packet for Mace smash damage.", Category.COMBAT);
       }
 
       @Override
@@ -554,7 +569,7 @@ public final class CombatExtras {
       private final PlaceSettings placer = new PlaceSettings(this, 1, 3, 4.5);
 
       public SelfTrap() {
-         super("SelfTrap", "Encase your upper body and head in obsidian to block beds, anchors, and crystals.", Category.COMBAT);
+         super("SelfTrap", "Encase your upper body and head in obsidian.", Category.COMBAT);
       }
 
       @Override
@@ -569,19 +584,24 @@ public final class CombatExtras {
    }
 
    public static final class ShieldBreaker extends Module {
+      private int cooldown;
+
       public ShieldBreaker() {
-         super("ShieldBreaker", "Automatically switch to an axe and strike when a nearby opponent raises a shield.", Category.COMBAT);
+         super("ShieldBreaker", "Swap to an axe and strike when an enemy blocks.", Category.COMBAT);
       }
 
       @Override
       public void onTick() {
          Minecraft client = Minecraft.getInstance();
-         if (CombatModules.ready(client) && client.gui.screen() == null) {
+         if (this.cooldown > 0) {
+            this.cooldown--;
+         } else if (CombatModules.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
             if (CombatExtras.nearestEnemy(client, player, 4.2, false) instanceof Player targetPlayer && targetPlayer.isBlocking()) {
                CombatExtras.withSlot(player, s -> s.is(ItemTags.AXES), () -> {
                   client.gameMode.attack(player, targetPlayer);
                   player.swing(InteractionHand.MAIN_HAND);
+                  this.cooldown = 6;
                });
             }
          }
@@ -589,11 +609,11 @@ public final class CombatExtras {
    }
 
    public static final class SuperKnockback extends Module {
-      private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How sprint is reset on attack", "Packet", "Packet", "WTap", "StopStart"));
+      private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Sprint reset method on hit", "Packet", "Packet", "WTap", "StopStart"));
       private final BooleanSetting onlyMoving = this.addSetting(new BooleanSetting("Only Moving", "Require forward movement", true));
 
       public SuperKnockback() {
-         super("SuperKnockback", "Reset sprint state on hit like LiquidBounce to deal maximum knockback.", Category.COMBAT);
+         super("SuperKnockback", "Reset sprint state on hit for maximum knockback.", Category.COMBAT);
       }
 
       @Override
@@ -606,22 +626,34 @@ public final class CombatExtras {
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
          ClientPacketListener conn = client.getConnection();
-         if (player != null && conn != null && target instanceof LivingEntity && (!this.onlyMoving.get() || player.isSprinting())) {
-            conn.send(new ServerboundPlayerCommandPacket(player, Action.STOP_SPRINTING));
-            conn.send(new ServerboundPlayerCommandPacket(player, Action.START_SPRINTING));
-            player.setSprinting(true);
+         if (player != null && conn != null && target instanceof LivingEntity && (!this.onlyMoving.get() || MoveUtil.hasInput(player))) {
+            if (this.mode.is("WTap")) {
+               player.setSprinting(false);
+               conn.send(new ServerboundPlayerCommandPacket(player, Action.STOP_SPRINTING));
+               player.setSprinting(true);
+            } else if (this.mode.is("StopStart")) {
+               if (player.isSprinting()) {
+                  conn.send(new ServerboundPlayerCommandPacket(player, Action.STOP_SPRINTING));
+               }
+               conn.send(new ServerboundPlayerCommandPacket(player, Action.START_SPRINTING));
+               player.setSprinting(true);
+            } else {
+               conn.send(new ServerboundPlayerCommandPacket(player, Action.STOP_SPRINTING));
+               conn.send(new ServerboundPlayerCommandPacket(player, Action.START_SPRINTING));
+               player.setSprinting(true);
+            }
          }
       }
    }
 
    public static final class TriggerBot extends Module {
-      private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown %", "Required attack charge before swinging", 92.0, 50.0, 100.0, 2.0));
+      private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown %", "Required weapon charge % to attack", 92.0, 50.0, 100.0, 2.0));
       private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players under crosshair", true));
       private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Attack hostile mobs under crosshair", true));
-      private final BooleanSetting critsOnly = this.addSetting(new BooleanSetting("Wait For Fall", "Wait until falling when airborne for criticals", false));
+      private final BooleanSetting critsOnly = this.addSetting(new BooleanSetting("Wait For Fall", "Wait until falling when airborne for crits", false));
 
       public TriggerBot() {
-         super("TriggerBot", "Automatically attack the target under your crosshair when your weapon is charged.", Category.COMBAT);
+         super("TriggerBot", "Attack targets under your crosshair when charged.", Category.COMBAT);
       }
 
       @Override
@@ -629,7 +661,7 @@ public final class CombatExtras {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null && client.hitResult != null && client.hitResult.getType() == Type.ENTITY) {
             LocalPlayer player = client.player;
-            if (!player.isUsingItem() && player.getAttackStrengthScale(0.0F) * 100.0F >= this.cooldown.floatValue()) {
+            if (!player.isUsingItem() && (VersionBridge.isLegacyCombat() || player.getAttackStrengthScale(0.0F) * 100.0F >= this.cooldown.floatValue())) {
                if (this.critsOnly.get() && !player.onGround() && player.getDeltaMovement().y >= -0.02) {
                   return;
                }
@@ -646,12 +678,12 @@ public final class CombatExtras {
 
    public static final class WTap extends Module {
       private final NumberSetting holdTicks = this.addSetting(
-         new NumberSetting("Release Ticks", "Ticks to release forward input after landing a hit", 2.0, 1.0, 5.0, 1.0)
+         new NumberSetting("Release Ticks", "Ticks to release W after landing a hit", 2.0, 1.0, 5.0, 1.0)
       );
       private int releaseTimer;
 
       public WTap() {
-         super("WTap", "Briefly release and re-tap forward movement after melee hits for legit combo spacing and knockback.", Category.COMBAT);
+         super("WTap", "Briefly re-tap W after melee hits for combo knockback.", Category.COMBAT);
       }
 
       @Override
@@ -697,10 +729,10 @@ public final class CombatExtras {
 
    public static final class WebAura extends Module {
       private final PlaceSettings placer = new PlaceSettings(this, 1, 2, 4.5);
-      private final NumberSetting range = this.addSetting(new NumberSetting("Enemy Range", "Distance to target enemies with cobwebs", 4.5, 2.0, 6.0, 0.5));
+      private final NumberSetting range = this.addSetting(new NumberSetting("Enemy Range", "Target distance for cobwebs", 4.5, 2.0, 6.0, 0.5));
 
       public WebAura() {
-         super("WebAura", "Place cobwebs at the feet of nearby enemies to stall their movement.", Category.COMBAT);
+         super("WebAura", "Place cobwebs at enemy feet to stall movement.", Category.COMBAT);
       }
 
       @Override

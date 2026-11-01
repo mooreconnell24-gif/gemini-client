@@ -20,7 +20,8 @@ public abstract class ClientPacketListenerMixin {
    @Inject(
       method = {"sendChat"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$interceptSendChat(String message, CallbackInfo ci) {
       if (message != null && (message.startsWith(".") || message.startsWith("#")) && !CommandManager.rawSending()) {
@@ -34,7 +35,8 @@ public abstract class ClientPacketListenerMixin {
 
    @Inject(
       method = {"handleMovePlayer"},
-      at = {@At("RETURN")}
+      at = {@At("RETURN")},
+      require = 0
    )
    private void gemini$onServerPositionSetback(ClientboundPlayerPositionPacket packet, CallbackInfo ci) {
       Minecraft client = Minecraft.getInstance();
@@ -46,7 +48,8 @@ public abstract class ClientPacketListenerMixin {
    @Inject(
       method = {"handleSetEntityMotion"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$velocity(ClientboundSetEntityMotionPacket packet, CallbackInfo ci) {
       Minecraft client = Minecraft.getInstance();
@@ -76,7 +79,8 @@ public abstract class ClientPacketListenerMixin {
 
    @Inject(
       method = {"handleExplosion"},
-      at = {@At("RETURN")}
+      at = {@At("RETURN")},
+      require = 0
    )
    private void gemini$explosionKnockback(ClientboundExplodePacket packet, CallbackInfo ci) {
       Minecraft client = Minecraft.getInstance();

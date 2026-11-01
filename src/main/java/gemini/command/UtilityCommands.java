@@ -1,5 +1,6 @@
 package gemini.command;
 
+import gemini.util.VersionBridge;
 import gemini.config.ConfigManager;
 import gemini.module.ModuleManager;
 import gemini.module.SelfTest;
@@ -156,7 +157,7 @@ final class UtilityCommands {
             double amount = Mth.clamp(requested, -400.0, 400.0);
             Vec3 destination;
             if (vertical) {
-               double y = Mth.clamp(player.getY() + amount, client.level.getMinY(), client.level.getMaxY());
+               double y = Mth.clamp(player.getY() + amount, VersionBridge.minWorldY(client.level), VersionBridge.maxWorldY(client.level));
                destination = new Vec3(player.getX(), y, player.getZ());
             } else {
                double yaw = Math.toRadians(player.getYRot());
@@ -181,14 +182,14 @@ final class UtilityCommands {
       if (player != null) {
          ClientPacketListener connection = Minecraft.getInstance().getConnection();
          if (player.getVehicle() != null && connection != null) {
-            Input held = player.input.keyPresses;
+            Input held = player.input != null ? player.input.keyPresses : Input.EMPTY;
             connection.send(
                new ServerboundPlayerInputPacket(new Input(held.forward(), held.backward(), held.left(), held.right(), held.jump(), true, held.sprint()))
             );
             Scheduler.later(2, () -> {
                Minecraft client = Minecraft.getInstance();
                if (client.player != null && client.getConnection() != null) {
-                  client.getConnection().send(new ServerboundPlayerInputPacket(client.player.input.keyPresses));
+                  client.getConnection().send(new ServerboundPlayerInputPacket(client.player.input != null ? client.player.input.keyPresses : Input.EMPTY));
                }
             });
             feedback("§aDismounting.");

@@ -72,7 +72,8 @@ public final class ClickGuiScreen extends Screen {
 
    public void updateAnimations() {
       boolean open = true;
-      this.animationProgress = Mth.lerp(0.2F, this.animationProgress, open ? 1.0F : 0.0F);
+      float elapsed = Math.min(1.0F, (float)(Util.getMillis() - this.openedAt) / 260.0F);
+      this.animationProgress = ease(elapsed);
    }
 
    protected void init() {
@@ -174,8 +175,8 @@ public final class ClickGuiScreen extends Screen {
       int total = Gemini.getInstance().modules().getModules().size();
       int fps = Minecraft.getInstance().getFps();
       String meta = this.hudEditMode
-         ? "NEXTGEN v2.4  ·  HUD EDIT MODE (drag widgets or click Edit HUD to exit)"
-         : "NEXTGEN v2.4  ·  " + fps + " FPS  ·  " + enabled + "/" + total + " modules active";
+         ? "NEXTGEN v2.5  ·  HUD EDIT MODE (drag widgets or click Edit HUD to exit)"
+         : "NEXTGEN v2.5  ·  " + fps + " FPS  ·  " + enabled + "/" + total + " modules active";
       graphics.text(this.font, meta, 56, 22, this.hudEditMode ? accentB : -8351581, false);
       String stats = "Ctrl+F search  ·  " + enabled + "/" + total + " active";
       int searchW = Math.min(180, Math.max(110, this.vw / 4));
@@ -291,21 +292,54 @@ public final class ClickGuiScreen extends Screen {
       super.extractRenderState(graphics, rawMouseX, rawMouseY, partialTick);
    }
 
+   private List<String> wrapLines(String text, int maxWidth) {
+      List<String> lines = new ArrayList<>();
+      if (text == null || text.isEmpty()) {
+         return lines;
+      }
+
+      String[] words = text.split("\\s+");
+      StringBuilder current = new StringBuilder();
+      for (String word : words) {
+         if (current.length() == 0) {
+            current.append(word);
+         } else if (this.font.width(current + " " + word) <= maxWidth) {
+            current.append(' ').append(word);
+         } else {
+            lines.add(current.toString());
+            current.setLength(0);
+            current.append(word);
+         }
+      }
+
+      if (current.length() > 0) {
+         lines.add(current.toString());
+      }
+
+      return lines;
+   }
+
    private void drawSlideTooltip(GuiGraphicsExtractor graphics, int accent, int accentB) {
       String cleanBody = this.tooltipBody.replaceAll("§.", "");
-      int titleW = this.font.width(this.tooltipTitle) + (this.tooltipKeyBadge != null ? this.font.width(" [" + this.tooltipKeyBadge + "]") + 6 : 0);
-      int bodyW = this.font.width(cleanBody);
-      int cardW = Math.min(240, Math.max(titleW, bodyW) + 18);
-      int cardH = 28;
+      int titleW = this.font.width(this.tooltipTitle) + (this.tooltipKeyBadge != null ? this.font.width(" [" + this.tooltipKeyBadge + "]") + 8 : 0);
+      int maxTextW = Math.max(175, Math.min(245, titleW + 16));
+      List<String> wrapped = this.wrapLines(cleanBody, maxTextW);
+      int widestLine = titleW;
+      for (String line : wrapped) {
+         widestLine = Math.max(widestLine, this.font.width(line));
+      }
+
+      int cardW = widestLine + 16;
+      int cardH = 18 + Math.max(1, wrapped.size()) * 10 + 4;
       int slideOffset = Math.round((1.0F - this.tooltipProgress) * 10.0F);
       int tx = this.tooltipAnchorX + this.tooltipAnchorW + 8 - slideOffset;
       if (tx + cardW > this.vw - 6) {
          tx = Math.max(6, this.tooltipAnchorX - cardW - 8 + slideOffset);
       }
 
-      int ty = Mth.clamp(this.tooltipAnchorY - 2, 58, this.vh - 30 - cardH - 4);
-      int alpha = Math.round(235.0F * this.tooltipProgress);
-      graphics.fill(tx - 1, ty - 1, tx + cardW + 1, ty + cardH + 1, GeminiMark.withAlpha(accent, Math.round(70.0F * this.tooltipProgress)));
+      int ty = Mth.clamp(this.tooltipAnchorY - 2, 58, Math.max(58, this.vh - 30 - cardH - 4));
+      int alpha = Math.round(238.0F * this.tooltipProgress);
+      graphics.fill(tx - 1, ty - 1, tx + cardW + 1, ty + cardH + 1, GeminiMark.withAlpha(accent, Math.round(78.0F * this.tooltipProgress)));
       graphics.fill(tx, ty, tx + cardW, ty + cardH, GeminiMark.withAlpha(-15987178, alpha));
       graphics.fill(tx, ty, tx + 2, ty + cardH, GeminiMark.withAlpha(accentB, Math.round(255.0F * this.tooltipProgress)));
       graphics.text(this.font, this.tooltipTitle, tx + 7, ty + 5, GeminiMark.withAlpha(-1, Math.round(255.0F * this.tooltipProgress)), false);
@@ -316,13 +350,11 @@ public final class ClickGuiScreen extends Screen {
          );
       }
 
-      String clipped = cleanBody;
-
-      while (this.font.width(clipped) > cardW - 14 && clipped.length() > 4) {
-         clipped = clipped.substring(0, clipped.length() - 1);
+      int lineY = ty + 16;
+      for (String line : wrapped) {
+         graphics.text(this.font, line, tx + 7, lineY, GeminiMark.withAlpha(-3617580, Math.round(255.0F * this.tooltipProgress)), false);
+         lineY += 10;
       }
-
-      graphics.text(this.font, clipped, tx + 7, ty + 16, GeminiMark.withAlpha(-4733999, Math.round(255.0F * this.tooltipProgress)), false);
    }
 
    private void renderHudEditOverlay(GuiGraphicsExtractor graphics, int rawMouseX, int rawMouseY, int accent, int accentB) {
@@ -379,20 +411,24 @@ public final class ClickGuiScreen extends Screen {
       graphics.fill(bindX, bindY, bindX + bindWidth, bindY + 18, this.bindingMenu ? GeminiMark.withAlpha(accent, 90) : -586147808);
       graphics.fill(bindX, bindY, bindX + 2, bindY + 18, accent);
       graphics.text(this.font, bindLabel, bindX + 8, bindY + 5, this.bindingMenu ? -1 : accent, false);
+      String hint = "Wheel scroll · Shift+drag HUD";
+      int hintW = this.font.width(hint);
       boolean flashing = this.flashText != null && now < this.flashUntil;
       if (tooltips || flashing) {
          String tip = this.hoveredDescription.replace("§f", "").replace("§7", "").replace("§b", "").replace("§a", "").replace("§c", "");
-         int maxWidth = this.vw - (bindX + bindWidth + 14) - 165;
-
-         while (this.font.width(tip) > maxWidth && tip.length() > 4) {
-            tip = tip.substring(0, tip.length() - 1);
+         int maxWidth = Math.max(120, this.vw - (bindX + bindWidth + 12) - hintW - 22);
+         if (this.font.width(tip) <= maxWidth) {
+            graphics.text(this.font, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : -5920072, false);
+         } else {
+            List<String> lines = this.wrapLines(tip, maxWidth);
+            int topY = lines.size() > 1 ? bindY + 1 : bindY + 5;
+            for (int i = 0; i < Math.min(2, lines.size()); i++) {
+               graphics.text(this.font, lines.get(i), bindX + bindWidth + 12, topY + i * 9, flashing ? accentB : -5920072, false);
+            }
          }
-
-         graphics.text(this.font, tip, bindX + bindWidth + 14, bindY + 5, flashing ? accentB : -7102288, false);
       }
 
-      String hint = "Wheel scroll  ·  Shift+drag HUD  ·  edges resize";
-      graphics.text(this.font, hint, this.vw - 14 - this.font.width(hint), bindY + 5, -10523522, false);
+      graphics.text(this.font, hint, this.vw - 14 - hintW, bindY + 5, -10523522, false);
    }
 
    public boolean mouseClicked(MouseButtonEvent rawEvent, boolean doubled) {

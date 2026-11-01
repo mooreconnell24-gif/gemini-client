@@ -26,7 +26,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SectionCompilerMixin {
    @Inject(
       method = {"compile"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      require = 0
    )
    private void gemini$beginSection(
       SectionPos sectionPos, RenderSectionRegion region, VertexSorting sorting, SectionBufferBuilderPack builders, CallbackInfoReturnable<Results> cir
@@ -36,7 +37,8 @@ public abstract class SectionCompilerMixin {
 
    @Inject(
       method = {"compile"},
-      at = {@At("RETURN")}
+      at = {@At("RETURN")},
+      require = 0
    )
    private void gemini$endSection(
       SectionPos sectionPos, RenderSectionRegion region, VertexSorting sorting, SectionBufferBuilderPack builders, CallbackInfoReturnable<Results> cir

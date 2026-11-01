@@ -55,6 +55,7 @@ public final class Gemini implements ClientModInitializer {
          LOGGER.info("{} v{} configuration loaded (Built-in Baritone active).", "Gemini Client", "2.0.0");
       });
       ClientTickEvents.END_CLIENT_TICK.register((EndTick)client -> {
+         SingleplayerGate.tick(client);
          while (GeminiKeys.OPEN_GUI.consumeClick()) {
             toggleMenu(client);
          }

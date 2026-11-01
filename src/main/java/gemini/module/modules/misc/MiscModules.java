@@ -62,11 +62,13 @@ public final class MiscModules {
    }
 
    public static final class AntiBot extends Module {
+      public static MiscModules.AntiBot instance;
       private final BooleanSetting tabCheck = this.addSetting(new BooleanSetting("Tab List Check", "Ignore players missing from the tab list", true));
       private final BooleanSetting zeroHealth = this.addSetting(new BooleanSetting("Zero Health", "Ignore entities with invalid <=0 health", true));
 
       public AntiBot() {
-         super("AntiBot", "Filter out anti-cheat decoy bots from combat targeting.", Category.COMBAT);
+         super("AntiBot", "Filter out anti-cheat decoy bots from combat.", Category.COMBAT);
+         instance = this;
       }
 
       public boolean isBot(Entity entity) {
@@ -86,7 +88,7 @@ public final class MiscModules {
       private final ModeSetting mode = this.addSetting(
          new ModeSetting(
             "Mode",
-            "Dynamic tightens limits when FPS drops; Always enforces full throttling; Aggressive strips all heavy effects",
+            "Dynamic adapts to FPS; Aggressive culls all effects",
             "Dynamic",
             "Dynamic",
             "Always",
@@ -94,42 +96,42 @@ public final class MiscModules {
          )
       );
       private final NumberSetting targetFps = this.addSetting(
-         new NumberSetting("Target FPS", "FPS threshold where Dynamic mode activates strict throttling", 90.0, 30.0, 240.0, 10.0)
+         new NumberSetting("Target FPS", "FPS threshold where Dynamic culling activates", 90.0, 30.0, 240.0, 10.0)
             .showIf(() -> this.mode.is("Dynamic"))
       );
       private final NumberSetting maxParticlesTick = this.addSetting(
          new NumberSetting("Max Particles/Tick", "Maximum particles allowed to spawn in a single tick", 55.0, 5.0, 250.0, 5.0)
       );
       private final NumberSetting particleRange = this.addSetting(
-         new NumberSetting("Particle Distance", "Skip spawning particles farther than this many blocks", 28.0, 8.0, 96.0, 4.0)
+         new NumberSetting("Particle Distance", "Cull particles beyond this distance in blocks", 28.0, 8.0, 96.0, 4.0)
       );
       private final BooleanSetting blockExplosions = this.addSetting(
-         new BooleanSetting("Block Explosions & Fireworks", "Block explosion emitters, firework sparks, flashes, and sonic booms", true)
+         new BooleanSetting("Block Explosions & Fireworks", "Block explosion emitters", true)
       );
       private final BooleanSetting blockSmoke = this.addSetting(
-         new BooleanSetting("Block Smoke & Campfires", "Block heavy campfire smoke, large smoke, and ash clouds", true)
+         new BooleanSetting("Block Smoke & Campfires", "Block heavy campfire smoke", true)
       );
       private final BooleanSetting blockWeather = this.addSetting(
-         new BooleanSetting("Block Weather & Portals", "Block rain splash, dripping water, and portal particle floods", true)
+         new BooleanSetting("Block Weather & Portals", "Block rain splash, dripping water, and portal particles", true)
       );
       private final BooleanSetting packetGuard = this.addSetting(
-         new BooleanSetting("Packet Flood Guard", "Drop server particle packets that request absurd particle counts (>150)", true)
+         new BooleanSetting("Packet Flood Guard", "Drop server packets spawning excessive particles", true)
       );
       private final BooleanSetting soundThrottle = this.addSetting(
-         new BooleanSetting("Sound Spam Filter", "Cap overlapping sounds per tick to prevent audio engine lag", true)
+         new BooleanSetting("Sound Spam Filter", "Cap overlapping sounds per tick to prevent lag", true)
       );
       private final NumberSetting maxSoundsTick = this.addSetting(
          new NumberSetting("Max Sounds/Tick", "Maximum sound instances started per tick", 14.0, 4.0, 40.0, 2.0).showIf(this.soundThrottle::get)
       );
       private final BooleanSetting cullNametags = this.addSetting(
-         new BooleanSetting("Cull Distant Nametags", "Hide entity nametags beyond 24m (or 12m during FPS drops) and on armor stands", true)
+         new BooleanSetting("Cull Distant Nametags", "Hide distant entity and armor stand nametags", true)
       );
       private int particlesThisTick;
       private int soundsThisTick;
       private long totalBlocked;
 
       public AntiLag() {
-         super("AntiLag", "Boost FPS and prevent lag machines, particle floods, sound spam, and packet crashes.", Category.CLIENT);
+         super("AntiLag", "Boost FPS and prevent lag machines.", Category.CLIENT);
          instance = this;
       }
 
@@ -264,7 +266,7 @@ public final class MiscModules {
       private int cooldown;
 
       public AntiStaff() {
-         super("AntiStaff", "Alert via toast notification when spectator or vanished entities are detected nearby.", Category.CLIENT);
+         super("AntiStaff", "Alert when spectator or staff players are nearby.", Category.CLIENT);
       }
 
       @Override
@@ -305,13 +307,13 @@ public final class MiscModules {
          new ListSetting("Hidden Words", "Chat lines containing any of these are hidden", ListSetting.Kind.TEXT)
       );
       private final BooleanSetting protectCoordinates = this.addSetting(
-         new BooleanSetting("Coordinate Protection", "Refuse to send chat messages that contain coordinates", false)
+         new BooleanSetting("Coordinate Protection", "Block outgoing chat messages containing coordinates", false)
       );
       private String lastText = "";
       private long lastTime;
 
       public BetterChat() {
-         super("Better Chat", "Timestamps, anti-spam, word filter and coordinate protection for chat.", Category.CLIENT);
+         super("Better Chat", "Chat timestamps, anti-spam, and coordinate guard.", Category.CLIENT);
          instance = this;
       }
 
@@ -364,7 +366,7 @@ public final class MiscModules {
       );
 
       public Disabler() {
-         super("Disabler", "Cancel redundant sprint or state packets for specific anti-cheat test profiles.", Category.CLIENT);
+         super("Disabler", "Filter sprint and action packets for anti-cheats.", Category.CLIENT);
       }
 
       @Override
@@ -384,7 +386,7 @@ public final class MiscModules {
       private int flags;
 
       public FlagCheck() {
-         super("FlagCheck", "Count and notify whenever the server sends a position setback (lagback) packet.", Category.CLIENT);
+         super("FlagCheck", "Count and alert on server position setbacks.", Category.CLIENT);
       }
 
       @Override
@@ -409,17 +411,36 @@ public final class MiscModules {
    }
 
    public static final class NameProtect extends Module {
+      public static MiscModules.NameProtect instance;
       private final ListSetting alias = this.addSetting(
          new ListSetting("Alias", "Replacement name shown for your character", ListSetting.Kind.TEXT, "GeminiUser")
       );
 
       public NameProtect() {
-         super("NameProtect", "Mask your account name in HUD and client feedback.", Category.CLIENT);
+         super("NameProtect", "Mask your account name in HUD and chat.", Category.CLIENT);
+         instance = this;
+      }
+
+      public String aliasName() {
+         return this.alias.isEmpty() ? "GeminiUser" : this.alias.get().getFirst();
+      }
+
+      public Component filterComponent(Component message) {
+         Minecraft client = Minecraft.getInstance();
+         if (client.player == null || message == null) {
+            return message;
+         }
+         String selfName = client.player.getGameProfile().name();
+         String raw = message.getString();
+         if (selfName != null && !selfName.isEmpty() && raw.contains(selfName)) {
+            return Component.literal(raw.replace(selfName, this.aliasName())).withStyle(message.getStyle());
+         }
+         return message;
       }
 
       @Override
       public String info() {
-         return this.alias.isEmpty() ? "GeminiUser" : this.alias.get().getFirst();
+         return this.aliasName();
       }
    }
 
@@ -491,7 +512,7 @@ public final class MiscModules {
       private boolean forwarding;
 
       public PingSpoof() {
-         super("PingSpoof", "Delay KeepAlive packets to increase your reported latency.", Category.CLIENT);
+         super("PingSpoof", "Delay KeepAlive packets to spoof higher ping.", Category.CLIENT);
       }
 
       @Override
@@ -522,8 +543,24 @@ public final class MiscModules {
    }
 
    public static final class PortalMenu extends Module {
+      public static MiscModules.PortalMenu instance;
+
       public PortalMenu() {
-         super("PortalMenu", "Allow opening GUIs and chat while standing inside a Nether portal.", Category.PLAYER);
+         super("PortalMenu", "Allow opening GUIs and chat inside Nether portals.", Category.PLAYER);
+         instance = this;
+      }
+
+      @Override
+      public void onTick() {
+         Minecraft client = Minecraft.getInstance();
+         if (client.player != null && client.gui.screen() == null && client.player.portalProcess != null && client.player.portalProcess.isInsidePortalThisTick()) {
+            while (client.options.keyInventory.consumeClick()) {
+               client.gui.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(client.player));
+            }
+            while (client.options.keyChat.consumeClick()) {
+               client.gui.setScreen(new net.minecraft.client.gui.screens.ChatScreen("", false));
+            }
+         }
       }
    }
 
@@ -531,7 +568,7 @@ public final class MiscModules {
       public static MiscModules.SoundBlocker instance;
       private final ListSetting sounds = this.addSetting(
          new ListSetting(
-               "Sounds", "Sound ids, or any part of one, to mute (for example entity.phantom)", ListSetting.Kind.TEXT, "ambient.cave", "entity.phantom"
+               "Sounds", "Sound ids, or any part of one, to mute", ListSetting.Kind.TEXT, "ambient.cave", "entity.phantom"
             )
             .onChange(this::rebuild)
       );
@@ -573,7 +610,7 @@ public final class MiscModules {
 
    public static final class XCarry extends Module {
       public XCarry() {
-         super("XCarry", "Store items in the 2x2 crafting grid; they stay there when you close the inventory.", Category.PLAYER);
+         super("XCarry", "Store items in the 2x2 crafting grid.", Category.PLAYER);
       }
 
       @Override

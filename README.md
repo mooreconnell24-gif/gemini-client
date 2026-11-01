@@ -1,44 +1,240 @@
-Gemini Client<p align="center">
-<img src="assets/gemini/icon.png" alt="Gemini Client" width="96" height="96" />
-</p><p align="center">
-<b>A sleek, responsive multi-version single-player Fabric utility & sandbox client (Minecraft 1.7.10 – 26.2+)</b><br>
-Heavily inspired by LiquidBounce Nextgen, packed with 269 modules, custom HUD widgets, multi-version combat/physics adaptation, and built-in Baritone pathfinding — strictly locked to local single-player worlds.
-</p><p align="center">
-<a href="https://fabricmc.net/"><img src="https://img.shields.io/badge/Minecraft-All_Versions_(1.7.10--26.2%2B)-brightgreen.svg" alt="Minecraft All Versions"></a>
-<a href="https://fabricmc.net/"><img src="https://img.shields.io/badge/Loader-Fabric-blue.svg" alt="Fabric"></a>
-<a href="LICENSE_gemini"><img src="https://img.shields.io/badge/Mode-Singleplayer_Only-red.svg" alt="Single-Player Only"></a>
-<a href="LICENSE_gemini"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-</p>🔒 Strictly Single-Player Only — Impossible to Use on Servers
-Gemini Client is engineered exclusively for offline single-player worlds, local sandbox experimentation, and pathfinding automation. Built-in client-level enforcement (SingleplayerGate) verifies an active local integrated server before any module, keybind, command, or GUI screen can run, and blocks multiplayer server connections while the mod is installed. It is completely impossible to use these cheats on any multiplayer server.⚡ What is Gemini?Most utility mods feel clunky, break every time Minecraft updates, or force you to install three different companion mods just to get pathfinding and a clean HUD in your single-player worlds.Gemini was built to fix that. It's designed to feel like a polished, modern client: smooth glassmorphism menus, crisp HUD rendering, customizable color palettes, and 269 sandbox, movement, combat, and world-automation modules. Baritone is built straight into the client, and Gemini supports all Minecraft versions (1.7.10 through 26.2+) with universal Fabric loader wildcards, a fault-tolerant Mixin plugin (GeminiMixinPlugin), native ViaFabricPlus protocol auto-detection, and .version switching (VersionBridge). Because Gemini is hard-locked to local single-player worlds, it cannot be used to gain an unfair advantage on multiplayer servers.🚀 Key Features🌐 Universal All-Version Support (1.7.10 – 26.2+)Universal Fabric Loader & Mixin Guard: Unrestricted "minecraft": "*" and "fabricloader": "*" manifest with GeminiMixinPlugin and require = 0 injectors so version-specific class or method differences never crash startup.Multi-Version Mechanics (VersionBridge): Automatically adapts combat and world rules across versions — including 1.8.9 / 1.7.10 Legacy CPS combat (no 1.9 attack cooldown + +0.1F legacy hitbox margin), 1.12.2 1x2 End Crystal space checks, pre-1.18 (0..256) vs modern (-64..320) world heights, and 1.21+ / 26.2+ mechanics.ViaFabricPlus & Manual Override: Automatically detects active ViaFabricPlus target versions via reflection, or lets you switch mechanics anytime with .version <auto|1.7|1.8|1.12|1.16|1.18|1.19|1.20|1.21|26.2>.🎨 Clean UI & Draggable HUDGlassmorphic ClickGUI: Smooth frame-rate-independent slide and fade animations, glowing borders, and multi-line word-wrapped module tooltips. Press Right Shift to open.Search Anything: Hit Ctrl + F inside the GUI to instantly filter across all 269 modules.Draggable HUD: Hold Shift and drag elements anywhere on your screen. Snap to grid or arrange your arraylist, TargetHUD, Keystrokes, armor display, coordinates, and CPS counters however you like.Profiles & Presets: Save and load complete client configs with .config save <name> and .config load <name>.🤖 Built-In Baritone AutomationNative API + Built-In 3D Engine: If you have the official baritone-api mod installed, Gemini binds directly to baritone.api.BaritoneAPI (CustomGoalProcess, MineProcess, FollowProcess, FarmProcess, ExploreProcess, BuilderProcess, and SelectionManager). If you don't have the external mod installed, Gemini's built-in 3,600-node 3D A* solver takes over seamlessly.Full Terrain Navigation: Tunnels through solid rock, auto-bridges across gaps and lava, mines vertical shafts and stairwells, executes 2-block parkour jumps, climbs ladders and vines, and replants crops.Full Chat Command Support: Run #goto <x> <z>, #mine diamond_ore, #tunnel, #farm, #follow, #thisway <dist>, #axis, #sel pos1/pos2/clear, #surface, and #stop straight from chat.⚔️ Combat & Target Testing (Single-Player Sandbox)KillAura: Supports both 1.9+ Cooldown and 1.8 Legacy CPS combat modes (Auto / 1.9+ Cooldown / 1.8 Legacy CPS), custom rotation smoothing, raycast verification, automatic shield-breaker axe swaps, and falling-window crit pacing.AutoCrystal: End Crystal placement and detonation with automatic 1.12.2 (1x2) vs 1.13+ (1x1) crystal space checks, predictive target raycasting, anti-suicide health checks, support obsidian placement, and silent packet rotations.Surround & AutoTrap: Rapidly wrap your feet in obsidian to absorb crystal explosions or box targets in before they can step away.AnchorAura & BedAura: Auto-placement, glowstone charging, and safe detonation with self-damage guards.🏃 Scaffold & MovementSmart Scaffold: Features Normal, Telly (Keep Y sprint-bridging), GodBridge, and Breeze strafing modes, Eagle edge-sneaking, 4-block BFS support search, custom tower motion, and automatic hotbar refills from your inventory.Speed & Flight: Multiple physics profiles (Strafe, Vanilla, Creative, Glide, and Jetpack) equipped with velocity smoothing.🛠️ Player & World UtilitiesAutoClutch: Automatically saves you from lethal falls with a water bucket, cobweb, slime block, or hay bale, and scoops the water right back up.InventoryCleaner & HotbarSorter: Automatically keeps your sword, pickaxe, gapples, and blocks in your favorite slots, and dumps junk while preserving enchanted or named items.PacketMine & Nuker: Mine blocks effortlessly in the background or clear out volumes in your single-player worlds.🎮 Default ControlsActionKey / InputOpen ClickGUIRight ShiftToggle ModuleLeft ClickModule SettingsRight ClickBind ModuleMiddle Click (press any key to bind, Delete to unbind)Move HUD WidgetsHold Shift + Left Click & DragSearch ModulesCtrl + F inside ClickGUIEmergency PanicType .panic in chat to disable everything💬 Command CheatsheetClient Commands (Prefix: .).help                         - Show available commands
-.version [auto|1.8|1.12|1.21] - View or switch active Minecraft version mechanics
-.toggle <module>              - Toggle a module (or just .<module>)
-.bind <module> <key>          - Set a custom keybind
-.set <module> <setting> <val> - Change a module setting
-.get <module>                 - View all settings for a module
-.config save <name>           - Save current settings to a profile
-.config load <name>           - Load a saved profile
-.vclip <blocks>               - Teleport vertically through blocks
-.panic                        - Turn off all modules immediately
-Baritone Commands (Prefix: # or .b)#goto <x> <z>                 - Pathfind to surface coordinates
-#goto <x> <y> <z>             - Pathfind to exact 3D coordinates
-#goal [x y z|clear]           - Set or clear pathfinding goal
-#path                         - Execute path to current goal
-#thisway <distance>           - Goal N blocks in your look direction
-#axis                         - Align and walk along cardinal/diagonal axis
-#mine <block> [block2]        - Search, tunnel to, and mine specific blocks
-#follow [players|mobs|entity] - Follow target entity
-#tunnel [h w d]               - Dig a custom tunnel forward
-#farm [range]                 - Harvest and replant ripe crops nearby
-#explore                      - Explore uncharted chunks outward
-#sel pos1 / pos2 / clear      - Manage 3D box selections
-#surface                      - Safely tunnel up to surface level
-#stop                         - Cancel current path or task
-#status                       - View active Baritone path state
-📥 InstallationInstall Fabric Loader for your preferred Minecraft version (1.7.10 – 26.2+).Download the Fabric API jar (and optionally ViaFabricPlus / Baritone) and place it into your .minecraft/mods folder.Place gemini-2.0.0.jar into .minecraft/mods.Launch the game using your Fabric profile, load any single-player world, and hit Right Shift!🔨 Building from SourceIf you want to build or target a specific Minecraft version from source:# Clone the repository
-git clone https://github.com/your-username/gemini-client.git
-cd gemini-client
+<div align="center">
+  <img src="src/main/resources/assets/gemini/textures/gui/logo.png" width="260" alt="Gemini Client logo" />
 
-# Build the universal jar (or pass -Pmc_version=1.21.4, 1.20.4, 1.8.9, 26.2, etc.)
+  # Gemini Client
+
+  **A Fabric utility / sandbox client for Minecraft 26.2.**
+
+  Built-in Baritone A* pathfinding · 269 modules · 33 HUD widgets · glassmorphic ClickGUI · VersionBridge
+
+  [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
+  [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
+  [![Version](https://img.shields.io/badge/Release-2.0.1-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
+  [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+
+  [Download](#installation) · [Controls](#controls) · [Commands](#commands) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
+</div>
+
+---
+
+## Overview
+
+Gemini Client is a client-side Fabric mod with a LiquidBounce Nextgen-inspired interface for Minecraft **26.2**. It includes a large module set, a fully draggable HUD, per-module settings, config profiles, VersionBridge combat/world adaptation, and a built-in Baritone-style pathfinding engine — no external Baritone jar required.
+
+Everything runs locally. There is no account system, API key, cloud service, or telemetry.
+
+> **Note:** This project was generated by AI as a capability test of modern development workflows. It is a proof of concept for end-to-end AI-assisted building (codebase, build system, GUI, and mod metadata).
+
+> **Version:** 2.0.1 · **Minecraft:** 26.2 · **Loader:** Fabric · **Java:** 25+
+
+## What's new in 2.0.1
+
+- **VersionBridge** — switch combat / world rule profiles with `.version`
+- **GeminiMixinPlugin** — soft-loads version-sensitive mixins (`defaultRequire: 0`) so mismatched methods do not hard-crash startup
+- **Scaffold** improvements — Godbridge / Telly / Breeze modes and inventory hotbar refill
+- **SingleplayerGate** — modules and GUI are gated to local integrated-server worlds by default
+- Optional hooks for external **Baritone** and **ViaFabricPlus** when those mods are installed
+
+## Highlights
+
+| | |
+|---|---|
+| **269 modules** | Combat, movement, player, world, render, misc, bot, and client utilities |
+| **33 HUD widgets** | FPS, CPS, TPS, armor, potions, radar, TargetHUD, keystrokes, graphs, and more |
+| **Built-in Baritone** | Native 3D A* with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate`, and more |
+| **Glassmorphic ClickGUI** | Animated panels, themes, search, tooltips, grid snap, HUD edit mode |
+| **Profiles & config** | Autosave plus named profiles via `.config` |
+| **Crash isolation** | A failing module is disabled instead of taking down the client |
+
+## Module overview
+
+| Category | Examples |
+|---|---|
+| Combat | KillAura, AutoCrystal, AnchorAura, BedAura, Surround, AutoTrap, Criticals, Velocity, TriggerBot |
+| Movement | Flight, Speed, Step, Scaffold, HighJump, Spider, Jesus, Elytra Boost, NoFall, NoSlow |
+| Player | AutoArmor, AutoTotem, AutoEat, AutoTool, ChestStealer, InventoryCleaner, FastPlace, AntiVoid |
+| World | Nuker, Auto Farm, Vein Miner, Auto Tunnel, Auto Breed, Seed, Weather, Time |
+| Render | ESP, StorageESP, Xray, Tracers, Nametags, Freecam, Zoom, Fullbright |
+| Client / Misc | ClickGUI, Panic, Presets, NameProtect, Notifier, PacketLogger |
+| HUD | FPS, CPS, Armor, Potion Timers, Radar, TargetHUD, Keystrokes, Inventory Viewer |
+
+<details>
+<summary><strong>Show all HUD widgets</strong></summary>
+
+FPS · TPS · Speedometer · Memory · Session Timer · CPS · Position · Facing · Biome · Clock · Light Level · Last Death · Chunk Info · Looking At · Compass · Welcome · Lag Notifier · Custom Text · Potion Timers · Entity Counter · Armor · Held Item · Item Counter · Totem Counter · Inventory Viewer · Keystrokes · TargetHUD · Radar · Combat Items · FPS Graph · Keybinds · Cooldowns · AntiLag HUD
+
+</details>
+
+## Built-in Baritone
+
+Gemini includes its own pathfinding engine. You do **not** need a separate Baritone jar. Commands use the `#` prefix (`.b` also works):
+
+| Command | Description |
+|---|---|
+| `#goto <x> [y] <z>` | Pathfind to coordinates. Omitting `y` uses surface height. |
+| `#mine <block> [block...]` | Find and mine blocks, e.g. `#mine diamond_ore` |
+| `#follow [player\|players\|mobs]` | Follow a player, nearby players, or mobs |
+| `#tunnel [length]` | Dig a 1×2 tunnel in the look direction |
+| `#farm` | Harvest ripe crops nearby |
+| `#explore` | Spiral outward into new chunks |
+| `#excavate [radius] [depth]` | Clear an area around you |
+| `#thisway <distance>` | Goal N blocks ahead |
+| `#axis` | Walk along a cardinal / diagonal axis |
+| `#sel pos1` / `#sel pos2` / `#sel clear` | Selection box helpers |
+| `#surface` / `#come` | Climb to surface / path to camera position |
+| `#pause` / `#resume` | Pause or resume the current task |
+| `#stop` / `#cancel` | Stop everything |
+| `#status` | Show current task state |
+
+## Installation
+
+### Requirements
+
+| Requirement | Version |
+|---|---|
+| Minecraft Java Edition | 26.2 |
+| Fabric Loader | 0.19.5 or newer |
+| Fabric API | A 26.2-compatible build (developed against `0.161.0+26.2`) |
+| Java | 25 or newer |
+
+### Steps
+
+1. Install **Fabric Loader** for Minecraft **26.2**.
+2. Install **Fabric API** for 26.2 into your `mods` folder.
+3. Download [`gemini-2.0.1.jar`](gemini-2.0.1.jar) from this repo (or build from source) and place it in `mods`.
+4. Launch with the Fabric profile.
+5. Press **Right Shift** to open the ClickGUI.
+
+> Remove any standalone Baritone jar if you hit a conflict. Gemini already provides the `baritone` entrypoint.
+
+## Controls
+
+| Input | Action |
+|---|---|
+| **Right Shift** | Open / close ClickGUI (rebindable in Options → Controls → Gemini Client) |
+| **Left click** | Toggle a module |
+| **Right click** | Open module settings |
+| **Middle click** | Bind a key to a module (`Delete` to clear) |
+| **Shift + drag** | Move HUD widgets while ClickGUI is open |
+| **Ctrl + F** | Search modules inside ClickGUI |
+| **Module keybind** | Toggle that module in-game |
+
+## Commands
+
+Chat commands use a `.` prefix. Module names are case-insensitive.
+
+| Command | Description |
+|---|---|
+| `.help` / `.?` | Command list |
+| `.gui` / `.menu` | Open ClickGUI |
+| `.toggle <module> [on\|off]` | Toggle or set a module |
+| `.<module>` | Quick-toggle, e.g. `.flight` |
+| `.set <module> <setting> <value>` | Change a setting (`_` for spaces) |
+| `.get <module> [setting]` | Inspect a module or setting |
+| `.bind <module> <key>` / `.unbind <module>` | Manage keybinds |
+| `.modules [category]` | List modules |
+| `.config save\|load\|list\|reset <name>` | Named config profiles |
+| `.version [auto\|1.7\|1.8\|1.12\|1.16\|1.18\|1.19\|1.20\|1.21\|26.2]` | View / switch VersionBridge profile |
+| `.reload` | Reload config from disk |
+| `.panic` | Disable every module immediately |
+| `.vclip <blocks>` / `.hclip <blocks>` | Vertical / horizontal clip |
+| `.coords` | Print coordinates |
+| `.sethome` / `.home` / `.back` | Save and return to a position |
+| `.selftest` | Run module self-test in a throwaway world |
+
+## Configuration
+
+Gemini saves automatically when the game closes.
+
+| Path | Contents |
+|---|---|
+| `config/gemini_config.json` | Modules, settings, keybinds, HUD layout, panels |
+| `config/gemini_profiles/` | Named profiles from `.config save <name>` |
+
+If the main config cannot be read, Gemini keeps a backup as `gemini_config.json.broken` and starts with defaults.
+
+## Building from source
+
+### Requirements
+
+- JDK **25**
+- Git
+- Internet access for the first Gradle resolve
+
+### Windows
+
+```powershell
+git clone https://github.com/mooreconnell24-gif/gemini-client.git
+cd gemini-client
+.\gradlew.bat build
+```
+
+### Linux / macOS
+
+```bash
+git clone https://github.com/mooreconnell24-gif/gemini-client.git
+cd gemini-client
 ./gradlew build
-./gradlew build -Pmc_version=1.21.4
-Your compiled mod jar will be in build/libs/.📜 Single-Player Lock & LicenseGemini Client is strictly a single-player utility mod. Every module, command, and UI screen is gated by an integrated single-player check (SingleplayerGate), and multiplayer server connections are disabled while running the client. It is impossible to use these cheats on a multiplayer server.Licensed under the MIT License.
+```
+
+The mod jar lands in `build/libs/gemini-2.0.1.jar`.
+
+Dev client:
+
+```bash
+./gradlew runClient
+```
+
+## Project layout
+
+```text
+src/main/java/gemini/
+├── Gemini.java              Client entrypoint
+├── command/                 Chat command system
+├── config/                  Config and profile persistence
+├── input/                   Key mappings
+├── mixin/                   Fabric mixins + GeminiMixinPlugin
+├── module/                  Module framework, settings, categories
+│   └── modules/             Gameplay and HUD modules
+├── render/                  3D rendering helpers
+├── ui/                      ClickGUI, HUD overlay
+├── util/                    Baritone, VersionBridge, rotations, inventory
+└── xray/                    Xray data and compilation
+
+src/main/resources/
+├── fabric.mod.json
+├── gemini.mixins.json
+└── assets/gemini/           Icon, logo, language files
+```
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Crash on launch | Confirm Minecraft 26.2, Fabric Loader 0.19.5+, Fabric API for 26.2, and Java 25 |
+| ClickGUI will not open | Check Options → Controls → Gemini Client for **Open Gemini** |
+| Module missing | Run `.modules` and check `logs/latest.log` for init errors |
+| Baritone does nothing | Run `#status`; ensure you are in a world and no other Baritone conflicts |
+| Settings reset | Restore `config/gemini_config.json.broken` or `.config load <name>` |
+
+## Disclaimer
+
+Gemini Client is a client-side utility mod. Some modules can violate server rules or trip anti-cheat. Use it only where such modifications are allowed. The authors are not responsible for bans, lost items, or other consequences.
+
+By default, gameplay modules are intended for local single-player / integrated-server use.
+
+Gemini Client is not affiliated with Mojang, Microsoft, Fabric, LiquidBounce, or Baritone.
+
+## Credits
+
+- **Fabric** — mod loader and API
+- **LiquidBounce Nextgen** — visual direction for ClickGUI / HUD
+- **Baritone** — pathfinding ideas and optional API integration
+- Testers and issue reporters
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+Copyright © 2026 Gemini Client.

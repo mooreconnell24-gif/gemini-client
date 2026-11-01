@@ -25,7 +25,8 @@ public abstract class LocalPlayerMixin {
 
    @Inject(
       method = {"aiStep"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      require = 0
    )
    private void gemini$interpolateMovement(CallbackInfo ci) {
       MoveUtil.tickInterpolation((LocalPlayer)(Object)this);

@@ -87,7 +87,7 @@ public final class PlayerModules {
 
    public static final class AutoDrop extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Blacklist drops the listed items, Whitelist drops everything else", "Blacklist", "Blacklist", "Whitelist")
+         new ModeSetting("Mode", "Blacklist drops the listed items", "Blacklist", "Blacklist", "Whitelist")
       );
       private final ListSetting items = this.addSetting(
          new ListSetting(
@@ -154,7 +154,7 @@ public final class PlayerModules {
       private int cooldown;
 
       public AutoMount() {
-         super("Auto Mount", "Climb into nearby boats, minecarts and rideable animals.", Category.PLAYER);
+         super("Auto Mount", "Auto-mount nearby boats, minecarts, and animals.", Category.PLAYER);
       }
 
       @Override
@@ -306,7 +306,7 @@ public final class PlayerModules {
       private RemotePlayer dummy;
 
       public FakePlayer() {
-         super("Fake Player", "Spawn a dummy player next to you to test combat modules.", Category.PLAYER);
+         super("Fake Player", "Spawn a dummy player next to you to test combat.", Category.PLAYER);
       }
 
       @Override
@@ -400,7 +400,7 @@ public final class PlayerModules {
       public static PlayerModules.LiquidInteract instance;
 
       public LiquidInteract() {
-         super("Liquid Interact", "Target liquids with your crosshair so you can interact with them.", Category.PLAYER);
+         super("Liquid Interact", "Allow placing blocks directly against water and lava.", Category.PLAYER);
          instance = this;
       }
 
@@ -572,7 +572,7 @@ public final class PlayerModules {
 
    public static final class Rotation extends Module {
       private final ModeSetting yawMode = this.addSetting(
-         new ModeSetting("Yaw", "None leaves it alone, Snap rounds to a step, Fixed holds an angle", "Snap", "None", "Snap", "Fixed")
+         new ModeSetting("Yaw", "Yaw lock mode (None, Snap to step, or Fixed angle)", "Snap", "None", "Snap", "Fixed")
       );
       private final NumberSetting step = this.addSetting(
          new NumberSetting("Snap Step", "Degrees between snap angles", 45.0, 5.0, 90.0, 5.0).showIf(() -> this.yawMode.is("Snap"))

@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.util.VersionBridge;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -58,7 +59,7 @@ public final class WorldRender {
       private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "Fixed color or an animated rainbow", "Custom", "Custom", "Rainbow"));
       private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline color", 175).showIf(() -> this.colors.is("Custom")));
       private final BooleanSetting exactShape = this.addSetting(
-         new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain box", true)
+         new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain", true)
       );
       private final ShapeSettings shape = new ShapeSettings(this, "Both", false);
 
@@ -117,8 +118,8 @@ public final class WorldRender {
             int cz = player.chunkPosition().z();
             int extra = this.radius.intValue();
             int py = Mth.floor(player.getY());
-            int top = Math.min(level.getMaxY() + 1, py + this.vertical.intValue());
-            int bottom = Math.max(level.getMinY(), py - this.vertical.intValue());
+            int top = Math.min(VersionBridge.maxWorldY(level) + 1, py + this.vertical.intValue());
+            int bottom = Math.max(VersionBridge.minWorldY(level), py - this.vertical.intValue());
             float stroke = this.width.floatValue();
             int edgeColor = this.edge.argb();
             int innerColor = this.inner.argb();
@@ -254,7 +255,7 @@ public final class WorldRender {
       private final List<AABB> boxes = new ArrayList<>();
 
       public Marker() {
-         super("Marker", "Draw boxes you place yourself. Use .marker add / box / remove / clear / list.", Category.RENDER);
+         super("Marker", "Draw boxes you place yourself. Use .marker add / box.", Category.RENDER);
          this.addSetting(new ActionSetting("Mark Here", "Add a marker on your block", this::markHere));
          this.addSetting(new ActionSetting("Clear", "Remove every marker", this::clear));
       }
@@ -458,7 +459,7 @@ public final class WorldRender {
       private int resultCap = -1;
 
       public Search() {
-         super("Search", "Highlight chosen blocks anywhere in the loaded chunks. Edit the list with the GUI or .search add <block>.", Category.RENDER);
+         super("Search", "Highlight selected blocks across loaded chunks.", Category.RENDER);
          this.blocks.onChange(this::reset);
          this.speed.onChange(this::reset);
          this.results.onChange(this::reset);
@@ -507,8 +508,8 @@ public final class WorldRender {
             Vec3 origin = Render3D.crosshair();
             MutableBlockPos cursor = new MutableBlockPos();
             Set<Block> wanted = this.blocks.blocks();
-            int bottom = level.getMinY();
-            int top = level.getMaxY() + 1;
+            int bottom = VersionBridge.minWorldY(level);
+            int top = VersionBridge.maxWorldY(level) + 1;
             this.scanner
                .forEach((chunkX, chunkZ) -> Render3D.visible(chunkX << 4, bottom, chunkZ << 4, (chunkX << 4) + 16, top, (chunkZ << 4) + 16), packed -> {
                   cursor.set(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));

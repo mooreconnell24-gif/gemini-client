@@ -202,7 +202,7 @@ public final class EntityRender {
       private final BooleanSetting hideVanilla = this.addSetting(new BooleanSetting("Hide Vanilla", "Hide the built-in name tags of labelled players", true));
 
       public Nametags() {
-         super("Nametags", "Readable labels with health and ping above players and mobs.", Category.RENDER);
+         super("Nametags", "Readable labels with health and ping above players.", Category.RENDER);
          instance = this;
       }
 
@@ -382,14 +382,14 @@ public final class EntityRender {
       private final NumberSetting steps = this.addSetting(new NumberSetting("Max Steps", "How many ticks of flight to simulate", 150.0, 20.0, 400.0, 10.0));
       private final BooleanSetting landing = this.addSetting(new BooleanSetting("Landing Marker", "Box where the projectile ends", true));
       private final BooleanSetting entities = this.addSetting(
-         new BooleanSetting("Hit Entities", "Stop at entities and outline the one that would be hit", true)
+         new BooleanSetting("Hit Entities", "Stop trajectory arc at entities and highlight the target", true)
       );
       private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the path", 2.0, 0.5, 5.0, 0.5));
       private final ColorSetting pathColor = this.addSetting(new ColorSetting("Path Color", "Color of the flight path", 190));
       private final ColorSetting hitColor = this.addSetting(new ColorSetting("Hit Color", "Color of the landing marker", 0));
 
       public Trajectories() {
-         super("Trajectories", "Predict where arrows, pearls and other projectiles will land.", Category.RENDER);
+         super("Trajectories", "Predict where arrows, pearls and other projectiles.", Category.RENDER);
       }
 
       @Override

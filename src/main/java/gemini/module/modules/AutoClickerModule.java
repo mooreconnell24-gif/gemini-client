@@ -30,7 +30,7 @@ public final class AutoClickerModule extends Module {
    private int untilBurst = 8;
 
    public AutoClickerModule() {
-      super("AutoClicker", "Click with a human rhythm while you hold attack, and wait for the hit to count.", Category.COMBAT);
+      super("AutoClicker", "Click with a human rhythm while you hold attack.", Category.COMBAT);
    }
 
    @Override

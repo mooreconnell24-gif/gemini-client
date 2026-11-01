@@ -1,5 +1,6 @@
 package gemini.module.modules;
 
+import gemini.util.VersionBridge;
 import com.google.gson.JsonObject;
 import gemini.command.CommandManager;
 import gemini.module.Category;
@@ -61,7 +62,7 @@ public final class SoloModules {
       );
 
       public Gamemode() {
-         super("Gamemode", "Switch survival, creative, adventure or spectator. Single-player only.", Category.PLAYER);
+         super("Gamemode", "Switch survival, creative, adventure or spectator.", Category.PLAYER);
          this.addSetting(new ActionSetting("Apply", "Switch to the selected gamemode", this::apply));
       }
 
@@ -256,7 +257,7 @@ public final class SoloModules {
       private boolean haveSeed;
 
       public SlimeChunks() {
-         super("Slime Chunks", "Outline overworld chunks where slimes can spawn, using your world's seed.", Category.RENDER);
+         super("Slime Chunks", "Outline overworld chunks where slimes can spawn.", Category.RENDER);
       }
 
       @Override
@@ -286,7 +287,7 @@ public final class SoloModules {
                      BlockPos mark = new BlockPos(x * 16 + 8, floor, z * 16 + 8);
                      Render3D.floorMark(mark, 0.05, argb, true, true, 1.5F, 50, false);
                      Render3D.box(
-                        new AABB(x * 16, Math.max(client.level.getMinY(), floor - 2), z * 16, x * 16 + 16, Math.min(40, floor + 1), z * 16 + 16),
+                        new AABB(x * 16, Math.max(VersionBridge.minWorldY(client.level), floor - 2), z * 16, x * 16 + 16, Math.min(40, floor + 1), z * 16 + 16),
                         argb,
                         true,
                         false,

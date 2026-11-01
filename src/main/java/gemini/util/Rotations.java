@@ -2,7 +2,7 @@ package gemini.util;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class Rotations {
@@ -14,9 +14,22 @@ public final class Rotations {
    }
 
    public static float[] face(Entity from, Entity to, double ticks) {
+      Vec3 eye = from.getEyePosition();
       Vec3 motion = to.getDeltaMovement().scale(ticks);
-      double ty = to instanceof LivingEntity living ? living.getY() + living.getBbHeight() * 0.85 : to.getY() + to.getBbHeight() * 0.5;
-      return look(from.getEyePosition(), new Vec3(to.getX() + motion.x, ty + motion.y, to.getZ() + motion.z));
+      AABB box = to.getBoundingBox().move(motion);
+      double marginX = Math.min(0.12, (box.maxX - box.minX) * 0.25);
+      double marginY = Math.min(0.14, (box.maxY - box.minY) * 0.2);
+      double marginZ = Math.min(0.12, (box.maxZ - box.minZ) * 0.25);
+      double nearX = Mth.clamp(eye.x, box.minX + marginX, box.maxX - marginX);
+      double nearY = Mth.clamp(eye.y, box.minY + marginY, box.maxY - marginY);
+      double nearZ = Mth.clamp(eye.z, box.minZ + marginZ, box.maxZ - marginZ);
+      double centerX = (box.minX + box.maxX) * 0.5;
+      double centerY = box.minY + (box.maxY - box.minY) * 0.78;
+      double centerZ = (box.minZ + box.maxZ) * 0.5;
+      double aimX = Mth.lerp(0.35, nearX, centerX);
+      double aimY = Mth.lerp(0.45, nearY, centerY);
+      double aimZ = Mth.lerp(0.35, nearZ, centerZ);
+      return look(eye, new Vec3(aimX, aimY, aimZ));
    }
 
    public static float[] look(Vec3 eye, Vec3 point) {

@@ -109,7 +109,7 @@ public final class MovementModules {
       private final NumberSetting pullSpeed = this.addSetting(new NumberSetting("Pull Speed", "Downward pull velocity", 0.38, 0.15, 0.8, 0.02));
 
       public AnchorPull() {
-         super("AnchorPull", "Cancel horizontal air drift and pull straight down when passing over a safe hole.", Category.MOVEMENT);
+         super("AnchorPull", "Pull straight down into safe PvP holes.", Category.MOVEMENT);
       }
 
       @Override
@@ -138,7 +138,7 @@ public final class MovementModules {
 
    public static final class AntiLevitation extends Module {
       public AntiLevitation() {
-         super("AntiLevitation", "Neutralize upward drift from the Shulker Levitation effect.", Category.MOVEMENT);
+         super("AntiLevitation", "Cancel upward drift from Levitation.", Category.MOVEMENT);
       }
 
       @Override
@@ -195,7 +195,7 @@ public final class MovementModules {
 
    public static final class AutoJump extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Always = bunny hop while moving, Obstacle = hop over blocks in your way", "Obstacle", "Always", "Obstacle")
+         new ModeSetting("Mode", "Always = bunny hop while moving", "Obstacle", "Always", "Obstacle")
       );
 
       public AutoJump() {
@@ -229,7 +229,7 @@ public final class MovementModules {
          new NumberSetting("Vertical Speed", "Climb and descent speed with Jump and Sneak", 0.5, 0.1, 2.0, 0.1)
       );
       private final BooleanSetting antiKick = this.addSetting(
-         new BooleanSetting("Anti Kick", "Sink a little now and then so servers don't kick for flying", true)
+         new BooleanSetting("Anti Kick", "Sink a little now and then so servers don't kick", true)
       );
       private AbstractBoat flying;
       private int hoverTicks;
@@ -289,7 +289,7 @@ public final class MovementModules {
          new ModeSetting("Trigger", "What starts the teleport", "Middle Click", "Middle Click", "Sneak + Right Click")
       );
       private final BooleanSetting steps = this.addSetting(
-         new BooleanSetting("Step Packets", "Send the route in short hops so servers accept long jumps", true)
+         new BooleanSetting("Step Packets", "Send the route in short hops so servers accept long", true)
       );
       private boolean previous;
 
@@ -349,7 +349,7 @@ public final class MovementModules {
       );
 
       public EdgeJump() {
-         super("EdgeJump", "Automatically jump at the exact outer edge of blocks when running off ledges.", Category.MOVEMENT);
+         super("EdgeJump", "Auto-jump at the outer edge of blocks.", Category.MOVEMENT);
       }
 
       @Override
@@ -368,7 +368,7 @@ public final class MovementModules {
 
    public static final class ElytraFly extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Control = fly where you look at a fixed speed, Boost = accelerate forwards", "Control", "Control", "Boost")
+         new ModeSetting("Mode", "Control = fly where you look at a fixed speed", "Control", "Control", "Boost")
       );
       private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Flight speed in blocks per tick", 1.2, 0.2, 5.0, 0.1));
       private final NumberSetting vertical = this.addSetting(
@@ -473,7 +473,7 @@ public final class MovementModules {
    public static final class FastFall extends Module {
       private final NumberSetting speed = this.addSetting(new NumberSetting("Fall Speed", "Downward speed in blocks per tick", 1.0, 0.3, 4.0, 0.1));
       private final BooleanSetting onlySafe = this.addSetting(
-         new BooleanSetting("Only When Safe", "Only speed up when the whole fall stays under three blocks", true)
+         new BooleanSetting("Only When Safe", "Only speed up when the whole fall stays under three", true)
       );
 
       public FastFall() {
@@ -503,7 +503,7 @@ public final class MovementModules {
       private int tick;
 
       public FastSwim() {
-         super("FastSwim", "Accelerate underwater and surface swimming speed like LiquidBounce FastSwim.", Category.MOVEMENT);
+         super("FastSwim", "Swim faster underwater and on the surface.", Category.MOVEMENT);
       }
 
       @Override
@@ -525,7 +525,7 @@ public final class MovementModules {
 
    public static final class Freeze extends Module {
       public Freeze() {
-         super("Freeze", "Freeze your character mid-air and cancel outgoing movement packets.", Category.MOVEMENT);
+         super("Freeze", "Freeze your character mid-air and cancel outgoing.", Category.MOVEMENT);
       }
 
       @Override
@@ -581,7 +581,7 @@ public final class MovementModules {
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max distance to pull into a safe hole", 4.0, 1.5, 6.0, 0.5));
 
       public HoleSnap() {
-         super("HoleSnap", "Pull your character smoothly into the nearest Bedrock or Obsidian hole.", Category.MOVEMENT);
+         super("HoleSnap", "Snap smoothly into nearby Bedrock/Obsidian holes.", Category.MOVEMENT);
       }
 
       @Override
@@ -607,7 +607,7 @@ public final class MovementModules {
       private int lockedY;
 
       public KeepY() {
-         super("KeepY", "Automatically jump on touch-down to keep your vertical floor locked for Telly bridging and PvP.", Category.MOVEMENT);
+         super("KeepY", "Auto-jump on landing to lock your Y level.", Category.MOVEMENT);
       }
 
       @Override
@@ -638,7 +638,7 @@ public final class MovementModules {
 
    public static final class NoWeb extends Module {
       public NoWeb() {
-         super("NoWeb", "Prevent cobwebs and sweet berry bushes from slowing down your movement.", Category.MOVEMENT);
+         super("NoWeb", "Prevent cobwebs, berries, and snow from slowing you.", Category.MOVEMENT);
       }
 
       @Override
@@ -647,8 +647,12 @@ public final class MovementModules {
          if (MovementModules.ready(client)) {
             LocalPlayer player = client.player;
             BlockState feet = client.level.getBlockState(player.blockPosition());
-            if (feet.is(Blocks.COBWEB) || feet.is(Blocks.SWEET_BERRY_BUSH)) {
+            BlockState head = client.level.getBlockState(player.blockPosition().above());
+            if (feet.is(Blocks.COBWEB) || feet.is(Blocks.SWEET_BERRY_BUSH) || feet.is(Blocks.POWDER_SNOW) || head.is(Blocks.COBWEB)) {
                MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player));
+               if (player.getDeltaMovement().y < 0.0) {
+                  player.setDeltaMovement(player.getDeltaMovement().x, player.getDeltaMovement().y * 1.65, player.getDeltaMovement().z);
+               }
             }
          }
       }
@@ -657,7 +661,7 @@ public final class MovementModules {
    public static final class Slippy extends Module {
       public static MovementModules.Slippy instance;
       private final NumberSetting friction = this.addSetting(
-         new NumberSetting("Friction", "Block friction (0.6 = normal, 0.98 = ice, 1.0 = no friction)", 0.98, 0.6, 1.0, 0.01)
+         new NumberSetting("Friction", "Block friction", 0.98, 0.6, 1.0, 0.01)
       );
       private final ListSetting ignored = this.addSetting(new ListSetting("Ignored Blocks", "Blocks that keep their normal friction", ListSetting.Kind.BLOCK));
 
@@ -678,7 +682,7 @@ public final class MovementModules {
 
    public static final class Sneak extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Vanilla = really crouch, Packet = only the server sees you crouching", "Vanilla", "Vanilla", "Packet")
+         new ModeSetting("Mode", "Vanilla = really crouch, Packet = only the server", "Vanilla", "Vanilla", "Packet")
       );
       private final BooleanSetting onlyMoving = this.addSetting(
          new BooleanSetting("Only Moving", "Sneak only while you are walking", false).showIf(() -> this.mode.is("Vanilla"))
@@ -765,7 +769,7 @@ public final class MovementModules {
       private LivingEntity activeTarget;
 
       public TargetStrafe() {
-         super("TargetStrafe", "Orbit smoothly around nearby combat targets like LiquidBounce TargetStrafe.", Category.MOVEMENT);
+         super("TargetStrafe", "Orbit smoothly around active combat targets.", Category.MOVEMENT);
       }
 
       @Override
@@ -790,6 +794,13 @@ public final class MovementModules {
                double r = this.radius.get();
                double tx = this.activeTarget.getX() + Math.cos(angle) * r;
                double tz = this.activeTarget.getZ() + Math.sin(angle) * r;
+               BlockPos nextGround = BlockPos.containing(tx, player.getY() - 1.0, tz);
+               if (client.level.getBlockState(nextGround).is(Blocks.LAVA) || MovementModules.groundDistance(client.level, player, 5) < 0.0) {
+                  this.dir = -this.dir;
+                  angle = Math.atan2(player.getZ() - this.activeTarget.getZ(), player.getX() - this.activeTarget.getX()) + this.dir * 0.26;
+                  tx = this.activeTarget.getX() + Math.cos(angle) * r;
+                  tz = this.activeTarget.getZ() + Math.sin(angle) * r;
+               }
                Vec3 delta = new Vec3(tx - player.getX(), 0.0, tz - player.getZ()).normalize().scale(MoveUtil.baseSpeed(player) * this.speed.get());
                player.setDeltaMovement(delta.x, player.getDeltaMovement().y, delta.z);
             }
@@ -839,7 +850,7 @@ public final class MovementModules {
       private final NumberSetting boost = this.addSetting(new NumberSetting("Boost", "Speed multiplier on ice, soul sand, and stairs", 1.35, 1.05, 2.5, 0.05));
 
       public TerrainSpeed() {
-         super("TerrainSpeed", "Accelerate movement over ice, soul sand, snow, and stairs.", Category.MOVEMENT);
+         super("TerrainSpeed", "Move faster across ice, soul sand, and stairs.", Category.MOVEMENT);
       }
 
       @Override
@@ -861,7 +872,7 @@ public final class MovementModules {
       private int cooldown;
 
       public TimerRange() {
-         super("TimerRange", "Burst movement speed briefly when closing distance to a combat target.", Category.MOVEMENT);
+         super("TimerRange", "Burst speed briefly when closing gap to a target.", Category.MOVEMENT);
       }
 
       @Override
@@ -912,7 +923,7 @@ public final class MovementModules {
       private int tick;
 
       public WallClimb() {
-         super("WallClimb", "Climb up solid walls with Motion, Pulse, or LedgeStep modes.", Category.MOVEMENT);
+         super("WallClimb", "Climb solid walls with Motion, Pulse, or LedgeStep.", Category.MOVEMENT);
       }
 
       @Override
@@ -931,6 +942,8 @@ public final class MovementModules {
                if (this.tick % 4 == 0) {
                   player.setDeltaMovement(m.x, 0.42, m.z);
                }
+            } else if (this.mode.is("LedgeStep")) {
+               player.setDeltaMovement(m.x, this.tick % 3 == 0 ? 0.36 : 0.12, m.z);
             } else {
                player.setDeltaMovement(m.x, this.speed.get(), m.z);
             }

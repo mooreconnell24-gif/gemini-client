@@ -5,6 +5,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
+import gemini.ui.HudOverlay;
 import net.minecraft.util.Mth;
 
 public abstract class HudWidget extends Module {
@@ -52,6 +53,10 @@ public abstract class HudWidget extends Module {
 
    protected boolean hasBackground() {
       return this.background.get();
+   }
+
+   protected boolean shouldRenderContent(HudContext hud) {
+      return true;
    }
 
    public float lastScreenX() {
@@ -175,18 +180,27 @@ public abstract class HudWidget extends Module {
          this.lastY = y;
          this.lastW = scaledW;
          this.lastH = scaledH;
-         hud.graphics.pose().pushMatrix();
-         hud.graphics.pose().translate(x, y);
-         hud.graphics.pose().scale(s, s);
-         if (this.hasBackground()) {
-            hud.graphics.fill(-1, -1, w + 1, h + 1, GeminiMark.withAlpha(hud.accent, 38));
-            hud.graphics.fill(0, 0, w, h, GeminiMark.withAlpha(-15987178, 185));
-            hud.graphics.fill(0, 0, w, 1, GeminiMark.withAlpha(hud.accent2, 95));
-            hud.graphics.fill(0, 0, 2, h, hud.accent);
-         }
+         if (this.shouldRenderContent(hud)) {
+            hud.graphics.pose().pushMatrix();
+            hud.graphics.pose().translate(x, y);
+            hud.graphics.pose().scale(s, s);
+            if (this.hasBackground()) {
+               hud.graphics.fill(-1, -1, w + 1, h + 1, GeminiMark.withAlpha(hud.accent, 42));
+               hud.graphics.fill(0, 0, w, h, GeminiMark.withAlpha(-15987178, 198));
+               hud.graphics.fill(0, 0, w, 4, GeminiMark.withAlpha(hud.accent, 14));
+               int steps = Math.min(18, Math.max(1, w));
+               for (int i = 0; i < steps; i++) {
+                  int sx = w * i / steps;
+                  int ex = w * (i + 1) / steps;
+                  float t = steps <= 1 ? 0.0F : (float)i / (steps - 1);
+                  hud.graphics.fill(sx, 0, ex, 1, GeminiMark.withAlpha(HudOverlay.lerp(hud.accent, hud.accent2, t), 160));
+               }
+               hud.graphics.fill(0, 0, 2, h, hud.accent);
+            }
 
-         this.paint(hud, w, h);
-         hud.graphics.pose().popMatrix();
+            this.paint(hud, w, h);
+            hud.graphics.pose().popMatrix();
+         }
       }
    }
 }

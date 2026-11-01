@@ -57,7 +57,7 @@ public final class CameraModules {
       );
 
       public BetterTooltips() {
-         super("Better Tooltips", "Add durability, food and container details to item tooltips.", Category.RENDER);
+         super("Better Tooltips", "Add durability, food and container details to item.", Category.RENDER);
          ItemTooltipCallback.EVENT.register((ItemTooltipCallback)(stack, context, flag, lines) -> {
             if (this.isEnabled()) {
                this.decorate(stack, lines);
@@ -114,7 +114,7 @@ public final class CameraModules {
       );
 
       public CameraTweaks() {
-         super("Camera Tweaks", "Move the third-person camera further out and let it pass through walls.", Category.RENDER);
+         super("Camera Tweaks", "Move the third-person camera further out and let it.", Category.RENDER);
          instance = this;
       }
 
@@ -154,7 +154,7 @@ public final class CameraModules {
       private boolean ready;
 
       public FreeLook() {
-         super("Free Look", "Look around freely while your character keeps facing forward. Bind it to a held key.", Category.RENDER);
+         super("Free Look", "Look around freely while your character keeps facing.", Category.RENDER);
          instance = this;
       }
 
@@ -222,7 +222,7 @@ public final class CameraModules {
       private boolean ready;
 
       public Freecam() {
-         super("Freecam", "Fly the camera around while your character stays where it is.", Category.RENDER);
+         super("Freecam", "Fly the camera around while your character stays.", Category.RENDER);
          instance = this;
       }
 
@@ -359,7 +359,7 @@ public final class CameraModules {
       private volatile Set<String> cache;
 
       public ParticleBlocker() {
-         super("Particles", "Hide particles you do not want to see: explosions, smoke, anything.", Category.RENDER);
+         super("Particles", "Hide particles you do not want to see: explosions.", Category.RENDER);
          instance = this;
          this.types.onChange(() -> this.cache = null);
       }
@@ -393,7 +393,7 @@ public final class CameraModules {
       );
 
       public UnfocusedCpu() {
-         super("Unfocused CPU", "Save power by limiting the frame rate when you tab away.", Category.RENDER);
+         super("Unfocused CPU", "Save power by limiting the frame rate when you tab.", Category.RENDER);
          instance = this;
       }
 

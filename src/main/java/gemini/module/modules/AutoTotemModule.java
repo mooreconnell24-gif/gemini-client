@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.Damage;
 import gemini.util.Inventories;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -22,7 +23,7 @@ public final class AutoTotemModule extends Module {
    }
 
    public boolean wantsOffhand(LocalPlayer player) {
-      return player != null && player.getHealth() <= this.health.floatValue();
+      return player != null && Damage.health(player) <= this.health.floatValue();
    }
 
    @Override
@@ -39,7 +40,7 @@ public final class AutoTotemModule extends Module {
             this.cooldown--;
          } else {
             ItemStack offhand = player.getOffhandItem();
-            if (!offhand.is(Items.TOTEM_OF_UNDYING) && !(player.getHealth() > this.health.floatValue()) && (this.replace.get() || offhand.isEmpty())) {
+            if (!offhand.is(Items.TOTEM_OF_UNDYING) && !(Damage.health(player) > this.health.floatValue()) && (this.replace.get() || offhand.isEmpty())) {
                int index = this.findTotem(player);
                if (index >= 0) {
                   this.cooldown = this.delay.intValue();

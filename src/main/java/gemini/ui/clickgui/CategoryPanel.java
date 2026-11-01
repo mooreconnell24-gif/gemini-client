@@ -44,6 +44,7 @@ public final class CategoryPanel {
    private final ConfigManager.PanelState state;
    private final List<CategoryPanel.Row> rows = new ArrayList<>();
    private final List<CategoryPanel.Item> items = new ArrayList<>();
+   private final java.util.IdentityHashMap<Setting<?>, Float> settingAnims = new java.util.IdentityHashMap<>();
    private float scroll;
    private float scrollTarget;
    private float collapseAnim;
@@ -179,10 +180,11 @@ public final class CategoryPanel {
 
    public void tick(float delta, boolean animate) {
       this.updateAnimations();
-      float follow = Math.min(1.0F, delta * 14.0F);
+      float follow = 1.0F - (float)Math.exp(-delta * 16.0F);
+      float fastFollow = 1.0F - (float)Math.exp(-delta * 20.0F);
       float collapseTarget = this.state.collapsed ? 0.0F : 1.0F;
-      this.collapseAnim = animate ? this.collapseAnim + (collapseTarget - this.collapseAnim) * follow : collapseTarget;
-      if (Math.abs(this.collapseAnim - collapseTarget) < 0.004F) {
+      this.collapseAnim = animate ? Mth.lerp(follow, this.collapseAnim, collapseTarget) : collapseTarget;
+      if (Math.abs(this.collapseAnim - collapseTarget) < 0.003F) {
          this.collapseAnim = collapseTarget;
       }
 
@@ -192,16 +194,33 @@ public final class CategoryPanel {
          float hoverTarget = row.hoveredFrame ? 1.0F : 0.0F;
          row.hoveredFrame = false;
          if (animate) {
-            row.enableAnim = row.enableAnim + (enabled - row.enableAnim) * Math.min(1.0F, delta * 12.0F);
-            row.hoverAnim = Mth.lerp(Math.min(1.0F, delta * 16.0F), row.hoverAnim, hoverTarget);
-            row.expand = row.expand + (expand - row.expand) * follow;
-            if (Math.abs(row.expand - expand) < 0.004F) {
+            row.enableAnim = Mth.lerp(follow, row.enableAnim, enabled);
+            row.hoverAnim = Mth.lerp(fastFollow, row.hoverAnim, hoverTarget);
+            row.expand = Mth.lerp(follow, row.expand, expand);
+            if (Math.abs(row.expand - expand) < 0.003F) {
                row.expand = expand;
             }
          } else {
             row.enableAnim = enabled;
             row.hoverAnim = hoverTarget;
             row.expand = expand;
+         }
+         if (row.expand > 0.01F) {
+            for (Setting<?> setting : row.module.settings()) {
+               if (setting instanceof BooleanSetting bool) {
+                  float target = bool.get() ? 1.0F : 0.0F;
+                  float cur = this.settingAnims.getOrDefault(setting, target);
+                  this.settingAnims.put(setting, animate ? Mth.lerp(fastFollow, cur, target) : target);
+               } else if (setting instanceof NumberSetting num) {
+                  float target = (float)num.percent();
+                  float cur = this.settingAnims.getOrDefault(setting, target);
+                  this.settingAnims.put(setting, animate ? Mth.lerp(fastFollow, cur, target) : target);
+               } else if (setting instanceof ColorSetting col) {
+                  float target = (float)col.percent();
+                  float cur = this.settingAnims.getOrDefault(setting, target);
+                  this.settingAnims.put(setting, animate ? Mth.lerp(fastFollow, cur, target) : target);
+               }
+            }
          }
       }
 
@@ -570,26 +589,33 @@ public final class CategoryPanel {
       int labelColor = !setting.isDefault() && !(setting instanceof ActionSetting) ? -1840396 : -4734770;
       if (setting instanceof BooleanSetting bool) {
          graphics.text(font, fit(font, setting.name(), right - left - 24), left, y + 5, labelColor, false);
-         int tx = right - 16;
-         graphics.fill(tx, y + 4, tx + 16, y + 12, bool.get() ? GeminiMark.withAlpha(accent, 175) : -14142908);
-         int kx = bool.get() ? tx + 9 : tx + 1;
-         graphics.fill(kx, y + 5, kx + 6, y + 11, bool.get() ? -1 : -8483940);
+         int tx = right - 18;
+         float anim = this.settingAnims.getOrDefault(setting, bool.get() ? 1.0F : 0.0F);
+         int trackColor = HudOverlay.lerp(-14142908, accent, anim);
+         graphics.fill(tx - 1, y + 3, tx + 19, y + 13, GeminiMark.withAlpha(accent, Math.round(45.0F * anim)));
+         graphics.fill(tx, y + 4, tx + 18, y + 12, GeminiMark.withAlpha(trackColor, 210));
+         int kx = tx + 1 + Math.round(anim * 10.0F);
+         graphics.fill(kx, y + 5, kx + 6, y + 11, HudOverlay.lerp(-8483940, -1, anim));
       } else if (setting instanceof NumberSetting number) {
          String value = formatNumber(number);
          int valueW = font.width(value);
          graphics.text(font, fit(font, setting.name(), right - left - valueW - 6), left, y + 3, labelColor, false);
          graphics.text(font, value, right - valueW, y + 3, accent2, false);
-         drawTrack(graphics, left, right, y + 16, number.percent(), accent, accent2, null);
+         double pct = this.settingAnims.getOrDefault(setting, (float)number.percent());
+         drawTrack(graphics, left, right, y + 16, pct, accent, accent2, null, over || this.activeSlider == setting);
       } else if (setting instanceof ColorSetting color) {
          graphics.text(font, fit(font, setting.name(), right - left - 22), left, y + 3, labelColor, false);
          graphics.fill(right - 14, y + 3, right, y + 11, -16052458);
          graphics.fill(right - 13, y + 4, right - 1, y + 10, color.argb());
-         drawTrack(graphics, left, right, y + 16, color.percent(), accent, accent2, color);
+         double pct = this.settingAnims.getOrDefault(setting, (float)color.percent());
+         drawTrack(graphics, left, right, y + 16, pct, accent, accent2, color, over || this.activeSlider == setting);
       } else if (setting instanceof ModeSetting mode) {
          String value = mode.get();
          int valueW = font.width(value);
-         graphics.text(font, fit(font, setting.name(), right - left - valueW - 8), left, y + 5, labelColor, false);
-         graphics.text(font, value, right - valueW, y + 5, accent2, false);
+         graphics.text(font, fit(font, setting.name(), right - left - valueW - 14), left, y + 5, labelColor, false);
+         int pillL = right - valueW - 6;
+         graphics.fill(pillL, y + 3, right, y + 14, GeminiMark.withAlpha(accent, over ? 55 : 28));
+         graphics.text(font, value, right - valueW - 3, y + 5, over ? -1 : accent2, false);
       } else if (setting instanceof ListSetting list) {
          String value = list.size() + (list.size() == 1 ? " entry  >" : " entries  >");
          int valueW = font.width(value);
@@ -603,8 +629,9 @@ public final class CategoryPanel {
       }
    }
 
-   private static void drawTrack(GuiGraphicsExtractor graphics, int left, int right, int y, double percent, int accent, int accent2, ColorSetting hue) {
+   private static void drawTrack(GuiGraphicsExtractor graphics, int left, int right, int y, double percent, int accent, int accent2, ColorSetting hue, boolean active) {
       int width = right - left;
+      double clampedPct = Mth.clamp(percent, 0.0, 1.0);
       if (hue != null) {
          int segments = Math.max(6, width / 3);
 
@@ -615,13 +642,16 @@ public final class CategoryPanel {
          }
       } else {
          graphics.fill(left, y, right, y + 3, -14142908);
-         int fillW = (int)Math.round(width * percent);
+         int fillW = (int)Math.round(width * clampedPct);
          if (fillW > 0) {
             drawGradientStrip(graphics, left, y, left + fillW, y + 3, accent, accent2);
          }
       }
 
-      int knob = left + (int)Math.round(width * percent);
+      int knob = left + (int)Math.round(width * clampedPct);
+      if (active) {
+         graphics.fill(knob - 3, y - 3, knob + 3, y + 6, GeminiMark.withAlpha(accent2, 95));
+      }
       graphics.fill(knob - 2, y - 2, knob + 2, y + 5, -1);
    }
 

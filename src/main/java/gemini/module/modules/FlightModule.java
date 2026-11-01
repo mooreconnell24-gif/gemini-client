@@ -18,11 +18,12 @@ public final class FlightModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Strict and Packet smooth motion and anti-kick dips; Auto uses Creative in SP",
+         "Flight mode",
          "Strict",
          "Auto",
          "Strict",
          "Packet",
+         "VulcanGlide",
          "Creative",
          "Velocity",
          "Glide",
@@ -31,13 +32,13 @@ public final class FlightModule extends Module {
    );
    private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal flight speed", 0.55, 0.2, 5.0, 0.1));
    private final NumberSetting vertical = this.addSetting(
-      new NumberSetting("Vertical", "Up/down speed (non-Creative modes)", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
+      new NumberSetting("Vertical", "Vertical climb/descent speed", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
    );
    private final BooleanSetting antiKick = this.addSetting(
-      new BooleanSetting("Anti Kick", "Dip slightly at intervals so anti-cheats don't flag floating", true).showIf(() -> !this.mode.is("Creative"))
+      new BooleanSetting("Anti Kick", "Dip periodically to bypass vanilla fly kick", true).showIf(() -> !this.mode.is("Creative"))
    );
    private final BooleanSetting setbackPause = this.addSetting(
-      new BooleanSetting("Setback Damp", "Smoothly damp velocity when the server corrects your position", true)
+      new BooleanSetting("Setback Damp", "Smooth velocity on server position setback", true)
    );
    private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying", true));
    private boolean previousMayFly;
@@ -45,7 +46,7 @@ public final class FlightModule extends Module {
    private int airTicks;
 
    public FlightModule() {
-      super("Flight", "Fly around with strict anti-cheat motion handling and setback smoothing.", Category.MOVEMENT, 71);
+      super("Flight", "Multi-mode flight with anti-kick and setback.", Category.MOVEMENT, 71);
    }
 
    private boolean creativeMode() {
@@ -104,6 +105,8 @@ public final class FlightModule extends Module {
 
             if (this.mode.is("Jetpack")) {
                this.jetpack(player);
+            } else if (this.mode.is("VulcanGlide")) {
+               this.vulcanGlide(player);
             } else if (this.mode.is("Glide")) {
                this.glide(player);
             } else if (this.mode.is("Packet")) {
@@ -114,6 +117,21 @@ public final class FlightModule extends Module {
                this.velocityFlight(player);
             }
          }
+      }
+   }
+
+   private void vulcanGlide(LocalPlayer player) {
+      this.airTicks++;
+      double y = this.airTicks % 2 == 0 ? -0.1 : -0.16;
+      if (player.input != null && player.input.keyPresses.jump() && this.airTicks % 6 == 0) {
+         y = 0.42;
+      }
+      player.setDeltaMovement(player.getDeltaMovement().x, y, player.getDeltaMovement().z);
+      if (MoveUtil.hasInput(player)) {
+         MoveUtil.setHorizontal(player, 0.2806 * Math.min(1.35, this.speed.get()));
+      }
+      if (this.noFall.get()) {
+         player.resetFallDistance();
       }
    }
 

@@ -47,12 +47,26 @@ public final class HudOverlay {
 
    public static void pushNotification(String title, String body, boolean enabled) {
       synchronized (TOASTS) {
-         if (TOASTS.size() >= 6) {
+         Iterator<HudOverlay.Toast> it = TOASTS.iterator();
+         while (it.hasNext()) {
+            if (it.next().title.equals(title)) {
+               it.remove();
+               break;
+            }
+         }
+
+         if (TOASTS.size() >= 5) {
             TOASTS.removeFirst();
          }
 
-         TOASTS.addLast(new HudOverlay.Toast(title, body, enabled, Util.getMillis(), 2200L));
+         TOASTS.addLast(new HudOverlay.Toast(title, body, enabled, Util.getMillis(), 2100L));
       }
+   }
+
+   private static float easeOutCubic(float t) {
+      float clamped = Mth.clamp(t, 0.0F, 1.0F);
+      float inv = 1.0F - clamped;
+      return 1.0F - inv * inv * inv;
    }
 
    public void onHudRender(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
@@ -91,7 +105,7 @@ public final class HudOverlay {
 
    private void drawToasts(GuiGraphicsExtractor graphics, Font font, int width, int height, int accent, int accent2) {
       long now = Util.getMillis();
-      int y = height - 34;
+      float cursorY = height - 34.0F;
       synchronized (TOASTS) {
          Iterator<HudOverlay.Toast> it = TOASTS.iterator();
 
@@ -101,22 +115,30 @@ public final class HudOverlay {
             if (age >= toast.durationMs) {
                it.remove();
             } else {
-               float in = Math.min(1.0F, (float)age / 180.0F);
-               float out = Math.min(1.0F, (float)(toast.durationMs - age) / 220.0F);
+               float in = easeOutCubic((float)age / 210.0F);
+               float out = easeOutCubic((float)(toast.durationMs - age) / 240.0F);
                float slide = Math.min(in, out);
-               int cardW = Math.max(124, Math.max(font.width(toast.title), font.width(toast.body)) + 24);
-               int cardH = 24;
-               int x = width - 6 - Math.round(cardW * slide);
+               String badge = toast.enabled ? "ON" : "OFF";
+               int badgeW = font.width(badge) + 8;
+               int cardW = Math.max(132, Math.max(font.width(toast.title) + badgeW + 14, font.width(toast.body) + 18));
+               int cardH = 25;
+               int x = width - 6 - Math.round((cardW + 4) * slide) + 4;
+               int y = Math.round(cursorY);
                int statusColor = toast.enabled ? -11086174 : -1548963;
-               graphics.fill(x - 1, y - 1, x + cardW + 1, y + cardH + 1, GeminiMark.withAlpha(accent, (int)(55.0F * slide)));
-               graphics.fill(x, y, x + cardW, y + cardH, GeminiMark.withAlpha(-15987178, (int)(225.0F * slide)));
-               graphics.fill(x, y, x + 3, y + cardH, statusColor);
+               int alphaBg = Math.round(228.0F * slide);
+               int alphaText = Math.round(255.0F * slide);
+               graphics.fill(x - 1, y - 1, x + cardW + 1, y + cardH + 1, GeminiMark.withAlpha(accent, Math.round(62.0F * slide)));
+               graphics.fill(x, y, x + cardW, y + cardH, GeminiMark.withAlpha(-15987178, alphaBg));
+               graphics.fill(x, y, x + 2, y + cardH, GeminiMark.withAlpha(statusColor, alphaText));
+               int pillX = x + cardW - badgeW - 5;
+               graphics.fill(pillX, y + 4, pillX + badgeW, y + 13, GeminiMark.withAlpha(statusColor, Math.round(45.0F * slide)));
+               graphics.text(font, badge, pillX + 4, y + 5, GeminiMark.withAlpha(statusColor, alphaText), false);
                float progress = 1.0F - (float)age / (float)toast.durationMs;
                int barW = Math.round(cardW * progress);
-               graphics.fill(x, y + cardH - 2, x + barW, y + cardH, lerp(accent, accent2, 1.0F - progress));
-               graphics.text(font, toast.title, x + 8, y + 4, -1, false);
-               graphics.text(font, toast.body, x + 8, y + 13, statusColor, false);
-               y -= cardH + 5;
+               graphics.fill(x, y + cardH - 2, x + barW, y + cardH, GeminiMark.withAlpha(lerp(accent, accent2, 1.0F - progress), alphaText));
+               graphics.text(font, toast.title, x + 7, y + 4, GeminiMark.withAlpha(-1, alphaText), false);
+               graphics.text(font, toast.body, x + 7, y + 14, GeminiMark.withAlpha(-4733999, alphaText), false);
+               cursorY -= (cardH + 5) * slide;
             }
          }
       }
@@ -126,7 +148,7 @@ public final class HudOverlay {
       Font font = client.font;
       String wmStyle = hud == null ? "Nextgen Card" : hud.watermarkStyle();
       List<String> meta = new ArrayList<>();
-      meta.add("v2.4");
+      meta.add("v2.5");
       if (hud == null || hud.fps()) {
          meta.add(client.getFps() + " FPS");
       }
@@ -140,8 +162,9 @@ public final class HudOverlay {
       }
 
       if (hud == null || hud.speed()) {
-         Vec3 motion = player.getDeltaMovement();
-         meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(motion.x, motion.z) * 20.0));
+         double dx = player.getX() - player.xo;
+         double dz = player.getZ() - player.zo;
+         meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
       }
 
       if (BuiltInBaritone.isActive()) {
@@ -157,20 +180,22 @@ public final class HudOverlay {
          String title = "GEMINI ";
          String sub = "NEXTGEN  |  " + metaLine;
          int pillW = 14 + font.width(title) + font.width(sub);
-         int pillH = 16;
-         graphics.fill(4, 4, 4 + pillW, 4 + pillH, GeminiMark.withAlpha(-15987178, 220));
+         int pillH = 17;
+         graphics.fill(3, 3, 5 + pillW, 5 + pillH, GeminiMark.withAlpha(accent, 42));
+         graphics.fill(4, 4, 4 + pillW, 4 + pillH, GeminiMark.withAlpha(-15987178, 225));
          graphics.fill(4, 4, 6, 4 + pillH, accent);
          drawHorizontalGradient(graphics, 4, 4, 4 + pillW, 5, accent, accent2);
          graphics.text(font, title, 10, 8, accent, shadow);
          graphics.text(font, sub, 10 + font.width(title), 8, -1511689, shadow);
-         return 24;
+         return 25;
       } else {
          boolean hasLogo = hud == null || hud.logo();
          int textX = hasLogo ? 28 : 8;
          int boxW = textX + Math.max(font.width("GEMINI NEXTGEN"), font.width(metaLine)) + 10;
-         int boxH = 24;
-         graphics.fill(3, 3, 4 + boxW + 1, 4 + boxH + 1, GeminiMark.withAlpha(accent, 48));
-         graphics.fill(4, 4, 4 + boxW, 4 + boxH, GeminiMark.withAlpha(-15987178, 210));
+         int boxH = 25;
+         graphics.fill(3, 3, 4 + boxW + 1, 4 + boxH + 1, GeminiMark.withAlpha(accent, 52));
+         graphics.fill(4, 4, 4 + boxW, 4 + boxH, GeminiMark.withAlpha(-15987178, 222));
+         graphics.fill(4, 6, 4 + boxW, 14, GeminiMark.withAlpha(accent, 14));
          drawHorizontalGradient(graphics, 4, 4, 4 + boxW, 6, accent, accent2);
          if (hasLogo) {
             GeminiMark.draw(graphics, 6, 7, 18, accent, 1.0F);
@@ -178,8 +203,8 @@ public final class HudOverlay {
 
          graphics.text(font, "GEMINI", textX, 8, -1, shadow);
          graphics.text(font, "NEXTGEN", textX + font.width("GEMINI "), 8, accent2, shadow);
-         graphics.text(font, metaLine, textX, 17, -5983548, false);
-         return 34;
+         graphics.text(font, metaLine, textX, 18, -4733999, false);
+         return 35;
       }
    }
 
@@ -196,17 +221,18 @@ public final class HudOverlay {
       String tagStyle = hud == null ? "Plain" : hud.tagStyle();
       boolean lower = hud != null && hud.lowercase();
       List<Module> candidates = new ArrayList<>();
+      float stepFactor = 1.0F - (float)Math.exp(-delta * 16.0F);
 
       for (Module module : this.modules.getModules()) {
          boolean active = module.isEnabled() && module.isListed();
          float current = this.arrayAnimations.getOrDefault(module, active ? 1.0F : 0.0F);
          float target = active ? 1.0F : 0.0F;
-         float next = animateSlide ? Mth.lerp(Math.min(1.0F, delta * 14.0F), current, target) : target;
-         if (Math.abs(next - target) < 0.01F) {
+         float next = animateSlide ? Mth.lerp(stepFactor, current, target) : target;
+         if (Math.abs(next - target) < 0.008F) {
             next = target;
          }
 
-         if (next > 0.01F) {
+         if (next > 0.008F) {
             this.arrayAnimations.put(module, next);
             candidates.add(module);
          } else {
@@ -233,12 +259,12 @@ public final class HudOverlay {
          boolean background = hud == null || hud.background();
          boolean bar = hud == null || hud.sideBar();
          boolean glowOutline = hud == null || hud.glowOutline();
-         float opacity = hud == null ? 0.65F : hud.opacity();
+         float opacity = hud == null ? 0.68F : hud.opacity();
          String colors = hud == null ? "Pulsing Rainbow" : hud.colors();
          float totalHeight = 0.0F;
 
          for (Module module : candidates) {
-            totalHeight += 11.0F * this.arrayAnimations.getOrDefault(module, 1.0F);
+            totalHeight += 11.0F * easeOutCubic(this.arrayAnimations.getOrDefault(module, 1.0F));
          }
 
          float cursorY = bottom ? height - 4.0F - totalHeight : 4.0F;
@@ -247,38 +273,44 @@ public final class HudOverlay {
 
          for (int i = 0; i < candidates.size(); i++) {
             Module module = candidates.get(i);
-            float anim = this.arrayAnimations.getOrDefault(module, 1.0F);
+            float rawAnim = this.arrayAnimations.getOrDefault(module, 1.0F);
+            float anim = easeOutCubic(rawAnim);
             String label = label(module, showKeys, lower);
             String info = showInfo ? formatInfo(module.info(), tagStyle, lower) : null;
             int labelWidth = totalWidth(font, module, showKeys, showInfo, tagStyle, lower);
             int rowColor = computeRowColor(colors, accent, accent2, module, i, candidates.size(), now);
             int nextColor = computeRowColor(colors, accent, accent2, module, Math.min(candidates.size() - 1, i + 1), candidates.size(), now);
-            int slideOffset = Math.round((1.0F - anim) * (labelWidth + 14));
+            int slideOffset = Math.round((1.0F - anim) * (labelWidth + 12));
             int boxLeft = right ? width - labelWidth - 10 + slideOffset : -slideOffset;
             int boxRight = right ? width + slideOffset : labelWidth + 10 - slideOffset;
             int y = Math.round(cursorY);
             int rowBottom = y + 10;
             if (background) {
                if (glowOutline) {
-                  graphics.fill(boxLeft - 1, y - 1, boxRight + 1, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(32.0F * anim)));
+                  graphics.fill(boxLeft - 1, y - 1, boxRight + 1, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(36.0F * anim)));
                }
 
                graphics.fill(boxLeft, y - 1, boxRight, rowBottom, GeminiMark.withAlpha(-15987178, (int)(255.0F * opacity * anim)));
+               graphics.fill(boxLeft, y - 1, boxRight, y + 3, GeminiMark.withAlpha(rowColor, (int)(16.0F * anim)));
             }
 
             if (glowOutline) {
                int innerEdgeX = right ? boxLeft - 1 : boxRight;
-               graphics.fill(innerEdgeX, y - 1, innerEdgeX + 1, rowBottom, GeminiMark.withAlpha(rowColor, (int)(195.0F * anim)));
+               graphics.fill(innerEdgeX, y - 1, innerEdgeX + 1, rowBottom, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
                if (i == 0) {
-                  graphics.fill(boxLeft - 1, y - 2, boxRight, y - 1, GeminiMark.withAlpha(rowColor, (int)(195.0F * anim)));
-               } else if (right && prevBoxLeft != -1 && boxLeft > prevBoxLeft) {
-                  graphics.fill(prevBoxLeft - 1, y - 1, boxLeft, y, GeminiMark.withAlpha(rowColor, (int)(195.0F * anim)));
-               } else if (!right && prevBoxRight != -1 && boxRight < prevBoxRight) {
-                  graphics.fill(boxRight, y - 1, prevBoxRight + 1, y, GeminiMark.withAlpha(rowColor, (int)(195.0F * anim)));
+                  graphics.fill(boxLeft - 1, y - 2, boxRight, y - 1, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
+               } else if (right && prevBoxLeft != -1 && boxLeft != prevBoxLeft) {
+                  int stepL = Math.min(prevBoxLeft, boxLeft) - 1;
+                  int stepR = Math.max(prevBoxLeft, boxLeft);
+                  graphics.fill(stepL, y - 1, stepR, y, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
+               } else if (!right && prevBoxRight != -1 && boxRight != prevBoxRight) {
+                  int stepL = Math.min(prevBoxRight, boxRight);
+                  int stepR = Math.max(prevBoxRight, boxRight) + 1;
+                  graphics.fill(stepL, y - 1, stepR, y, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
                }
 
                if (i == candidates.size() - 1) {
-                  graphics.fill(boxLeft - 1, rowBottom, boxRight, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(195.0F * anim)));
+                  graphics.fill(boxLeft - 1, rowBottom, boxRight, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
                }
             }
 
@@ -290,9 +322,10 @@ public final class HudOverlay {
             }
 
             int textX = right ? boxLeft + 4 : boxLeft + 6;
-            graphics.text(font, label, textX, y, GeminiMark.withAlpha(rowColor, (int)(255.0F * anim)), shadow);
+            int textAlpha = Math.max(8, (int)(255.0F * anim));
+            graphics.text(font, label, textX, y, GeminiMark.withAlpha(rowColor, textAlpha), shadow);
             if (info != null) {
-               graphics.text(font, info, textX + font.width(label) + 4, y, GeminiMark.withAlpha(-6641995, (int)(255.0F * anim)), shadow);
+               graphics.text(font, info, textX + font.width(label) + 4, y, GeminiMark.withAlpha(-4733999, textAlpha), shadow);
             }
 
             prevBoxLeft = boxLeft;

@@ -1,13 +1,16 @@
 {
 	"schemaVersion": 1,
 	"id": "gemini",
-	"version": "2.0.0",
+	"version": "${version}",
 	"name": "Gemini Client",
-	"description": "LiquidBounce Nextgen-inspired Fabric utility client with 230+ modules, glassmorphic ClickGUI, draggable HUD, and a built-in Baritone A* pathfinding & automation engine.",
+	"description": "Fabric utility / sandbox client for Minecraft 26.2 with 269 modules, glassmorphic ClickGUI, draggable HUD, VersionBridge mechanics, and built-in Baritone 3D A* pathfinding.",
 	"authors": [
 		"Gemini Client"
 	],
-	"contact": {},
+	"contact": {
+		"sources": "https://github.com/mooreconnell24-gif/gemini-client",
+		"issues": "https://github.com/mooreconnell24-gif/gemini-client/issues"
+	},
 	"license": "MIT",
 	"icon": "assets/gemini/icon.png",
 	"environment": "client",
@@ -28,10 +31,15 @@
 		"java": ">=25",
 		"fabric-api": "*"
 	},
+	"suggests": {
+		"baritone": "*",
+		"viafabricplus": "*"
+	},
 	"provides": [
 		"baritone"
 	],
 	"custom": {
-		"gemini:baritone": "Built-in Baritone 3D A* pathfinding and automation engine included natively (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate)."
+		"gemini:baritone": "Hooks baritone.api.BaritoneAPI when present and ships a built-in 3D A* engine (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate, #sel, #thisway, #axis).",
+		"gemini:versions": "VersionBridge adapts combat and world rules across version profiles; GeminiMixinPlugin soft-loads version-sensitive mixins."
 	}
 }

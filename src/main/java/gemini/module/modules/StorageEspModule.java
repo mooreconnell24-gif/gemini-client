@@ -47,7 +47,7 @@ public final class StorageEspModule extends Module {
    private int ticker;
 
    public StorageEspModule() {
-      super("StorageESP", "Highlight chests, shulkers, ender chests, barrels, and spawners in 3D and on the HUD.", Category.RENDER);
+      super("StorageESP", "Highlight chests, shulkers, ender chests, barrels.", Category.RENDER);
    }
 
    public List<StorageEspModule.Hit> hits() {

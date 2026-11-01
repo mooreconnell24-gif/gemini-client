@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.MoveUtil;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -17,7 +18,7 @@ public final class AutoEatModule extends Module {
    private static final Set<String> BAD_FOOD = Set.of("rotten_flesh", "spider_eye", "pufferfish", "poisonous_potato", "chorus_fruit", "suspicious_stew");
    private final NumberSetting hunger = this.addSetting(new NumberSetting("Hunger", "Eat when food level is at or below this", 14.0, 1.0, 19.0, 1.0));
    private final BooleanSetting goldenApples = this.addSetting(new BooleanSetting("Golden Apples", "Allow golden apples as food", false));
-   private final BooleanSetting badFood = this.addSetting(new BooleanSetting("Bad Food", "Allow rotten flesh, spider eyes and other harmful food", false));
+   private final BooleanSetting badFood = this.addSetting(new BooleanSetting("Bad Food", "Allow eating rotten flesh and harmful food items", false));
    private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Return to the previous hotbar slot afterwards", true));
    private int previousSlot = -1;
    private boolean eating;
@@ -74,7 +75,7 @@ public final class AutoEatModule extends Module {
    private void finish(Minecraft client) {
       if (this.eating) {
          this.eating = false;
-         client.options.keyUse.setDown(false);
+         client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
          if (this.restore.get() && client.player != null && this.previousSlot >= 0) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }

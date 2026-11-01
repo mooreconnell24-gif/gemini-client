@@ -14,7 +14,8 @@ public abstract class PlayerMixin {
    @Inject(
       method = {"isStayingOnGroundSurface"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$safeWalk(CallbackInfoReturnable<Boolean> cir) {
       Gemini gemini = Gemini.getInstance();

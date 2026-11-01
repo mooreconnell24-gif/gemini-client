@@ -36,7 +36,7 @@ public final class EspModule extends Module {
    );
 
    public EspModule() {
-      super("ESP", "Highlight entities through walls with 3D boxes, shader glow, and health bars.", Category.RENDER);
+      super("ESP", "Highlight entities through walls with 3D boxes.", Category.RENDER);
    }
 
    @Override

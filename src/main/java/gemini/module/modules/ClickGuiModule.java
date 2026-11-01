@@ -11,7 +11,7 @@ public final class ClickGuiModule extends Module {
    private final ModeSetting theme = this.addSetting(
       new ModeSetting(
          "Theme",
-         "Accent palette (LiquidBounce uses Nextgen electric blue & cyan)",
+         "Accent palette",
          "LiquidBounce",
          "LiquidBounce",
          "Neon",
@@ -26,11 +26,11 @@ public final class ClickGuiModule extends Module {
    );
    private final ColorSetting primary = this.addSetting(new ColorSetting("Primary", "Custom primary accent", 212).showIf(() -> this.theme.is("Custom")));
    private final ColorSetting secondary = this.addSetting(new ColorSetting("Secondary", "Custom secondary accent", 190).showIf(() -> this.theme.is("Custom")));
-   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Open motion, pulses, smooth scrolling and expand easing", true));
+   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Smooth open motion, pulses, scrolling, and dropdowns", true));
    private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glass Glow", "Render glassmorphic outer glow and gradient borders", true));
    private final BooleanSetting snapGrid = this.addSetting(new BooleanSetting("Grid Snap", "Snap panels and HUD widgets to an 8px alignment grid", true));
    private final BooleanSetting floatingTooltips = this.addSetting(
-      new BooleanSetting("Slide Tooltips", "Slide out contextual tooltip cards next to hovered modules", true)
+      new BooleanSetting("Slide Tooltips", "Slide out tooltip cards next to hovered modules", true)
    );
    private final BooleanSetting dim = this.addSetting(new BooleanSetting("Dim", "Darken the world behind the menu", true));
    private final BooleanSetting particles = this.addSetting(new BooleanSetting("Particles", "Soft floating particles in the menu", true));

@@ -29,7 +29,8 @@ public abstract class MultiPlayerGameModeMixin {
    @Inject(
       method = {"continueDestroyBlock"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$instantMine(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
       if (Gemini.getInstance() != null && this.minecraft.level != null) {
@@ -44,7 +45,8 @@ public abstract class MultiPlayerGameModeMixin {
 
    @Inject(
       method = {"attack"},
-      at = {@At("HEAD")}
+      at = {@At("HEAD")},
+      require = 0
    )
    private void gemini$onAttack(Player player, Entity target, CallbackInfo ci) {
       if (Gemini.getInstance() != null) {

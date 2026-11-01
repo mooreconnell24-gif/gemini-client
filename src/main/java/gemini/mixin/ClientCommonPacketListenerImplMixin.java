@@ -14,7 +14,8 @@ public abstract class ClientCommonPacketListenerImplMixin {
    @Inject(
       method = {"send"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$outgoing(Packet<?> packet, CallbackInfo ci) {
       Gemini gemini = Gemini.getInstance();

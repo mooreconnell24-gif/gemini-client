@@ -31,16 +31,16 @@ public final class JesusModule extends Module {
    private static volatile boolean active;
    private final ModeSetting waterMode = this.addSetting(
       new ModeSetting(
-         "Water", "Solid walks on top, Bob floats at the surface, Dolphin leaps out of it, Off leaves water alone", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Water", "Solid walks on water; Bob floats; Dolphin leaps", "Bob", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final ModeSetting lavaMode = this.addSetting(
       new ModeSetting(
-         "Lava", "Solid walks on top, Bob floats at the surface, Dolphin leaps out of it, Off leaves lava alone", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Lava", "Solid walks on lava; Bob floats; Dolphin leaps", "Bob", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final BooleanSetting flowing = this.addSetting(
-      new BooleanSetting("Flowing Fluid", "Also stand on flowing water and lava, not only on source blocks", true)
+      new BooleanSetting("Flowing Fluid", "Also stand on flowing water and lava", true)
    );
    private final NumberSetting offset = this.addSetting(
       new NumberSetting("Surface Offset", "Raises or lowers the surface you stand on, in blocks", 0.0, -0.3, 0.3, 0.01).showIf(this::anySolid)
@@ -49,7 +49,7 @@ public final class JesusModule extends Module {
       new NumberSetting("Speed", "Walking speed multiplier while standing on a fluid", 1.0, 1.0, 2.0, 0.05).showIf(this::anySolid)
    );
    private final NumberSetting rise = this.addSetting(
-      new NumberSetting("Rise Speed", "How quickly you float back up after ending up under the surface", 0.12, 0.03, 0.4, 0.01)
+      new NumberSetting("Rise Speed", "Upward speed when rising back to the fluid surface", 0.12, 0.03, 0.4, 0.01)
    );
    private final NumberSetting bobHeight = this.addSetting(
       new NumberSetting("Bob Height", "How far Bob mode swings up and down", 1.0, 0.0, 3.0, 0.1).showIf(() -> this.anyMode(JesusModule.Treatment.BOB))
@@ -58,16 +58,16 @@ public final class JesusModule extends Module {
       new NumberSetting("Leap Power", "Upward speed of each Dolphin jump", 0.42, 0.2, 0.8, 0.02).showIf(() -> this.anyMode(JesusModule.Treatment.DOLPHIN))
    );
    private final BooleanSetting dipSneak = this.addSetting(
-      new BooleanSetting("Dip On Sneak", "Hold sneak to sink into the fluid instead of walking on it", true)
+      new BooleanSetting("Dip On Sneak", "Hold sneak to sink down into the fluid", true)
    );
    private final BooleanSetting dipBurning = this.addSetting(
-      new BooleanSetting("Dip If Burning", "Sink into water when you are on fire so it puts you out", true)
+      new BooleanSetting("Dip If Burning", "Sink into water when you are on fire so it puts you", true)
    );
    private final BooleanSetting dipFall = this.addSetting(
-      new BooleanSetting("Dip On Fall", "Break through the surface after a long fall so you take no fall damage", true)
+      new BooleanSetting("Dip On Fall", "Break through the surface after a long fall so you", true)
    );
    private final NumberSetting fallHeight = this.addSetting(
-      new NumberSetting("Fall Height", "Fall distance, in blocks, that makes you break through", 4.0, 1.0, 20.0, 1.0).showIf(this.dipFall::get)
+      new NumberSetting("Fall Height", "Fall distance, in blocks, that makes you break", 4.0, 1.0, 20.0, 1.0).showIf(this.dipFall::get)
    );
    private int surfaceTick = -1073741824;
 
@@ -207,7 +207,7 @@ public final class JesusModule extends Module {
 
    private void walkFaster(LocalPlayer player) {
       double multiplier = this.speed.get();
-      if (!(multiplier <= 1.0) && player.tickCount - this.surfaceTick <= 1) {
+      if (!(multiplier <= 1.0) && player.tickCount - this.surfaceTick <= 1 && player.input != null) {
          Input keys = player.input.keyPresses;
          if (keys.forward() || keys.backward() || keys.left() || keys.right()) {
             Vec3 motion = player.getDeltaMovement();

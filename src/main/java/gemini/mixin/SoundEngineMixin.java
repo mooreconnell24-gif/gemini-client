@@ -16,7 +16,8 @@ public abstract class SoundEngineMixin {
    @Inject(
       method = {"play(Lnet/minecraft/client/resources/sounds/SoundInstance;)Lnet/minecraft/client/sounds/SoundEngine$PlayResult;"},
       at = {@At("HEAD")},
-      cancellable = true
+      cancellable = true,
+      require = 0
    )
    private void gemini$blockSound(SoundInstance instance, CallbackInfoReturnable<PlayResult> cir) {
       Identifier id = instance.getIdentifier();

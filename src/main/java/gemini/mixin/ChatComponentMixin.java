@@ -25,6 +25,11 @@ public abstract class ChatComponentMixin {
          message = chat.decorate(message);
       }
 
+      MiscModules.NameProtect nameProtect = MiscModules.NameProtect.instance;
+      if (nameProtect != null && nameProtect.isEnabled() && message != null) {
+         message = nameProtect.filterComponent(message);
+      }
+
       original.call(new Object[]{message, signature, source, tag});
    }
 }

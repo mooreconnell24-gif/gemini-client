@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.util.VersionBridge;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -114,7 +115,7 @@ public final class RenderExtras {
       private int wait;
 
       public BedPlates() {
-         super("BedPlates", "Display floating 3D plates above nearby beds showing their defense cover.", Category.RENDER);
+         super("BedPlates", "Show floating 3D defense tags above nearby beds.", Category.RENDER);
       }
 
       @Override
@@ -157,7 +158,7 @@ public final class RenderExtras {
 
    public static final class BlockCounter extends Module {
       public BlockCounter() {
-         super("BlockCounter", "Display a sleek live block counter pill near your crosshair when holding building blocks.", Category.RENDER);
+         super("BlockCounter", "Show a live block counter pill near your crosshair.", Category.RENDER);
       }
 
       @Override
@@ -203,7 +204,7 @@ public final class RenderExtras {
       private float progress;
 
       public BreakIndicators() {
-         super("BreakIndicators", "Render a dynamic 3D progress box and completion percentage on the block being mined.", Category.RENDER);
+         super("BreakIndicators", "Show a 3D progress box and % on mined blocks.", Category.RENDER);
       }
 
       @Override
@@ -262,7 +263,7 @@ public final class RenderExtras {
       private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Hat brim radius", 0.65, 0.3, 1.2, 0.05));
 
       public ChinaHat() {
-         super("ChinaHat", "Render a sleek 3D polygonal cone halo above your character's head.", Category.RENDER);
+         super("ChinaHat", "Render a 3D neon cone hat above your head.", Category.RENDER);
       }
 
       @Override
@@ -294,7 +295,7 @@ public final class RenderExtras {
       private final BooleanSetting dynamic = this.addSetting(new BooleanSetting("Dynamic", "Expand when moving or swinging", true));
 
       public CrosshairPlus() {
-         super("Crosshair", "Render a dynamic neon crosshair that reacts to movement and attack cooldown.", Category.RENDER);
+         super("Crosshair", "Dynamic neon crosshair with movement expansion.", Category.RENDER);
       }
 
       @Override
@@ -319,7 +320,7 @@ public final class RenderExtras {
       private final ArrayDeque<RenderExtras.DamageParticles.Popup> popups = new ArrayDeque<>();
 
       public DamageParticles() {
-         super("DamageParticles", "Display floating 3D damage numbers whenever entities lose or gain health.", Category.RENDER);
+         super("DamageParticles", "Show floating 3D damage and heal numbers on hit.", Category.RENDER);
       }
 
       @Override
@@ -378,17 +379,17 @@ public final class RenderExtras {
    public static final class EntityCulling extends Module {
       public static RenderExtras.EntityCulling instance;
       private final BooleanSetting wallCull = this.addSetting(
-         new BooleanSetting("Cull Behind Walls", "Hide vanilla nametags for entities obstructed by solid blocks", true)
+         new BooleanSetting("Cull Behind Walls", "Hide vanilla nametags for entities behind walls", true)
       );
       private final NumberSetting maxDistance = this.addSetting(
-         new NumberSetting("Nametag Distance", "Maximum distance in blocks to render vanilla nametags", 28.0, 6.0, 64.0, 2.0)
+         new NumberSetting("Nametag Distance", "Maximum distance in blocks to render vanilla", 28.0, 6.0, 64.0, 2.0)
       );
       private final BooleanSetting hideArmorStands = this.addSetting(
-         new BooleanSetting("Hide Armor Stand Tags", "Suppress hologram and armor stand nametag clutter in hubs", true)
+         new BooleanSetting("Hide Armor Stand Tags", "Suppress hologram and armor stand nametag clutter", true)
       );
 
       public EntityCulling() {
-         super("EntityCulling", "Skip rendering nametags and labels for occluded or distant entities to boost FPS.", Category.RENDER);
+         super("EntityCulling", "Cull occluded and distant nametags for higher FPS.", Category.RENDER);
          instance = this;
       }
 
@@ -430,7 +431,7 @@ public final class RenderExtras {
       private long lastHitMs;
 
       public HitEffect() {
-         super("HitEffect", "Render 3D neon impact bursts and a crosshair hitmarker when striking enemies.", Category.RENDER);
+         super("HitEffect", "Show 3D impact bursts and a crosshair hitmarker.", Category.RENDER);
       }
 
       @Override
@@ -525,7 +526,7 @@ public final class RenderExtras {
       private int wait;
 
       public HoleEsp() {
-         super("HoleESP", "Highlight safe Bedrock, Obsidian, and Mixed crystal PvP holes around you.", Category.RENDER);
+         super("HoleESP", "Highlight safe Bedrock and Obsidian PvP holes.", Category.RENDER);
       }
 
       @Override
@@ -576,7 +577,7 @@ public final class RenderExtras {
       private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw even when the item is hidden", true));
 
       public ItemEsp() {
-         super("Item ESP", "See dropped items through walls with their names and counts.", Category.RENDER);
+         super("Item ESP", "Highlight dropped items with names and stack counts.", Category.RENDER);
       }
 
       @Override
@@ -631,7 +632,7 @@ public final class RenderExtras {
       private boolean wasOnGround = true;
 
       public JumpEffect() {
-         super("JumpEffect", "Render expanding neon rings on the ground whenever you jump.", Category.RENDER);
+         super("JumpEffect", "Render expanding neon ground rings when jumping.", Category.RENDER);
       }
 
       @Override
@@ -685,7 +686,7 @@ public final class RenderExtras {
       private final List<RenderExtras.LogoffSpot.Spot> loggedSpots = new ArrayList<>();
 
       public LogoffSpot() {
-         super("LogoffSpot", "Mark the last known 3D bounding box and name of players who disconnect nearby.", Category.RENDER);
+         super("LogoffSpot", "Mark 3D positions where nearby players log out.", Category.RENDER);
       }
 
       @Override
@@ -739,7 +740,7 @@ public final class RenderExtras {
       private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Pearl tracker accent hue", 285));
 
       public PearlTracker() {
-         super("PearlTracker", "Track thrown Ender Pearls in 3D flight with owner labels and predicted landing spots.", Category.RENDER);
+         super("PearlTracker", "Track Ender Pearl arcs, owners, and landing spots.", Category.RENDER);
       }
 
       @Override
@@ -803,7 +804,7 @@ public final class RenderExtras {
       private final ArrayDeque<Vec3> samples = new ArrayDeque<>();
 
       public PlayerTrails() {
-         super("PlayerTrails", "Render a smooth dual-ribbon neon trail behind your character.", Category.RENDER);
+         super("PlayerTrails", "Render a smooth dual-ribbon neon trail behind you.", Category.RENDER);
       }
 
       @Override
@@ -859,7 +860,7 @@ public final class RenderExtras {
       private final BooleanSetting ownerLines = this.addSetting(new BooleanSetting("Owner Lines", "Draw a line back to whoever fired it", false));
 
       public ProjectileEsp() {
-         super("Projectile ESP", "Highlight incoming arrows, fireballs, TNT and falling blocks.", Category.RENDER);
+         super("Projectile ESP", "Highlight incoming arrows.", Category.RENDER);
       }
 
       @Override
@@ -929,12 +930,12 @@ public final class RenderExtras {
       public static RenderExtras.SoundLocator instance;
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum distance to locate sounds", 48.0, 12.0, 96.0, 4.0));
       private final BooleanSetting onlyImportant = this.addSetting(
-         new BooleanSetting("Important Only", "Only show chests, explosions, teleports, totems, and player steps", true)
+         new BooleanSetting("Important Only", "Only show chests, explosions, teleports, totems", true)
       );
       private final ArrayDeque<RenderExtras.SoundLocator.SoundPing> pings = new ArrayDeque<>();
 
       public SoundLocator() {
-         super("SoundLocator", "Visualize nearby explosions, chests, teleports, and footsteps in 3D space.", Category.RENDER);
+         super("SoundLocator", "Visualize nearby explosions.", Category.RENDER);
          instance = this;
       }
 
@@ -1015,7 +1016,7 @@ public final class RenderExtras {
 
    public static final class TntTimer extends Module {
       public TntTimer() {
-         super("TNTTimer", "Render a floating fuse countdown in seconds above primed TNT entities.", Category.RENDER);
+         super("TNTTimer", "Render a floating fuse countdown in seconds above.", Category.RENDER);
       }
 
       @Override
@@ -1062,8 +1063,8 @@ public final class RenderExtras {
             int r = this.radius.intValue();
             BlockPos center = player.blockPosition();
             MutableBlockPos cursor = new MutableBlockPos();
-            int yMin = Math.max(level.getMinY() + 1, center.getY() - this.below.intValue());
-            int yMax = Math.min(level.getMaxY() - 2, center.getY() + 6);
+            int yMin = Math.max(VersionBridge.minWorldY(level) + 1, center.getY() - this.below.intValue());
+            int yMax = Math.min(VersionBridge.maxWorldY(level) - 2, center.getY() + 6);
 
             for (int x = -r; x <= r; x++) {
                for (int z = -r; z <= r; z++) {
@@ -1136,7 +1137,7 @@ public final class RenderExtras {
       private int wait;
 
       public VoidEsp() {
-         super("Void ESP", "Highlight holes in the bedrock that drop into the void.", Category.RENDER);
+         super("Void ESP", "Highlight open holes in bedrock leading into the void.", Category.RENDER);
       }
 
       @Override
@@ -1155,7 +1156,7 @@ public final class RenderExtras {
             if (level.dimension() != Level.END) {
                int r = this.radius.intValue();
                BlockPos center = player.blockPosition();
-               int floor = level.getMinY();
+               int floor = VersionBridge.minWorldY(level);
                MutableBlockPos cursor = new MutableBlockPos();
 
                for (int x = -r; x <= r; x++) {

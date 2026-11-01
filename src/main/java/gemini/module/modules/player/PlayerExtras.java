@@ -82,7 +82,7 @@ public final class PlayerExtras {
       private int wait;
 
       public AntiAfk() {
-         super("AntiAFK", "Perform subtle movements and arm swings periodically so servers do not kick you for idling.", Category.PLAYER);
+         super("AntiAFK", "Periodically move and swing to prevent AFK kicks.", Category.PLAYER);
       }
 
       @Override
@@ -102,7 +102,7 @@ public final class PlayerExtras {
       private final NumberSetting durability = this.addSetting(
          new NumberSetting("Durability", "Protect items with this many uses left or fewer", 10.0, 1.0, 100.0, 1.0)
       );
-      private final BooleanSetting tools = this.addSetting(new BooleanSetting("Held Items", "Move a nearly broken held item out of the hotbar slot", true));
+      private final BooleanSetting tools = this.addSetting(new BooleanSetting("Held Items", "Move a nearly broken held item out of the hotbar", true));
       private final BooleanSetting armor = this.addSetting(new BooleanSetting("Armor", "Take off armor that is about to break", true));
       private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say which item was saved", true));
 
@@ -176,7 +176,7 @@ public final class PlayerExtras {
       private int pickupTicks;
 
       public AutoClutch() {
-         super("AutoClutch", "Automatically perform an MLG water bucket, cobweb, slime, or hay bale clutch before hitting the ground.", Category.PLAYER);
+         super("AutoClutch", "Auto MLG clutch with water, cobweb, slime, or hay.", Category.PLAYER);
       }
 
       @Override
@@ -276,7 +276,7 @@ public final class PlayerExtras {
          new BooleanSetting("Include Armor", "Also pull worn armor into the offhand while it mends", false)
       );
       private final BooleanSetting restore = this.addSetting(
-         new BooleanSetting("Restore Offhand", "Put the original offhand item back when everything is repaired", true)
+         new BooleanSetting("Restore Offhand", "Put the original offhand item back when everything", true)
       );
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between swaps", 10.0, 1.0, 60.0, 1.0));
       private ItemStack original = ItemStack.EMPTY;
@@ -285,7 +285,7 @@ public final class PlayerExtras {
       private int wait;
 
       public AutoMend() {
-         super("Auto Mend", "Move damaged Mending gear into your offhand until it is repaired.", Category.PLAYER);
+         super("Auto Mend", "Swap damaged Mending gear to offhand to repair.", Category.PLAYER);
       }
 
       @Override
@@ -405,7 +405,7 @@ public final class PlayerExtras {
       private boolean wasOnGround = true;
 
       public AutoWindCharge() {
-         super("AutoWindCharge", "Automatically aim downward in packets and fire a Wind Charge when you jump.", Category.PLAYER);
+         super("AutoWindCharge", "Fire a Wind Charge downward when jumping.", Category.PLAYER);
       }
 
       @Override
@@ -435,7 +435,7 @@ public final class PlayerExtras {
       private boolean flushing;
 
       public Blink() {
-         super("Blink", "Suspend outgoing movement packets to teleport from your frozen position on disable.", Category.PLAYER);
+         super("Blink", "Queue movement packets and flush them on disable.", Category.PLAYER);
       }
 
       @Override
@@ -498,7 +498,7 @@ public final class PlayerExtras {
 
    public static final class Eagle extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Edge sneaks only at drops; Always sneaks whenever there is nothing below", "Edge", "Edge", "Always")
+         new ModeSetting("Mode", "Edge sneaks at drops; Always sneaks over air", "Edge", "Edge", "Always")
       );
       private final NumberSetting lookAhead = this.addSetting(
          new NumberSetting("Look Ahead", "How far past your hitbox counts as the edge", 0.3, 0.05, 0.6, 0.05)
@@ -572,7 +572,7 @@ public final class PlayerExtras {
       private int wait;
 
       public FastUse() {
-         super("FastUse", "Rapidly use throwables, experience bottles, and blocks while holding right-click.", Category.PLAYER);
+         super("FastUse", "Use throwables and XP bottles rapidly on right-click.", Category.PLAYER);
       }
 
       @Override
@@ -582,7 +582,13 @@ public final class PlayerExtras {
             this.wait = this.delay.intValue();
             LocalPlayer player = client.player;
             ItemStack main = player.getMainHandItem();
-            if (main.is(Items.EXPERIENCE_BOTTLE) || main.is(Items.SNOWBALL) || main.is(Items.EGG) || main.is(Items.WIND_CHARGE)) {
+            if (main.is(Items.EXPERIENCE_BOTTLE)
+               || main.is(Items.SNOWBALL)
+               || main.is(Items.EGG)
+               || main.is(Items.WIND_CHARGE)
+               || main.is(Items.ENDER_PEARL)
+               || main.is(Items.SPLASH_POTION)
+               || main.is(Items.LINGERING_POTION)) {
                client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
             }
          }
@@ -594,7 +600,7 @@ public final class PlayerExtras {
       private boolean wasDown;
 
       public GhostHand() {
-         super("GhostHand", "Open chests, shulker boxes, and ender chests through solid walls.", Category.PLAYER);
+         super("GhostHand", "Open containers through walls.", Category.PLAYER);
       }
 
       @Override
@@ -635,7 +641,7 @@ public final class PlayerExtras {
       private int wait;
 
       public HotbarSorter() {
-         super("HotbarSorter", "Automatically keep your sword, pickaxe, golden apples, and blocks in dedicated hotbar slots.", Category.PLAYER);
+         super("HotbarSorter", "Keep sword, pickaxe, gapples, and blocks sorted.", Category.PLAYER);
       }
 
       @Override
@@ -679,11 +685,11 @@ public final class PlayerExtras {
 
    public static final class InventoryCleaner extends Module {
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay Ticks", "Ticks between inventory clean actions", 3.0, 1.0, 20.0, 1.0));
-      private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Drop rotten flesh, dirt, seeds, and poisonous potatoes", true));
+      private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Drop rotten flesh, dirt, seeds, and poisonous", true));
       private int wait;
 
       public InventoryCleaner() {
-         super("InventoryCleaner", "Automatically organize your hotbar and drop junk items like LiquidBounce InvCleaner.", Category.PLAYER);
+         super("InventoryCleaner", "Clean junk items and organize your hotbar.", Category.PLAYER);
       }
 
       @Override
@@ -712,7 +718,19 @@ public final class PlayerExtras {
       }
 
       private static boolean isJunk(ItemStack s) {
-         return s.is(Items.ROTTEN_FLESH) || s.is(Items.POISONOUS_POTATO) || s.is(Items.WHEAT_SEEDS) || s.is(Items.DEAD_BUSH) || s.is(Items.BOWL);
+         if (s.isEmpty() || s.isEnchanted() || s.has(DataComponents.CUSTOM_NAME)) {
+            return false;
+         }
+         return s.is(Items.ROTTEN_FLESH)
+            || s.is(Items.POISONOUS_POTATO)
+            || s.is(Items.WHEAT_SEEDS)
+            || s.is(Items.BEETROOT_SEEDS)
+            || s.is(Items.DEAD_BUSH)
+            || s.is(Items.BOWL)
+            || s.is(Items.STRING)
+            || s.is(Items.SPIDER_EYE)
+            || s.is(Items.FEATHER)
+            || s.is(Items.FLINT);
       }
    }
 
@@ -721,7 +739,7 @@ public final class PlayerExtras {
       private final BooleanSetting water = this.addSetting(new BooleanSetting("Water Current", "Resist flowing water drift when standing still", true));
 
       public NoPush() {
-         super("NoPush", "Prevent entities and flowing water currents from pushing you around.", Category.PLAYER);
+         super("NoPush", "Prevent entities and water currents from pushing you.", Category.PLAYER);
       }
 
       @Override
@@ -750,7 +768,7 @@ public final class PlayerExtras {
       private boolean restorePending;
 
       public NoRotateSet() {
-         super("NoRotateSet", "Prevent server teleport packets from snapping your client camera rotation.", Category.PLAYER);
+         super("NoRotateSet", "Block server packets from snapping your camera.", Category.PLAYER);
       }
 
       @Override
@@ -779,7 +797,7 @@ public final class PlayerExtras {
 
    public static final class Phase extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Walk keeps you grounded; Full lets you float through anything", "Walk", "Walk", "Full")
+         new ModeSetting("Mode", "Walk keeps you grounded", "Walk", "Walk", "Full")
       );
       private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Movement speed while phasing", 0.2, 0.05, 1.0, 0.01));
       private final BooleanSetting disableOnDrop = this.addSetting(
@@ -787,7 +805,7 @@ public final class PlayerExtras {
       );
 
       public Phase() {
-         super("Phase", "No clip through blocks on servers without movement checks.", Category.PLAYER);
+         super("Phase", "No clip through blocks on servers without movement.", Category.PLAYER);
       }
 
       @Override
@@ -846,7 +864,7 @@ public final class PlayerExtras {
       private boolean eating;
 
       public SmartEat() {
-         super("SmartEat", "Prioritize Golden Apples when low on health and normal food when hungry.", Category.PLAYER);
+         super("SmartEat", "Eat Golden Apples when low on HP and food when hungry.", Category.PLAYER);
       }
 
       @Override
@@ -887,13 +905,13 @@ public final class PlayerExtras {
 
    public static final class Tower extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Vanilla jumps normally, Fast nudges you up every block", "Fast", "Vanilla", "Fast")
+         new ModeSetting("Mode", "Vanilla jumps normally, Fast nudges you up every", "Fast", "Vanilla", "Fast")
       );
       private final BooleanSetting requireJump = this.addSetting(new BooleanSetting("Hold Jump", "Only tower while jump is held", true));
       private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your arm on each placement", true));
 
       public Tower() {
-         super("Tower", "Build straight up by jumping and placing blocks underneath you.", Category.PLAYER);
+         super("Tower", "Build straight up by jumping and placing blocks.", Category.PLAYER);
       }
 
       @Override
