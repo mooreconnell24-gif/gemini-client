@@ -3,16 +3,19 @@
 
   # Gemini Client
 
-  **A next-generation Fabric utility client for Minecraft 26.2.**
+  **A next-generation Fabric utility / hacked client for Minecraft 26.2.**
 
   Built-in Baritone A* pathfinding · 236 modules · 33 draggable HUD widgets · glassmorphic ClickGUI
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
+  [![Modrinth](https://img.shields.io/badge/Modrinth-gemini--client-6d55c8?style=flat-square)](https://modrinth.com/project/gemini-client)
   [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [Build](#building-from-source) · [Report an issue](https://github.com/mooreconnell24-gif/gemini-client/issues)
+  [Download](https://modrinth.com/project/gemini-client) · [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [Build](#building-from-source) · [Report an issue](https://github.com/mooreconnell24-gif/gemini-client/issues)
+
+  _Keywords: Gemini Client, Minecraft 26.2, Fabric utility client, hacked client, utility mod, Baritone, auto-clicker, ESP, X-ray, scaffold, KillAura, 26.2 mod._
 </div>
 
 ---
@@ -90,7 +93,7 @@ The `.b <command>` form is also supported, for example `.b goto 1000 64 -200`.
 
 1. Install **Fabric Loader** for Minecraft **26.2**.
 2. Install **Fabric API** for 26.2 into your `mods` folder.
-3. Download [`gemini-2.0.0.jar`](gemini-2.0.0.jar) and place it in your `mods` folder.
+3. Download `gemini-2.0.0.jar` from [Modrinth](https://modrinth.com/project/gemini-client) (or grab [`gemini-2.0.0.jar`](gemini-2.0.0.jar) right from this repo) and place it in your `mods` folder.
 4. Launch the game with the Fabric profile.
 5. Press **Right Shift** to open the ClickGUI.
 
