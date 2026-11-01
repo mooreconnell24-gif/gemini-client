@@ -3,7 +3,7 @@
 	"id": "gemini",
 	"version": "${version}",
 	"name": "Gemini Client",
-	"description": "Fabric utility / sandbox client for Minecraft 26.2 with 269 modules, glassmorphic ClickGUI, draggable HUD, VersionBridge mechanics, and built-in Baritone 3D A* pathfinding.",
+	"description": "Multi-version Fabric utility / sandbox client (Minecraft 1.7.10 – 26.2+) with 269 modules, glassmorphic ClickGUI, draggable HUD, VersionBridge mechanics, and built-in Baritone 3D A* pathfinding.",
 	"authors": [
 		"Gemini Client"
 	],
@@ -26,9 +26,9 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.2",
-		"java": ">=25",
+		"fabricloader": "*",
+		"minecraft": "*",
+		"java": ">=17",
 		"fabric-api": "*"
 	},
 	"suggests": {
@@ -40,6 +40,6 @@
 	],
 	"custom": {
 		"gemini:baritone": "Hooks baritone.api.BaritoneAPI when present and ships a built-in 3D A* engine (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate, #sel, #thisway, #axis).",
-		"gemini:versions": "VersionBridge adapts combat and world rules across version profiles; GeminiMixinPlugin soft-loads version-sensitive mixins."
+		"gemini:versions": "Supports Minecraft 1.7.10 – 26.2+ via VersionBridge profiles, GeminiMixinPlugin soft injectors, and optional ViaFabricPlus protocol detection."
 	}
 }
