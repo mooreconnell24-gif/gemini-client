@@ -1,0 +1,33 @@
+{
+	"required": true,
+	"package": "gemini.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"BlockMixin",
+		"BlockStateBaseMixin",
+		"CameraMixin",
+		"ChatComponentMixin",
+		"ClientCommonPacketListenerImplMixin",
+		"ClientLevelMixin",
+		"ClientPacketListenerMixin",
+		"EntityMixin",
+		"EntityRendererMixin",
+		"FluidRendererMixin",
+		"FramerateLimitTrackerMixin",
+		"HudMixin",
+		"LiquidBlockMixin",
+		"LivingEntityMixin",
+		"LocalPlayerMixin",
+		"MinecraftMixin",
+		"MultiPlayerGameModeMixin",
+		"PacketProcessorMixin",
+		"ParticleEngineMixin",
+		"PlayerMixin",
+		"ScreenEffectRendererMixin",
+		"SectionCompilerMixin",
+		"SoundEngineMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

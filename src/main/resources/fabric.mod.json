@@ -1,33 +1,37 @@
 {
-  "schemaVersion": 1,
-  "id": "gemini_client",
-  "version": "${version}",
-  "name": "Gemini Client",
-  "description": "A multiplayer-safe Fabric client mod with better utilities, keybinds, and command support.",
-  "authors": [
-    "mooreconnell24-gif"
-  ],
-  "contact": {
-    "homepage": "https://github.com/mooreconnell24-gif/gemini-client",
-    "sources": "https://github.com/mooreconnell24-gif/gemini-client"
-  },
-  "license": "MIT",
-  "environment": "*",
-  "entrypoints": {
-    "main": [
-      "com.mooreconnell24.geminiclient.GeminiClient"
-    ],
-    "client": [
-      "com.mooreconnell24.geminiclient.client.GeminiClientMod"
-    ]
-  },
-  "depends": {
-    "fabricloader": ">=0.16.0",
-    "minecraft": "~1.21.1",
-    "java": ">=21",
-    "fabric": "*"
-  },
-  "custom": {
-    "fabric-api:module-lifecycle": "*"
-  }
+	"schemaVersion": 1,
+	"id": "gemini",
+	"version": "2.0.0",
+	"name": "Gemini Client",
+	"description": "LiquidBounce Nextgen-inspired Fabric utility client with 230+ modules, glassmorphic ClickGUI, draggable HUD, and a built-in Baritone A* pathfinding & automation engine.",
+	"authors": [
+		"Gemini Client"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/gemini/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"gemini.Gemini"
+		]
+	},
+	"mixins": [
+		{
+			"config": "gemini.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"provides": [
+		"baritone"
+	],
+	"custom": {
+		"gemini:baritone": "Built-in Baritone 3D A* pathfinding and automation engine included natively (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate)."
+	}
 }

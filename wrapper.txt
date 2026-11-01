@@ -1,3 +1,0 @@
-# Gradle wrapper is intentionally omitted for this scaffold. Run:
-# ./gradlew setupDecompWorkspace
-# or open in IntelliJ and let Gradle generate the wrapper.
