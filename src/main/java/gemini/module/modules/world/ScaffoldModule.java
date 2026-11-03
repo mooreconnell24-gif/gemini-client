@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.util.Hands;
@@ -220,7 +221,7 @@ public final class ScaffoldModule extends Module {
 
             client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, plan.hit);
             if (this.swing.get()) {
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.interact(player, InteractionHand.MAIN_HAND);
             }
 
             if (this.keepSlot.get() && previous != slot) {

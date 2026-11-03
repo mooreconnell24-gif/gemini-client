@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
+
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -183,7 +185,7 @@ public final class AutoBlockModule extends Module {
 
    private void noteAttackCycle(LivingEntity living) {
       int since = this.sinceAttack.get(living.getId());
-      if (living.swinging && living.swingTime <= 1) {
+      if (Swing.isSwinging(living) && Swing.ticks(living) <= 1) {
          this.sinceAttack.put(living.getId(), 0);
       } else if (since < 0) {
          this.sinceAttack.put(living.getId(), 0);
@@ -201,7 +203,7 @@ public final class AutoBlockModule extends Module {
          } else if (this.mode.is("Range")) {
             return true;
          } else if (this.mode.is("Smart")) {
-            return living.swinging && living.swingTime <= 2;
+            return Swing.isSwinging(living) && Swing.ticks(living) <= 2;
          } else {
             int since = this.sinceAttack.get(mob.getId());
             if (since < 0) {
@@ -209,7 +211,7 @@ public final class AutoBlockModule extends Module {
             } else {
                int phase = since % 20;
                int windowStart = 20 - early;
-               return phase < windowStart && phase > 2 ? living.swinging && living.swingTime <= 2 : true;
+               return phase < windowStart && phase > 2 ? Swing.isSwinging(living) && Swing.ticks(living) <= 2 : true;
             }
          }
       } else if (living instanceof Player attacker) {
@@ -218,13 +220,13 @@ public final class AutoBlockModule extends Module {
          } else if (this.mode.is("Range")) {
             return Targets.reach(player, attacker) <= this.range.get();
          } else if (this.mode.is("Smart")) {
-            return attacker.swinging && attacker.swingTime <= 2;
+            return Swing.isSwinging(attacker) && Swing.ticks(attacker) <= 2;
          } else {
             float strength = attacker.getAttackStrengthScale(0.0F);
-            return strength >= 0.85F ? true : attacker.swinging && attacker.swingTime <= 2;
+            return strength >= 0.85F ? true : Swing.isSwinging(attacker) && Swing.ticks(attacker) <= 2;
          }
       } else {
-         return living.swinging && living.swingTime <= 2 && Targets.visible(player, living);
+         return Swing.isSwinging(living) && Swing.ticks(living) <= 2 && Targets.visible(player, living);
       }
    }
 

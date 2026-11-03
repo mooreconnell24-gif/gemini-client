@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -57,7 +58,7 @@ public final class AutoSleep extends Module {
             if (best != null && RotationManager.request(player, RotationManager.toward(player, best), 0.0F, this.rotate.get(), ActionPriority.WORLD_UTILITY)) {
                Vec3 hit = Vec3.atCenterOf(best).add(0.0, 0.5, 0.0);
                client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, best, false));
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.interact(player, InteractionHand.MAIN_HAND);
             }
          }
       }

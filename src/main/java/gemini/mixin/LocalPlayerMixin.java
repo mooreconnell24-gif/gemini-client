@@ -1,8 +1,11 @@
 package gemini.mixin;
 
 import gemini.module.modules.player.LiquidInteract;
+import gemini.module.modules.render.NoRenderModule;
 import gemini.util.MoveUtil;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,5 +33,19 @@ public abstract class LocalPlayerMixin {
    )
    private void gemini$interpolateMovement(CallbackInfo ci) {
       MoveUtil.tickInterpolation((LocalPlayer)(Object)this);
+   }
+
+   /** Hides the totem-of-undying pop. In Minecraft 26.3 this moved from the screen-effect renderer to LocalPlayer. */
+   @Inject(
+      method = {"displayItemActivation"},
+      at = {@At("HEAD")},
+      cancellable = true,
+      require = 0
+   )
+   private void gemini$noTotemPop(ItemStack stack, CallbackInfo ci) {
+      NoRenderModule module = NoRenderModule.running();
+      if (module != null && module.hideTotem() && stack.is(Items.TOTEM_OF_UNDYING)) {
+         ci.cancel();
+      }
    }
 }

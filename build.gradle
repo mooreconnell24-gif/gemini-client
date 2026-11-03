@@ -56,3 +56,22 @@ jar {
 		rename { "${it}_$projectName" }
 	}
 }
+
+// Fabric API jars for the production smoke test (not part of the mod).
+configurations {
+	prodRuntimeMods {
+		transitive = false
+	}
+}
+
+dependencies {
+	prodRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// Launches the built jar (with its bundled Baritone) in a production-style Fabric install.
+// CI uses it as a smoke test: ./gradlew prodClient
+tasks.register("prodClient", net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+	mods.from(configurations.prodRuntimeMods)
+	runDir = file("run-prod")
+	useXVFB = true
+}

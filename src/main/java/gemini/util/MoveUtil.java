@@ -1,5 +1,6 @@
 package gemini.util;
 
+import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.platform.InputConstants.Type;
@@ -11,7 +12,6 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.glfw.GLFW;
 
 public final class MoveUtil {
    public static final double WALK_SPEED = 0.2158;
@@ -147,10 +147,15 @@ public final class MoveUtil {
       try {
          String spec = mapping.saveString();
          Key key = InputConstants.getKey(spec);
-         if (key.getType() == Type.KEYSYM) {
-            return InputConstants.isKeyDown(client.getWindow(), key.getValue());
-         } else if (spec.startsWith("key.mouse.")) {
-            return GLFW.glfwGetMouseButton(client.getWindow().handle(), key.getValue()) == 1;
+         if (key.getType() == Type.KEYBOARD) {
+            return InputConstants.isKeyDown(key.getValue());
+         } else if (key.getType() == Type.MOUSE) {
+            return switch (key.getValue()) {
+               case Keys.MOUSE_LEFT -> client.mouseHandler.isLeftPressed();
+               case Keys.MOUSE_RIGHT -> client.mouseHandler.isRightPressed();
+               case Keys.MOUSE_MIDDLE -> client.mouseHandler.isMiddlePressed();
+               default -> mapping.isDown();
+            };
          } else {
             return false;
          }

@@ -8,7 +8,7 @@ import net.minecraft.resources.Identifier;
 
 public final class GeminiKeys {
    public static final Category CATEGORY = Category.register(Identifier.fromNamespaceAndPath("gemini", "main"));
-   public static final KeyMapping OPEN_GUI = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.gemini.open_gui", Type.KEYSYM, 344, CATEGORY));
+   public static final KeyMapping OPEN_GUI = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.gemini.open_gui", Type.KEYBOARD, Keys.RIGHT_SHIFT, CATEGORY));
 
    private GeminiKeys() {
    }
@@ -20,6 +20,6 @@ public final class GeminiKeys {
    }
 
    public static String displayName(int keyCode) {
-      return keyCode != -1 && keyCode != 0 ? Type.KEYSYM.getOrCreate(keyCode).getDisplayName().getString() : "NONE";
+      return keyCode != -1 && keyCode != 0 ? Type.KEYBOARD.getOrCreate(keyCode).getDisplayName().getString() : "NONE";
    }
 }

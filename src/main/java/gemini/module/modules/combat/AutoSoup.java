@@ -50,7 +50,7 @@ public final class AutoSoup extends Module {
          }
 
          if (this.dropBowl.get() && player.getMainHandItem().is(Items.BOWL)) {
-            player.drop(true);
+            client.gameMode.dropItem(player, true);
          }
 
          this.finish(client);

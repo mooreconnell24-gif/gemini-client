@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -24,7 +25,7 @@ public final class AutoSign extends Module {
    @Override
    public boolean onSendPacket(Packet<?> packet) {
       if (packet instanceof ServerboundSignUpdatePacket sign) {
-         if (!sign.isFrontText() && !this.backToo.get()) {
+         if (sign.slot() != SignTextSlot.FRONT && !this.backToo.get()) {
             return false;
          } else {
             Minecraft client = Minecraft.getInstance();
@@ -32,7 +33,7 @@ public final class AutoSign extends Module {
                return false;
             } else {
                client.getConnection()
-                  .send(new ServerboundSignUpdatePacket(sign.getPos(), sign.isFrontText(), this.line(0), this.line(1), this.line(2), this.line(3)));
+                  .send(new ServerboundSignUpdatePacket(sign.pos(), List.of(this.line(0), this.line(1), this.line(2), this.line(3)), sign.slot()));
                return true;
             }
          }

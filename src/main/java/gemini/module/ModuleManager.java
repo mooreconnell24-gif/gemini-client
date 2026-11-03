@@ -806,7 +806,7 @@ public final class ModuleManager {
          if (!(module instanceof ClickGuiModule)) {
             int key = module.getKeybind();
             if (key != -1 && key != 0) {
-               boolean pressed = InputConstants.isKeyDown(client.getWindow(), key);
+               boolean pressed = InputConstants.isKeyDown(key);
                boolean wasPressed = this.previousKeyState.getOrDefault(key, false);
                seen.add(key);
                if (module.isHoldBind()) {
@@ -823,7 +823,7 @@ public final class ModuleManager {
       }
 
       for (int key : seen) {
-         this.previousKeyState.put(key, InputConstants.isKeyDown(client.getWindow(), key));
+         this.previousKeyState.put(key, InputConstants.isKeyDown(key));
       }
 
       this.previousKeyState.keySet().removeIf(keyx -> !seen.contains(keyx));

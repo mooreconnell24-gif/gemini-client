@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -73,7 +74,7 @@ public final class ChestAura extends Module {
             } else {
                Vec3 hit = Vec3.atCenterOf(best).add(0.0, 0.5, 0.0);
                client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, best, false));
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.interact(player, InteractionHand.MAIN_HAND);
                this.opened.add(best);
             }
          }

@@ -52,7 +52,7 @@ public final class KeybindReport {
       } else {
          try {
             Key key = InputConstants.getKey(mapping.saveString());
-            return key.getType() == Type.KEYSYM ? key.getValue() : -1;
+            return key.getType() == Type.KEYBOARD ? key.getValue() : -1;
          } catch (RuntimeException var2) {
             return -1;
          }

@@ -1,5 +1,6 @@
 package gemini.ui.clickgui;
 
+import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import gemini.Gemini;
@@ -469,7 +470,7 @@ public final class ClickGuiScreen extends Screen {
          this.searchFocused = false;
 
          for (ClickGuiScreen.Chip chip : this.chips) {
-            if (event.button() == 0 && chip.contains(mx, my)) {
+            if (Keys.glfwButton(event.button()) == 0 && chip.contains(mx, my)) {
                this.runChip(chip);
                return true;
             }
@@ -478,12 +479,12 @@ public final class ClickGuiScreen extends Screen {
          String bindLabel = this.menuKeyLabel();
          int bindWidth = this.font.width(bindLabel) + 18;
          int bindY = this.vh - 30 + 4;
-         if (event.button() == 0 && mx >= 14.0 && mx <= 14 + bindWidth && my >= bindY && my <= bindY + 18) {
+         if (Keys.glfwButton(event.button()) == 0 && mx >= 14.0 && mx <= 14 + bindWidth && my >= bindY && my <= bindY + 18) {
             this.bindingMenu = true;
             this.bindingModule = null;
             return true;
          } else {
-            if (event.button() == 0 && (this.hudEditMode || isShiftDown())) {
+            if (Keys.glfwButton(event.button()) == 0 && (this.hudEditMode || isShiftDown())) {
                HudModule hud = Gemini.getInstance().modules().byClass(HudModule.class).orElse(null);
                float hudScale = hud == null ? 1.0F : hud.scale();
                double hudMx = rawEvent.x() / hudScale;
@@ -590,7 +591,7 @@ public final class ClickGuiScreen extends Screen {
    }
 
    public boolean mouseDragged(MouseButtonEvent rawEvent, double deltaX, double deltaY) {
-      if (this.draggingWidget != null && rawEvent.button() == 0) {
+      if (this.draggingWidget != null && Keys.glfwButton(rawEvent.button()) == 0) {
          HudModule hud = Gemini.getInstance().modules().byClass(HudModule.class).orElse(null);
          ClickGuiModule style = this.style();
          float hudScale = hud == null ? 1.0F : hud.scale();
@@ -641,7 +642,7 @@ public final class ClickGuiScreen extends Screen {
 
    public boolean keyPressed(KeyEvent event) {
       if (this.bindingMenu) {
-         if (event.key() != 256) {
+         if (event.key() != Keys.ESCAPE) {
             GeminiKeys.OPEN_GUI.setKey(InputConstants.getKey(event));
             KeyMapping.resetMapping();
             this.minecraft.options.save();
@@ -651,11 +652,11 @@ public final class ClickGuiScreen extends Screen {
          this.bindingMenu = false;
          return true;
       } else if (this.bindingModule != null) {
-         if (event.key() == 256) {
+         if (event.key() == Keys.ESCAPE) {
             this.bindingModule = null;
             return true;
          } else {
-            if (event.key() != 261 && event.key() != 259) {
+            if (event.key() != Keys.DELETE && event.key() != Keys.BACKSPACE) {
                this.bindingModule.setKeybind(event.key());
                String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.bindingModule, event.key());
                if (clash != null) {
@@ -668,17 +669,17 @@ public final class ClickGuiScreen extends Screen {
             this.bindingModule = null;
             return true;
          }
-      } else if (event.key() != 256 || !this.searchFocused && this.search.isEmpty()) {
-         if (GeminiKeys.OPEN_GUI.matches(event) || event.key() == 256) {
+      } else if (event.key() != Keys.ESCAPE || !this.searchFocused && this.search.isEmpty()) {
+         if (GeminiKeys.OPEN_GUI.matches(event) || event.key() == Keys.ESCAPE) {
             this.onClose();
             return true;
-         } else if (event.key() == 70 && isCtrlDown()) {
+         } else if (event.key() == Keys.F && isCtrlDown()) {
             this.searchFocused = true;
             return true;
-         } else if (event.key() == 257 || event.key() == 335) {
+         } else if (Keys.isEnter(event.key())) {
             this.searchFocused = false;
             return true;
-         } else if (event.key() == 259 && !this.search.isEmpty()) {
+         } else if (event.key() == Keys.BACKSPACE && !this.search.isEmpty()) {
             this.searchFocused = true;
             this.search = this.search.substring(0, this.search.length() - 1);
             return true;
@@ -743,12 +744,12 @@ public final class ClickGuiScreen extends Screen {
 
    private static boolean isShiftDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 340) || InputConstants.isKeyDown(window, 344);
+      return InputConstants.isKeyDown(Keys.LEFT_SHIFT) || InputConstants.isKeyDown(Keys.RIGHT_SHIFT);
    }
 
    private static boolean isCtrlDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 341) || InputConstants.isKeyDown(window, 345);
+      return InputConstants.isKeyDown(Keys.LEFT_CONTROL) || InputConstants.isKeyDown(Keys.RIGHT_CONTROL);
    }
 
    private static boolean inside(double mx, double my, int x, int y, int w, int h) {

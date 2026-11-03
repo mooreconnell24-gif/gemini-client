@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -35,7 +36,7 @@ public final class TriggerBot extends Module {
             Entity hit = ((EntityHitResult)client.hitResult).getEntity();
             if (Targets.isCandidate(player, hit, this.players.get(), this.mobs.get(), false, true)) {
                client.gameMode.attack(player, hit);
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(player, InteractionHand.MAIN_HAND);
             }
          }
       }

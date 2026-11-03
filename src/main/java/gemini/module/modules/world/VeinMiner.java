@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -109,7 +110,7 @@ public final class VeinMiner extends Module {
          LocalPlayer player = client.player;
          ClientLevel level = client.level;
          boolean attacking = client.options.keyAttack.isDown();
-         boolean justBroke = attacking || player.swinging;
+         boolean justBroke = attacking || Swing.isSwinging(player);
          if (this.watchedPos != null && justBroke && this.queue.isEmpty() && this.current == null && level.getBlockState(this.watchedPos).isAir()) {
             this.follow(level, player, this.watchedPos, this.watchedKey);
          }
@@ -173,7 +174,7 @@ public final class VeinMiner extends Module {
                BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, WorldHelpers.faceToward(player, this.current));
                if (this.swing.get()) {
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.attack(player, InteractionHand.MAIN_HAND);
                }
 
                return;
@@ -204,7 +205,7 @@ public final class VeinMiner extends Module {
          }
 
          if (this.swing.get()) {
-            player.swing(InteractionHand.MAIN_HAND);
+            Swing.attack(player, InteractionHand.MAIN_HAND);
          }
       }
    }

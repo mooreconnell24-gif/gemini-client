@@ -100,7 +100,7 @@ public final class BlockPlacer {
 
                InteractionResult result = client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
                if (swing) {
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.interact(player, InteractionHand.MAIN_HAND);
                }
 
                if (restoreSlot && slot != previous) {

@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -11,7 +12,7 @@ public final class ZoomModule extends Module {
    private float current = 1.0F;
 
    public ZoomModule() {
-      super("Zoom", "Optic zoom. Bind it to a key and hold it.", Category.RENDER, 67);
+      super("Zoom", "Optic zoom. Bind it to a key and hold it.", Category.RENDER, Keys.fromGlfw('C'));
       this.holdByDefault();
    }
 

@@ -1,5 +1,7 @@
 package gemini.util;
 
+import net.fabricmc.loader.api.ModContainer;
+import java.util.Optional;
 import gemini.Gemini;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
@@ -26,6 +28,8 @@ import net.minecraft.world.level.block.Block;
  */
 public final class BaritoneBridge {
    public static final String MOD_ID = "baritone";
+   /** Mod ids Baritone builds register under: upstream uses "baritone", the 26.3 fork bundled with Gemini uses "baritone-fork". */
+   private static final String[] MOD_IDS = {MOD_ID, "baritone-fork"};
    private static final double PAUSE_PRIORITY = 5.0;
    private static final long REPROBE_NANOS = 5_000_000_000L;
    private static final Set<String> PAUSE_REASONS = ConcurrentHashMap.newKeySet();
@@ -43,13 +47,24 @@ public final class BaritoneBridge {
    private BaritoneBridge() {
    }
 
+   private static Optional<ModContainer> container() {
+      for (String id : MOD_IDS) {
+         Optional<ModContainer> found = FabricLoader.getInstance().getModContainer(id);
+         if (found.isPresent()) {
+            return found;
+         }
+      }
+
+      return Optional.empty();
+   }
+
    /** Whether the Baritone mod is in the mods folder at all (cheap, cached). */
    public static boolean modInstalled() {
       Boolean cached = modLoaded;
       if (cached == null) {
          boolean present;
          try {
-            present = FabricLoader.getInstance().getModContainer(MOD_ID).isPresent();
+            present = container().isPresent();
          } catch (Throwable ignored) {
             present = false;
          }
@@ -64,7 +79,7 @@ public final class BaritoneBridge {
    /** The installed Baritone's version, or null without it. */
    public static String installedVersion() {
       try {
-         return FabricLoader.getInstance().getModContainer(MOD_ID).map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null);
+         return container().map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null);
       } catch (Throwable ignored) {
          return null;
       }

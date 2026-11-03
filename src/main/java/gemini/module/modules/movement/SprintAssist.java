@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -12,7 +13,7 @@ public final class SprintAssist extends Module {
    private final BooleanSetting whileUsing = this.addSetting(new BooleanSetting("While Using", "Keep sprinting while using an item", false));
 
    public SprintAssist() {
-      super("Sprint", "Sprint automatically while moving.", Category.MOVEMENT, 86);
+      super("Sprint", "Sprint automatically while moving.", Category.MOVEMENT, Keys.fromGlfw('V'));
    }
 
    @Override

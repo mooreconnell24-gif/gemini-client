@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -139,7 +140,7 @@ public final class KillAura extends Module {
 
                      boolean wasSprinting = player.isSprinting();
                      client.gameMode.attack(player, this.currentTarget);
-                     player.swing(InteractionHand.MAIN_HAND);
+                     Swing.attack(player, InteractionHand.MAIN_HAND);
                      if (this.keepSprint.get() && wasSprinting && MoveUtil.hasInput(player)) {
                         player.setSprinting(true);
                      }

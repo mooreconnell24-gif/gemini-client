@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -37,7 +38,7 @@ public final class LawnMower extends Module {
                BlockState s = client.level.getBlockState(pos);
                if (this.shouldClear(s)) {
                   client.gameMode.startDestroyBlock(pos.immutable(), Direction.UP);
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.attack(player, InteractionHand.MAIN_HAND);
                   return;
                }
             }

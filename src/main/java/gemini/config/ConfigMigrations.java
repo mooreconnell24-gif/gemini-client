@@ -1,5 +1,6 @@
 package gemini.config;
 
+import gemini.input.Keys;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -10,7 +11,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 5;
+   public static final int CURRENT_VERSION = 6;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -33,16 +34,45 @@ public final class ConfigMigrations {
    public static List<String> migrate(JsonObject root) {
       List<String> notes = new ArrayList<>();
       int from = versionOf(root);
-      if (root != null && from < 5) {
+      if (root != null && from < CURRENT_VERSION) {
          JsonObject modules = root.has("modules") && root.get("modules").isJsonObject() ? root.getAsJsonObject("modules") : null;
          if (modules != null && from < 5) {
             toV5(modules, notes);
          }
 
-         root.addProperty("version", 5);
+         if (modules != null && from < 6) {
+            toV6(modules, notes);
+         }
+
+         root.addProperty("version", CURRENT_VERSION);
          return notes;
       } else {
          return notes;
+      }
+   }
+
+   /** Minecraft 26.3 moved from GLFW key codes to SDL scancodes; convert saved module keybinds. */
+   private static void toV6(JsonObject modules, List<String> notes) {
+      int converted = 0;
+
+      for (Entry<String, JsonElement> entry : modules.entrySet()) {
+         if (entry.getValue().isJsonObject()) {
+            JsonObject module = entry.getValue().getAsJsonObject();
+            if (module.has("keybind") && module.get("keybind").isJsonPrimitive()) {
+               try {
+                  int old = module.get("keybind").getAsInt();
+                  if (old > 0) {
+                     module.addProperty("keybind", Keys.fromGlfw(old));
+                     converted++;
+                  }
+               } catch (RuntimeException ignored) {
+               }
+            }
+         }
+      }
+
+      if (converted > 0) {
+         notes.add("Converted " + converted + " keybinds to Minecraft 26.3 key codes");
       }
    }
 

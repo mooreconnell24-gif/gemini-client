@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.util.BlockPlacer;
 import gemini.util.Hands;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
@@ -57,7 +58,7 @@ public final class WorldHelpers {
 
          InteractionResult result = client.gameMode.interact(player, target, new EntityHitResult(target), InteractionHand.MAIN_HAND);
          if (swing) {
-            player.swing(InteractionHand.MAIN_HAND);
+            Swing.interact(player, InteractionHand.MAIN_HAND);
          }
 
          if (slot != previous) {
