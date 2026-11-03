@@ -27,14 +27,15 @@ jobs:
         if: success()
         continue-on-error: true
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 libgles2 > /dev/null
           mkdir -p run/mods /tmp/out
           if git fetch -q origin bundle-baritone 2>/dev/null; then
             git show FETCH_HEAD:gemini-3.0.0.jar > /tmp/bundled.jar && unzip -p /tmp/bundled.jar META-INF/jars/baritone-1.20.0.jar > run/mods/baritone-1.20.0.jar || true
           fi
           ls -la run/mods
-          export LIBGL_ALWAYS_SOFTWARE=1
-          (timeout 300 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient --no-configuration-cache > /tmp/out/client.log 2>&1; echo "exit $?" >> /tmp/out/client.log) || true
+          export LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEO_X11_FORCE_EGL=1 SDL_VIDEO_FORCE_EGL=1
+          glxinfo -B 2>/dev/null | head -5 || true
+          (timeout 300 xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClient --no-configuration-cache > /tmp/out/client.log 2>&1; echo "exit $?" >> /tmp/out/client.log) || true
           cp run/logs/latest.log /tmp/out/latest.log 2>/dev/null || true
           mkdir -p /tmp/out/crash && cp run/crash-reports/* /tmp/out/crash/ 2>/dev/null || true
           grep -E "Mixin apply|InvalidInjection|MixinTransformerError|crash|Sound engine started|Created: .*atlas|Exception" /tmp/out/client.log | head -40 || true
