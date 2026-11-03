@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.FastPlaceModule;
+import gemini.module.modules.player.FastPlaceModule;
 import gemini.util.SingleplayerGate;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;

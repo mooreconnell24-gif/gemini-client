@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.SafeWalkModule;
+import gemini.module.modules.movement.SafeWalkModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;

@@ -10,8 +10,8 @@ import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -101,7 +101,7 @@ public final class AutoBlockModule extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatModules.ready(client)) {
+      if (CombatHelpers.ready(client)) {
          LocalPlayer player = client.player;
          if ((this.workInGui.get() || client.gui.screen() == null) && !player.isCreative() && !player.isSpectator()) {
             this.tickCooldowns();

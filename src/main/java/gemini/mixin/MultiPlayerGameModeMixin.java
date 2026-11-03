@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.InstantMineModule;
+import gemini.module.modules.player.InstantMineModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;

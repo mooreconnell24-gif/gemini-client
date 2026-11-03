@@ -1,6 +1,6 @@
 package gemini.mixin;
 
-import gemini.module.modules.player.PlayerModules;
+import gemini.module.modules.player.LiquidInteract;
 import gemini.util.MoveUtil;
 import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,7 +20,7 @@ public abstract class LocalPlayerMixin {
       index = 2
    )
    private static boolean gemini$targetLiquids(boolean includeFluids) {
-      return includeFluids || PlayerModules.LiquidInteract.active();
+      return includeFluids || LiquidInteract.active();
    }
 
    @Inject(

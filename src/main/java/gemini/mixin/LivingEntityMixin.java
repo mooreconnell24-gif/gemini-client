@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.render.RenderExtras;
+import gemini.module.modules.render.Animations;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +19,7 @@ public abstract class LivingEntityMixin {
    )
    private void gemini$swingDuration(CallbackInfoReturnable<Integer> cir) {
       if (Gemini.getInstance() != null) {
-         int duration = RenderExtras.Animations.swingDuration((Entity)(Object)this);
+         int duration = Animations.swingDuration((Entity)(Object)this);
          if (duration > 0) {
             cir.setReturnValue(duration);
          }

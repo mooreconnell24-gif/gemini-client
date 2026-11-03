@@ -7,7 +7,7 @@ import gemini.input.GeminiKeys;
 import gemini.input.KeybindReport;
 import gemini.module.Category;
 import gemini.module.Module;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;

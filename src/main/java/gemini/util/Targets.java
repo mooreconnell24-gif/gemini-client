@@ -1,6 +1,6 @@
 package gemini.util;
 
-import gemini.module.modules.misc.MiscExtras;
+import gemini.module.modules.combat.Teams;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,7 +33,7 @@ public final class Targets {
          if (!players || player.isSpectator()) {
             return false;
          }
-         MiscExtras.Teams teams = MiscExtras.Teams.instance;
+         Teams teams = Teams.instance;
          if (teams != null && teams.isEnabled() && teams.isTeammate(self, player)) {
             return false;
          }

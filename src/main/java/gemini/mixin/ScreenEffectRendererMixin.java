@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import gemini.module.modules.NoRenderModule;
+import gemini.module.modules.render.NoRenderModule;
 import gemini.xray.XrayConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ScreenEffectRenderer;

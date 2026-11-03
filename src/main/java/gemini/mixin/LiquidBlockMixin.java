@@ -1,6 +1,6 @@
 package gemini.mixin;
 
-import gemini.module.modules.JesusModule;
+import gemini.module.modules.movement.JesusModule;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.LiquidBlock;

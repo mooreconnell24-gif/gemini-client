@@ -3,8 +3,11 @@ package gemini.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import gemini.Gemini;
-import gemini.module.modules.ZoomModule;
-import gemini.module.modules.render.CameraModules;
+import gemini.module.modules.render.CameraTweaks;
+import gemini.module.modules.render.Fov;
+import gemini.module.modules.render.FreeLook;
+import gemini.module.modules.render.Freecam;
+import gemini.module.modules.render.ZoomModule;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
@@ -36,7 +39,7 @@ public abstract class CameraMixin {
    private void gemini$fov(float partialTicks, CallbackInfoReturnable<Float> cir) {
       float fov = cir.getReturnValueF();
       boolean changed = false;
-      CameraModules.Fov custom = CameraModules.Fov.instance;
+      Fov custom = Fov.instance;
       if (custom != null && custom.isEnabled()) {
          fov = custom.apply(fov);
          changed = true;
@@ -64,7 +67,7 @@ public abstract class CameraMixin {
       )}
    )
    private float gemini$lookYaw(Entity entity, float partialTicks, Operation<Float> original) {
-      CameraModules.FreeLook look = CameraModules.FreeLook.instance;
+      FreeLook look = FreeLook.instance;
       return look != null && look.active() && entity == Minecraft.getInstance().player ? look.yaw() : (Float)original.call(new Object[]{entity, partialTicks});
    }
 
@@ -76,7 +79,7 @@ public abstract class CameraMixin {
       )}
    )
    private float gemini$lookPitch(Entity entity, float partialTicks, Operation<Float> original) {
-      CameraModules.FreeLook look = CameraModules.FreeLook.instance;
+      FreeLook look = FreeLook.instance;
       return look != null && look.active() && entity == Minecraft.getInstance().player
          ? look.pitch()
          : (Float)original.call(new Object[]{entity, partialTicks});
@@ -88,7 +91,7 @@ public abstract class CameraMixin {
       require = 0
    )
    private void gemini$freecam(float partialTicks, CallbackInfo ci) {
-      CameraModules.Freecam freecam = CameraModules.Freecam.instance;
+      Freecam freecam = Freecam.instance;
       if (freecam != null && freecam.active()) {
          this.setRotation(freecam.yaw(), freecam.pitch());
          this.setPosition(freecam.x(partialTicks), freecam.y(partialTicks), freecam.z(partialTicks));
@@ -105,7 +108,7 @@ public abstract class CameraMixin {
       index = 0
    )
    private float gemini$distance(float vanilla) {
-      CameraModules.CameraTweaks tweaks = CameraModules.CameraTweaks.instance;
+      CameraTweaks tweaks = CameraTweaks.instance;
       return tweaks != null && tweaks.isEnabled() ? tweaks.distanceOr(vanilla) : vanilla;
    }
 
@@ -116,7 +119,7 @@ public abstract class CameraMixin {
       require = 0
    )
    private void gemini$clip(float distance, CallbackInfoReturnable<Float> cir) {
-      CameraModules.CameraTweaks tweaks = CameraModules.CameraTweaks.instance;
+      CameraTweaks tweaks = CameraTweaks.instance;
       if (tweaks != null && tweaks.isEnabled() && tweaks.clips()) {
          cir.setReturnValue(distance);
       }
