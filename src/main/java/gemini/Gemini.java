@@ -65,6 +65,7 @@ public final class Gemini implements ClientModInitializer {
          }
 
          this.moduleManager.onEndTick(client);
+         this.configManager.tick();
       });
       ClientSendMessageEvents.ALLOW_CHAT.register((AllowChat)message -> {
          if (message != null && (message.startsWith(".") || message.startsWith("#")) && !CommandManager.rawSending()) {
@@ -92,6 +93,7 @@ public final class Gemini implements ClientModInitializer {
       ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)client -> {
          this.moduleManager.shutdown();
          this.configManager.save();
+         this.configManager.flush();
       });
       LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", VERSION);
    }

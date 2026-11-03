@@ -42,8 +42,13 @@ public final class ConfigManager {
    private final Path configPath;
    private final Path profileDir;
    private final Map<String, ConfigManager.PanelState> panels = new LinkedHashMap<>();
+   private static final long SAVE_QUIET_MS = 750L;
+   private static final long SAVE_MAX_DELAY_MS = 5000L;
    private boolean suppressAutosave;
    private boolean savingPaused;
+   private boolean dirty;
+   private long dirtySince;
+   private long lastChange;
 
    public ConfigManager(ModuleManager moduleManager) {
       this.moduleManager = moduleManager;
@@ -317,8 +322,36 @@ public final class ConfigManager {
       this.savingPaused = paused;
    }
 
+   /**
+    * Marks the config as changed. The file is written by {@link #tick()} once changes stop for a moment,
+    * so dragging a slider or a HUD widget no longer rewrites the whole config on every mouse event.
+    */
    public void save() {
       if (!this.suppressAutosave && !this.savingPaused) {
+         long now = System.currentTimeMillis();
+         if (!this.dirty) {
+            this.dirtySince = now;
+         }
+
+         this.dirty = true;
+         this.lastChange = now;
+      }
+   }
+
+   /** Called every client tick: writes pending changes after a short quiet period (and at least every few seconds). */
+   public void tick() {
+      if (this.dirty) {
+         long now = System.currentTimeMillis();
+         if (now - this.lastChange >= SAVE_QUIET_MS || now - this.dirtySince >= SAVE_MAX_DELAY_MS || now < this.lastChange) {
+            this.flush();
+         }
+      }
+   }
+
+   /** Writes pending changes to disk right away. */
+   public void flush() {
+      if (this.dirty && !this.suppressAutosave && !this.savingPaused) {
+         this.dirty = false;
          JsonObject root = new JsonObject();
          root.addProperty("version", 5);
          root.addProperty("menuKey", GeminiKeys.OPEN_GUI.saveString());

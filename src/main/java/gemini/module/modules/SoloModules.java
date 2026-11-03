@@ -286,8 +286,11 @@ public final class SoloModules {
                   if (isSlimeChunk(this.seed, x, z)) {
                      BlockPos mark = new BlockPos(x * 16 + 8, floor, z * 16 + 8);
                      Render3D.floorMark(mark, 0.05, argb, true, true, 1.5F, 50, false);
+                     // Slimes spawn below y = 40 in slime chunks: outline that band, starting a little below you.
+                     int top = 40;
+                     int bottom = Math.max(VersionBridge.minWorldY(client.level), Math.min(floor - 2, top - 1));
                      Render3D.box(
-                        new AABB(x * 16, Math.max(VersionBridge.minWorldY(client.level), floor - 2), z * 16, x * 16 + 16, Math.min(40, floor + 1), z * 16 + 16),
+                        new AABB(x * 16, bottom, z * 16, x * 16 + 16, top, z * 16 + 16),
                         argb,
                         true,
                         false,

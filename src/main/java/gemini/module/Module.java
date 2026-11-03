@@ -22,8 +22,8 @@ public abstract class Module {
    private final String description;
    private final Category category;
    private final List<Setting<?>> settings = new ArrayList<>();
-   private final ModeSetting bindMode = new ModeSetting(
-      "Bind Mode", "Toggle flips the module", "Toggle", "Toggle", "Hold"
+   private ModeSetting bindMode = new ModeSetting(
+      "Bind Mode", "Toggle flips the module; Hold keeps it on only while the key is down", "Toggle", "Toggle", "Hold"
    );
    private final BooleanSetting listed = new BooleanSetting("Show In List", "Show this module in the HUD module list", true);
    private List<Setting<?>> exposedSettings;
@@ -41,6 +41,14 @@ public abstract class Module {
       this.description = description;
       this.category = category;
       this.keybind = keybind == 0 ? -1 : keybind;
+   }
+
+   /** For modules meant to be held (Zoom, Freelook...): their key bind defaults to Hold instead of Toggle. */
+   protected final void holdByDefault() {
+      this.bindMode = new ModeSetting(
+         "Bind Mode", "Toggle flips the module; Hold keeps it on only while the key is down", "Hold", "Toggle", "Hold"
+      );
+      this.exposedSettings = null;
    }
 
    public final <T extends Setting<?>> T addSetting(T setting) {
@@ -140,7 +148,7 @@ public abstract class Module {
    }
 
    public String blockedReason() {
-      return SingleplayerGate.allowed() ? null : SingleplayerGate.denialMessage();
+      return SingleplayerGate.allowed() ? "§b" + this.name + " §7can't be turned on right now." : SingleplayerGate.denialMessage();
    }
 
    public final void toggle() {

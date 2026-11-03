@@ -12,6 +12,7 @@ public final class ZoomModule extends Module {
 
    public ZoomModule() {
       super("Zoom", "Optic zoom. Bind it to a key and hold it.", Category.RENDER, 67);
+      this.holdByDefault();
    }
 
    @Override

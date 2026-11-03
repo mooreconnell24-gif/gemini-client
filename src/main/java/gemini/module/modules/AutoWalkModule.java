@@ -3,6 +3,7 @@ package gemini.module.modules;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
+import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
@@ -17,9 +18,12 @@ public final class AutoWalkModule extends Module {
    @Override
    public void onDisable() {
       Minecraft client = Minecraft.getInstance();
-      client.options.keyUp.setDown(false);
-      if (this.sprint.get()) {
-         client.options.keySprint.setDown(false);
+      if (client.options != null) {
+         // Hand control back to the real keys so holding W while switching AutoWalk off keeps walking.
+         client.options.keyUp.setDown(MoveUtil.physicalKeyDown(client.options.keyUp));
+         if (this.sprint.get()) {
+            client.options.keySprint.setDown(MoveUtil.physicalKeyDown(client.options.keySprint));
+         }
       }
    }
 

@@ -176,7 +176,7 @@ public final class CombatExtras {
          if (CombatModules.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.NETHER && this.wait-- <= 0) {
             this.wait = this.delay.intValue();
             LocalPlayer player = client.player;
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), true);
             if (enemy != null) {
                BlockPos targetPos = enemy.blockPosition().above(2);
                if (!BlockPlacer.inReach(player, targetPos, this.range.get())) {
@@ -227,7 +227,9 @@ public final class CombatExtras {
                boolean aimed = RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), 0, 2.0F);
                if (aimed && this.wait-- <= 0) {
                   this.wait = this.delay.intValue();
-                  CombatExtras.withSlot(player, stack -> stack.is(Items.EXPERIENCE_BOTTLE), () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
+                  CombatExtras.withSlot(
+                     player, stack -> stack.is(Items.EXPERIENCE_BOTTLE), () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))
+                  );
                }
             }
          }
@@ -275,7 +277,7 @@ public final class CombatExtras {
             if (!(player.getHealth() > this.health.get())
                && this.wait-- <= 0
                && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), 10, 2.0F)
-               && CombatExtras.withSlot(player, this::usable, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))) {
+               && CombatExtras.withSlot(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
                this.wait = this.delay.intValue();
             }
          }
@@ -309,22 +311,60 @@ public final class CombatExtras {
    public static final class AutoSoup extends Module {
       private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat soup at or below this health", 12.0, 2.0, 19.0, 1.0));
       private final BooleanSetting dropBowl = this.addSetting(new BooleanSetting("Drop Bowl", "Drop empty bowl after eating", true));
+      private int previousSlot = -1;
+      private boolean eating;
 
       public AutoSoup() {
-         super("AutoSoup", "Instantly eat mushroom stew when low on health.", Category.COMBAT);
+         super("AutoSoup", "Eat mushroom stew automatically when low on health.", Category.COMBAT);
+      }
+
+      @Override
+      public void onDisable() {
+         this.finish(Minecraft.getInstance());
       }
 
       @Override
       public void onTick() {
          Minecraft client = Minecraft.getInstance();
-         if (CombatModules.ready(client) && client.gui.screen() == null && client.player.getHealth() <= this.health.floatValue()) {
-            LocalPlayer player = client.player;
-            CombatExtras.withSlot(player, s -> s.is(Items.MUSHROOM_STEW), () -> {
+         if (!CombatModules.ready(client) || client.gui.screen() != null) {
+            this.finish(client);
+            return;
+         }
+
+         LocalPlayer player = client.player;
+         if (this.eating) {
+            // Stew is a normal food now (about 1.6 s to eat), so keep Use held until it is gone.
+            if (player.isUsingItem() && player.getUseItem().is(Items.MUSHROOM_STEW)) {
+               client.options.keyUse.setDown(true);
+               return;
+            }
+
+            if (this.dropBowl.get() && player.getMainHandItem().is(Items.BOWL)) {
+               player.drop(true);
+            }
+
+            this.finish(client);
+         } else if (player.getHealth() <= this.health.floatValue() && !player.isUsingItem() && player.canEat(false)) {
+            int slot = Inventories.findHotbar(player, s -> s.is(Items.MUSHROOM_STEW));
+            if (slot >= 0) {
+               this.previousSlot = player.getInventory().getSelectedSlot();
+               player.getInventory().setSelectedSlot(slot);
                client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
-               if (this.dropBowl.get() && player.getMainHandItem().is(Items.BOWL)) {
-                  player.drop(true);
-               }
-            });
+               client.options.keyUse.setDown(true);
+               this.eating = true;
+            }
+         }
+      }
+
+      private void finish(Minecraft client) {
+         if (this.eating) {
+            this.eating = false;
+            client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
+            if (client.player != null && this.previousSlot >= 0) {
+               client.player.getInventory().setSelectedSlot(this.previousSlot);
+            }
+
+            this.previousSlot = -1;
          }
       }
    }
@@ -364,7 +404,7 @@ public final class CombatExtras {
             this.history.clear();
          } else {
             if (this.tracked == null || !this.tracked.isAlive() || this.tracked.distanceToSqr(client.player) > 49.0) {
-               this.tracked = CombatExtras.nearestEnemy(client, client.player, 6.0, false);
+               this.tracked = CombatExtras.nearestEnemy(client, client.player, 6.0, true);
                this.history.clear();
             }
 
@@ -401,7 +441,7 @@ public final class CombatExtras {
          if (CombatModules.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.OVERWORLD && this.wait-- <= 0) {
             this.wait = this.delay.intValue();
             LocalPlayer player = client.player;
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), true);
             if (enemy != null) {
                BlockPos pos = enemy.blockPosition().above();
                if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {
@@ -471,7 +511,7 @@ public final class CombatExtras {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null && this.placer.ready()) {
             LocalPlayer player = client.player;
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, 8.0, false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, 8.0, true);
             if (this.smart.get() && enemy == null) {
                return;
             }
@@ -521,7 +561,7 @@ public final class CombatExtras {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.maxDistance.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.maxDistance.get(), true);
             if (enemy != null) {
                double dist = player.distanceTo(enemy);
                boolean recharging = !this.onlyDuringCooldown.get() || player.getAttackStrengthScale(0.0F) < 0.85F;
@@ -738,7 +778,7 @@ public final class CombatExtras {
       public void onTick() {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null && this.placer.ready()) {
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, client.player, this.range.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, client.player, this.range.get(), true);
             if (enemy != null) {
                this.placer
                   .place(

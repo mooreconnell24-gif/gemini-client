@@ -23,9 +23,19 @@ import net.minecraft.world.level.Level;
 
 public final class NoFallModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Packet spoofs ground; Spoof rewrites moves; MLG clutches", "Packet", "Packet", "Spoof", "MLG")
+      new ModeSetting(
+         "Mode",
+         "Spoof marks falling moves as on-ground (safe at any speed); Packet sends an extra ground packet; MLG clutches with a water bucket",
+         "Spoof",
+         "Packet",
+         "Spoof",
+         "MLG"
+      )
    );
-   private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Start preventing damage after falling this far", 2.5, 1.5, 10.0, 0.5));
+   // Vanilla starts hurting at 3 blocks, so anything above that would let damage through instead of preventing it.
+   private final NumberSetting distance = this.addSetting(
+      new NumberSetting("Distance", "Start preventing damage after falling this far (vanilla hurts from 3)", 2.0, 0.5, 2.9, 0.1)
+   );
    private boolean replacing;
    private int pickup;
 
@@ -44,11 +54,15 @@ public final class NoFallModule extends Module {
       LocalPlayer player = client.player;
       if (player != null && player.connection != null && client.level != null && !player.getAbilities().flying && !player.isFallFlying()) {
          if (this.pickup <= 0) {
-            if (!(player.fallDistance <= this.distance.get())
-               && !(player.getDeltaMovement().y > -0.3)
+            // Send the ground packet before the next tick would push the server past the safe distance;
+            // waiting until we are already past it is what made the old Packet mode still hurt.
+            double nextDrop = Math.abs(Math.min(0.0, player.getDeltaMovement().y)) + 0.08;
+            boolean aboutToHurt = player.fallDistance > 0.0F && player.fallDistance + nextDrop >= this.distance.get();
+            if (aboutToHurt
+               && player.getDeltaMovement().y < -0.1
                && (!this.mode.is("MLG") || !this.placeWater(client, player))
                && !this.mode.is("Spoof")) {
-               player.connection.send(new StatusOnly(true, false));
+               player.connection.send(new StatusOnly(true, player.horizontalCollision));
                player.resetFallDistance();
             }
          } else {
@@ -122,7 +136,7 @@ public final class NoFallModule extends Module {
             int slot = Inventories.findHotbar(player, stack -> stack.is(Items.WATER_BUCKET));
             int previous = player.getInventory().getSelectedSlot();
             player.getInventory().setSelectedSlot(slot);
-            client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+            RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
             player.getInventory().setSelectedSlot(previous);
             player.resetFallDistance();
             this.pickup = 10;
@@ -138,9 +152,10 @@ public final class NoFallModule extends Module {
    private void scoop(Minecraft client, LocalPlayer player) {
       int slot = Inventories.findHotbar(player, stack -> stack.is(Items.BUCKET));
       if (slot >= 0 && client.gameMode != null) {
+         RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, 10, 180.0F);
          int previous = player.getInventory().getSelectedSlot();
          player.getInventory().setSelectedSlot(slot);
-         client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+         RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
          player.getInventory().setSelectedSlot(previous);
       }
    }

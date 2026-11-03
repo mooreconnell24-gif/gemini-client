@@ -5,6 +5,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
+import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -55,7 +56,7 @@ public final class AutoGappleModule extends Module {
    private void finish(Minecraft client) {
       if (this.eating) {
          this.eating = false;
-         client.options.keyUse.setDown(false);
+         client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
          if (this.restore.get() && client.player != null && this.previousSlot >= 0) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }

@@ -3,6 +3,7 @@ package gemini.util;
 import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -62,6 +63,17 @@ public final class AttributeBoost {
             instance.removeModifier(identifier);
          }
       });
+   }
+
+   /**
+    * Clears fall distance on the client and on the integrated server. The server keeps its own count from the
+    * movement packets, so resetting only the client copy still lets a long glide or flight hurt on landing.
+    */
+   public static void resetFall(LocalPlayer player) {
+      if (player != null) {
+         player.resetFallDistance();
+         onServer(serverPlayer -> serverPlayer.resetFallDistance());
+      }
    }
 
    public static void onServer(Consumer<ServerPlayer> action) {

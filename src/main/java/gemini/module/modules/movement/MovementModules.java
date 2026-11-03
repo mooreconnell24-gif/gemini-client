@@ -8,6 +8,7 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
+import gemini.util.AttributeBoost;
 import gemini.util.Holes;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
@@ -563,7 +564,7 @@ public final class MovementModules {
             }
 
             if (this.noFall.get()) {
-               player.resetFallDistance();
+               AttributeBoost.resetFall(player);
             }
          }
       }

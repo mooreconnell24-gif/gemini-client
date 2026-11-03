@@ -224,7 +224,7 @@ public final class MiscExtras {
             String var2 = this.pack.get();
             switch (var2) {
                case "LiquidBounce":
-                  toggle(client, true, "Sprint", "HUD", "TargetHUD", "Notifications", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag");
+                  toggle(client, true, "Sprint", "HUD", "TargetHUD", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag");
                   break;
                case "Performance":
                   toggle(client, true, "AntiLag", "EntityCulling", "Unfocused CPU", "Particles", "HUD", "FPS Graph", "AntiLag Status");

@@ -120,7 +120,7 @@ public final class FlightModule extends Module {
          MoveUtil.lerpMotion(current.x, targetX, 0.55), MoveUtil.lerpMotion(current.y, targetY, 0.65), MoveUtil.lerpMotion(current.z, targetZ, 0.55)
       );
       if (this.noFall.get()) {
-         player.resetFallDistance();
+         AttributeBoost.resetFall(player);
       }
    }
 
@@ -141,7 +141,7 @@ public final class FlightModule extends Module {
       }
 
       if (this.noFall.get()) {
-         player.resetFallDistance();
+         AttributeBoost.resetFall(player);
       }
    }
 
@@ -166,7 +166,7 @@ public final class FlightModule extends Module {
       }
 
       if (this.noFall.get()) {
-         player.resetFallDistance();
+         AttributeBoost.resetFall(player);
       }
    }
 
@@ -181,7 +181,7 @@ public final class FlightModule extends Module {
          }
 
          if (this.noFall.get()) {
-            player.resetFallDistance();
+            AttributeBoost.resetFall(player);
          }
       }
    }
@@ -206,7 +206,7 @@ public final class FlightModule extends Module {
       }
 
       if (this.noFall.get()) {
-         player.resetFallDistance();
+         AttributeBoost.resetFall(player);
       }
    }
 

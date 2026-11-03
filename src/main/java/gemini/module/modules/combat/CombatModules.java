@@ -331,7 +331,7 @@ public final class CombatModules {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.targetRange.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.targetRange.get(), true);
             if (enemy == null) {
                this.currentPlan.clear();
             } else {
@@ -564,7 +564,6 @@ public final class CombatModules {
                      long minDelayMs = (long)Math.max(45.0, 1000.0 / Math.max(1.0, this.legacyCps.get()));
                      boolean readyToHit = useLegacy ? (nowMs - this.lastLegacyAttackMs >= minDelayMs) : (player.getAttackStrengthScale(0.0F) >= cooldownRequired);
                      if (readyToHit) {
-                        this.lastLegacyAttackMs = nowMs;
                         if (this.autoCrit.get()
                            && !player.onGround()
                            && !player.isInWater()
@@ -573,6 +572,8 @@ public final class CombatModules {
                            && player.fallDistance < 1.2F) {
                            return;
                         }
+
+                        this.lastLegacyAttackMs = nowMs;
 
                         int prevSlot = player.getInventory().getSelectedSlot();
                         if (this.smartSwitch.get()) {

@@ -13,6 +13,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -49,7 +50,8 @@ public final class NukerModule extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && client.level != null && client.gameMode != null && client.gui.screen() == null && !player.isSpectator()) {
-         double reach = this.range.get();
+         // The server refuses to break blocks beyond the player's block reach + 1, so going further only makes ghost blocks.
+         double reach = Math.min(this.range.get(), player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE) + 1.0);
          Vec3 eye = player.getEyePosition();
          if (this.current != null) {
             BlockState state = client.level.getBlockState(this.current);

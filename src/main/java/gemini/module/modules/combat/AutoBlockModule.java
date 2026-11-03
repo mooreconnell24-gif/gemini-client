@@ -6,6 +6,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
+import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
@@ -75,7 +76,7 @@ public final class AutoBlockModule extends Module {
       managing = false;
       Minecraft client = Minecraft.getInstance();
       this.lower(client);
-      client.options.keyUse.setDown(false);
+      client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
       this.sinceAttack.clear();
       this.holdLeft = 0;
       this.faceTarget = null;
