@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.Gemini;
 import gemini.input.GeminiKeys;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
@@ -84,7 +85,11 @@ public final class HudOverlay {
             int height = Math.round(graphics.guiHeight() / scale);
             int topLeftY = 4;
             if (hud == null || hud.watermark()) {
-               topLeftY = this.drawWatermark(graphics, client, hud, accent, accent2, shadow);
+               float size = hud == null ? 0.7F : hud.watermarkSize();
+               graphics.pose().pushMatrix();
+               graphics.pose().scale(size, size);
+               topLeftY = Math.round(this.drawWatermark(graphics, client, hud, accent, accent2, shadow) * size);
+               graphics.pose().popMatrix();
             }
 
             if (hud == null || hud.arraylist()) {
@@ -147,7 +152,7 @@ public final class HudOverlay {
       Font font = client.font;
       String wmStyle = hud == null ? "Nextgen Card" : hud.watermarkStyle();
       List<String> meta = new ArrayList<>();
-      meta.add("v2.5");
+      meta.add("v" + Gemini.VERSION);
       if (hud == null || hud.fps()) {
          meta.add(client.getFps() + " FPS");
       }
@@ -160,7 +165,7 @@ public final class HudOverlay {
          }
       }
 
-      if (hud == null || hud.speed()) {
+      if ((hud == null || hud.speed()) && player != null) {
          double dx = player.getX() - player.xo;
          double dz = player.getZ() - player.zo;
          meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));

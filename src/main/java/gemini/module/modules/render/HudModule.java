@@ -12,6 +12,9 @@ public final class HudModule extends Module {
       new ModeSetting("Watermark Style", "Visual style of the top-left client watermark", "Nextgen Card", "Nextgen Card", "LiquidBounce Pill", "Minimal")
          .showIf(this.watermark::get)
    );
+   private final NumberSetting watermarkSize = this.addSetting(
+      new NumberSetting("Watermark Size", "Size of the watermark on its own, on top of the HUD scale", 0.7, 0.4, 1.5, 0.05).showIf(this.watermark::get)
+   );
    private final BooleanSetting logo = this.addSetting(new BooleanSetting("Logo", "Show the Gemini logo next to the name", true).showIf(this.watermark::get));
    private final BooleanSetting fps = this.addSetting(new BooleanSetting("FPS", "Show the FPS counter", true).showIf(this.watermark::get));
    private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show latency when online", true).showIf(this.watermark::get));
@@ -82,6 +85,10 @@ public final class HudModule extends Module {
 
    public String watermarkStyle() {
       return this.watermarkStyle.get();
+   }
+
+   public float watermarkSize() {
+      return this.watermarkSize.floatValue();
    }
 
    public boolean logo() {
