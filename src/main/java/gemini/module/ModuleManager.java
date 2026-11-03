@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
+import gemini.event.EventBus;
 import gemini.module.modules.bot.AutoExcavate;
 import gemini.module.modules.bot.AutoExplore;
 import gemini.module.modules.bot.AutoGoto;
@@ -90,6 +91,7 @@ import gemini.module.modules.hud.Welcome;
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.modules.misc.AutoGG;
 import gemini.module.modules.misc.BetterChat;
+import gemini.module.modules.misc.Aim;
 import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.misc.DeathCoords;
 import gemini.module.modules.misc.FlagCheck;
@@ -273,6 +275,7 @@ import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
+import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
 import java.util.ArrayDeque;
@@ -286,46 +289,41 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class ModuleManager {
-   private static volatile boolean activeDirty = true;
    private final ArrayList<Module> modules = new ArrayList<>();
    private final Map<Integer, Boolean> previousKeyState = new HashMap<>();
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
-   private volatile Module[] active = new Module[0];
+   private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
+      @Override
+      public boolean profiling() {
+         return SelfTest.profiling();
+      }
+
+      @Override
+      public void record(Module module, long nanos) {
+         SelfTest.record(module, nanos);
+      }
+   });
    private ConfigManager configManager;
    private static final ArrayDeque<ModuleManager.Failure> FAILURES = new ArrayDeque<>();
 
+   /** A module turned on or off: the bus rebuilds its subscriber lists before the next event. */
    public static void invalidateActive() {
-      activeDirty = true;
+      EventBus.invalidate();
    }
 
    private static String key(String name) {
       return name.toLowerCase(Locale.ROOT).replace(" ", "").replace("_", "").replace("-", "");
    }
 
-   public Module[] active() {
-      if (activeDirty) {
-         synchronized (this) {
-            if (activeDirty) {
-               activeDirty = false;
-               ArrayList<Module> running = new ArrayList<>();
-
-               for (Module module : this.modules) {
-                  if (module.isEnabled()) {
-                     running.add(module);
-                  }
-               }
-
-               this.active = running.toArray(new Module[0]);
-            }
-         }
-      }
-
-      return this.active;
+   public EventBus bus() {
+      return this.bus;
    }
 
    static void recordFailure(Module module, String hook, Throwable exception) {
@@ -355,91 +353,27 @@ public final class ModuleManager {
 
    public void renderWorld(float partialTick) {
       BaritoneBridge.render3D();
-      boolean timed = SelfTest.profiling();
-
-      for (Module module : this.active()) {
-         if (module.isEnabled()) {
-            long start = timed ? System.nanoTime() : 0L;
-
-            try {
-               module.onRender3D(partialTick);
-            } catch (StackOverflowError | RuntimeException | LinkageError var10) {
-               this.disableAfterFailure(module, "onRender3D", var10);
-            }
-
-            if (timed) {
-               SelfTest.record(module, System.nanoTime() - start);
-            }
-         }
-      }
+      this.bus.render3D(partialTick);
    }
 
    public void renderHud(HudContext hud) {
-      boolean timed = SelfTest.profiling();
-
-      for (Module module : this.active()) {
-         if (module.isEnabled()) {
-            long start = timed ? System.nanoTime() : 0L;
-
-            try {
-               module.onRenderHud(hud);
-            } catch (StackOverflowError | RuntimeException | LinkageError var10) {
-               this.disableAfterFailure(module, "onRenderHud", var10);
-            }
-
-            if (timed) {
-               SelfTest.record(module, System.nanoTime() - start);
-            }
-         }
-      }
+      this.bus.renderHud(hud);
    }
 
    public boolean sendPacket(Packet<?> packet) {
-      if (RotationManager.onSendPacket(packet)) {
-         return true;
-      } else {
-         boolean cancelled = false;
-
-         for (Module module : this.active()) {
-            if (module.isEnabled()) {
-               try {
-                  cancelled |= module.onSendPacket(packet);
-               } catch (StackOverflowError | RuntimeException | LinkageError var8) {
-                  this.disableAfterFailure(module, "onSendPacket", var8);
-               }
-            }
-         }
-
-         return cancelled;
-      }
+      return RotationManager.onSendPacket(packet) || this.bus.sendPacket(packet);
    }
 
    public boolean receivePacket(Packet<?> packet) {
-      boolean cancelled = false;
-
-      for (Module module : this.active()) {
-         if (module.isEnabled()) {
-            try {
-               cancelled |= module.onReceivePacket(packet);
-            } catch (StackOverflowError | RuntimeException | LinkageError var8) {
-               this.disableAfterFailure(module, "onReceivePacket", var8);
-            }
-         }
-      }
-
-      return cancelled;
+      return this.bus.receivePacket(packet);
    }
 
    public void attack(Entity target) {
-      for (Module module : this.active()) {
-         if (module.isEnabled()) {
-            try {
-               module.onAttack(target);
-            } catch (StackOverflowError | RuntimeException | LinkageError var7) {
-               this.disableAfterFailure(module, "onAttack", var7);
-            }
-         }
-      }
+      this.bus.attack(target);
+   }
+
+   public void blockUpdate(BlockPos pos, BlockState oldState, BlockState newState) {
+      this.bus.blockUpdate(pos, oldState, newState);
    }
 
    public void init() {
@@ -502,6 +436,7 @@ public final class ModuleManager {
       this.register(new XrayModule());
       this.register(new HudModule());
       this.register(new ClickGuiModule());
+      this.register(new Aim());
       this.register(new Home());
       this.register(new Gamemode());
       this.register(new ItemMagnet());
@@ -727,6 +662,7 @@ public final class ModuleManager {
       } else {
          this.modules.add(module);
          this.byType.put(module.getClass(), module);
+         this.bus.register(module);
       }
    }
 
@@ -793,25 +729,9 @@ public final class ModuleManager {
       } else {
          Scheduler.tick();
          RotationManager.beginTick();
+         Hands.beginTick();
          this.pollKeybinds(client, client.gui.screen() == null);
-         boolean timed = SelfTest.profiling();
-
-         for (Module module : this.active()) {
-            if (module.isEnabled()) {
-               long start = timed ? System.nanoTime() : 0L;
-
-               try {
-                  module.onTick();
-               } catch (StackOverflowError | RuntimeException | LinkageError var10) {
-                  this.disableAfterFailure(module, "onTick", var10);
-               }
-
-               if (timed) {
-                  SelfTest.record(module, System.nanoTime() - start);
-               }
-            }
-         }
-
+         this.bus.tick();
          this.syncBaritonePause();
          BaritoneBridge.tick();
          RotationManager.endTick();
@@ -820,22 +740,7 @@ public final class ModuleManager {
    }
 
    private void syncBaritonePause() {
-      boolean pause = false;
-
-      for (Module module : this.active()) {
-         if (module.isEnabled()) {
-            try {
-               if (module.wantsBaritonePause()) {
-                  pause = true;
-                  break;
-               }
-            } catch (RuntimeException | LinkageError var7) {
-               this.disableAfterFailure(module, "wantsBaritonePause", var7);
-            }
-         }
-      }
-
-      if (pause) {
+      if (this.bus.wantsBaritonePause()) {
          BaritoneBridge.pause("combat");
       } else {
          BaritoneBridge.resume("combat");

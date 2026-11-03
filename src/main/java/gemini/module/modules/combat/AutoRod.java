@@ -1,11 +1,13 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
+import gemini.util.Hands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -29,7 +31,7 @@ public final class AutoRod extends Module {
    }
 
    private void restore(LocalPlayer player) {
-      if (player != null && this.previousSlot >= 0) {
+      if (player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
          player.getInventory().setSelectedSlot(this.previousSlot);
       }
       this.previousSlot = -1;
@@ -60,9 +62,9 @@ public final class AutoRod extends Module {
          LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
          if (enemy != null && player.distanceTo(enemy) > 3.1) {
             int slot = Inventories.findHotbar(player, s -> s.is(Items.FISHING_ROD));
-            if (slot >= 0) {
+            if (slot >= 0 && Hands.claimMainHand()) {
                float[] rot = Rotations.face(player, enemy, 2.5);
-               if (RotationManager.request(player, rot, 95.0F, true, 5)) {
+               if (RotationManager.request(player, rot, 95.0F, true, ActionPriority.COMBAT)) {
                   this.previousSlot = player.getInventory().getSelectedSlot();
                   player.getInventory().setSelectedSlot(slot);
                   RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));

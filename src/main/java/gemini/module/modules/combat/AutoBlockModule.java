@@ -10,6 +10,7 @@ import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
+import gemini.event.ActionPriority;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -72,6 +73,11 @@ public final class AutoBlockModule extends Module {
    }
 
    @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
+   }
+
+   @Override
    public void onDisable() {
       managing = false;
       Minecraft client = Minecraft.getInstance();
@@ -118,7 +124,7 @@ public final class AutoBlockModule extends Module {
             if (this.holdLeft > 0) {
                if (this.look.get() && this.faceTarget != null) {
                   float[] rotation = Rotations.face(player, this.faceTarget);
-                  RotationManager.request(player, rotation, 0.0F, this.silent.get(), 10);
+                  RotationManager.request(player, rotation, 0.0F, this.silent.get(), ActionPriority.CRITICAL_SURVIVAL);
                }
 
                this.raise(client, player);

@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ListSetting;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 import java.util.Set;
 import net.minecraft.world.level.block.Block;
 
@@ -23,6 +24,11 @@ public final class AutoMineBot extends Module {
 
    public AutoMineBot() {
       super("Auto Mine Bot", "Pathfind and mine target ores via Baritone.", Category.WORLD);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

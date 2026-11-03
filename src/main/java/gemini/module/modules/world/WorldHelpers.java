@@ -1,6 +1,7 @@
 package gemini.module.modules.world;
 
 import gemini.util.BlockPlacer;
+import gemini.util.Hands;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
@@ -46,7 +47,7 @@ public final class WorldHelpers {
 
    static boolean useOnEntity(Minecraft client, LocalPlayer player, Entity target, Predicate<ItemStack> filter, boolean swing) {
       int slot = BlockPlacer.pickSlot(player, filter);
-      if (slot < 0) {
+      if (slot < 0 || !Hands.claimMainHand()) {
          return false;
       } else {
          int previous = player.getInventory().getSelectedSlot();

@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.Hands;
 import gemini.util.Inventories;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -29,7 +30,7 @@ public final class PlayerHelpers {
          return true;
       } else {
          int slot = Inventories.findHotbar(player, stack -> stack.is(item));
-         if (slot < 0) {
+         if (slot < 0 || !Hands.claimMainHand()) {
             return false;
          } else {
             int previous = player.getInventory().getSelectedSlot();

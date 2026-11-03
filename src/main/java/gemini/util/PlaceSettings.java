@@ -1,5 +1,7 @@
 package gemini.util;
 
+import gemini.event.ActionPriority;
+import gemini.event.EventBus;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -26,6 +28,12 @@ public final class PlaceSettings {
       this.swing = module.addSetting(new BooleanSetting("Swing", "Swing your hand when placing", true));
       this.airPlace = module.addSetting(new BooleanSetting("Air Place", "Place against empty space when no neighbouring", false));
       this.rotate = module.addSetting(new BooleanSetting("Silent Aim", "Face each block in packets only while placing", true));
+   }
+
+   /** The running module's priority, so a survival module's placements outrank a builder's. */
+   private static ActionPriority priority() {
+      ActionPriority current = EventBus.currentPriority();
+      return current != null ? current : ActionPriority.WORLD_UTILITY;
    }
 
    public boolean ready() {
@@ -63,7 +71,7 @@ public final class PlaceSettings {
             }
 
             if (BlockPlacer.inReach(player, pos, this.range.get())
-               && (!this.rotate.get() || RotationManager.request(player, RotationManager.toward(player, pos), 0.0F, true, 5))
+               && (!this.rotate.get() || RotationManager.request(player, RotationManager.toward(player, pos), 0.0F, true, priority()))
                && BlockPlacer.place(client, pos, filter, this.swing.get(), true, this.airPlace.get(), checkEntities)) {
                placed++;
                if (onPlaced != null) {

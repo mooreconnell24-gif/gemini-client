@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ColorSetting;
 import gemini.util.BuiltInBaritone;
+import gemini.event.ActionPriority;
 
 public final class PathRenderer extends Module {
    private final ColorSetting lineColor = this.addSetting(new ColorSetting("Path Color", "Color of the 3D Baritone path line", 198));
@@ -12,6 +13,11 @@ public final class PathRenderer extends Module {
    public PathRenderer() {
       super("Path Renderer", "Render 3D path lines and goal boxes for Baritone.", Category.RENDER);
       this.loadState(true, this.getKeybind());
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

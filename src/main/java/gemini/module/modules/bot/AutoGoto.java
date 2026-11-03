@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 import net.minecraft.core.BlockPos;
 
 public final class AutoGoto extends Module {
@@ -13,6 +14,11 @@ public final class AutoGoto extends Module {
 
    public AutoGoto() {
       super("Auto Goto", "Pathfind to X/Y/Z coordinates via Baritone.", Category.MOVEMENT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

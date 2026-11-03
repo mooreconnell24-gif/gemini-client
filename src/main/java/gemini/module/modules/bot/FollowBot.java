@@ -5,6 +5,7 @@ import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
 import gemini.util.BaritoneBridge;
 import gemini.util.Targets;
+import gemini.event.ActionPriority;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
@@ -15,6 +16,11 @@ public final class FollowBot extends Module {
 
    public FollowBot() {
       super("Follow Bot", "Pathfind and follow nearby players or mobs.", Category.MOVEMENT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

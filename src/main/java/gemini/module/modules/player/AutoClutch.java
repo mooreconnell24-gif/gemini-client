@@ -1,11 +1,13 @@
 package gemini.module.modules.player;
 
 import gemini.module.Category;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -32,6 +34,11 @@ public final class AutoClutch extends Module {
    }
 
    @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
+   }
+
+   @Override
    public void onDisable() {
       this.placedWaterPos = null;
       this.pickupTicks = 0;
@@ -48,8 +55,8 @@ public final class AutoClutch extends Module {
                this.placedWaterPos = null;
             } else if (player.onGround() || player.isInWater()) {
                int bucketSlot = Inventories.findHotbar(player, s -> s.is(Items.BUCKET));
-               if (bucketSlot >= 0 && level.getBlockState(this.placedWaterPos).is(Blocks.WATER)) {
-                  RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), 10, 2.0F);
+               if (bucketSlot >= 0 && level.getBlockState(this.placedWaterPos).is(Blocks.WATER) && Hands.claimMainHand()) {
+                  RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), ActionPriority.CRITICAL_SURVIVAL, 2.0F);
                   int prev = player.getInventory().getSelectedSlot();
                   player.getInventory().setSelectedSlot(bucketSlot);
                   RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
@@ -77,8 +84,8 @@ public final class AutoClutch extends Module {
 
                if (ground != null) {
                   int clutchSlot = findClutchSlot(player, level.dimension() == Level.NETHER);
-                  if (clutchSlot >= 0) {
-                     RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), 10, 3.0F);
+                  if (clutchSlot >= 0 && Hands.claimMainHand()) {
+                     RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), ActionPriority.CRITICAL_SURVIVAL, 3.0F);
                      ItemStack stack = player.getInventory().getItem(clutchSlot);
                      int prev = player.getInventory().getSelectedSlot();
                      player.getInventory().setSelectedSlot(clutchSlot);

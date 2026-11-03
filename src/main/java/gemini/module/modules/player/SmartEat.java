@@ -6,6 +6,8 @@ import gemini.module.setting.NumberSetting;
 import gemini.util.Damage;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
+import gemini.event.ActionPriority;
+import gemini.util.Hands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
@@ -21,6 +23,11 @@ public final class SmartEat extends Module {
 
    public SmartEat() {
       super("SmartEat", "Eat Golden Apples when low on HP and food when hungry.", Category.PLAYER);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.COMBAT;
    }
 
    @Override
@@ -42,7 +49,7 @@ public final class SmartEat extends Module {
                slot = Inventories.findHotbar(player, SmartEat::plainFood);
             }
 
-            if (slot >= 0 && (needGap || player.canEat(false))) {
+            if (slot >= 0 && (needGap || player.canEat(false)) && Hands.claimMainHand()) {
                if (!this.eating) {
                   this.previousSlot = player.getInventory().getSelectedSlot();
                }
@@ -62,7 +69,7 @@ public final class SmartEat extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (client.player != null && this.previousSlot >= 0) {
+         if (client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }
 

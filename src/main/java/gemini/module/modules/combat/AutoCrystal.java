@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
@@ -12,6 +13,7 @@ import gemini.util.Damage;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
 import gemini.util.VersionBridge;
+import gemini.util.Hands;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -96,7 +98,7 @@ public final class AutoCrystal extends Module {
                Entity bestCrystal = this.findBestCrystal(level, player, target);
                if (bestCrystal != null) {
                   float[] rot = RotationManager.toward(player, bestCrystal);
-                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), 10)) {
+                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
                      client.gameMode.attack(player, bestCrystal);
                      player.swing(InteractionHand.MAIN_HAND);
                      this.breakTimer = this.breakDelay.intValue();
@@ -121,13 +123,13 @@ public final class AutoCrystal extends Module {
                   int crystalSlot = Inventories.findHotbar(player, stack -> stack.is(Items.END_CRYSTAL));
                   if (hand == InteractionHand.MAIN_HAND
                      && !player.getMainHandItem().is(Items.END_CRYSTAL)
-                     && (this.autoSwitch.is("None") || crystalSlot < 0)) {
+                     && (this.autoSwitch.is("None") || crystalSlot < 0 || !Hands.claimMainHand())) {
                      return;
                   }
 
                   Vec3 hitVec = Vec3.atCenterOf(bestBase).add(0.0, 0.5, 0.0);
                   float[] rot = RotationManager.toward(player, hitVec);
-                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), 10)) {
+                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
                      int prev = player.getInventory().getSelectedSlot();
                      boolean swapped = false;
                      if (hand == InteractionHand.MAIN_HAND && !player.getMainHandItem().is(Items.END_CRYSTAL)) {

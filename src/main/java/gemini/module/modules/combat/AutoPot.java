@@ -5,6 +5,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.RotationManager;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
@@ -27,13 +28,18 @@ public final class AutoPot extends Module {
    }
 
    @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
+   }
+
+   @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       if (CombatHelpers.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (!(player.getHealth() > this.health.get())
             && this.wait-- <= 0
-            && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), 10, 2.0F)
+            && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.CRITICAL_SURVIVAL, 2.0F)
             && CombatHelpers.withSlot(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
             this.wait = this.delay.intValue();
          }

@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
@@ -49,7 +50,7 @@ public final class AnchorAura extends Module {
             BlockState state = client.level.getBlockState(targetPos);
             BlockPos finalPos = targetPos;
             if (state.is(Blocks.RESPAWN_ANCHOR)) {
-               RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, 8);
+               RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, ActionPriority.COMBAT);
                int charges = (Integer)state.getValue(RespawnAnchorBlock.CHARGE);
                if (charges == 0) {
                   CombatHelpers.withSlot(player, s -> s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));

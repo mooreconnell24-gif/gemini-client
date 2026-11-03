@@ -1,6 +1,7 @@
 package gemini.module.modules.player;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -24,7 +25,7 @@ public final class Derp extends Module {
       if (player != null) {
          this.yaw = Mth.wrapDegrees(this.yaw + this.spinSpeed.floatValue());
          float pitch = this.headless.get() ? Mth.sin(player.tickCount * 0.35F) * 89.0F : player.getXRot();
-         RotationManager.request(player, this.yaw, pitch, 180.0F, true, 0, 180.0F);
+         RotationManager.request(player, this.yaw, pitch, 180.0F, true, ActionPriority.WORLD_UTILITY, 180.0F);
       }
    }
 }

@@ -6,6 +6,8 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
+import gemini.event.ActionPriority;
+import gemini.util.Hands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -23,6 +25,11 @@ public final class AutoGappleModule extends Module {
    }
 
    @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
+   }
+
+   @Override
    public void onDisable() {
       this.finish(Minecraft.getInstance());
    }
@@ -37,7 +44,7 @@ public final class AutoGappleModule extends Module {
                int slot = Inventories.findHotbar(
                   player, stack -> stack.is(Items.GOLDEN_APPLE) || this.enchanted.get() && stack.is(Items.ENCHANTED_GOLDEN_APPLE)
                );
-               if (slot >= 0) {
+               if (slot >= 0 && Hands.claimMainHand()) {
                   this.previousSlot = player.getInventory().getSelectedSlot();
                   player.getInventory().setSelectedSlot(slot);
                   client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
@@ -46,6 +53,7 @@ public final class AutoGappleModule extends Module {
                }
             }
          } else if (player.isUsingItem() && client.gui.screen() == null) {
+            Hands.claimMainHand();
             client.options.keyUse.setDown(true);
          } else {
             this.finish(client);
@@ -57,7 +65,7 @@ public final class AutoGappleModule extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (this.restore.get() && client.player != null && this.previousSlot >= 0) {
+         if (this.restore.get() && client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }
 

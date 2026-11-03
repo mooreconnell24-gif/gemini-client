@@ -4,10 +4,16 @@ import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 
 public final class BaritoneStatus extends Module {
    public BaritoneStatus() {
       super("Baritone Status", "Show current Baritone engine and task status.", Category.CLIENT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

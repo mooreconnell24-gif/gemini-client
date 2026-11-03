@@ -1,6 +1,7 @@
 package gemini.module.modules.movement;
 
 import gemini.module.Category;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -34,7 +35,7 @@ public final class AutoFirework extends Module {
                client.gameMode.useItem(player, InteractionHand.OFF_HAND);
             } else {
                int slot = Inventories.findHotbar(player, stack -> stack.is(Items.FIREWORK_ROCKET));
-               if (slot < 0) {
+               if (slot < 0 || !Hands.claimMainHand()) {
                   return;
                }
 

@@ -8,6 +8,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Damage;
 import gemini.util.Inventories;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.tags.ItemTags;
@@ -30,6 +31,11 @@ public final class Offhand extends Module {
 
    public Offhand() {
       super("Offhand", "Keep your offhand stocked with totems.", Category.COMBAT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    @Override

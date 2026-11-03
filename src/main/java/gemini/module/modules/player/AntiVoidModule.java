@@ -8,6 +8,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.AttributeBoost;
 import gemini.util.VersionBridge;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
@@ -29,6 +30,11 @@ public final class AntiVoidModule extends Module {
 
    public AntiVoidModule() {
       super("AntiVoid", "Catch yourself before falling into the void.", Category.PLAYER);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    @Override

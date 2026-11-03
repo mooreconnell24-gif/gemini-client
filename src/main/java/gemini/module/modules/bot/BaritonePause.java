@@ -4,10 +4,16 @@ import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 
 public final class BaritonePause extends Module {
    public BaritonePause() {
       super("Baritone Pause", "Pause active Baritone pathing and mining.", Category.CLIENT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

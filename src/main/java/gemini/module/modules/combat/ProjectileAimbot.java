@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -61,7 +62,7 @@ public final class ProjectileAimbot extends Module {
                } else {
                   pitch = (float)(-(Mth.atan2(dy, horizDist) * (180.0 / Math.PI)));
                }
-               RotationManager.request(player, Mth.wrapDegrees(yaw), Mth.clamp(pitch, -90.0F, 90.0F), 95.0F, this.silent.get(), 10, 2.5F);
+               RotationManager.request(player, Mth.wrapDegrees(yaw), Mth.clamp(pitch, -90.0F, 90.0F), 95.0F, this.silent.get(), ActionPriority.COMBAT, 2.5F);
             }
          }
       }

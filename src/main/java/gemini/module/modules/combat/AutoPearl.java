@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Damage;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -15,6 +16,11 @@ public final class AutoPearl extends Module {
 
    public AutoPearl() {
       super("AutoPearl", "Throw an Ender Pearl when health drops critically low.", Category.COMBAT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    @Override

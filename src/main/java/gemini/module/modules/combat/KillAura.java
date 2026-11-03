@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
@@ -12,6 +13,7 @@ import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
+import gemini.util.Hands;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -108,7 +110,7 @@ public final class KillAura extends Module {
 
                double pred = this.effectivePredictionTicks(client, player);
                float[] rotation = Rotations.face(player, this.currentTarget, pred);
-               boolean aimed = RotationManager.request(player, rotation[0], rotation[1], this.turnSpeed.floatValue(), this.silentRotate.get(), 10, 8.0F);
+               boolean aimed = RotationManager.request(player, rotation[0], rotation[1], this.turnSpeed.floatValue(), this.silentRotate.get(), ActionPriority.COMBAT, 8.0F);
                if (aimed) {
                   boolean useLegacy = this.versionMode.is("1.8 Legacy CPS");
                   float cooldownRequired = 0.9F;
@@ -130,7 +132,7 @@ public final class KillAura extends Module {
                      int prevSlot = player.getInventory().getSelectedSlot();
                      if (this.smartSwitch.get()) {
                         int weaponSlot = this.pickSmartWeapon(player, this.currentTarget);
-                        if (weaponSlot >= 0 && weaponSlot != prevSlot) {
+                        if (weaponSlot >= 0 && weaponSlot != prevSlot && Hands.claimMainHand()) {
                            player.getInventory().setSelectedSlot(weaponSlot);
                         }
                      }

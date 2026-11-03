@@ -1,6 +1,7 @@
 package gemini.module.modules.world;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -67,7 +68,7 @@ public final class ChestAura extends Module {
          }
 
          if (best != null) {
-            if (this.rotate.get() && !RotationManager.request(player, RotationManager.toward(player, best), 0.0F, true, 0)) {
+            if (this.rotate.get() && !RotationManager.request(player, RotationManager.toward(player, best), 0.0F, true, ActionPriority.WORLD_UTILITY)) {
                this.wait = 0;
             } else {
                Vec3 hit = Vec3.atCenterOf(best).add(0.0, 0.5, 0.0);

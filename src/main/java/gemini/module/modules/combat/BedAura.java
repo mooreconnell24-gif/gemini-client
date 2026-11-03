@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
@@ -33,7 +34,7 @@ public final class BedAura extends Module {
          if (enemy != null) {
             BlockPos pos = enemy.blockPosition().above();
             if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {
-               RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, 8);
+               RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, ActionPriority.COMBAT);
                CombatHelpers.click(client, player, pos, Direction.UP);
             } else {
                BlockPlacer.place(client, pos, stack -> stack.is(ItemTags.BEDS), true, true, true, false);

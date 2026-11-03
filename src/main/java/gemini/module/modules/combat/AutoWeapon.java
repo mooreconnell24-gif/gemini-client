@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
+import gemini.util.Hands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
@@ -49,7 +50,7 @@ public final class AutoWeapon extends Module {
                }
             }
 
-            if (best >= 0 && best != selected) {
+            if (best >= 0 && best != selected && Hands.claimMainHand()) {
                player.getInventory().setSelectedSlot(best);
             }
          }

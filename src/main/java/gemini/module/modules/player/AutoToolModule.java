@@ -3,6 +3,7 @@ package gemini.module.modules.player;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
+import gemini.util.Hands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -77,7 +78,7 @@ public final class AutoToolModule extends Module {
                }
             }
 
-            if (best >= 0 && best != player.getInventory().getSelectedSlot()) {
+            if (best >= 0 && best != player.getInventory().getSelectedSlot() && Hands.claimMainHand()) {
                if (this.previousSlot < 0) {
                   this.previousSlot = player.getInventory().getSelectedSlot();
                }
@@ -97,6 +98,10 @@ public final class AutoToolModule extends Module {
    private void restoreSlot() {
       LocalPlayer player = Minecraft.getInstance().player;
       if (this.restore.get() && player != null && this.previousSlot >= 0) {
+         if (!Hands.claimMainHand()) {
+            return; // someone more important holds the hand this tick; restore next tick
+         }
+
          player.getInventory().setSelectedSlot(this.previousSlot);
       }
 

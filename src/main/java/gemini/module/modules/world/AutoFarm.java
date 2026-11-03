@@ -1,6 +1,7 @@
 package gemini.module.modules.world;
 
 import gemini.module.Category;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -254,7 +255,7 @@ public final class AutoFarm extends Module {
 
    private boolean fertilise(Minecraft client, LocalPlayer player, BlockPos pos) {
       int slot = BlockPlacer.pickSlot(player, stack -> stack.is(Items.BONE_MEAL));
-      if (slot < 0) {
+      if (slot < 0 || !Hands.claimMainHand()) {
          return false;
       } else {
          int previous = player.getInventory().getSelectedSlot();

@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
@@ -13,6 +14,11 @@ public final class AutoTunnel extends Module {
 
    public AutoTunnel() {
       super("Auto Tunnel", "Dig a 1x2 tunnel and bridge gaps automatically.", Category.WORLD);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -33,7 +34,7 @@ public final class AimAssist extends Module {
          LivingEntity target = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
          if (target != null && Targets.inFov(player, target, this.fov.get())) {
             float[] look = Rotations.face(player, target);
-            RotationManager.request(player, look[0], look[1], this.speed.floatValue(), false, 0, 2.0F);
+            RotationManager.request(player, look[0], look[1], this.speed.floatValue(), false, ActionPriority.WORLD_UTILITY, 2.0F);
          }
       }
    }

@@ -1,6 +1,8 @@
 package gemini.module.modules.world;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -48,10 +50,17 @@ public final class Flamethrower extends Module {
                   LivingEntity target = (LivingEntity)entity;
                   BlockPos feet = target.blockPosition();
                   if (level.getBlockState(feet).isAir() && !level.getBlockState(feet.below()).getCollisionShape(level, feet.below()).isEmpty()) {
-                     if (this.rotate.get() && !RotationManager.request(player, RotationManager.toward(player, feet.below()), 0.0F, true, 5)) {
+                     if (this.rotate.get() && !RotationManager.request(player, RotationManager.toward(player, feet.below()), 0.0F, true, ActionPriority.WORLD_UTILITY)) {
                         this.wait = 0;
                         return;
                      }
+
+                     if (!Hands.claimMainHand()) {
+
+                        return;
+
+                     }
+
 
                      int previous = player.getInventory().getSelectedSlot();
                      player.getInventory().setSelectedSlot(slot);

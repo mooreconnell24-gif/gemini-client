@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BaritoneBridge;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -14,6 +15,11 @@ public final class AutoExcavate extends Module {
 
    public AutoExcavate() {
       super("Auto Excavate", "Excavate a cubic area around you layer by layer.", Category.WORLD);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

@@ -1,6 +1,8 @@
 package gemini.module.modules.world;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
@@ -187,14 +189,14 @@ public final class ScaffoldModule extends Module {
 
          if (plan == null && !this.rotate.is("None") && MoveUtil.hasInput(player)) {
             float[] idleRot = this.computeBridgeRotation(player, null);
-            RotationManager.request(player, idleRot[0], idleRot[1], this.turnSpeed.floatValue(), !this.rotate.is("Snap"), 5, 10.0F);
+            RotationManager.request(player, idleRot[0], idleRot[1], this.turnSpeed.floatValue(), !this.rotate.is("Snap"), ActionPriority.WORLD_UTILITY, 10.0F);
          }
 
          if (plan != null) {
             if (!this.rotate.is("None")) {
                boolean quiet = !this.rotate.is("Snap");
                float[] placeRot = this.computeBridgeRotation(player, plan.hit);
-               boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, 6, 16.0F);
+               boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 16.0F);
                if (!ready && this.rotate.is("Strict")) {
                   return;
                }
@@ -203,6 +205,13 @@ public final class ScaffoldModule extends Module {
             if (this.sprintMode.is("Legit") && player.isSprinting()) {
                player.setSprinting(false);
             }
+
+            if (!Hands.claimMainHand()) {
+
+               return; // a survival module is using the hand this tick
+
+            }
+
 
             int previous = player.getInventory().getSelectedSlot();
             if (previous != slot) {

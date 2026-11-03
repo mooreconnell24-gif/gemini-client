@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Hands;
 import gemini.util.Inventories;
 import gemini.util.Targets;
 import java.util.function.Predicate;
@@ -46,7 +47,7 @@ public final class CombatHelpers {
 
    static boolean withSlot(LocalPlayer player, Predicate<ItemStack> filter, Runnable action) {
       int slot = Inventories.findHotbar(player, filter);
-      if (slot < 0) {
+      if (slot < 0 || !Hands.claimMainHand()) {
          return false;
       } else {
          int previous = player.getInventory().getSelectedSlot();

@@ -1,11 +1,13 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -19,6 +21,11 @@ public final class AutoSoup extends Module {
 
    public AutoSoup() {
       super("AutoSoup", "Eat mushroom stew automatically when low on health.", Category.COMBAT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    @Override
@@ -37,7 +44,7 @@ public final class AutoSoup extends Module {
       LocalPlayer player = client.player;
       if (this.eating) {
          // Stew is a normal food now (about 1.6 s to eat), so keep Use held until it is gone.
-         if (player.isUsingItem() && player.getUseItem().is(Items.MUSHROOM_STEW)) {
+         if (player.isUsingItem() && player.getUseItem().is(Items.MUSHROOM_STEW) && Hands.claimMainHand()) {
             client.options.keyUse.setDown(true);
             return;
          }
@@ -49,7 +56,7 @@ public final class AutoSoup extends Module {
          this.finish(client);
       } else if (player.getHealth() <= this.health.floatValue() && !player.isUsingItem() && player.canEat(false)) {
          int slot = Inventories.findHotbar(player, s -> s.is(Items.MUSHROOM_STEW));
-         if (slot >= 0) {
+         if (slot >= 0 && Hands.claimMainHand()) {
             this.previousSlot = player.getInventory().getSelectedSlot();
             player.getInventory().setSelectedSlot(slot);
             client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
@@ -63,7 +70,7 @@ public final class AutoSoup extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (client.player != null && this.previousSlot >= 0) {
+         if (client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }
 

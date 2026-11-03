@@ -5,6 +5,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.MoveUtil;
+import gemini.util.Hands;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -38,7 +39,7 @@ public final class AutoEatModule extends Module {
       LocalPlayer player = client.player;
       if (player != null && client.gameMode != null) {
          if (this.eating) {
-            if (player.isUsingItem() && client.gui.screen() == null) {
+            if (player.isUsingItem() && client.gui.screen() == null && Hands.claimMainHand()) {
                client.options.keyUse.setDown(true);
             } else {
                this.finish(client);
@@ -56,7 +57,7 @@ public final class AutoEatModule extends Module {
                }
             }
 
-            if (best >= 0) {
+            if (best >= 0 && Hands.claimMainHand()) {
                this.previousSlot = player.getInventory().getSelectedSlot();
                player.getInventory().setSelectedSlot(best);
                client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
@@ -76,7 +77,7 @@ public final class AutoEatModule extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (this.restore.get() && client.player != null && this.previousSlot >= 0) {
+         if (this.restore.get() && client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
             client.player.getInventory().setSelectedSlot(this.previousSlot);
          }
 

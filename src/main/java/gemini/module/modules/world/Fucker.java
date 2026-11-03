@@ -1,6 +1,7 @@
 package gemini.module.modules.world;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -35,7 +36,7 @@ public final class Fucker extends Module {
 
          for (BlockPos pos : BlockPos.betweenClosed(c.offset(-r, -r, -r), c.offset(r, r, r))) {
             if (BlockPlacer.inReach(player, pos, this.range.get()) && this.matches(client.level.getBlockState(pos))) {
-               RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, 5);
+               RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, ActionPriority.WORLD_UTILITY);
                client.gameMode.continueDestroyBlock(pos.immutable(), Direction.UP);
                player.swing(InteractionHand.MAIN_HAND);
                return;

@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.util.RotationManager;
@@ -20,7 +21,7 @@ public final class Quiver extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (CombatHelpers.ready(client) && client.gui.screen() == null && player.isUsingItem() && player.getUseItem().getItem() instanceof BowItem) {
-         RotationManager.request(player, player.getYRot(), -90.0F, 180.0F, true, 10, 2.0F);
+         RotationManager.request(player, player.getYRot(), -90.0F, 180.0F, true, ActionPriority.COMBAT, 2.0F);
          if (player.getTicksUsingItem() >= this.charge.intValue()) {
             client.gameMode.releaseUsingItem(player);
             this.setEnabled(false);

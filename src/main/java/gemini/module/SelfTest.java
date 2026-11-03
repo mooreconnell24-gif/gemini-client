@@ -38,12 +38,12 @@ public final class SelfTest {
       return current != null;
    }
 
-   static boolean profiling() {
+   public static boolean profiling() {
       SelfTest test = current;
       return test != null && test.ticks >= 20;
    }
 
-   static void record(Module module, long nanos) {
+   public static void record(Module module, long nanos) {
       SelfTest test = current;
       if (test != null) {
          test.cost.computeIfAbsent(module, key -> new long[1])[0] += nanos;

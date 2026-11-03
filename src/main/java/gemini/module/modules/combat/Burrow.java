@@ -1,6 +1,7 @@
 package gemini.module.modules.combat;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.util.BlockPlacer;
@@ -45,7 +46,7 @@ public final class Burrow extends Module {
             conn.send(new Pos(x, y + 1.00133597911214, z, true, false));
             conn.send(new Pos(x, y + 1.16610926093821, z, true, false));
             if (this.rotate.get()) {
-               RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, 10, 5.0F);
+               RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.COMBAT, 5.0F);
             }
 
             BlockPlacer.place(client, feet, burrowBlock, true, true, true, false);

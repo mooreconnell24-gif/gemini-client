@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
+import gemini.event.ActionPriority;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.Setting;
@@ -14,8 +15,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 
 public abstract class Module {
    private final String name;
@@ -71,6 +74,14 @@ public abstract class Module {
 
    public Category getCategory() {
       return this.category;
+   }
+
+   /**
+    * Where this module stands when modules compete in one tick (hand swaps, rotations, hook order). Defaults
+    * from the category; survival modules override it with {@link ActionPriority#CRITICAL_SURVIVAL}.
+    */
+   public ActionPriority priority() {
+      return ActionPriority.defaultFor(this.category);
    }
 
    public List<Setting<?>> settings() {
@@ -274,6 +285,10 @@ public abstract class Module {
    }
 
    public void onAttack(Entity target) {
+   }
+
+   /** A block in the loaded world changed (placed, broken or updated). Runs on the client thread. */
+   public void onBlockUpdate(BlockPos pos, BlockState oldState, BlockState newState) {
    }
 
    public void readExtra(JsonObject object) {

@@ -1,6 +1,8 @@
 package gemini.module.modules.player;
 
 import gemini.module.Category;
+import gemini.event.ActionPriority;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
@@ -23,8 +25,8 @@ public final class AutoWindCharge extends Module {
          LocalPlayer player = client.player;
          if (this.wasOnGround && !player.onGround() && player.getDeltaMovement().y > 0.25) {
             int slot = Inventories.findHotbar(player, s -> s.is(Items.WIND_CHARGE));
-            if (slot >= 0) {
-               RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, true, 10, 3.0F);
+            if (slot >= 0 && Hands.claimMainHand()) {
+               RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, true, ActionPriority.CRITICAL_SURVIVAL, 3.0F);
                int prev = player.getInventory().getSelectedSlot();
                player.getInventory().setSelectedSlot(slot);
                RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));

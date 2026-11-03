@@ -5,6 +5,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -18,6 +19,11 @@ public final class AutoHighway extends Module {
 
    public AutoHighway() {
       super("Auto Highway", "Pave a multi-block highway with side curbs ahead.", Category.WORLD);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.BOT;
    }
 
    @Override

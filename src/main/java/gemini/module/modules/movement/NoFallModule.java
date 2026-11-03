@@ -1,11 +1,13 @@
 package gemini.module.modules.movement;
 
 import gemini.module.Category;
+import gemini.util.Hands;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
@@ -41,6 +43,11 @@ public final class NoFallModule extends Module {
 
    public NoFallModule() {
       super("NoFall", "Cancel fall damage.", Category.MOVEMENT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    @Override
@@ -131,8 +138,8 @@ public final class NoFallModule extends Module {
             gap++;
          }
 
-         if (gap != 0 && gap <= 4) {
-            RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, 10, 180.0F);
+         if (gap != 0 && gap <= 4 && Hands.claimMainHand()) {
+            RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.CRITICAL_SURVIVAL, 180.0F);
             int slot = Inventories.findHotbar(player, stack -> stack.is(Items.WATER_BUCKET));
             int previous = player.getInventory().getSelectedSlot();
             player.getInventory().setSelectedSlot(slot);
@@ -151,8 +158,8 @@ public final class NoFallModule extends Module {
 
    private void scoop(Minecraft client, LocalPlayer player) {
       int slot = Inventories.findHotbar(player, stack -> stack.is(Items.BUCKET));
-      if (slot >= 0 && client.gameMode != null) {
-         RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, 10, 180.0F);
+      if (slot >= 0 && client.gameMode != null && Hands.claimMainHand()) {
+         RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.CRITICAL_SURVIVAL, 180.0F);
          int previous = player.getInventory().getSelectedSlot();
          player.getInventory().setSelectedSlot(slot);
          RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));

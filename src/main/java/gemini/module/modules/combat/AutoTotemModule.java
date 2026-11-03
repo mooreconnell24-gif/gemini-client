@@ -6,6 +6,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Damage;
 import gemini.util.Inventories;
+import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -20,6 +21,11 @@ public final class AutoTotemModule extends Module {
 
    public AutoTotemModule() {
       super("AutoTotem", "Keep a totem of undying in your offhand.", Category.COMBAT);
+   }
+
+   @Override
+   public ActionPriority priority() {
+      return ActionPriority.CRITICAL_SURVIVAL;
    }
 
    public boolean wantsOffhand(LocalPlayer player) {
