@@ -13,3 +13,14 @@ com.mojang.blaze3d.platform.Window
 net.minecraft.client.MouseHandler
 net.minecraft.client.KeyMapping
 net.minecraft.client.multiplayer.MultiPlayerGameMode
+net.minecraft.client.input.KeyEvent
+net.minecraft.client.input.KeyEvent$Action
+net.minecraft.client.input.MouseButtonEvent
+net.minecraft.client.input.MouseButtonInfo
+net.minecraft.client.input.MouseButtonInfo$MouseButton
+net.minecraft.client.input.InputWithModifiers
+net.minecraft.client.input.InputWithModifiers$Modifiers
+net.minecraft.client.input.InputQuirks
+net.minecraft.client.gui.components.events.GuiEventListener
+net.minecraft.client.gui.screens.Screen
+net.minecraft.client.KeyboardHandler

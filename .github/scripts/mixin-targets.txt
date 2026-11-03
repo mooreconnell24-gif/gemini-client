@@ -24,3 +24,8 @@ net.minecraft.world.entity.player.Player
 net.minecraft.world.level.block.Block
 net.minecraft.world.level.block.LiquidBlock
 net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase
+com.mojang.blaze3d.platform.InputConstants
+net.minecraft.client.input.KeyEvent
+net.minecraft.client.input.MouseButtonInfo
+net.minecraft.client.MouseHandler
+net.minecraft.client.KeyboardHandler
