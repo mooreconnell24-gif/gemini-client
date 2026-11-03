@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.2 (Fabric).**
 
-  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (drives the real Baritone when installed)
+  273 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (drives the real Baritone when installed)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -107,7 +107,7 @@ The rest:
 
 | | |
 |---|---|
-| **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
+| **273 modules** | Combat 41 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the real Baritone when it is installed; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |

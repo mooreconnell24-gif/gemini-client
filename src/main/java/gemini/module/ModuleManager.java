@@ -42,6 +42,7 @@ import gemini.module.modules.combat.HoleFiller;
 import gemini.module.modules.combat.KeepRange;
 import gemini.module.modules.combat.KeepSprintModule;
 import gemini.module.modules.combat.KillAura;
+import gemini.module.modules.combat.SilentAim;
 import gemini.module.modules.combat.MaceKill;
 import gemini.module.modules.combat.Offhand;
 import gemini.module.modules.combat.ProjectileAimbot;
@@ -517,6 +518,7 @@ public final class ModuleManager {
       this.register(new ParticleBlocker());
       this.register(new BetterTooltips());
       this.register(new KillAura());
+      this.register(new SilentAim());
       this.register(new AutoCrystal());
       this.register(new Surround());
       this.register(new AutoTrap());
