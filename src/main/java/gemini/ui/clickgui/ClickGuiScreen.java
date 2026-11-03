@@ -87,6 +87,8 @@ public final class ClickGuiScreen extends Screen {
    }
 
    protected void init() {
+      // Minecraft 26.3 reads keys through SDL, which only sends typed characters to a screen that asks for them.
+      this.minecraft.textInputManager().startTextInput(this);
       ClickGuiModule style = this.style();
       int count = Category.values().length;
       int needed = count * 128 + (count + 1) * 8;
@@ -728,6 +730,7 @@ public final class ClickGuiScreen extends Screen {
    }
 
    public void removed() {
+      this.minecraft.textInputManager().stopTextInput(this);
       rememberedSearch = this.search;
       if (Gemini.getInstance() != null) {
          Gemini.getInstance().config().save();
