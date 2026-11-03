@@ -26,7 +26,7 @@ jobs:
       - name: Probe Minecraft classes
         if: always()
         run: |
-          .github/scripts/probe.sh $(cat .github/scripts/probe-classes.txt 2>/dev/null)
+          .github/scripts/probe.sh
       - name: Publish build output to ci-out branch
         if: always() && github.event_name == 'push'
         run: |
