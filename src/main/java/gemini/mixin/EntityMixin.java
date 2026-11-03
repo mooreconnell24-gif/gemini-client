@@ -1,12 +1,14 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.util.VersionBridge;
 import gemini.module.modules.EspModule;
 import gemini.module.modules.combat.CombatModules;
+import gemini.module.modules.movement.MovementModules;
 import gemini.module.modules.render.CameraModules;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -69,13 +71,26 @@ public abstract class EntityMixin {
       require = 0
    )
    private void gemini$widenHitbox(CallbackInfoReturnable<Float> cir) {
-      float extra = VersionBridge.legacyHitboxMargin();
       CombatModules.Hitboxes hitboxes = CombatModules.Hitboxes.instance;
       if (hitboxes != null && hitboxes.isEnabled()) {
-         extra += hitboxes.extra((Entity)(Object)this);
+         float extra = hitboxes.extra((Entity)(Object)this);
+         if (extra > 0.0F) {
+            cir.setReturnValue((Float)cir.getReturnValue() + extra);
+         }
       }
-      if (extra > 0.0F) {
-         cir.setReturnValue((Float)cir.getReturnValue() + extra);
+   }
+
+   // Full descriptor on purpose: if a future version changes the signature this matches nothing and is skipped
+   // (require = 0) instead of failing on a mismatched handler.
+   @Inject(
+      method = {"makeStuckInBlock(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/phys/Vec3;)V"},
+      at = {@At("HEAD")},
+      cancellable = true,
+      require = 0
+   )
+   private void gemini$noWeb(BlockState state, Vec3 multiplier, CallbackInfo ci) {
+      if ((Object)this == Minecraft.getInstance().player && MovementModules.NoWeb.cancels(state)) {
+         ci.cancel();
       }
    }
 

@@ -24,6 +24,9 @@ public final class ClickGuiModule extends Module {
          "Custom"
       )
    );
+   private final ModeSetting layout = this.addSetting(
+      new ModeSetting("Layout", "Window is one centred window with a sidebar; Panels is the classic draggable column per category", "Window", "Window", "Panels")
+   );
    private final ColorSetting primary = this.addSetting(new ColorSetting("Primary", "Custom primary accent", 212).showIf(() -> this.theme.is("Custom")));
    private final ColorSetting secondary = this.addSetting(new ColorSetting("Secondary", "Custom secondary accent", 190).showIf(() -> this.theme.is("Custom")));
    private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Smooth open motion, pulses, scrolling, and dropdowns", true));
@@ -59,6 +62,15 @@ public final class ClickGuiModule extends Module {
    @Override
    protected boolean hasBindOptions() {
       return false;
+   }
+
+   public boolean panelLayout() {
+      return this.layout.is("Panels");
+   }
+
+   public void setPanelLayout(boolean panels) {
+      this.layout.set(panels ? "Panels" : "Window");
+      this.save();
    }
 
    public boolean animations() {

@@ -400,11 +400,10 @@ public final class HudOverlay {
    private int drawWaypoints(GuiGraphicsExtractor graphics, Minecraft client, int accent, int startY, boolean shadow) {
       WaypointsModule waypoints = this.modules.byClass(WaypointsModule.class).orElse(null);
       if (waypoints != null && waypoints.isEnabled() && client.level != null) {
-         String dimension = client.level.dimension().identifier().toString();
          int y = startY + 2;
 
          for (WaypointsModule.Waypoint waypoint : waypoints.waypoints()) {
-            if (waypoint.dimension().equals(dimension)) {
+            if (waypoints.visible(waypoint)) {
                double dx = waypoint.x() + 0.5 - client.player.getX();
                double dz = waypoint.z() + 0.5 - client.player.getZ();
                int distance = (int)Math.sqrt(dx * dx + dz * dz);

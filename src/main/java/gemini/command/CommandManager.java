@@ -4,6 +4,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import gemini.Gemini;
 import gemini.config.ConfigManager;
+import gemini.input.GeminiKeys;
+import gemini.input.KeybindConflicts;
+import gemini.input.KeybindReport;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
@@ -14,7 +17,7 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.SingleplayerGate;
@@ -23,7 +26,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.Map.Entry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -32,6 +38,48 @@ import net.minecraft.world.entity.player.Player;
 
 public final class CommandManager {
    private static final int LIST_PREVIEW = 40;
+   private static final List<String> COMMAND_WORDS = List.of(
+      "help",
+      "baritone",
+      "bind",
+      "unbind",
+      "binds",
+      "toggle",
+      "modules",
+      "set",
+      "get",
+      "settings",
+      "reset",
+      "panic",
+      "config",
+      "gui",
+      "menu",
+      "version",
+      "vclip",
+      "hclip",
+      "dismount",
+      "drop",
+      "leave",
+      "disconnect",
+      "say",
+      "rotate",
+      "coords",
+      "sethome",
+      "home",
+      "back",
+      "gm",
+      "gamemode",
+      "day",
+      "noon",
+      "night",
+      "sun",
+      "rain",
+      "heal",
+      "feed",
+      "clear",
+      "reload",
+      "selftest"
+   );
    private static volatile boolean rawSending;
    private final ModuleManager moduleManager;
    private final ConfigManager configManager;
@@ -100,6 +148,10 @@ public final class CommandManager {
                      case "unbind":
                         this.handleUnbind(parts);
                         break;
+                     case "binds":
+                     case "keybinds":
+                        this.listBinds();
+                        break;
                      case "toggle":
                      case "t":
                         this.handleToggle(parts);
@@ -137,12 +189,21 @@ public final class CommandManager {
                      default:
                         String rest = trimmed.substring(parts[0].length()).trim();
                         if (!this.utilities.run(command, parts, rest) && !this.handleModuleCommand(command, parts)) {
-                           feedback("§cUnknown command. Type §f.help §cor §f#help §cfor a list.");
+                           List<String> words = new ArrayList<>(COMMAND_WORDS);
+                           this.moduleManager.getModules().forEach(module -> words.add(module.getName()));
+                           List<String> close = Suggestions.closest(command, words, 3);
+                           feedback(
+                              close.isEmpty()
+                                 ? "§cUnknown command. Type §f.help §cor §f#help §cfor a list."
+                                 : "§cUnknown command. Did you mean §f"
+                                    + Suggestions.humanList(close.stream().map(word -> "." + commandWord(word)).toList())
+                                    + "§c?"
+                           );
                         }
                   }
-               } catch (RuntimeException var9) {
-                  Gemini.LOGGER.error("Command failed: {}", rawMessage, var9);
-                  feedback("§cThat command failed: " + var9.getClass().getSimpleName());
+               } catch (RuntimeException var11) {
+                  Gemini.LOGGER.error("Command failed: {}", rawMessage, var11);
+                  feedback("§cThat command failed: " + var11.getClass().getSimpleName());
                }
 
                return true;
@@ -216,7 +277,7 @@ public final class CommandManager {
                         int z = Integer.parseInt(args[2]);
                         BaritoneBridge.gotoXZ(x, z);
                         feedback("§bBaritone §7pathing to XZ §f" + x + " " + z + "§7.");
-                     } catch (NumberFormatException var15) {
+                     } catch (NumberFormatException var21) {
                         feedback("§cUsage: §f#goto <x> [y] <z>");
                      }
                   } else if (args.length >= 4) {
@@ -226,7 +287,7 @@ public final class CommandManager {
                         int z = Integer.parseInt(args[3]);
                         BaritoneBridge.gotoBlock(new BlockPos(x, y, z));
                         feedback("§bBaritone §7pathing to §f" + x + " " + y + " " + z + "§7.");
-                     } catch (NumberFormatException var14) {
+                     } catch (NumberFormatException var20) {
                         feedback("§cUsage: §f#goto <x> <y> <z>");
                      }
                   } else {
@@ -257,20 +318,22 @@ public final class CommandManager {
                   }
                   break;
                case "goal":
-                  if (args.length >= 2 && (args[1].equalsIgnoreCase("clear") || args[1].equalsIgnoreCase("none"))) {
-                     BuiltInBaritone.setGoalOnly(null);
-                     feedback("§bBaritone §7goal cleared.");
-                  } else if (args.length >= 4) {
-                     try {
-                        BlockPos gp = new BlockPos(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-                        BuiltInBaritone.setGoalOnly(gp);
-                        feedback("§bBaritone §7goal set to §f" + gp.toShortString() + "§7. Type §f#path §7to start.");
-                     } catch (NumberFormatException ignored) {
-                        feedback("§cUsage: §f#goal [x y z | clear]");
+                  if (args.length < 2 || !args[1].equalsIgnoreCase("clear") && !args[1].equalsIgnoreCase("none")) {
+                     if (args.length >= 4) {
+                        try {
+                           BlockPos gp = new BlockPos(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+                           BuiltInBaritone.setGoalOnly(gp);
+                           feedback("§bBaritone §7goal set to §f" + gp.toShortString() + "§7. Type §f#path §7to start.");
+                        } catch (NumberFormatException var19) {
+                           feedback("§cUsage: §f#goal [x y z | clear]");
+                        }
+                     } else {
+                        BuiltInBaritone.setGoalOnly(player.blockPosition());
+                        feedback("§bBaritone §7goal set to current position §f" + player.blockPosition().toShortString() + "§7.");
                      }
                   } else {
-                     BuiltInBaritone.setGoalOnly(player.blockPosition());
-                     feedback("§bBaritone §7goal set to current position §f" + player.blockPosition().toShortString() + "§7.");
+                     BuiltInBaritone.setGoalOnly(null);
+                     feedback("§bBaritone §7goal cleared.");
                   }
                   break;
                case "path":
@@ -286,9 +349,10 @@ public final class CommandManager {
                   if (args.length >= 2) {
                      try {
                         dist = Integer.parseInt(args[1]);
-                     } catch (NumberFormatException ignored) {
+                     } catch (NumberFormatException var18) {
                      }
                   }
+
                   BuiltInBaritone.thisWay(player, dist);
                   BuiltInBaritone.pathToCurrentGoal();
                   feedback("§bBaritone §7heading §f" + dist + "m §7in look direction.");
@@ -306,20 +370,24 @@ public final class CommandManager {
                   break;
                case "sel":
                case "selection":
-                  if (args.length >= 2 && (args[1].equalsIgnoreCase("1") || args[1].equalsIgnoreCase("pos1"))) {
-                     BuiltInBaritone.setSelection(1, player.blockPosition());
-                     feedback("§bBaritone §7pos1 set to §f" + player.blockPosition().toShortString() + "§7.");
-                  } else if (args.length >= 2 && (args[1].equalsIgnoreCase("2") || args[1].equalsIgnoreCase("pos2"))) {
-                     BuiltInBaritone.setSelection(2, player.blockPosition());
-                     feedback("§bBaritone §7pos2 set to §f" + player.blockPosition().toShortString() + "§7.");
-                  } else if (args.length >= 2 && (args[1].equalsIgnoreCase("ca") || args[1].equalsIgnoreCase("cleararea"))) {
-                     if (BuiltInBaritone.clearSelectionArea()) {
-                        feedback("§bBaritone §7clearing selected region.");
+                  if (args.length < 2 || !args[1].equalsIgnoreCase("1") && !args[1].equalsIgnoreCase("pos1")) {
+                     if (args.length < 2 || !args[1].equalsIgnoreCase("2") && !args[1].equalsIgnoreCase("pos2")) {
+                        if (args.length >= 2 && (args[1].equalsIgnoreCase("ca") || args[1].equalsIgnoreCase("cleararea"))) {
+                           if (BuiltInBaritone.clearSelectionArea()) {
+                              feedback("§bBaritone §7clearing selected region.");
+                           } else {
+                              feedback("§cSet §f#sel 1 §cand §f#sel 2 §cfirst.");
+                           }
+                        } else {
+                           feedback("§cUsage: §f#sel 1 §7| §f#sel 2 §7| §f#sel cleararea");
+                        }
                      } else {
-                        feedback("§cSet §f#sel 1 §cand §f#sel 2 §cfirst.");
+                        BuiltInBaritone.setSelection(2, player.blockPosition());
+                        feedback("§bBaritone §7pos2 set to §f" + player.blockPosition().toShortString() + "§7.");
                      }
                   } else {
-                     feedback("§cUsage: §f#sel 1 §7| §f#sel 2 §7| §f#sel cleararea");
+                     BuiltInBaritone.setSelection(1, player.blockPosition());
+                     feedback("§bBaritone §7pos1 set to §f" + player.blockPosition().toShortString() + "§7.");
                   }
                   break;
                case "tunnel":
@@ -327,7 +395,7 @@ public final class CommandManager {
                   if (args.length >= 2) {
                      try {
                         len = Integer.parseInt(args[1]);
-                     } catch (NumberFormatException var13) {
+                     } catch (NumberFormatException var17) {
                      }
                   }
 
@@ -348,14 +416,14 @@ public final class CommandManager {
                   if (args.length >= 2) {
                      try {
                         r = Integer.parseInt(args[1]);
-                     } catch (NumberFormatException var12) {
+                     } catch (NumberFormatException var16) {
                      }
                   }
 
                   if (args.length >= 3) {
                      try {
                         d = Integer.parseInt(args[2]);
-                     } catch (NumberFormatException var11) {
+                     } catch (NumberFormatException var15) {
                      }
                   }
 
@@ -394,7 +462,7 @@ public final class CommandManager {
       feedback("§f.get <module> [setting] §7- inspect a module");
       feedback("§f.reset §7- restore every setting  §f.reset <module> [setting] §7- restore one");
       feedback("§f.<module> <setting> [value] §7- shortcut for get and set");
-      feedback("§f.bind <module> <key> §7/ §f.unbind <module> §7- keybinds");
+      feedback("§f.bind <module> <key> §7/ §f.unbind <module> §7/ §f.binds §7- keybinds (§f.binds §7flags keys used twice)");
       feedback("§f.modules [category] §7- list modules");
       feedback("§f.config save|load|list|reset <name> §7/ §f.reload §7- profiles and the config file");
       feedback("§f.vclip <blocks> §7/ §f.hclip <blocks> §7/ §f.rotate <yaw> [pitch] §7- move and aim");
@@ -403,17 +471,55 @@ public final class CommandManager {
       feedback("§f.sethome §7/ §f.home §7/ §f.back §7- saved teleport in this world");
       feedback("§f.gm survival|creative|adventure|spectator §7/ §f.day §7/ §f.night §7/ §f.sun §7/ §f.rain §7/ §f.heal §7/ §f.feed");
       feedback("§f.selftest §7- crash-test every module in a throwaway world");
-      feedback("§f.panic §7- turn every module off (also the Panic module)  §f.gui §7- open the menu");
-      feedback("§7Module commands: §f.xray reload§7, §f.marker add|remove|list|clear");
+      feedback("§f.panic §7- turn every module off (also the Panic module)  §f.gui §7- open the menu  §f.version §7- build info");
+      feedback("§7Module commands: §f.xray reload§7, §f.marker add|remove|list|clear§7, §f.waypoints add|remove|list|tp|clear");
    }
 
    private Optional<Module> module(String name) {
       Optional<Module> found = this.moduleManager.getByName(name);
       if (found.isEmpty()) {
-         feedback("§cModule not found: §f" + name);
+         List<String> close = Suggestions.closest(name, this.moduleManager.getModules().stream().map(Module::getName).toList(), 3);
+         feedback("§cModule not found: §f" + name + (close.isEmpty() ? "" : " §7(did you mean §f" + Suggestions.humanList(close) + "§7?)"));
       }
 
       return found;
+   }
+
+   private static String commandWord(String name) {
+      return Suggestions.normalize(name);
+   }
+
+   private void listBinds() {
+      Map<String, Integer> bindings = KeybindReport.snapshot(this.moduleManager);
+      Map<Integer, List<String>> conflicts = KeybindConflicts.find(bindings);
+      Map<Integer, List<String>> modulesByKey = new TreeMap<>();
+
+      for (Module module : this.moduleManager.getModules()) {
+         if (module.isBindable() && KeybindConflicts.isBound(module.getKeybind())) {
+            modulesByKey.computeIfAbsent(module.getKeybind(), key -> new ArrayList<>()).add(module.getName());
+         }
+      }
+
+      if (modulesByKey.isEmpty()) {
+         feedback("§7No modules have a keybind yet. Use §f.bind <module> <key>§7 or middle-click a module in the menu.");
+      } else {
+         feedback("§bKeybinds §7(" + modulesByKey.values().stream().mapToInt(List::size).sum() + " modules)");
+
+         for (Entry<Integer, List<String>> entry : modulesByKey.entrySet()) {
+            List<String> clash = conflicts.get(entry.getKey());
+            String line = "§f" + GeminiKeys.displayName(entry.getKey()) + " §7-> §b" + String.join("§7, §b", entry.getValue());
+            if (clash == null) {
+               feedback(line);
+            } else {
+               List<String> outside = clash.stream().filter(name -> !entry.getValue().contains(name)).toList();
+               feedback(line + (outside.isEmpty() ? " §c(shared)" : " §c(shared with " + Suggestions.humanList(outside) + ")"));
+            }
+         }
+
+         if (!conflicts.isEmpty()) {
+            feedback("§7Keys marked §cshared§7 run every action bound to them. Rebind with §f.bind <module> <key>§7.");
+         }
+      }
    }
 
    private boolean handleModuleCommand(String name, String[] parts) {
@@ -575,6 +681,10 @@ public final class CommandManager {
                } else {
                   module.setKeybind(code);
                   feedback("§b" + module.getName() + " §7bound to §f" + parts[2].toUpperCase(Locale.ROOT));
+                  String clash = KeybindReport.warning(this.moduleManager, module, code);
+                  if (clash != null) {
+                     feedback("§e" + clash + ". §7Both will run when you press it.");
+                  }
                }
             }
          });
@@ -874,13 +984,7 @@ public final class CommandManager {
    }
 
    private void handleVersion(String[] parts) {
-      if (parts.length < 2) {
-         feedback("§bActive Version Protocol: §f" + VersionBridge.activeVersionLabel() + " §7(Use §f.version <auto|1.7|1.8|1.12|1.16|1.18|1.19|1.20|1.21|26.2>§7)");
-      } else if (VersionBridge.setForcedProfileByName(parts[1])) {
-         feedback("§aVersion protocol set to §f" + VersionBridge.activeVersionLabel() + "§a.");
-      } else {
-         feedback("§cUnknown version. Supported: §fauto, 1.7.10, 1.8.9, 1.12.2, 1.16.5, 1.18.2, 1.19.4, 1.20.6, 1.21.4, 26.2");
-      }
+      feedback("§bGemini Client §f" + Gemini.VERSION + " §7on Minecraft §f" + VersionBridge.activeVersionLabel());
    }
 
    private void openGui() {
@@ -888,7 +992,7 @@ public final class CommandManager {
       if (!SingleplayerGate.allowed()) {
          feedback(SingleplayerGate.denialMessage());
       } else {
-         client.execute(() -> client.gui.setScreen(new ClickGuiScreen()));
+         client.execute(() -> client.gui.setScreen(Menus.create()));
       }
    }
 
@@ -975,7 +1079,7 @@ public final class CommandManager {
             try {
                Key key = InputConstants.getKey("key.keyboard." + name.replace('_', '.'));
                return key.getValue();
-            } catch (RuntimeException var5) {
+            } catch (RuntimeException var51) {
                return -1;
             }
       }

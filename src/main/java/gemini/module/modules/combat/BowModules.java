@@ -145,7 +145,7 @@ final class BowModules {
                return;
             }
 
-            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), false);
+            LivingEntity enemy = CombatExtras.nearestEnemy(client, player, this.range.get(), true);
             if (enemy != null && player.distanceTo(enemy) > 3.1) {
                int slot = Inventories.findHotbar(player, s -> s.is(Items.FISHING_ROD));
                if (slot >= 0) {
@@ -153,7 +153,7 @@ final class BowModules {
                   if (RotationManager.request(player, rot, 95.0F, true, 5)) {
                      this.previousSlot = player.getInventory().getSelectedSlot();
                      player.getInventory().setSelectedSlot(slot);
-                     client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                     RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
                      player.swing(InteractionHand.MAIN_HAND);
                      this.retractTicks = 3;
                      this.wait = this.delay.intValue();

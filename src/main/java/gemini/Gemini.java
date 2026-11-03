@@ -6,7 +6,7 @@ import gemini.input.GeminiKeys;
 import gemini.module.ModuleManager;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
 import gemini.util.SingleplayerGate;
@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeGizmos;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.network.chat.Component;
@@ -32,7 +33,10 @@ import org.slf4j.LoggerFactory;
 public final class Gemini implements ClientModInitializer {
    public static final String MOD_ID = "gemini";
    public static final String NAME = "Gemini Client";
-   public static final String VERSION = "2.0.0";
+   public static final String VERSION = FabricLoader.getInstance()
+      .getModContainer("gemini")
+      .map(container -> container.getMetadata().getVersion().getFriendlyString())
+      .orElse("dev");
    public static final Logger LOGGER = LoggerFactory.getLogger("Gemini Client");
    private static Gemini instance;
    private ModuleManager moduleManager;
@@ -52,7 +56,7 @@ public final class Gemini implements ClientModInitializer {
       ClientLifecycleEvents.CLIENT_STARTED.register((ClientStarted)client -> {
          this.configManager.load();
          BaritoneBridge.init();
-         LOGGER.info("{} v{} configuration loaded (Built-in Baritone active).", "Gemini Client", "2.0.0");
+         LOGGER.info("{} v{} configuration loaded (Built-in Baritone active).", "Gemini Client", VERSION);
       });
       ClientTickEvents.END_CLIENT_TICK.register((EndTick)client -> {
          SingleplayerGate.tick(client);
@@ -61,6 +65,7 @@ public final class Gemini implements ClientModInitializer {
          }
 
          this.moduleManager.onEndTick(client);
+         this.configManager.tick();
       });
       ClientSendMessageEvents.ALLOW_CHAT.register((AllowChat)message -> {
          if (message != null && (message.startsWith(".") || message.startsWith("#")) && !CommandManager.rawSending()) {
@@ -88,8 +93,9 @@ public final class Gemini implements ClientModInitializer {
       ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)client -> {
          this.moduleManager.shutdown();
          this.configManager.save();
+         this.configManager.flush();
       });
-      LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", "2.0.0");
+      LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", VERSION);
    }
 
    public static Gemini getInstance() {
@@ -113,13 +119,13 @@ public final class Gemini implements ClientModInitializer {
    }
 
    private static void toggleMenu(Minecraft client) {
-      if (client.gui.screen() instanceof ClickGuiScreen) {
+      if (Menus.isMenu(client.gui.screen())) {
          client.gui.setScreen(null);
       } else if (client.player != null) {
          if (!SingleplayerGate.allowed()) {
             client.gui.hud.getChat().addClientSystemMessage(Component.literal(SingleplayerGate.denialMessage()));
          } else {
-            client.gui.setScreen(new ClickGuiScreen());
+            client.gui.setScreen(Menus.create());
          }
       }
    }

@@ -177,6 +177,30 @@ public final class RotationManager {
       return new Vec3(i * j, -k, h * j);
    }
 
+   /**
+    * Runs a module-driven item use (potion, XP bottle, bucket, rod...) while the player briefly faces the current
+    * silent aim. Since 1.21 the use-item packet carries the player's own rotation, so without this the throw goes
+    * where the camera looks instead of where the module aimed. The camera rotation is restored immediately.
+    */
+   public static void useWithAim(LocalPlayer player, Runnable action) {
+      if (player == null || !active || !silent) {
+         action.run();
+         return;
+      }
+
+      float yaw = player.getYRot();
+      float pitch = player.getXRot();
+      player.setYRot(targetYaw);
+      player.setXRot(targetPitch);
+
+      try {
+         action.run();
+      } finally {
+         player.setYRot(yaw);
+         player.setXRot(pitch);
+      }
+   }
+
    public static void clear() {
       active = false;
       requested = false;

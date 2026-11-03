@@ -6,6 +6,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
+import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
@@ -51,7 +52,7 @@ public final class AutoBlockModule extends Module {
    private final BooleanSetting swap = this.addSetting(
       new BooleanSetting("Swap Shield", "Auto-equip a shield into your offhand when needed", true)
    );
-   private final BooleanSetting look = this.addSetting(new BooleanSetting("Face Threat", "Turn toward the attacker so the 90° shield arc", true));
+   private final BooleanSetting look = this.addSetting(new BooleanSetting("Face Threat", "Turn toward the attacker so the shield's 90° arc covers the hit", true));
    private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Face the attacker in packets only", true).showIf(this.look::get));
    private final BooleanSetting workInGui = this.addSetting(new BooleanSetting("In Screens", "Keep blocking while a screen is open", false));
    private final BooleanSetting pauseBaritone = this.addSetting(new BooleanSetting("Pause Baritone", "Stop Baritone pathing while the shield is up", true));
@@ -75,7 +76,7 @@ public final class AutoBlockModule extends Module {
       managing = false;
       Minecraft client = Minecraft.getInstance();
       this.lower(client);
-      client.options.keyUse.setDown(false);
+      client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
       this.sinceAttack.clear();
       this.holdLeft = 0;
       this.faceTarget = null;

@@ -1,5 +1,7 @@
 package gemini.module.setting;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.function.BooleanSupplier;
 
 public final class NumberSetting extends Setting<Double> {
@@ -27,11 +29,44 @@ public final class NumberSetting extends Setting<Double> {
    }
 
    public void set(Double value) {
-      if (value != null && !value.isNaN()) {
+      if (value != null && !value.isNaN() && !value.isInfinite()) {
+         // A default that sits between steps (0.55 on a 0.1 slider) must survive reset and config reloads
+         // instead of snapping to the nearest step.
+         if (Math.abs(value - this.defaultValue()) < 1.0E-9) {
+            super.set(this.defaultValue());
+            return;
+         }
+
          double clamped = Math.max(this.min, Math.min(this.max, value));
          double stepped = this.step > 0.0 ? this.min + Math.round((clamped - this.min) / this.step) * this.step : clamped;
-         super.set(Math.max(this.min, Math.min(this.max, stepped)));
+         super.set(this.tidy(Math.max(this.min, Math.min(this.max, stepped))));
       }
+   }
+
+   /** Decimal places that are meaningful for this setting (from its step and minimum). */
+   public int decimals() {
+      if (this.step <= 0.0) {
+         return 3;
+      }
+
+      int stepScale = Math.max(0, BigDecimal.valueOf(this.step).stripTrailingZeros().scale());
+      int minScale = Math.max(0, BigDecimal.valueOf(this.min).stripTrailingZeros().scale());
+      // Some defaults sit between steps (0.55 on a 0.1 slider); keep their precision instead of rounding them away.
+      int defaultScale = Math.max(0, BigDecimal.valueOf(this.defaultValue()).stripTrailingZeros().scale());
+      return Math.min(6, Math.max(stepScale, Math.max(minScale, defaultScale)));
+   }
+
+   /** The value as text: "0.3" instead of "0.30000000000000004", "4.0" on a 0.1 slider, "0.55" for an in-between default. */
+   public String display() {
+      int stepScale = this.step <= 0.0 ? 0 : Math.max(0, BigDecimal.valueOf(this.step).stripTrailingZeros().scale());
+      BigDecimal value = BigDecimal.valueOf(this.get()).setScale(this.decimals(), RoundingMode.HALF_UP).stripTrailingZeros();
+      return value.setScale(Math.max(stepScale, Math.max(0, value.scale())), RoundingMode.HALF_UP).toPlainString();
+   }
+
+   // Repeated "min + n * step" arithmetic leaves binary noise (0.1 + 2 * 0.1 = 0.30000000000000004), which
+   // showed up in the menu and made isDefault() miss. Round to the setting's precision instead.
+   private double tidy(double value) {
+      return BigDecimal.valueOf(value).setScale(this.decimals(), RoundingMode.HALF_UP).doubleValue();
    }
 
    public void setFromPercent(double percent) {

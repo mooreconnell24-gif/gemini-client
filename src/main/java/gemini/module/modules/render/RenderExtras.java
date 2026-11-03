@@ -1016,7 +1016,7 @@ public final class RenderExtras {
 
    public static final class TntTimer extends Module {
       public TntTimer() {
-         super("TNTTimer", "Render a floating fuse countdown in seconds above.", Category.RENDER);
+         super("TNTTimer", "Render a floating fuse countdown above lit TNT.", Category.RENDER);
       }
 
       @Override

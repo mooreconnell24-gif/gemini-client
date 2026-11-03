@@ -10,7 +10,7 @@ import net.minecraft.world.effect.MobEffects;
 
 public final class Fullbright extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Effect is true fullbright", "Effect", "Effect", "Gamma")
+      new ModeSetting("Mode", "Effect gives true fullbright; Gamma raises brightness to the slider maximum", "Effect", "Effect", "Gamma")
    );
    private double previousGamma = 0.5;
    private boolean gammaApplied;

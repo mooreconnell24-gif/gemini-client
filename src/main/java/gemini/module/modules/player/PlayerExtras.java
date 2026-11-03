@@ -6,14 +6,12 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.render.Render3D;
 import gemini.util.BlockPlacer;
 import gemini.util.Damage;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
 import gemini.util.OffhandClaim;
 import gemini.util.RotationManager;
-import java.util.ArrayDeque;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
@@ -21,9 +19,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -40,7 +38,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnderChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -58,8 +55,6 @@ public final class PlayerExtras {
       sink.accept(new PlayerExtras.InventoryCleaner());
       sink.accept(new PlayerExtras.FastUse());
       sink.accept(new PlayerExtras.NoRotateSet());
-      sink.accept(new PlayerExtras.AntiAfk());
-      sink.accept(new PlayerExtras.Blink());
       sink.accept(new PlayerExtras.AutoWindCharge());
       sink.accept(new PlayerExtras.GhostHand());
       sink.accept(new PlayerExtras.SmartEat());
@@ -75,27 +70,6 @@ public final class PlayerExtras {
 
    static boolean mending(ItemStack stack) {
       return !stack.isEmpty() && stack.isDamageableItem() && EnchantmentHelper.has(stack, EnchantmentEffectComponents.REPAIR_WITH_XP);
-   }
-
-   public static final class AntiAfk extends Module {
-      private final NumberSetting interval = this.addSetting(new NumberSetting("Interval Seconds", "Seconds between anti-AFK actions", 15.0, 3.0, 60.0, 1.0));
-      private int wait;
-
-      public AntiAfk() {
-         super("AntiAFK", "Periodically move and swing to prevent AFK kicks.", Category.PLAYER);
-      }
-
-      @Override
-      public void onTick() {
-         Minecraft client = Minecraft.getInstance();
-         if (PlayerExtras.ready(client) && this.wait-- <= 0) {
-            this.wait = this.interval.intValue() * 20;
-            client.player.swing(InteractionHand.MAIN_HAND);
-            if (client.player.onGround()) {
-               client.player.jumpFromGround();
-            }
-         }
-      }
    }
 
    public static final class AntiBreak extends Module {
@@ -200,7 +174,7 @@ public final class PlayerExtras {
                      RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), 10, 2.0F);
                      int prev = player.getInventory().getSelectedSlot();
                      player.getInventory().setSelectedSlot(bucketSlot);
-                     client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                     RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
                      player.getInventory().setSelectedSlot(prev);
                   }
 
@@ -235,7 +209,7 @@ public final class PlayerExtras {
                            client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, ground, false));
                            player.swing(InteractionHand.MAIN_HAND);
                         } else {
-                           client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                           RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
                            if (stack.is(Items.WATER_BUCKET)) {
                               this.placedWaterPos = ground.above();
                               this.pickupTicks = 12;
@@ -276,7 +250,7 @@ public final class PlayerExtras {
          new BooleanSetting("Include Armor", "Also pull worn armor into the offhand while it mends", false)
       );
       private final BooleanSetting restore = this.addSetting(
-         new BooleanSetting("Restore Offhand", "Put the original offhand item back when everything", true)
+         new BooleanSetting("Restore Offhand", "Put the original offhand item back when everything is repaired", true)
       );
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between swaps", 10.0, 1.0, 60.0, 1.0));
       private ItemStack original = ItemStack.EMPTY;
@@ -419,79 +393,12 @@ public final class PlayerExtras {
                   RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, true, 10, 3.0F);
                   int prev = player.getInventory().getSelectedSlot();
                   player.getInventory().setSelectedSlot(slot);
-                  client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
+                  RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
                   player.getInventory().setSelectedSlot(prev);
                }
             }
 
             this.wasOnGround = player.onGround();
-         }
-      }
-   }
-
-   public static final class Blink extends Module {
-      private final ArrayDeque<Packet<?>> packets = new ArrayDeque<>();
-      private Vec3 startPos;
-      private boolean flushing;
-
-      public Blink() {
-         super("Blink", "Queue movement packets and flush them on disable.", Category.PLAYER);
-      }
-
-      @Override
-      public boolean selfTestExempt() {
-         return true;
-      }
-
-      @Override
-      public void onEnable() {
-         LocalPlayer player = Minecraft.getInstance().player;
-         this.startPos = player == null ? null : player.position();
-         this.packets.clear();
-      }
-
-      @Override
-      public void onDisable() {
-         Minecraft client = Minecraft.getInstance();
-         if (client.getConnection() != null && !this.packets.isEmpty()) {
-            this.flushing = true;
-
-            try {
-               while (!this.packets.isEmpty()) {
-                  client.getConnection().send(this.packets.removeFirst());
-               }
-            } finally {
-               this.flushing = false;
-            }
-         } else {
-            this.packets.clear();
-         }
-
-         this.startPos = null;
-      }
-
-      @Override
-      public String info() {
-         return Integer.toString(this.packets.size());
-      }
-
-      @Override
-      public boolean onSendPacket(Packet<?> packet) {
-         if (!this.flushing && packet instanceof ServerboundMovePlayerPacket) {
-            this.packets.addLast(packet);
-            return true;
-         } else {
-            return false;
-         }
-      }
-
-      @Override
-      public void onRender3D(float partialTick) {
-         if (this.startPos != null) {
-            AABB box = new AABB(
-               this.startPos.x - 0.3, this.startPos.y, this.startPos.z - 0.3, this.startPos.x + 0.3, this.startPos.y + 1.8, this.startPos.z + 0.3
-            );
-            Render3D.box(box, -16722689, true, true, 1.8F, 55, true);
          }
       }
    }
@@ -685,7 +592,7 @@ public final class PlayerExtras {
 
    public static final class InventoryCleaner extends Module {
       private final NumberSetting delay = this.addSetting(new NumberSetting("Delay Ticks", "Ticks between inventory clean actions", 3.0, 1.0, 20.0, 1.0));
-      private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Drop rotten flesh, dirt, seeds, and poisonous", true));
+      private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Drop rotten flesh, seeds, string, bowls and other junk", true));
       private int wait;
 
       public InventoryCleaner() {
@@ -805,7 +712,7 @@ public final class PlayerExtras {
       );
 
       public Phase() {
-         super("Phase", "No clip through blocks on servers without movement.", Category.PLAYER);
+         super("Phase", "No-clip through blocks.", Category.PLAYER);
       }
 
       @Override
@@ -861,7 +768,9 @@ public final class PlayerExtras {
 
    public static final class SmartEat extends Module {
       private final NumberSetting gappleHealth = this.addSetting(new NumberSetting("Gapple Health", "Eat Golden Apple below this health", 12.0, 4.0, 18.0, 1.0));
+      private final NumberSetting hunger = this.addSetting(new NumberSetting("Hunger", "Eat normal food at or below this food level", 16.0, 1.0, 19.0, 1.0));
       private boolean eating;
+      private int previousSlot = -1;
 
       public SmartEat() {
          super("SmartEat", "Eat Golden Apples when low on HP and food when hungry.", Category.PLAYER);
@@ -869,11 +778,7 @@ public final class PlayerExtras {
 
       @Override
       public void onDisable() {
-         if (this.eating) {
-            Minecraft client = Minecraft.getInstance();
-            client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-            this.eating = false;
-         }
+         this.stop(Minecraft.getInstance());
       }
 
       @Override
@@ -882,12 +787,19 @@ public final class PlayerExtras {
          if (PlayerExtras.ready(client) && client.gui.screen() == null) {
             LocalPlayer player = client.player;
             boolean needGap = Damage.health(player) <= this.gappleHealth.floatValue();
-            boolean needFood = player.getFoodData().needsFood();
+            boolean needFood = player.getFoodData().getFoodLevel() <= this.hunger.intValue();
             if (needGap || needFood) {
-               int slot = Inventories.findHotbar(
-                  player, s -> needGap ? s.is(Items.ENCHANTED_GOLDEN_APPLE) || s.is(Items.GOLDEN_APPLE) : s.has(DataComponents.FOOD)
-               );
-               if (slot >= 0) {
+               // Hunger alone never spends golden apples or eats harmful food.
+               int slot = Inventories.findHotbar(player, s -> needGap ? s.is(Items.ENCHANTED_GOLDEN_APPLE) || s.is(Items.GOLDEN_APPLE) : plainFood(s));
+               if (slot < 0 && needGap && needFood) {
+                  slot = Inventories.findHotbar(player, PlayerExtras.SmartEat::plainFood);
+               }
+
+               if (slot >= 0 && (needGap || player.canEat(false))) {
+                  if (!this.eating) {
+                     this.previousSlot = player.getInventory().getSelectedSlot();
+                  }
+
                   player.getInventory().setSelectedSlot(slot);
                   client.options.keyUse.setDown(true);
                   this.eating = true;
@@ -895,17 +807,34 @@ public final class PlayerExtras {
                }
             }
 
-            if (this.eating) {
-               client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-               this.eating = false;
-            }
+            this.stop(client);
          }
+      }
+
+      private void stop(Minecraft client) {
+         if (this.eating) {
+            this.eating = false;
+            client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
+            if (client.player != null && this.previousSlot >= 0) {
+               client.player.getInventory().setSelectedSlot(this.previousSlot);
+            }
+
+            this.previousSlot = -1;
+         }
+      }
+
+      private static final java.util.Set<String> NOT_FOR_HUNGER = java.util.Set.of(
+         "golden_apple", "enchanted_golden_apple", "rotten_flesh", "spider_eye", "poisonous_potato", "pufferfish", "chorus_fruit", "suspicious_stew"
+      );
+
+      private static boolean plainFood(ItemStack stack) {
+         return stack.has(DataComponents.FOOD) && !NOT_FOR_HUNGER.contains(BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath());
       }
    }
 
    public static final class Tower extends Module {
       private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Vanilla jumps normally, Fast nudges you up every", "Fast", "Vanilla", "Fast")
+         new ModeSetting("Mode", "Vanilla jumps normally; Fast pops you up on every placement", "Fast", "Vanilla", "Fast")
       );
       private final BooleanSetting requireJump = this.addSetting(new BooleanSetting("Hold Jump", "Only tower while jump is held", true));
       private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your arm on each placement", true));

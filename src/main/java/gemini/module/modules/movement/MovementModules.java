@@ -8,6 +8,7 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
+import gemini.util.AttributeBoost;
 import gemini.util.Holes;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
@@ -228,11 +229,7 @@ public final class MovementModules {
       private final NumberSetting vertical = this.addSetting(
          new NumberSetting("Vertical Speed", "Climb and descent speed with Jump and Sneak", 0.5, 0.1, 2.0, 0.1)
       );
-      private final BooleanSetting antiKick = this.addSetting(
-         new BooleanSetting("Anti Kick", "Sink a little now and then so servers don't kick", true)
-      );
       private AbstractBoat flying;
-      private int hoverTicks;
 
       public BoatFly() {
          super("Boat Fly", "Fly while sitting in a boat.", Category.MOVEMENT);
@@ -268,10 +265,6 @@ public final class MovementModules {
                   y -= this.vertical.get();
                }
 
-               if (y == 0.0 && this.antiKick.get() && ++this.hoverTicks % 30 == 0) {
-                  y = -0.04;
-               }
-
                Vec3 direction = MoveUtil.direction(player);
                double x = direction == null ? 0.0 : direction.x * this.horizontal.get();
                double z = direction == null ? 0.0 : direction.z * this.horizontal.get();
@@ -289,7 +282,7 @@ public final class MovementModules {
          new ModeSetting("Trigger", "What starts the teleport", "Middle Click", "Middle Click", "Sneak + Right Click")
       );
       private final BooleanSetting steps = this.addSetting(
-         new BooleanSetting("Step Packets", "Send the route in short hops so servers accept long", true)
+         new BooleanSetting("Step Packets", "Send the route in short hops so the server accepts long teleports", true)
       );
       private boolean previous;
 
@@ -473,7 +466,7 @@ public final class MovementModules {
    public static final class FastFall extends Module {
       private final NumberSetting speed = this.addSetting(new NumberSetting("Fall Speed", "Downward speed in blocks per tick", 1.0, 0.3, 4.0, 0.1));
       private final BooleanSetting onlySafe = this.addSetting(
-         new BooleanSetting("Only When Safe", "Only speed up when the whole fall stays under three", true)
+         new BooleanSetting("Only When Safe", "Only speed up when the whole fall stays under three blocks", true)
       );
 
       public FastFall() {
@@ -525,7 +518,7 @@ public final class MovementModules {
 
    public static final class Freeze extends Module {
       public Freeze() {
-         super("Freeze", "Freeze your character mid-air and cancel outgoing.", Category.MOVEMENT);
+         super("Freeze", "Freeze your character mid-air and hold back movement packets.", Category.MOVEMENT);
       }
 
       @Override
@@ -571,7 +564,7 @@ public final class MovementModules {
             }
 
             if (this.noFall.get()) {
-               player.resetFallDistance();
+               AttributeBoost.resetFall(player);
             }
          }
       }
@@ -637,21 +630,41 @@ public final class MovementModules {
    }
 
    public static final class NoWeb extends Module {
+      private static volatile MovementModules.NoWeb instance;
+      private final BooleanSetting webs = this.addSetting(new BooleanSetting("Cobwebs", "Walk through cobwebs at full speed", true));
+      private final BooleanSetting berries = this.addSetting(new BooleanSetting("Berry Bushes", "Walk through sweet berry bushes at full speed", true));
+      private final BooleanSetting snow = this.addSetting(new BooleanSetting("Powder Snow", "Walk through powder snow at full speed", true));
+
       public NoWeb() {
          super("NoWeb", "Prevent cobwebs, berries, and snow from slowing you.", Category.MOVEMENT);
+         instance = this;
+      }
+
+      /** Called from the entity mixin: whether the local player's "stuck in block" slowdown for this block is skipped. */
+      public static boolean cancels(BlockState state) {
+         MovementModules.NoWeb module = instance;
+         if (module == null || !module.isEnabled()) {
+            return false;
+         } else if (state.is(Blocks.COBWEB)) {
+            return module.webs.get();
+         } else if (state.is(Blocks.SWEET_BERRY_BUSH)) {
+            return module.berries.get();
+         } else {
+            return state.is(Blocks.POWDER_SNOW) && module.snow.get();
+         }
       }
 
       @Override
       public void onTick() {
+         // Fallback in case the entity hook is not available: push back toward walking speed.
          Minecraft client = Minecraft.getInstance();
          if (MovementModules.ready(client)) {
             LocalPlayer player = client.player;
             BlockState feet = client.level.getBlockState(player.blockPosition());
             BlockState head = client.level.getBlockState(player.blockPosition().above());
-            if (feet.is(Blocks.COBWEB) || feet.is(Blocks.SWEET_BERRY_BUSH) || feet.is(Blocks.POWDER_SNOW) || head.is(Blocks.COBWEB)) {
-               MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player));
-               if (player.getDeltaMovement().y < 0.0) {
-                  player.setDeltaMovement(player.getDeltaMovement().x, player.getDeltaMovement().y * 1.65, player.getDeltaMovement().z);
+            if (cancels(feet) || cancels(head)) {
+               if (MoveUtil.hasInput(player) && MoveUtil.horizontalSpeed(player) < MoveUtil.baseSpeed(player)) {
+                  MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player));
                }
             }
          }

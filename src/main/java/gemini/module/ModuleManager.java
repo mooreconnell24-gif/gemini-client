@@ -64,6 +64,7 @@ import gemini.module.modules.WeatherControlModule;
 import gemini.module.modules.XrayModule;
 import gemini.module.modules.ZoomModule;
 import gemini.module.modules.bot.BaritoneModules;
+import gemini.module.modules.combat.ArrowDamageModule;
 import gemini.module.modules.combat.CombatExtras;
 import gemini.module.modules.combat.CombatModules;
 import gemini.module.modules.hud.HudWidgets;
@@ -77,9 +78,10 @@ import gemini.module.modules.render.EntityRender;
 import gemini.module.modules.render.RenderExtras;
 import gemini.module.modules.render.WorldRender;
 import gemini.module.modules.world.WorldExtras;
+import gemini.module.modules.world.SandboxModules;
 import gemini.module.modules.world.WorldModules;
 import gemini.ui.HudContext;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.RotationManager;
@@ -256,6 +258,7 @@ public final class ModuleManager {
       this.register(new AutoTotemModule());
       this.register(new AutoGappleModule());
       this.register(new CriticalsModule());
+      this.register(new ArrowDamageModule());
       this.register(new AutoClickerModule());
       this.register(new KeepSprintModule());
       this.register(new FlightModule());
@@ -323,6 +326,7 @@ public final class ModuleManager {
       PlayerExtras.register(this::register);
       WorldModules.register(this::register);
       WorldExtras.register(this::register);
+      SandboxModules.register(this::register);
       MiscModules.register(this::register);
       MiscExtras.register(this::register);
       BaritoneModules.register(this::register);
@@ -486,7 +490,7 @@ public final class ModuleManager {
 
          this.previousKeyState.clear();
          Minecraft client = Minecraft.getInstance();
-         if (client.gui.screen() instanceof ClickGuiScreen) {
+         if (Menus.isMenu(client.gui.screen())) {
             client.gui.setScreen(null);
          }
       } finally {

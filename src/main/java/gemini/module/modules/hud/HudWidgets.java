@@ -12,7 +12,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.ui.HudOverlay;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -1315,7 +1315,7 @@ public final class HudWidgets {
 
       @Override
       protected boolean shouldRenderContent(HudContext hud) {
-         return hud.client.gui.screen() instanceof ClickGuiScreen || this.findTarget(hud.client.player) != null;
+         return Menus.isMenu(hud.client.gui.screen()) || this.findTarget(hud.client.player) != null;
       }
 
       @Override

@@ -9,7 +9,6 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.HudOverlay;
-import gemini.util.Scheduler;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -19,22 +18,17 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ServerboundChatPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.player.Player;
 
 public final class MiscModules {
    private MiscModules() {
@@ -47,11 +41,7 @@ public final class MiscModules {
       sink.accept(new MiscModules.SoundBlocker());
       sink.accept(new MiscModules.XCarry());
       sink.accept(new MiscModules.PacketLogger());
-      sink.accept(new MiscModules.Disabler());
-      sink.accept(new MiscModules.PingSpoof());
       sink.accept(new MiscModules.NameProtect());
-      sink.accept(new MiscModules.AntiBot());
-      sink.accept(new MiscModules.AntiStaff());
       sink.accept(new MiscModules.FlagCheck());
       sink.accept(new MiscModules.PortalMenu());
    }
@@ -59,28 +49,6 @@ public final class MiscModules {
    static String simplePacketName(Packet<?> packet) {
       String name = packet.getClass().getName();
       return name.substring(name.lastIndexOf(46) + 1);
-   }
-
-   public static final class AntiBot extends Module {
-      public static MiscModules.AntiBot instance;
-      private final BooleanSetting tabCheck = this.addSetting(new BooleanSetting("Tab List Check", "Ignore players missing from the tab list", true));
-      private final BooleanSetting zeroHealth = this.addSetting(new BooleanSetting("Zero Health", "Ignore entities with invalid <=0 health", true));
-
-      public AntiBot() {
-         super("AntiBot", "Filter out anti-cheat decoy bots from combat.", Category.COMBAT);
-         instance = this;
-      }
-
-      public boolean isBot(Entity entity) {
-         if (entity instanceof Player player) {
-            Minecraft client = Minecraft.getInstance();
-            return this.zeroHealth.get() && player.getHealth() <= 0.0F
-               ? true
-               : this.tabCheck.get() && client.getConnection() != null && client.getConnection().getPlayerInfo(player.getUUID()) == null;
-         } else {
-            return false;
-         }
-      }
    }
 
    public static final class AntiLag extends Module {
@@ -262,34 +230,6 @@ public final class MiscModules {
       }
    }
 
-   public static final class AntiStaff extends Module {
-      private int cooldown;
-
-      public AntiStaff() {
-         super("AntiStaff", "Alert when spectator or staff players are nearby.", Category.CLIENT);
-      }
-
-      @Override
-      public void onTick() {
-         if (this.cooldown > 0) {
-            this.cooldown--;
-         } else {
-            Minecraft client = Minecraft.getInstance();
-            LocalPlayer self = client.player;
-            if (self != null && client.level != null) {
-               for (Entity entity : client.level.entitiesForRendering()) {
-                  if (entity != self && entity instanceof Player p && p.isSpectator()) {
-                     HudOverlay.pushNotification("AntiStaff", "Spectator nearby: " + p.getName().getString(), false);
-                     CommandManager.feedback("§c[AntiStaff] §7Spectator detected: §f" + p.getName().getString());
-                     this.cooldown = 200;
-                     break;
-                  }
-               }
-            }
-         }
-      }
-   }
-
    public static final class BetterChat extends Module {
       public static MiscModules.BetterChat instance;
       private static final Pattern COORDINATES = Pattern.compile("(?<![\\d.])-?\\d{2,7}(?:\\.\\d+)?[ ,]+-?\\d{1,3}(?:\\.\\d+)?[ ,]+-?\\d{2,7}(?![\\d.])");
@@ -360,33 +300,11 @@ public final class MiscModules {
       }
    }
 
-   public static final class Disabler extends Module {
-      private final ModeSetting mode = this.addSetting(
-         new ModeSetting("Mode", "Packet filter profile", "VulcanSprint", "VulcanSprint", "VerusCombat", "GrimPlace")
-      );
-
-      public Disabler() {
-         super("Disabler", "Filter sprint and action packets for anti-cheats.", Category.CLIENT);
-      }
-
-      @Override
-      public String info() {
-         return this.mode.get();
-      }
-
-      @Override
-      public boolean onSendPacket(Packet<?> packet) {
-         return this.mode.is("VulcanSprint") && packet instanceof ServerboundPlayerCommandPacket cmd
-            ? cmd.getAction() == Action.START_SPRINTING || cmd.getAction() == Action.STOP_SPRINTING
-            : false;
-      }
-   }
-
    public static final class FlagCheck extends Module {
       private int flags;
 
       public FlagCheck() {
-         super("FlagCheck", "Count and alert on server position setbacks.", Category.CLIENT);
+         super("FlagCheck", "Count and alert when the world snaps your position back.", Category.CLIENT);
       }
 
       @Override
@@ -447,6 +365,12 @@ public final class MiscModules {
    public static final class PacketLogger extends Module {
       private final BooleanSetting outgoing = this.addSetting(new BooleanSetting("Outgoing", "Log packets sent to the server", true));
       private final BooleanSetting incoming = this.addSetting(new BooleanSetting("Incoming", "Log packets received from the server", false));
+      private final BooleanSetting skipNoise = this.addSetting(
+         new BooleanSetting("Skip Noise", "Hide movement, keep-alive and other packets sent every tick", true)
+      );
+      private String lastLine;
+      private int repeats;
+      private long lastTime;
 
       public PacketLogger() {
          super("PacketLogger", "Log outgoing and incoming network packets in chat.", Category.CLIENT);
@@ -458,9 +382,15 @@ public final class MiscModules {
       }
 
       @Override
+      public void onEnable() {
+         this.lastLine = null;
+         this.repeats = 0;
+      }
+
+      @Override
       public boolean onSendPacket(Packet<?> packet) {
          if (this.outgoing.get()) {
-            CommandManager.feedback("§b[OUT] §7" + MiscModules.simplePacketName(packet));
+            this.log("§b[OUT] §7", packet);
          }
 
          return false;
@@ -469,10 +399,57 @@ public final class MiscModules {
       @Override
       public boolean onReceivePacket(Packet<?> packet) {
          if (this.incoming.get()) {
-            CommandManager.feedback("§a[IN] §7" + MiscModules.simplePacketName(packet));
+            this.log("§a[IN] §7", packet);
          }
 
          return false;
+      }
+
+      private void log(String prefix, Packet<?> packet) {
+         String name = MiscModules.simplePacketName(packet);
+         if (this.skipNoise.get() && noisy(name)) {
+            return;
+         }
+
+         // Collapse bursts of the same packet into one line with a count instead of flooding chat.
+         String line = prefix + name;
+         long now = System.currentTimeMillis();
+         if (line.equals(this.lastLine) && now - this.lastTime < 1000L) {
+            this.repeats++;
+            this.lastTime = now;
+            return;
+         }
+
+         if (this.repeats > 0) {
+            CommandManager.feedback(this.lastLine + " §8x" + (this.repeats + 1));
+         }
+
+         this.lastLine = line;
+         this.lastTime = now;
+         this.repeats = 0;
+         CommandManager.feedback(line);
+      }
+
+      private static boolean noisy(String name) {
+         return name.contains("MovePlayer")
+            || name.contains("KeepAlive")
+            || name.contains("ClientTickEnd")
+            || name.contains("PlayerInput")
+            || name.contains("Pong")
+            || name.contains("Ping")
+            || name.contains("SetTime")
+            || name.contains("MoveEntity")
+            || name.contains("TeleportEntity")
+            || name.contains("RotateHead")
+            || name.contains("EntityPositionSync")
+            || name.contains("SetEntityMotion")
+            || name.contains("SetEntityData")
+            || name.contains("BundleDelimiter")
+            || name.contains("ChunkBatch")
+            || name.contains("LevelChunk")
+            || name.contains("LightUpdate")
+            || name.contains("SoundEntity")
+            || name.contains("Sound");
       }
    }
 
@@ -504,41 +481,6 @@ public final class MiscModules {
          }
 
          CommandManager.feedback("§bPanic §7all modules disabled.");
-      }
-   }
-
-   public static final class PingSpoof extends Module {
-      private final NumberSetting delayTicks = this.addSetting(new NumberSetting("Delay Ticks", "Ticks to delay KeepAlive packets", 6.0, 1.0, 40.0, 1.0));
-      private boolean forwarding;
-
-      public PingSpoof() {
-         super("PingSpoof", "Delay KeepAlive packets to spoof higher ping.", Category.CLIENT);
-      }
-
-      @Override
-      public String info() {
-         return this.delayTicks.intValue() * 50 + "ms";
-      }
-
-      @Override
-      public boolean onSendPacket(Packet<?> packet) {
-         if (!this.forwarding && packet instanceof ServerboundKeepAlivePacket keepAlive) {
-            Scheduler.later(this.delayTicks.intValue(), () -> {
-               Minecraft client = Minecraft.getInstance();
-               if (client.getConnection() != null) {
-                  this.forwarding = true;
-
-                  try {
-                     client.getConnection().send(keepAlive);
-                  } finally {
-                     this.forwarding = false;
-                  }
-               }
-            });
-            return true;
-         } else {
-            return false;
-         }
       }
    }
 
