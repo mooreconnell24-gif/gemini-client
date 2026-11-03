@@ -23,6 +23,10 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew build --no-configuration-cache --stacktrace 2>&1 | tee build.log
+      - name: Probe Minecraft classes
+        if: always()
+        run: |
+          .github/scripts/probe.sh $(cat .github/scripts/probe-classes.txt 2>/dev/null)
       - name: Publish build output to ci-out branch
         if: always() && github.event_name == 'push'
         run: |

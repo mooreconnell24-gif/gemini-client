@@ -1,0 +1,9 @@
+net.minecraft.world.entity.LivingEntity
+com.mojang.blaze3d.platform.InputConstants
+com.mojang.blaze3d.platform.InputConstants$Type
+com.mojang.blaze3d.platform.InputConstants$Key
+com.mojang.blaze3d.platform.Window
+net.minecraft.client.MouseHandler
+net.minecraft.client.KeyMapping
+net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket
+net.minecraft.network.protocol.game.ServerboundSignUpdatePacket
