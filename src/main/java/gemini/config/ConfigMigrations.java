@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 6;
+   public static final int CURRENT_VERSION = 7;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -44,11 +44,48 @@ public final class ConfigMigrations {
             toV6(modules, notes);
          }
 
+         if (modules != null && from < 7) {
+            toV7(modules, notes);
+         }
+
          root.addProperty("version", CURRENT_VERSION);
          return notes;
       } else {
          return notes;
       }
+   }
+
+   /** AutoClutch was folded into Clutch: carry its on/off state and key bind over, then drop it. */
+   private static void toV7(JsonObject modules, List<String> notes) {
+      String oldKey = findKey(modules, "AutoClutch");
+      if (oldKey == null) {
+         return;
+      }
+
+      JsonElement old = modules.remove(oldKey);
+      if (old != null && old.isJsonObject()) {
+         JsonObject from = old.getAsJsonObject();
+         String newKey = findKey(modules, "Clutch");
+         JsonObject to;
+         if (newKey != null && modules.get(newKey).isJsonObject()) {
+            to = modules.getAsJsonObject(newKey);
+         } else {
+            to = new JsonObject();
+            modules.add("Clutch", to);
+         }
+
+         boolean wasOn = from.has("enabled") && from.get("enabled").isJsonPrimitive() && from.get("enabled").getAsBoolean();
+         if (wasOn) {
+            to.addProperty("enabled", true);
+         }
+
+         boolean clutchBound = to.has("keybind") && to.get("keybind").isJsonPrimitive() && to.get("keybind").getAsInt() > 0;
+         if (!clutchBound && from.has("keybind") && from.get("keybind").isJsonPrimitive()) {
+            to.add("keybind", from.get("keybind"));
+         }
+      }
+
+      notes.add("AutoClutch was merged into Clutch");
    }
 
    /** Minecraft 26.3 moved from GLFW key codes to SDL scancodes; convert saved module keybinds. */

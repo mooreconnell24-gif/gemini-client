@@ -105,12 +105,35 @@ public final class Fuzzy {
          best = Math.max(best, score(query, alias));
       }
 
-      best = Math.max(best, score(query, module.getDescription()) * 3 / 5);
+      // Descriptions and setting names are long, so a scattered-letter match there is almost always noise
+      // ("heal" used to pull in 68 unrelated modules). They only count when the words actually appear.
+      best = Math.max(best, substringScore(query, module.getDescription()) * 3 / 5);
       for (gemini.module.setting.Setting<?> setting : module.settings()) {
-         best = Math.max(best, score(query, setting.name()) * 7 / 10);
+         best = Math.max(best, substringScore(query, setting.name()) * 7 / 10);
       }
 
       return best;
+   }
+
+   /** Like {@link #score} but every query word must appear in the text as written (no scattered letters). */
+   public static int substringScore(String query, String text) {
+      if (query == null || text == null) {
+         return 0;
+      }
+
+      String q = query.trim().toLowerCase(Locale.ROOT);
+      if (q.isEmpty()) {
+         return 1;
+      }
+
+      String t = text.toLowerCase(Locale.ROOT);
+      for (String word : q.split("\\s+")) {
+         if (!t.contains(word)) {
+            return 0;
+         }
+      }
+
+      return score(q, text);
    }
 
    /** The best score of the query against any of the texts. */
