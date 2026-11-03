@@ -6,23 +6,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - name: Build
         run: |
           chmod +x gradlew
           ./gradlew build --no-configuration-cache --stacktrace
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: gemini-jar
           path: build/libs/*.jar
@@ -48,3 +48,11 @@ jobs:
           grep -q "Created: .*atlas" "$log" || { echo "::error::The client never finished loading resources"; tail -60 "$log"; exit 1; }
           grep -q -- "- gemini " "$log" || { echo "::error::Gemini was not loaded"; exit 1; }
           grep -q -- "- baritone-fork" "$log" || { echo "::error::The bundled Baritone was not loaded"; exit 1; }
+      - name: Commit the built jar to the branch (one-off)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/update-all'
+        run: |
+          cp build/libs/gemini-3.0.0.jar gemini-3.0.0.jar
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add gemini-3.0.0.jar
+          git commit -m "Update gemini-3.0.0.jar from CI build [skip ci]" && git push || echo "jar unchanged"
