@@ -1,0 +1,20 @@
+Compiled from "SwingAnimationType.java"
+public final class net.minecraft.world.item.SwingAnimationType extends java.lang.Enum<net.minecraft.world.item.SwingAnimationType> implements net.minecraft.util.StringRepresentable {
+  public static final net.minecraft.world.item.SwingAnimationType NONE;
+  public static final net.minecraft.world.item.SwingAnimationType WHACK;
+  public static final net.minecraft.world.item.SwingAnimationType STAB;
+  private static final java.util.function.IntFunction<net.minecraft.world.item.SwingAnimationType> BY_ID;
+  public static final net.minecraft.util.StringRepresentable$EnumCodec<net.minecraft.world.item.SwingAnimationType> CODEC;
+  public static final net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, net.minecraft.world.item.SwingAnimationType> STREAM_CODEC;
+  private final int id;
+  private final java.lang.String name;
+  private static final net.minecraft.world.item.SwingAnimationType[] $VALUES;
+  public static net.minecraft.world.item.SwingAnimationType[] values();
+  public static net.minecraft.world.item.SwingAnimationType valueOf(java.lang.String);
+  private net.minecraft.world.item.SwingAnimationType(int, java.lang.String);
+  public int getId();
+  public java.lang.String getSerializedName();
+  public static net.minecraft.world.item.SwingAnimationType byName(java.lang.String, net.minecraft.world.item.SwingAnimationType);
+  private static net.minecraft.world.item.SwingAnimationType[] $values();
+  static {};
+}

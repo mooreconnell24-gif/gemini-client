@@ -1,0 +1,331 @@
+Compiled from "SectionCompiler.java"
+public class net.minecraft.client.renderer.chunk.SectionCompiler {
+  private final boolean ambientOcclusion;
+
+  private final boolean cutoutLeaves;
+
+  private final net.minecraft.client.renderer.block.BlockStateModelSet blockModelSet;
+
+  private final net.minecraft.client.renderer.block.FluidStateModelSet fluidModelSet;
+
+  private final net.minecraft.client.color.block.BlockColors blockColors;
+
+  public net.minecraft.client.renderer.chunk.SectionCompiler(boolean, boolean, net.minecraft.client.renderer.block.BlockStateModelSet, net.minecraft.client.renderer.block.FluidStateModelSet, net.minecraft.client.color.block.BlockColors);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: iload_1
+         6: putfield      #7                  // Field ambientOcclusion:Z
+         9: aload_0
+        10: iload_2
+        11: putfield      #13                 // Field cutoutLeaves:Z
+        14: aload_0
+        15: aload_3
+        16: putfield      #16                 // Field blockModelSet:Lnet/minecraft/client/renderer/block/BlockStateModelSet;
+        19: aload_0
+        20: aload         4
+        22: putfield      #20                 // Field fluidModelSet:Lnet/minecraft/client/renderer/block/FluidStateModelSet;
+        25: aload_0
+        26: aload         5
+        28: putfield      #24                 // Field blockColors:Lnet/minecraft/client/color/block/BlockColors;
+        31: return
+
+  public net.minecraft.client.renderer.chunk.SectionCompiler$Results compile(net.minecraft.core.SectionPos, net.minecraft.client.renderer.chunk.RenderSectionRegion, com.mojang.blaze3d.vertex.VertexSorting, net.minecraft.client.renderer.SectionBufferBuilderPack);
+    Code:
+         0: new           #28                 // class net/minecraft/client/renderer/chunk/SectionCompiler$Results
+         3: dup
+         4: invokespecial #30                 // Method net/minecraft/client/renderer/chunk/SectionCompiler$Results."<init>":()V
+         7: astore        5
+         9: aload_1
+        10: invokevirtual #31                 // Method net/minecraft/core/SectionPos.origin:()Lnet/minecraft/core/BlockPos;
+        13: astore        6
+        15: aload         6
+        17: bipush        15
+        19: bipush        15
+        21: bipush        15
+        23: invokevirtual #37                 // Method net/minecraft/core/BlockPos.offset:(III)Lnet/minecraft/core/BlockPos;
+        26: astore        7
+        28: new           #43                 // class net/minecraft/client/renderer/chunk/VisGraph
+        31: dup
+        32: invokespecial #45                 // Method net/minecraft/client/renderer/chunk/VisGraph."<init>":()V
+        35: astore        8
+        37: invokestatic  #46                 // Method net/minecraft/client/renderer/block/BlockModelLighter.enableCaching:()V
+        40: new           #51                 // class net/minecraft/client/renderer/block/ModelBlockRenderer
+        43: dup
+        44: aload_0
+        45: getfield      #7                  // Field ambientOcclusion:Z
+        48: iconst_1
+        49: aload_0
+        50: getfield      #24                 // Field blockColors:Lnet/minecraft/client/color/block/BlockColors;
+        53: invokespecial #53                 // Method net/minecraft/client/renderer/block/ModelBlockRenderer."<init>":(ZZLnet/minecraft/client/color/block/BlockColors;)V
+        56: astore        9
+        58: new           #56                 // class net/minecraft/client/renderer/block/FluidRenderer
+        61: dup
+        62: aload_0
+        63: getfield      #20                 // Field fluidModelSet:Lnet/minecraft/client/renderer/block/FluidStateModelSet;
+        66: invokespecial #58                 // Method net/minecraft/client/renderer/block/FluidRenderer."<init>":(Lnet/minecraft/client/renderer/block/FluidStateModelSet;)V
+        69: astore        10
+        71: new           #61                 // class java/util/EnumMap
+        74: dup
+        75: ldc           #63                 // class net/minecraft/client/renderer/chunk/ChunkSectionLayer
+        77: invokespecial #65                 // Method java/util/EnumMap."<init>":(Ljava/lang/Class;)V
+        80: astore        11
+        82: aload_0
+        83: aload         11
+        85: aload         4
+        87: invokedynamic #68,  0             // InvokeDynamic #0:put:(Lnet/minecraft/client/renderer/chunk/SectionCompiler;Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;)Lnet/minecraft/client/renderer/block/BlockQuadOutput;
+        92: astore        12
+        94: aload_0
+        95: aload         11
+        97: aload         4
+        99: invokedynamic #72,  0             // InvokeDynamic #1:put:(Lnet/minecraft/client/renderer/chunk/SectionCompiler;Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;)Lnet/minecraft/client/renderer/block/BlockQuadOutput;
+       104: astore        13
+       106: aload_0
+       107: aload         11
+       109: aload         4
+       111: invokedynamic #73,  0             // InvokeDynamic #2:getBuilder:(Lnet/minecraft/client/renderer/chunk/SectionCompiler;Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;)Lnet/minecraft/client/renderer/block/FluidRenderer$Output;
+       116: astore        14
+       118: aload         6
+       120: aload         7
+       122: invokestatic  #77                 // Method net/minecraft/core/BlockPos.betweenClosed:(Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/BlockPos;)Ljava/lang/Iterable;
+       125: invokeinterface #81,  1           // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+       130: astore        15
+       132: aload         15
+       134: invokeinterface #87,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+       139: ifeq          375
+       142: aload         15
+       144: invokeinterface #93,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+       149: checkcast     #38                 // class net/minecraft/core/BlockPos
+       152: astore        16
+       154: aload_2
+       155: aload         16
+       157: invokevirtual #97                 // Method net/minecraft/client/renderer/chunk/RenderSectionRegion.getBlockState:(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/state/BlockState;
+       160: astore        17
+       162: aload         17
+       164: invokevirtual #103                // Method net/minecraft/world/level/block/state/BlockState.isAir:()Z
+       167: ifeq          173
+       170: goto          132
+       173: aload         17
+       175: invokevirtual #108                // Method net/minecraft/world/level/block/state/BlockState.isSolidRender:()Z
+       178: ifeq          188
+       181: aload         8
+       183: aload         16
+       185: invokevirtual #111                // Method net/minecraft/client/renderer/chunk/VisGraph.setOpaque:(Lnet/minecraft/core/BlockPos;)V
+       188: aload         17
+       190: invokevirtual #115                // Method net/minecraft/world/level/block/state/BlockState.hasBlockEntity:()Z
+       193: ifeq          217
+       196: aload_2
+       197: aload         16
+       199: invokevirtual #118                // Method net/minecraft/client/renderer/chunk/RenderSectionRegion.getBlockEntity:(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/entity/BlockEntity;
+       202: astore        18
+       204: aload         18
+       206: ifnull        217
+       209: aload_0
+       210: aload         5
+       212: aload         18
+       214: invokevirtual #122                // Method handleBlockEntity:(Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;Lnet/minecraft/world/level/block/entity/BlockEntity;)V
+       217: aload         17
+       219: invokevirtual #126                // Method net/minecraft/world/level/block/state/BlockState.getFluidState:()Lnet/minecraft/world/level/material/FluidState;
+       222: astore        18
+       224: aload         18
+       226: invokevirtual #130                // Method net/minecraft/world/level/material/FluidState.isEmpty:()Z
+       229: ifne          246
+       232: aload         10
+       234: aload_2
+       235: aload         16
+       237: aload         14
+       239: aload         17
+       241: aload         18
+       243: invokevirtual #135                // Method net/minecraft/client/renderer/block/FluidRenderer.tesselate:(Lnet/minecraft/client/renderer/block/BlockAndTintGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/client/renderer/block/FluidRenderer$Output;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/material/FluidState;)V
+       246: aload         17
+       248: invokevirtual #139                // Method net/minecraft/world/level/block/state/BlockState.getRenderShape:()Lnet/minecraft/world/level/block/RenderShape;
+       251: getstatic     #143                // Field net/minecraft/world/level/block/RenderShape.MODEL:Lnet/minecraft/world/level/block/RenderShape;
+       254: if_acmpne     329
+       257: aload         9
+       259: aload_0
+       260: getfield      #13                 // Field cutoutLeaves:Z
+       263: aload         17
+       265: invokestatic  #149                // Method net/minecraft/client/renderer/block/ModelBlockRenderer.forceOpaque:(ZLnet/minecraft/world/level/block/state/BlockState;)Z
+       268: ifeq          276
+       271: aload         13
+       273: goto          278
+       276: aload         12
+       278: aload         16
+       280: invokevirtual #153                // Method net/minecraft/core/BlockPos.getX:()I
+       283: invokestatic  #157                // Method net/minecraft/core/SectionPos.sectionRelative:(I)I
+       286: i2f
+       287: aload         16
+       289: invokevirtual #161                // Method net/minecraft/core/BlockPos.getY:()I
+       292: invokestatic  #157                // Method net/minecraft/core/SectionPos.sectionRelative:(I)I
+       295: i2f
+       296: aload         16
+       298: invokevirtual #164                // Method net/minecraft/core/BlockPos.getZ:()I
+       301: invokestatic  #157                // Method net/minecraft/core/SectionPos.sectionRelative:(I)I
+       304: i2f
+       305: aload_2
+       306: aload         16
+       308: aload         17
+       310: aload_0
+       311: getfield      #16                 // Field blockModelSet:Lnet/minecraft/client/renderer/block/BlockStateModelSet;
+       314: aload         17
+       316: invokevirtual #167                // Method net/minecraft/client/renderer/block/BlockStateModelSet.get:(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/renderer/block/dispatch/BlockStateModel;
+       319: aload         17
+       321: aload         16
+       323: invokevirtual #173                // Method net/minecraft/world/level/block/state/BlockState.getSeed:(Lnet/minecraft/core/BlockPos;)J
+       326: invokevirtual #177                // Method net/minecraft/client/renderer/block/ModelBlockRenderer.tesselateBlock:(Lnet/minecraft/client/renderer/block/BlockQuadOutput;FFFLnet/minecraft/client/renderer/block/BlockAndTintGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/client/renderer/block/dispatch/BlockStateModel;J)V
+       329: goto          372
+       332: astore        18
+       334: aload         18
+       336: ldc           #183                // String Tesselating block in world
+       338: invokestatic  #185                // Method net/minecraft/CrashReport.forThrowable:(Ljava/lang/Throwable;Ljava/lang/String;)Lnet/minecraft/CrashReport;
+       341: astore        19
+       343: aload         19
+       345: ldc           #191                // String Block being tesselated
+       347: invokevirtual #193                // Method net/minecraft/CrashReport.addCategory:(Ljava/lang/String;)Lnet/minecraft/CrashReportCategory;
+       350: astore        20
+       352: aload         20
+       354: aload_2
+       355: aload         16
+       357: aload         17
+       359: invokestatic  #197                // Method net/minecraft/CrashReportCategory.populateBlockDetails:(Lnet/minecraft/CrashReportCategory;Lnet/minecraft/world/level/LevelHeightAccessor;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V
+       362: new           #203                // class net/minecraft/ReportedException
+       365: dup
+       366: aload         19
+       368: invokespecial #205                // Method net/minecraft/ReportedException."<init>":(Lnet/minecraft/CrashReport;)V
+       371: athrow
+       372: goto          132
+       375: aload         11
+       377: invokeinterface #208,  1          // InterfaceMethod java/util/Map.entrySet:()Ljava/util/Set;
+       382: invokeinterface #214,  1          // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+       387: astore        15
+       389: aload         15
+       391: invokeinterface #87,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+       396: ifeq          487
+       399: aload         15
+       401: invokeinterface #93,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+       406: checkcast     #217                // class java/util/Map$Entry
+       409: astore        16
+       411: aload         16
+       413: invokeinterface #219,  1          // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+       418: checkcast     #63                 // class net/minecraft/client/renderer/chunk/ChunkSectionLayer
+       421: astore        17
+       423: aload         16
+       425: invokeinterface #222,  1          // InterfaceMethod java/util/Map$Entry.getValue:()Ljava/lang/Object;
+       430: checkcast     #225                // class com/mojang/blaze3d/vertex/BufferBuilder
+       433: invokevirtual #227                // Method com/mojang/blaze3d/vertex/BufferBuilder.build:()Lcom/mojang/blaze3d/vertex/MeshData;
+       436: astore        18
+       438: aload         18
+       440: ifnull        484
+       443: aload         17
+       445: getstatic     #231                // Field net/minecraft/client/renderer/chunk/ChunkSectionLayer.TRANSLUCENT:Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;
+       448: if_acmpne     469
+       451: aload         5
+       453: aload         18
+       455: aload         4
+       457: aload         17
+       459: invokevirtual #235                // Method net/minecraft/client/renderer/SectionBufferBuilderPack.buffer:(Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;)Lcom/mojang/blaze3d/vertex/ByteBufferBuilder;
+       462: aload_3
+       463: invokevirtual #241                // Method com/mojang/blaze3d/vertex/MeshData.sortQuads:(Lcom/mojang/blaze3d/vertex/ByteBufferBuilder;Lcom/mojang/blaze3d/vertex/VertexSorting;)Lcom/mojang/blaze3d/vertex/MeshData$SortState;
+       466: putfield      #247                // Field net/minecraft/client/renderer/chunk/SectionCompiler$Results.transparencyState:Lcom/mojang/blaze3d/vertex/MeshData$SortState;
+       469: aload         5
+       471: getfield      #251                // Field net/minecraft/client/renderer/chunk/SectionCompiler$Results.renderedLayers:Ljava/util/Map;
+       474: aload         17
+       476: aload         18
+       478: invokeinterface #255,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       483: pop
+       484: goto          389
+       487: invokestatic  #258                // Method net/minecraft/client/renderer/block/BlockModelLighter.clearCache:()V
+       490: aload         5
+       492: aload         8
+       494: invokevirtual #261                // Method net/minecraft/client/renderer/chunk/VisGraph.resolve:()Lnet/minecraft/client/renderer/chunk/VisibilitySet;
+       497: putfield      #265                // Field net/minecraft/client/renderer/chunk/SectionCompiler$Results.visibilitySet:Lnet/minecraft/client/renderer/chunk/VisibilitySet;
+       500: aload         5
+       502: areturn
+      Exception table:
+         from    to  target type
+           173   329   332   Class java/lang/Throwable
+
+  private com.mojang.blaze3d.vertex.BufferBuilder getOrBeginLayer(java.util.Map<net.minecraft.client.renderer.chunk.ChunkSectionLayer, com.mojang.blaze3d.vertex.BufferBuilder>, net.minecraft.client.renderer.SectionBufferBuilderPack, net.minecraft.client.renderer.chunk.ChunkSectionLayer);
+    Code:
+         0: aload_1
+         1: aload_3
+         2: invokeinterface #269,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+         7: checkcast     #225                // class com/mojang/blaze3d/vertex/BufferBuilder
+        10: astore        4
+        12: aload         4
+        14: ifnonnull     52
+        17: aload_2
+        18: aload_3
+        19: invokevirtual #235                // Method net/minecraft/client/renderer/SectionBufferBuilderPack.buffer:(Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;)Lcom/mojang/blaze3d/vertex/ByteBufferBuilder;
+        22: astore        5
+        24: new           #225                // class com/mojang/blaze3d/vertex/BufferBuilder
+        27: dup
+        28: aload         5
+        30: getstatic     #272                // Field com/mojang/renderpearl/api/pipeline/PrimitiveTopology.QUADS:Lcom/mojang/renderpearl/api/pipeline/PrimitiveTopology;
+        33: aload_3
+        34: invokevirtual #278                // Method net/minecraft/client/renderer/chunk/ChunkSectionLayer.vertexFormat:()Lcom/mojang/renderpearl/api/vertex/VertexFormat;
+        37: invokespecial #282                // Method com/mojang/blaze3d/vertex/BufferBuilder."<init>":(Lcom/mojang/blaze3d/vertex/ByteBufferBuilder;Lcom/mojang/renderpearl/api/pipeline/PrimitiveTopology;Lcom/mojang/renderpearl/api/vertex/VertexFormat;)V
+        40: astore        4
+        42: aload_1
+        43: aload_3
+        44: aload         4
+        46: invokeinterface #255,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        51: pop
+        52: aload         4
+        54: areturn
+
+  private <E extends net.minecraft.world.level.block.entity.BlockEntity> void handleBlockEntity(net.minecraft.client.renderer.chunk.SectionCompiler$Results, E);
+    Code:
+         0: aload_1
+         1: getfield      #285                // Field net/minecraft/client/renderer/chunk/SectionCompiler$Results.blockEntities:Ljava/util/List;
+         4: aload_2
+         5: invokeinterface #289,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        10: pop
+        11: return
+
+  private com.mojang.blaze3d.vertex.VertexConsumer lambda$compile$2(java.util.Map, net.minecraft.client.renderer.SectionBufferBuilderPack, net.minecraft.client.renderer.chunk.ChunkSectionLayer);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: aload_3
+         4: invokevirtual #295                // Method getOrBeginLayer:(Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;)Lcom/mojang/blaze3d/vertex/BufferBuilder;
+         7: areturn
+
+  private void lambda$compile$1(java.util.Map, net.minecraft.client.renderer.SectionBufferBuilderPack, float, float, float, net.minecraft.client.resources.model.geometry.BakedQuad, com.mojang.blaze3d.vertex.QuadInstance);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: getstatic     #299                // Field net/minecraft/client/renderer/chunk/ChunkSectionLayer.SOLID:Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;
+         6: invokevirtual #295                // Method getOrBeginLayer:(Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;)Lcom/mojang/blaze3d/vertex/BufferBuilder;
+         9: astore        8
+        11: aload         8
+        13: fload_3
+        14: fload         4
+        16: fload         5
+        18: aload         6
+        20: aload         7
+        22: invokevirtual #302                // Method com/mojang/blaze3d/vertex/BufferBuilder.putBlockBakedQuad:(FFFLnet/minecraft/client/resources/model/geometry/BakedQuad;Lcom/mojang/blaze3d/vertex/QuadInstance;)V
+        25: return
+
+  private void lambda$compile$0(java.util.Map, net.minecraft.client.renderer.SectionBufferBuilderPack, float, float, float, net.minecraft.client.resources.model.geometry.BakedQuad, com.mojang.blaze3d.vertex.QuadInstance);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: aload         6
+         5: invokevirtual #306                // Method net/minecraft/client/resources/model/geometry/BakedQuad.materialInfo:()Lnet/minecraft/client/resources/model/geometry/BakedQuad$MaterialInfo;
+         8: invokevirtual #312                // Method net/minecraft/client/resources/model/geometry/BakedQuad$MaterialInfo.layer:()Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;
+        11: invokevirtual #295                // Method getOrBeginLayer:(Ljava/util/Map;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;)Lcom/mojang/blaze3d/vertex/BufferBuilder;
+        14: astore        8
+        16: aload         8
+        18: fload_3
+        19: fload         4
+        21: fload         5
+        23: aload         6
+        25: aload         7
+        27: invokevirtual #302                // Method com/mojang/blaze3d/vertex/BufferBuilder.putBlockBakedQuad:(FFFLnet/minecraft/client/resources/model/geometry/BakedQuad;Lcom/mojang/blaze3d/vertex/QuadInstance;)V
+        30: return
+}

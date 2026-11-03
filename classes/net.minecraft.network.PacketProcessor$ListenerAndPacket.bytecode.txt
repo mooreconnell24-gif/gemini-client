@@ -1,0 +1,98 @@
+Compiled from "PacketProcessor.java"
+final class net.minecraft.network.PacketProcessor$ListenerAndPacket<T extends net.minecraft.network.PacketListener> extends java.lang.Record {
+  private final T listener;
+
+  private final net.minecraft.network.protocol.Packet<T> packet;
+
+  private net.minecraft.network.PacketProcessor$ListenerAndPacket(T, net.minecraft.network.protocol.Packet<T>);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Record."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+         9: aload_0
+        10: aload_2
+        11: putfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+        14: return
+
+  public void handle();
+    Code:
+         0: aload_0
+         1: getfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+         4: aload_0
+         5: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+         8: invokeinterface #17,  2           // InterfaceMethod net/minecraft/network/PacketListener.shouldHandleMessage:(Lnet/minecraft/network/protocol/Packet;)Z
+        13: ifeq          85
+        16: aload_0
+        17: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+        20: aload_0
+        21: getfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+        24: invokeinterface #23,  2           // InterfaceMethod net/minecraft/network/protocol/Packet.handle:(Lnet/minecraft/network/PacketListener;)V
+        29: goto          99
+        32: astore_1
+        33: aload_1
+        34: instanceof    #31                 // class net/minecraft/ReportedException
+        37: ifeq          68
+        40: aload_1
+        41: checkcast     #31                 // class net/minecraft/ReportedException
+        44: astore_2
+        45: aload_2
+        46: invokevirtual #33                 // Method net/minecraft/ReportedException.getCause:()Ljava/lang/Throwable;
+        49: instanceof    #37                 // class java/lang/OutOfMemoryError
+        52: ifeq          68
+        55: aload_1
+        56: aload_0
+        57: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+        60: aload_0
+        61: getfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+        64: invokestatic  #39                 // Method net/minecraft/network/protocol/PacketUtils.makeReportedException:(Ljava/lang/Exception;Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;)Lnet/minecraft/ReportedException;
+        67: athrow
+        68: aload_0
+        69: getfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+        72: aload_0
+        73: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+        76: aload_1
+        77: invokeinterface #45,  3           // InterfaceMethod net/minecraft/network/PacketListener.onPacketError:(Lnet/minecraft/network/protocol/Packet;Ljava/lang/Exception;)V
+        82: goto          99
+        85: getstatic     #49                 // Field net/minecraft/network/PacketProcessor.LOGGER:Lorg/slf4j/Logger;
+        88: ldc           #55                 // String Ignoring packet due to disconnection: {}
+        90: aload_0
+        91: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+        94: invokeinterface #57,  3           // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;Ljava/lang/Object;)V
+        99: return
+      Exception table:
+         from    to  target type
+            16    29    32   Class java/lang/Exception
+
+  public final java.lang.String toString();
+    Code:
+         0: aload_0
+         1: invokedynamic #63,  0             // InvokeDynamic #0:toString:(Lnet/minecraft/network/PacketProcessor$ListenerAndPacket;)Ljava/lang/String;
+         6: areturn
+
+  public final int hashCode();
+    Code:
+         0: aload_0
+         1: invokedynamic #67,  0             // InvokeDynamic #0:hashCode:(Lnet/minecraft/network/PacketProcessor$ListenerAndPacket;)I
+         6: ireturn
+
+  public final boolean equals(java.lang.Object);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokedynamic #71,  0             // InvokeDynamic #0:equals:(Lnet/minecraft/network/PacketProcessor$ListenerAndPacket;Ljava/lang/Object;)Z
+         7: ireturn
+
+  public T listener();
+    Code:
+         0: aload_0
+         1: getfield      #7                  // Field listener:Lnet/minecraft/network/PacketListener;
+         4: areturn
+
+  public net.minecraft.network.protocol.Packet<T> packet();
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field packet:Lnet/minecraft/network/protocol/Packet;
+         4: areturn
+}

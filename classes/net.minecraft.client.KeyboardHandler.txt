@@ -1,0 +1,40 @@
+Compiled from "KeyboardHandler.java"
+public class net.minecraft.client.KeyboardHandler {
+  private static final org.slf4j.Logger LOGGER;
+  public static final int DEBUG_CRASH_TIME = 10000;
+  private final net.minecraft.client.Minecraft minecraft;
+  private final com.mojang.blaze3d.platform.ClipboardManager clipboardManager;
+  private long debugCrashKeyTime;
+  private long debugCrashKeyReportedTime;
+  private long debugCrashKeyReportedCount;
+  private boolean usedDebugKeyAsModifier;
+  private net.minecraft.client.input.PreeditEvent lastPreeditEvent;
+  public net.minecraft.client.KeyboardHandler(net.minecraft.client.Minecraft);
+  private boolean handleChunkDebugKeys(net.minecraft.client.input.KeyEvent);
+  private void debugFeedbackEnabledStatus(java.lang.String, boolean);
+  private static net.minecraft.network.chat.Component decorateDebugComponent(net.minecraft.ChatFormatting, net.minecraft.network.chat.Component);
+  private void debugWarningComponent(net.minecraft.network.chat.Component);
+  private void debugFeedbackComponent(net.minecraft.network.chat.Component);
+  private void debugFeedbackTranslated(java.lang.String);
+  private void debugFeedback(java.lang.String);
+  private boolean handleDebugKeys(net.minecraft.client.input.KeyEvent);
+  private void copyRecreateCommand(boolean, boolean);
+  private void copyCreateBlockCommand(net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.nbt.CompoundTag);
+  private void copyCreateEntityCommand(net.minecraft.resources.Identifier, net.minecraft.world.phys.Vec3, net.minecraft.nbt.CompoundTag);
+  public void keyPress(long, int, net.minecraft.client.input.KeyEvent);
+  public void charTyped(long, net.minecraft.client.input.CharacterEvent);
+  public void textInput(long, java.lang.String);
+  public void textEditing(long, net.minecraft.client.input.PreeditEvent);
+  public void resubmitLastPreeditEvent(net.minecraft.client.gui.components.events.GuiEventListener);
+  public static void submitPreeditEvent(net.minecraft.client.gui.components.events.GuiEventListener, net.minecraft.client.input.PreeditEvent);
+  public java.lang.String getClipboard();
+  public void setClipboard(java.lang.String);
+  public void tick();
+  private static java.lang.String lambda$submitPreeditEvent$0(net.minecraft.client.input.PreeditEvent) throws java.lang.Exception;
+  private void lambda$textInput$0(long, int);
+  private void lambda$keyPress$0(int);
+  private void lambda$copyRecreateCommand$1(net.minecraft.resources.Identifier, net.minecraft.world.entity.Entity, net.minecraft.nbt.CompoundTag);
+  private void lambda$copyRecreateCommand$0(net.minecraft.world.level.block.state.BlockState, net.minecraft.core.BlockPos, net.minecraft.nbt.CompoundTag);
+  private static net.minecraft.network.chat.Style lambda$handleDebugKeys$0(java.nio.file.Path, net.minecraft.network.chat.Style);
+  static {};
+}

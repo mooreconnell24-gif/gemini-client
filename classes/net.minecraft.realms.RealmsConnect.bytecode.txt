@@ -1,0 +1,94 @@
+Compiled from "RealmsConnect.java"
+public class net.minecraft.realms.RealmsConnect {
+  private static final org.slf4j.Logger LOGGER;
+
+  private final net.minecraft.client.gui.screens.Screen onlineScreen;
+
+  private volatile boolean aborted;
+
+  private net.minecraft.network.Connection connection;
+
+  public net.minecraft.realms.RealmsConnect(net.minecraft.client.gui.screens.Screen);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #7                  // Field onlineScreen:Lnet/minecraft/client/gui/screens/Screen;
+         9: return
+
+  public void connect(com.mojang.realmsclient.dto.RealmsServer, net.minecraft.client.multiplayer.resolver.ServerAddress);
+    Code:
+         0: invokestatic  #13                 // Method net/minecraft/client/Minecraft.getInstance:()Lnet/minecraft/client/Minecraft;
+         3: astore_3
+         4: aload_3
+         5: invokevirtual #19                 // Method net/minecraft/client/Minecraft.prepareForMultiplayer:()V
+         8: aload_3
+         9: invokevirtual #22                 // Method net/minecraft/client/Minecraft.getNarrator:()Lnet/minecraft/client/GameNarrator;
+        12: ldc           #26                 // String mco.connect.success
+        14: invokestatic  #28                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        17: invokevirtual #34                 // Method net/minecraft/client/GameNarrator.saySystemNow:(Lnet/minecraft/network/chat/Component;)V
+        20: aload_2
+        21: invokevirtual #40                 // Method net/minecraft/client/multiplayer/resolver/ServerAddress.getHost:()Ljava/lang/String;
+        24: astore        4
+        26: aload_2
+        27: invokevirtual #46                 // Method net/minecraft/client/multiplayer/resolver/ServerAddress.getPort:()I
+        30: istore        5
+        32: new           #50                 // class net/minecraft/realms/RealmsConnect$1
+        35: dup
+        36: aload_0
+        37: ldc           #52                 // String Realms-connect-task
+        39: aload         4
+        41: iload         5
+        43: aload_3
+        44: aload_1
+        45: invokespecial #54                 // Method net/minecraft/realms/RealmsConnect$1."<init>":(Lnet/minecraft/realms/RealmsConnect;Ljava/lang/String;Ljava/lang/String;ILnet/minecraft/client/Minecraft;Lcom/mojang/realmsclient/dto/RealmsServer;)V
+        48: invokevirtual #57                 // Method net/minecraft/realms/RealmsConnect$1.start:()V
+        51: return
+
+  public void abort();
+    Code:
+         0: aload_0
+         1: iconst_1
+         2: putfield      #60                 // Field aborted:Z
+         5: aload_0
+         6: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+         9: ifnull        41
+        12: aload_0
+        13: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        16: invokevirtual #68                 // Method net/minecraft/network/Connection.isConnected:()Z
+        19: ifeq          41
+        22: aload_0
+        23: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        26: ldc           #74                 // String disconnect.genericReason
+        28: invokestatic  #28                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        31: invokevirtual #76                 // Method net/minecraft/network/Connection.disconnect:(Lnet/minecraft/network/chat/Component;)V
+        34: aload_0
+        35: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        38: invokevirtual #79                 // Method net/minecraft/network/Connection.handleDisconnection:()V
+        41: return
+
+  public void tick();
+    Code:
+         0: aload_0
+         1: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+         4: ifnull        34
+         7: aload_0
+         8: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        11: invokevirtual #68                 // Method net/minecraft/network/Connection.isConnected:()Z
+        14: ifeq          27
+        17: aload_0
+        18: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        21: invokevirtual #82                 // Method net/minecraft/network/Connection.tick:()V
+        24: goto          34
+        27: aload_0
+        28: getfield      #64                 // Field connection:Lnet/minecraft/network/Connection;
+        31: invokevirtual #79                 // Method net/minecraft/network/Connection.handleDisconnection:()V
+        34: return
+
+  static {};
+    Code:
+         0: invokestatic  #85                 // Method com/mojang/logging/LogUtils.getLogger:()Lorg/slf4j/Logger;
+         3: putstatic     #91                 // Field LOGGER:Lorg/slf4j/Logger;
+         6: return
+}

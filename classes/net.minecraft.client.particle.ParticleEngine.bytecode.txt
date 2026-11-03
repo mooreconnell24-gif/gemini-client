@@ -1,0 +1,442 @@
+Compiled from "ParticleEngine.java"
+public class net.minecraft.client.particle.ParticleEngine {
+  private static final java.util.List<net.minecraft.client.particle.ParticleRenderType> RENDER_ORDER;
+
+  protected net.minecraft.client.multiplayer.ClientLevel level;
+
+  private final java.util.Map<net.minecraft.client.particle.ParticleRenderType, net.minecraft.client.particle.ParticleGroup<?>> particles;
+
+  private final java.util.Queue<net.minecraft.client.particle.TrackingEmitter> trackingEmitters;
+
+  private final java.util.Queue<net.minecraft.client.particle.Particle> particlesToAdd;
+
+  private final it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap<net.minecraft.core.particles.ParticleLimit> trackedParticleCounts;
+
+  private final net.minecraft.client.particle.ParticleResources resourceManager;
+
+  private final net.minecraft.util.RandomSource random;
+
+  public net.minecraft.client.particle.ParticleEngine(net.minecraft.client.multiplayer.ClientLevel, net.minecraft.client.particle.ParticleResources);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: invokestatic  #7                  // Method com/google/common/collect/Maps.newIdentityHashMap:()Ljava/util/IdentityHashMap;
+         8: putfield      #13                 // Field particles:Ljava/util/Map;
+        11: aload_0
+        12: invokestatic  #19                 // Method com/google/common/collect/Queues.newArrayDeque:()Ljava/util/ArrayDeque;
+        15: putfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        18: aload_0
+        19: invokestatic  #19                 // Method com/google/common/collect/Queues.newArrayDeque:()Ljava/util/ArrayDeque;
+        22: putfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+        25: aload_0
+        26: new           #32                 // class it/unimi/dsi/fastutil/objects/Object2IntOpenHashMap
+        29: dup
+        30: invokespecial #34                 // Method it/unimi/dsi/fastutil/objects/Object2IntOpenHashMap."<init>":()V
+        33: putfield      #35                 // Field trackedParticleCounts:Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
+        36: aload_0
+        37: invokestatic  #39                 // InterfaceMethod net/minecraft/util/RandomSource.create:()Lnet/minecraft/util/RandomSource;
+        40: putfield      #45                 // Field random:Lnet/minecraft/util/RandomSource;
+        43: aload_0
+        44: aload_1
+        45: putfield      #49                 // Field level:Lnet/minecraft/client/multiplayer/ClientLevel;
+        48: aload_0
+        49: aload_2
+        50: putfield      #53                 // Field resourceManager:Lnet/minecraft/client/particle/ParticleResources;
+        53: return
+
+  public void createTrackingEmitter(net.minecraft.world.entity.Entity, net.minecraft.core.particles.ParticleOptions);
+    Code:
+         0: aload_0
+         1: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+         4: new           #57                 // class net/minecraft/client/particle/TrackingEmitter
+         7: dup
+         8: aload_0
+         9: getfield      #49                 // Field level:Lnet/minecraft/client/multiplayer/ClientLevel;
+        12: aload_1
+        13: aload_2
+        14: invokespecial #59                 // Method net/minecraft/client/particle/TrackingEmitter."<init>":(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/particles/ParticleOptions;)V
+        17: invokeinterface #62,  2           // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        22: pop
+        23: return
+
+  public void createTrackingEmitter(net.minecraft.world.entity.Entity, net.minecraft.core.particles.ParticleOptions, int);
+    Code:
+         0: aload_0
+         1: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+         4: new           #57                 // class net/minecraft/client/particle/TrackingEmitter
+         7: dup
+         8: aload_0
+         9: getfield      #49                 // Field level:Lnet/minecraft/client/multiplayer/ClientLevel;
+        12: aload_1
+        13: aload_2
+        14: iload_3
+        15: invokespecial #68                 // Method net/minecraft/client/particle/TrackingEmitter."<init>":(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/particles/ParticleOptions;I)V
+        18: invokeinterface #62,  2           // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        23: pop
+        24: return
+
+  public net.minecraft.client.particle.Particle createParticle(net.minecraft.core.particles.ParticleOptions, double, double, double, double, double, double);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: dload_2
+         3: dload         4
+         5: dload         6
+         7: dload         8
+         9: dload         10
+        11: dload         12
+        13: invokevirtual #71                 // Method makeParticle:(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)Lnet/minecraft/client/particle/Particle;
+        16: astore        14
+        18: aload         14
+        20: ifnull        32
+        23: aload_0
+        24: aload         14
+        26: invokevirtual #75                 // Method add:(Lnet/minecraft/client/particle/Particle;)V
+        29: aload         14
+        31: areturn
+        32: aconst_null
+        33: areturn
+
+  private <T extends net.minecraft.core.particles.ParticleOptions> net.minecraft.client.particle.Particle makeParticle(T, double, double, double, double, double, double);
+    Code:
+         0: aload_0
+         1: getfield      #53                 // Field resourceManager:Lnet/minecraft/client/particle/ParticleResources;
+         4: invokevirtual #78                 // Method net/minecraft/client/particle/ParticleResources.getProviders:()Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;
+         7: getstatic     #84                 // Field net/minecraft/core/registries/BuiltInRegistries.PARTICLE_TYPE:Lnet/minecraft/core/Registry;
+        10: aload_1
+        11: invokeinterface #90,  1           // InterfaceMethod net/minecraft/core/particles/ParticleOptions.getType:()Lnet/minecraft/core/particles/ParticleType;
+        16: invokeinterface #96,  2           // InterfaceMethod net/minecraft/core/Registry.getId:(Ljava/lang/Object;)I
+        21: invokeinterface #102,  2          // InterfaceMethod it/unimi/dsi/fastutil/ints/Int2ObjectMap.get:(I)Ljava/lang/Object;
+        26: checkcast     #108                // class net/minecraft/client/particle/ParticleProvider
+        29: astore        14
+        31: aload         14
+        33: ifnonnull     38
+        36: aconst_null
+        37: areturn
+        38: aload         14
+        40: aload_1
+        41: aload_0
+        42: getfield      #49                 // Field level:Lnet/minecraft/client/multiplayer/ClientLevel;
+        45: dload_2
+        46: dload         4
+        48: dload         6
+        50: dload         8
+        52: dload         10
+        54: dload         12
+        56: aload_0
+        57: getfield      #45                 // Field random:Lnet/minecraft/util/RandomSource;
+        60: invokeinterface #110,  16         // InterfaceMethod net/minecraft/client/particle/ParticleProvider.createParticle:(Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDDLnet/minecraft/util/RandomSource;)Lnet/minecraft/client/particle/Particle;
+        65: areturn
+
+  public void add(net.minecraft.client.particle.Particle);
+    Code:
+         0: aload_1
+         1: invokevirtual #114                // Method net/minecraft/client/particle/Particle.getParticleLimit:()Ljava/util/Optional;
+         4: astore_2
+         5: aload_2
+         6: invokevirtual #120                // Method java/util/Optional.isPresent:()Z
+         9: ifeq          52
+        12: aload_0
+        13: aload_2
+        14: invokevirtual #126                // Method java/util/Optional.get:()Ljava/lang/Object;
+        17: checkcast     #129                // class net/minecraft/core/particles/ParticleLimit
+        20: invokevirtual #131                // Method hasSpaceInParticleLimit:(Lnet/minecraft/core/particles/ParticleLimit;)Z
+        23: ifeq          63
+        26: aload_0
+        27: getfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+        30: aload_1
+        31: invokeinterface #62,  2           // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        36: pop
+        37: aload_0
+        38: aload_2
+        39: invokevirtual #126                // Method java/util/Optional.get:()Ljava/lang/Object;
+        42: checkcast     #129                // class net/minecraft/core/particles/ParticleLimit
+        45: iconst_1
+        46: invokevirtual #135                // Method updateCount:(Lnet/minecraft/core/particles/ParticleLimit;I)V
+        49: goto          63
+        52: aload_0
+        53: getfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+        56: aload_1
+        57: invokeinterface #62,  2           // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        62: pop
+        63: return
+
+  public void tick();
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field particles:Ljava/util/Map;
+         4: invokedynamic #139,  0            // InvokeDynamic #0:accept:()Ljava/util/function/BiConsumer;
+         9: invokeinterface #143,  2          // InterfaceMethod java/util/Map.forEach:(Ljava/util/function/BiConsumer;)V
+        14: aload_0
+        15: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        18: invokeinterface #149,  1          // InterfaceMethod java/util/Queue.isEmpty:()Z
+        23: ifne          92
+        26: invokestatic  #152                // Method com/google/common/collect/Lists.newArrayList:()Ljava/util/ArrayList;
+        29: astore_1
+        30: aload_0
+        31: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        34: invokeinterface #158,  1          // InterfaceMethod java/util/Queue.iterator:()Ljava/util/Iterator;
+        39: astore_2
+        40: aload_2
+        41: invokeinterface #162,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        46: ifeq          81
+        49: aload_2
+        50: invokeinterface #167,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        55: checkcast     #57                 // class net/minecraft/client/particle/TrackingEmitter
+        58: astore_3
+        59: aload_3
+        60: invokevirtual #170                // Method net/minecraft/client/particle/TrackingEmitter.tick:()V
+        63: aload_3
+        64: invokevirtual #173                // Method net/minecraft/client/particle/TrackingEmitter.isAlive:()Z
+        67: ifne          78
+        70: aload_1
+        71: aload_3
+        72: invokeinterface #176,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        77: pop
+        78: goto          40
+        81: aload_0
+        82: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        85: aload_1
+        86: invokeinterface #179,  2          // InterfaceMethod java/util/Queue.removeAll:(Ljava/util/Collection;)Z
+        91: pop
+        92: aload_0
+        93: getfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+        96: invokeinterface #149,  1          // InterfaceMethod java/util/Queue.isEmpty:()Z
+       101: ifne          166
+       104: aload_0
+       105: getfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+       108: invokeinterface #183,  1          // InterfaceMethod java/util/Queue.poll:()Ljava/lang/Object;
+       113: checkcast     #115                // class net/minecraft/client/particle/Particle
+       116: dup
+       117: astore_1
+       118: ifnull        166
+       121: aload_0
+       122: getfield      #13                 // Field particles:Ljava/util/Map;
+       125: aload_1
+       126: invokevirtual #186                // Method net/minecraft/client/particle/Particle.getGroup:()Lnet/minecraft/client/particle/ParticleRenderType;
+       129: aload_0
+       130: invokedynamic #190,  0            // InvokeDynamic #1:apply:(Lnet/minecraft/client/particle/ParticleEngine;)Ljava/util/function/Function;
+       135: invokeinterface #194,  3          // InterfaceMethod java/util/Map.computeIfAbsent:(Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;
+       140: checkcast     #198                // class net/minecraft/client/particle/ParticleGroup
+       143: aload_1
+       144: invokevirtual #200                // Method net/minecraft/client/particle/ParticleGroup.add:(Lnet/minecraft/client/particle/Particle;)Z
+       147: ifne          104
+       150: aload_1
+       151: invokevirtual #114                // Method net/minecraft/client/particle/Particle.getParticleLimit:()Ljava/util/Optional;
+       154: aload_0
+       155: invokedynamic #203,  0            // InvokeDynamic #2:accept:(Lnet/minecraft/client/particle/ParticleEngine;)Ljava/util/function/Consumer;
+       160: invokevirtual #206                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+       163: goto          104
+       166: return
+
+  private net.minecraft.client.particle.ParticleGroup<?> createParticleGroup(net.minecraft.client.particle.ParticleRenderType);
+    Code:
+         0: aload_1
+         1: getstatic     #210                // Field net/minecraft/client/particle/ParticleRenderType.ITEM_PICKUP:Lnet/minecraft/client/particle/ParticleRenderType;
+         4: if_acmpne     16
+         7: new           #216                // class net/minecraft/client/particle/ItemPickupParticleGroup
+        10: dup
+        11: aload_0
+        12: invokespecial #218                // Method net/minecraft/client/particle/ItemPickupParticleGroup."<init>":(Lnet/minecraft/client/particle/ParticleEngine;)V
+        15: areturn
+        16: aload_1
+        17: getstatic     #221                // Field net/minecraft/client/particle/ParticleRenderType.ELDER_GUARDIANS:Lnet/minecraft/client/particle/ParticleRenderType;
+        20: if_acmpne     32
+        23: new           #224                // class net/minecraft/client/particle/ElderGuardianParticleGroup
+        26: dup
+        27: aload_0
+        28: invokespecial #226                // Method net/minecraft/client/particle/ElderGuardianParticleGroup."<init>":(Lnet/minecraft/client/particle/ParticleEngine;)V
+        31: areturn
+        32: aload_1
+        33: getstatic     #227                // Field net/minecraft/client/particle/ParticleRenderType.NO_RENDER:Lnet/minecraft/client/particle/ParticleRenderType;
+        36: if_acmpne     48
+        39: new           #230                // class net/minecraft/client/particle/NoRenderParticleGroup
+        42: dup
+        43: aload_0
+        44: invokespecial #232                // Method net/minecraft/client/particle/NoRenderParticleGroup."<init>":(Lnet/minecraft/client/particle/ParticleEngine;)V
+        47: areturn
+        48: new           #233                // class net/minecraft/client/particle/QuadParticleGroup
+        51: dup
+        52: aload_0
+        53: aload_1
+        54: invokespecial #235                // Method net/minecraft/client/particle/QuadParticleGroup."<init>":(Lnet/minecraft/client/particle/ParticleEngine;Lnet/minecraft/client/particle/ParticleRenderType;)V
+        57: areturn
+
+  protected void updateCount(net.minecraft.core.particles.ParticleLimit, int);
+    Code:
+         0: aload_0
+         1: getfield      #35                 // Field trackedParticleCounts:Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
+         4: aload_1
+         5: iload_2
+         6: invokevirtual #238                // Method it/unimi/dsi/fastutil/objects/Object2IntOpenHashMap.addTo:(Ljava/lang/Object;I)I
+         9: pop
+        10: return
+
+  public void extract(net.minecraft.client.renderer.state.level.ParticlesRenderState, net.minecraft.client.renderer.culling.Frustum, net.minecraft.client.Camera, float);
+    Code:
+         0: getstatic     #242                // Field RENDER_ORDER:Ljava/util/List;
+         3: invokeinterface #246,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+         8: astore        5
+        10: aload         5
+        12: invokeinterface #162,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        17: ifeq          77
+        20: aload         5
+        22: invokeinterface #167,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        27: checkcast     #211                // class net/minecraft/client/particle/ParticleRenderType
+        30: astore        6
+        32: aload_0
+        33: getfield      #13                 // Field particles:Ljava/util/Map;
+        36: aload         6
+        38: invokeinterface #247,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+        43: checkcast     #198                // class net/minecraft/client/particle/ParticleGroup
+        46: astore        7
+        48: aload         7
+        50: ifnull        74
+        53: aload         7
+        55: invokevirtual #250                // Method net/minecraft/client/particle/ParticleGroup.isEmpty:()Z
+        58: ifne          74
+        61: aload_1
+        62: aload         7
+        64: aload_2
+        65: aload_3
+        66: fload         4
+        68: invokevirtual #251                // Method net/minecraft/client/particle/ParticleGroup.extractRenderState:(Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/Camera;F)Lnet/minecraft/client/renderer/state/level/ParticleGroupRenderState;
+        71: invokevirtual #255                // Method net/minecraft/client/renderer/state/level/ParticlesRenderState.add:(Lnet/minecraft/client/renderer/state/level/ParticleGroupRenderState;)V
+        74: goto          10
+        77: return
+
+  public void setLevel(net.minecraft.client.multiplayer.ClientLevel);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #49                 // Field level:Lnet/minecraft/client/multiplayer/ClientLevel;
+         5: aload_0
+         6: invokevirtual #260                // Method clearParticles:()V
+         9: aload_0
+        10: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        13: invokeinterface #263,  1          // InterfaceMethod java/util/Queue.clear:()V
+        18: return
+
+  public java.lang.String countParticles();
+    Code:
+         0: new           #266                // class java/lang/StringBuilder
+         3: dup
+         4: invokespecial #268                // Method java/lang/StringBuilder."<init>":()V
+         7: astore_1
+         8: iconst_0
+         9: istore_2
+        10: aload_0
+        11: getfield      #13                 // Field particles:Ljava/util/Map;
+        14: invokeinterface #269,  1          // InterfaceMethod java/util/Map.entrySet:()Ljava/util/Set;
+        19: invokeinterface #273,  1          // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+        24: astore_3
+        25: aload_3
+        26: invokeinterface #162,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        31: ifeq          105
+        34: aload_3
+        35: invokeinterface #167,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        40: checkcast     #276                // class java/util/Map$Entry
+        43: astore        4
+        45: aload_1
+        46: aload         4
+        48: invokeinterface #278,  1          // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+        53: checkcast     #211                // class net/minecraft/client/particle/ParticleRenderType
+        56: invokevirtual #281                // Method net/minecraft/client/particle/ParticleRenderType.shorthand:()Ljava/lang/String;
+        59: invokevirtual #285                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        62: ldc_w         #289                // String
+        65: invokevirtual #285                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        68: pop
+        69: aload         4
+        71: invokeinterface #291,  1          // InterfaceMethod java/util/Map$Entry.getValue:()Ljava/lang/Object;
+        76: checkcast     #198                // class net/minecraft/client/particle/ParticleGroup
+        79: invokevirtual #294                // Method net/minecraft/client/particle/ParticleGroup.size:()I
+        82: istore        5
+        84: aload_1
+        85: iload         5
+        87: invokevirtual #298                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        90: ldc_w         #289                // String
+        93: invokevirtual #285                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        96: pop
+        97: iload_2
+        98: iload         5
+       100: iadd
+       101: istore_2
+       102: goto          25
+       105: aload_1
+       106: ldc_w         #301                // String T
+       109: invokevirtual #285                // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+       112: pop
+       113: aload_1
+       114: iload_2
+       115: invokevirtual #298                // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+       118: pop
+       119: aload_1
+       120: invokevirtual #303                // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+       123: areturn
+
+  private boolean hasSpaceInParticleLimit(net.minecraft.core.particles.ParticleLimit);
+    Code:
+         0: aload_0
+         1: getfield      #35                 // Field trackedParticleCounts:Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
+         4: aload_1
+         5: invokevirtual #306                // Method it/unimi/dsi/fastutil/objects/Object2IntOpenHashMap.getInt:(Ljava/lang/Object;)I
+         8: aload_1
+         9: invokevirtual #309                // Method net/minecraft/core/particles/ParticleLimit.limit:()I
+        12: if_icmpge     19
+        15: iconst_1
+        16: goto          20
+        19: iconst_0
+        20: ireturn
+
+  public void clearParticles();
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field particles:Ljava/util/Map;
+         4: invokeinterface #312,  1          // InterfaceMethod java/util/Map.clear:()V
+         9: aload_0
+        10: getfield      #29                 // Field particlesToAdd:Ljava/util/Queue;
+        13: invokeinterface #263,  1          // InterfaceMethod java/util/Queue.clear:()V
+        18: aload_0
+        19: getfield      #25                 // Field trackingEmitters:Ljava/util/Queue;
+        22: invokeinterface #263,  1          // InterfaceMethod java/util/Queue.clear:()V
+        27: aload_0
+        28: getfield      #35                 // Field trackedParticleCounts:Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
+        31: invokevirtual #313                // Method it/unimi/dsi/fastutil/objects/Object2IntOpenHashMap.clear:()V
+        34: return
+
+  public net.minecraft.util.RandomSource getRandom();
+    Code:
+         0: aload_0
+         1: getfield      #45                 // Field random:Lnet/minecraft/util/RandomSource;
+         4: areturn
+
+  private void lambda$tick$1(net.minecraft.core.particles.ParticleLimit);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iconst_m1
+         3: invokevirtual #135                // Method updateCount:(Lnet/minecraft/core/particles/ParticleLimit;I)V
+         6: return
+
+  private static void lambda$tick$0(net.minecraft.client.particle.ParticleRenderType, net.minecraft.client.particle.ParticleGroup);
+    Code:
+         0: invokestatic  #314                // Method net/minecraft/util/profiling/Profiler.get:()Lnet/minecraft/util/profiling/ProfilerFiller;
+         3: aload_0
+         4: invokevirtual #319                // Method net/minecraft/client/particle/ParticleRenderType.name:()Ljava/lang/String;
+         7: invokeinterface #322,  2          // InterfaceMethod net/minecraft/util/profiling/ProfilerFiller.push:(Ljava/lang/String;)V
+        12: aload_1
+        13: invokevirtual #328                // Method net/minecraft/client/particle/ParticleGroup.tickParticles:()V
+        16: invokestatic  #314                // Method net/minecraft/util/profiling/Profiler.get:()Lnet/minecraft/util/profiling/ProfilerFiller;
+        19: invokeinterface #331,  1          // InterfaceMethod net/minecraft/util/profiling/ProfilerFiller.pop:()V
+        24: return
+
+  static {};
+    Code:
+         0: getstatic     #334                // Field net/minecraft/client/particle/ParticleRenderType.SINGLE_QUADS:Lnet/minecraft/client/particle/ParticleRenderType;
+         3: getstatic     #210                // Field net/minecraft/client/particle/ParticleRenderType.ITEM_PICKUP:Lnet/minecraft/client/particle/ParticleRenderType;
+         6: getstatic     #221                // Field net/minecraft/client/particle/ParticleRenderType.ELDER_GUARDIANS:Lnet/minecraft/client/particle/ParticleRenderType;
+         9: invokestatic  #337                // InterfaceMethod java/util/List.of:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/List;
+        12: putstatic     #242                // Field RENDER_ORDER:Ljava/util/List;
+        15: return
+}

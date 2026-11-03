@@ -1,0 +1,18 @@
+Compiled from "PlayerRenderState.java"
+public class net.minecraft.client.renderer.state.level.PlayerRenderState {
+  public boolean hasPlayer;
+  public net.minecraft.client.renderer.entity.state.AvatarRenderState avatarRenderState;
+  public final net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState firstPersonHandsAndItems;
+  public float portalEffectIntensity;
+  public float nauseaEffectIntensity;
+  public float spinningEffectAngle;
+  public boolean isEyeInWater;
+  public boolean isOnFire;
+  public boolean isUnderWater;
+  public double eyePositionY;
+  public net.minecraft.client.renderer.state.level.PlayerRenderState$BlockOverlay blockOverlay;
+  public net.minecraft.client.renderer.state.level.PlayerRenderState$WaterOverlay waterOverlay;
+  public net.minecraft.client.renderer.state.level.PlayerRenderState$ItemActivationRenderState itemActivation;
+  public net.minecraft.client.renderer.state.level.PlayerRenderState();
+  public void reset();
+}

@@ -1,0 +1,1543 @@
+Compiled from "Connection.java"
+public class net.minecraft.network.Connection extends io.netty.channel.SimpleChannelInboundHandler<net.minecraft.network.protocol.Packet<?>> {
+  private static final float AVERAGE_PACKETS_SMOOTHING;
+
+  private static final org.slf4j.Logger LOGGER;
+
+  public static final org.slf4j.Marker ROOT_MARKER;
+
+  public static final org.slf4j.Marker PACKET_MARKER;
+
+  public static final org.slf4j.Marker PACKET_RECEIVED_MARKER;
+
+  public static final org.slf4j.Marker PACKET_SENT_MARKER;
+
+  private static final net.minecraft.network.ProtocolInfo<net.minecraft.network.protocol.handshake.ServerHandshakePacketListener> INITIAL_PROTOCOL;
+
+  private final net.minecraft.network.protocol.PacketFlow receiving;
+
+  private volatile boolean sendLoginDisconnect;
+
+  private final java.util.Queue<java.util.function.Consumer<net.minecraft.network.Connection>> pendingActions;
+
+  private io.netty.channel.Channel channel;
+
+  private java.net.SocketAddress address;
+
+  private volatile net.minecraft.network.PacketListener disconnectListener;
+
+  private volatile net.minecraft.network.PacketListener packetListener;
+
+  private net.minecraft.network.DisconnectionDetails disconnectionDetails;
+
+  private boolean disconnectionHandled;
+
+  private int receivedPackets;
+
+  private int sentPackets;
+
+  private float averageReceivedPackets;
+
+  private float averageSentPackets;
+
+  private int tickCount;
+
+  private boolean handlingFault;
+
+  private volatile net.minecraft.network.DisconnectionDetails delayedDisconnect;
+
+  private net.minecraft.network.BandwidthDebugMonitor bandwidthDebugMonitor;
+
+  public net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method io/netty/channel/SimpleChannelInboundHandler."<init>":()V
+         4: aload_0
+         5: iconst_1
+         6: putfield      #7                  // Field sendLoginDisconnect:Z
+         9: aload_0
+        10: invokestatic  #13                 // Method com/google/common/collect/Queues.newConcurrentLinkedQueue:()Ljava/util/concurrent/ConcurrentLinkedQueue;
+        13: putfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        16: aload_0
+        17: aload_1
+        18: putfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+        21: return
+
+  public void channelActive(io.netty.channel.ChannelHandlerContext) throws java.lang.Exception;
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokespecial #27                 // Method io/netty/channel/SimpleChannelInboundHandler.channelActive:(Lio/netty/channel/ChannelHandlerContext;)V
+         5: aload_0
+         6: aload_1
+         7: invokeinterface #31,  1           // InterfaceMethod io/netty/channel/ChannelHandlerContext.channel:()Lio/netty/channel/Channel;
+        12: putfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        15: aload_0
+        16: aload_0
+        17: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        20: invokeinterface #40,  1           // InterfaceMethod io/netty/channel/Channel.remoteAddress:()Ljava/net/SocketAddress;
+        25: putfield      #46                 // Field address:Ljava/net/SocketAddress;
+        28: aload_0
+        29: getfield      #50                 // Field delayedDisconnect:Lnet/minecraft/network/DisconnectionDetails;
+        32: ifnull        43
+        35: aload_0
+        36: aload_0
+        37: getfield      #50                 // Field delayedDisconnect:Lnet/minecraft/network/DisconnectionDetails;
+        40: invokevirtual #54                 // Method disconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+        43: return
+
+  public void channelInactive(io.netty.channel.ChannelHandlerContext);
+    Code:
+         0: aload_0
+         1: ldc           #58                 // String disconnect.endOfStream
+         3: invokestatic  #60                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+         6: invokevirtual #66                 // Method disconnect:(Lnet/minecraft/network/chat/Component;)V
+         9: return
+
+  public void exceptionCaught(io.netty.channel.ChannelHandlerContext, java.lang.Throwable);
+    Code:
+         0: aload_2
+         1: instanceof    #69                 // class net/minecraft/network/SkipPacketException
+         4: ifeq          22
+         7: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+        10: ldc           #75                 // String Skipping packet due to errors
+        12: aload_2
+        13: invokevirtual #77                 // Method java/lang/Throwable.getCause:()Ljava/lang/Throwable;
+        16: invokeinterface #83,  3           // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;Ljava/lang/Throwable;)V
+        21: return
+        22: aload_0
+        23: getfield      #89                 // Field handlingFault:Z
+        26: ifne          33
+        29: iconst_1
+        30: goto          34
+        33: iconst_0
+        34: istore_3
+        35: aload_0
+        36: iconst_1
+        37: putfield      #89                 // Field handlingFault:Z
+        40: aload_0
+        41: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        44: invokeinterface #92,  1           // InterfaceMethod io/netty/channel/Channel.isOpen:()Z
+        49: ifne          53
+        52: return
+        53: aload_2
+        54: instanceof    #96                 // class io/netty/handler/timeout/TimeoutException
+        57: ifeq          83
+        60: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+        63: ldc           #98                 // String Timeout
+        65: aload_2
+        66: invokeinterface #83,  3           // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;Ljava/lang/Throwable;)V
+        71: aload_0
+        72: ldc           #100                // String disconnect.timeout
+        74: invokestatic  #60                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        77: invokevirtual #66                 // Method disconnect:(Lnet/minecraft/network/chat/Component;)V
+        80: goto          248
+        83: ldc           #102                // String disconnect.genericReason
+        85: iconst_1
+        86: anewarray     #104                // class java/lang/Object
+        89: dup
+        90: iconst_0
+        91: aload_2
+        92: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        95: invokedynamic #112,  0            // InvokeDynamic #0:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+       100: aastore
+       101: invokestatic  #116                // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;[Ljava/lang/Object;)Lnet/minecraft/network/chat/MutableComponent;
+       104: astore        4
+       106: aload_0
+       107: getfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+       110: astore        6
+       112: aload         6
+       114: ifnull        132
+       117: aload         6
+       119: aload         4
+       121: aload_2
+       122: invokeinterface #123,  3          // InterfaceMethod net/minecraft/network/PacketListener.createDisconnectionInfo:(Lnet/minecraft/network/chat/Component;Ljava/lang/Throwable;)Lnet/minecraft/network/DisconnectionDetails;
+       127: astore        5
+       129: goto          143
+       132: new           #129                // class net/minecraft/network/DisconnectionDetails
+       135: dup
+       136: aload         4
+       138: invokespecial #131                // Method net/minecraft/network/DisconnectionDetails."<init>":(Lnet/minecraft/network/chat/Component;)V
+       141: astore        5
+       143: iload_3
+       144: ifeq          231
+       147: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+       150: ldc           #133                // String Failed to sent packet
+       152: aload_2
+       153: invokeinterface #83,  3           // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;Ljava/lang/Throwable;)V
+       158: aload_0
+       159: invokevirtual #135                // Method getSending:()Lnet/minecraft/network/protocol/PacketFlow;
+       162: getstatic     #139                // Field net/minecraft/network/protocol/PacketFlow.CLIENTBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+       165: if_acmpne     218
+       168: aload_0
+       169: getfield      #7                  // Field sendLoginDisconnect:Z
+       172: ifeq          187
+       175: new           #144                // class net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket
+       178: dup
+       179: aload         4
+       181: invokespecial #146                // Method net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket."<init>":(Lnet/minecraft/network/chat/Component;)V
+       184: goto          196
+       187: new           #147                // class net/minecraft/network/protocol/common/ClientboundDisconnectPacket
+       190: dup
+       191: aload         4
+       193: invokespecial #149                // Method net/minecraft/network/protocol/common/ClientboundDisconnectPacket."<init>":(Lnet/minecraft/network/chat/Component;)V
+       196: astore        7
+       198: aload_0
+       199: aload         7
+       201: aload_0
+       202: aload         5
+       204: invokedynamic #150,  0            // InvokeDynamic #1:run:(Lnet/minecraft/network/Connection;Lnet/minecraft/network/DisconnectionDetails;)Ljava/lang/Runnable;
+       209: invokestatic  #154                // Method net/minecraft/network/PacketSendListener.thenRun:(Ljava/lang/Runnable;)Lio/netty/channel/ChannelFutureListener;
+       212: invokevirtual #160                // Method send:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V
+       215: goto          224
+       218: aload_0
+       219: aload         5
+       221: invokevirtual #54                 // Method disconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+       224: aload_0
+       225: invokevirtual #164                // Method setReadOnly:()V
+       228: goto          248
+       231: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+       234: ldc           #167                // String Double fault
+       236: aload_2
+       237: invokeinterface #83,  3           // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;Ljava/lang/Throwable;)V
+       242: aload_0
+       243: aload         5
+       245: invokevirtual #54                 // Method disconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+       248: return
+
+  protected void channelRead0(io.netty.channel.ChannelHandlerContext, net.minecraft.network.protocol.Packet<?>);
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: invokeinterface #92,  1           // InterfaceMethod io/netty/channel/Channel.isOpen:()Z
+         9: ifne          13
+        12: return
+        13: aload_0
+        14: getfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+        17: astore_3
+        18: aload_3
+        19: ifnonnull     32
+        22: new           #169                // class java/lang/IllegalStateException
+        25: dup
+        26: ldc           #171                // String Received a packet before the packet listener was initialized
+        28: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        31: athrow
+        32: aload_3
+        33: aload_2
+        34: invokeinterface #176,  2          // InterfaceMethod net/minecraft/network/PacketListener.shouldHandleMessage:(Lnet/minecraft/network/protocol/Packet;)Z
+        39: ifeq          108
+        42: aload_2
+        43: aload_3
+        44: invokestatic  #180                // Method genericsFtw:(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;)V
+        47: goto          98
+        50: astore        4
+        52: goto          98
+        55: astore        4
+        57: aload_0
+        58: ldc           #188                // String multiplayer.disconnect.server_shutdown
+        60: invokestatic  #60                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        63: invokevirtual #66                 // Method disconnect:(Lnet/minecraft/network/chat/Component;)V
+        66: goto          98
+        69: astore        4
+        71: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+        74: ldc           #192                // String Received {} that couldn\'t be processed
+        76: aload_2
+        77: invokeinterface #194,  1          // InterfaceMethod net/minecraft/network/protocol/Packet.getClass:()Ljava/lang/Class;
+        82: aload         4
+        84: invokeinterface #200,  4          // InterfaceMethod org/slf4j/Logger.error:(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
+        89: aload_0
+        90: ldc           #204                // String multiplayer.disconnect.invalid_packet
+        92: invokestatic  #60                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        95: invokevirtual #66                 // Method disconnect:(Lnet/minecraft/network/chat/Component;)V
+        98: aload_0
+        99: dup
+       100: getfield      #206                // Field receivedPackets:I
+       103: iconst_1
+       104: iadd
+       105: putfield      #206                // Field receivedPackets:I
+       108: return
+      Exception table:
+         from    to  target type
+            42    47    50   Class net/minecraft/server/RunningOnDifferentThreadException
+            42    47    55   Class java/util/concurrent/RejectedExecutionException
+            42    47    69   Class java/lang/ClassCastException
+
+  private static <T extends net.minecraft.network.PacketListener> void genericsFtw(net.minecraft.network.protocol.Packet<T>, net.minecraft.network.PacketListener);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokeinterface #210,  2          // InterfaceMethod net/minecraft/network/protocol/Packet.handle:(Lnet/minecraft/network/PacketListener;)V
+         7: return
+
+  private void validateListener(net.minecraft.network.ProtocolInfo<?>, net.minecraft.network.PacketListener);
+    Code:
+         0: aload_2
+         1: ldc           #214                // String packetListener
+         3: invokestatic  #215                // Method java/util/Objects.requireNonNull:(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+         6: pop
+         7: aload_2
+         8: invokeinterface #221,  1          // InterfaceMethod net/minecraft/network/PacketListener.flow:()Lnet/minecraft/network/protocol/PacketFlow;
+        13: astore_3
+        14: aload_3
+        15: aload_0
+        16: getfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+        19: if_acmpeq     46
+        22: new           #169                // class java/lang/IllegalStateException
+        25: dup
+        26: aload_0
+        27: getfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+        30: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        33: aload_3
+        34: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        37: invokedynamic #224,  0            // InvokeDynamic #2:makeConcatWithConstants:(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+        42: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        45: athrow
+        46: aload_2
+        47: invokeinterface #227,  1          // InterfaceMethod net/minecraft/network/PacketListener.protocol:()Lnet/minecraft/network/ConnectionProtocol;
+        52: astore        4
+        54: aload_1
+        55: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        60: aload         4
+        62: if_acmpeq     87
+        65: new           #169                // class java/lang/IllegalStateException
+        68: dup
+        69: aload         4
+        71: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        74: aload_1
+        75: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        78: invokedynamic #236,  0            // InvokeDynamic #3:makeConcatWithConstants:(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+        83: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        86: athrow
+        87: return
+
+  private static void syncAfterConfigurationChange(io.netty.channel.ChannelFuture);
+    Code:
+         0: aload_0
+         1: invokeinterface #237,  1          // InterfaceMethod io/netty/channel/ChannelFuture.syncUninterruptibly:()Lio/netty/channel/ChannelFuture;
+         6: pop
+         7: goto          31
+        10: astore_1
+        11: aload_1
+        12: instanceof    #245                // class java/nio/channels/ClosedChannelException
+        15: ifeq          29
+        18: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+        21: ldc           #247                // String Connection closed during protocol change
+        23: invokeinterface #249,  2          // InterfaceMethod org/slf4j/Logger.info:(Ljava/lang/String;)V
+        28: return
+        29: aload_1
+        30: athrow
+        31: return
+      Exception table:
+         from    to  target type
+             0     7    10   Class java/lang/Exception
+
+  public <T extends net.minecraft.network.PacketListener> void setupInboundProtocol(net.minecraft.network.ProtocolInfo<T>, T);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: invokevirtual #252                // Method validateListener:(Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/PacketListener;)V
+         6: aload_1
+         7: invokeinterface #256,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.flow:()Lnet/minecraft/network/protocol/PacketFlow;
+        12: aload_0
+        13: invokevirtual #257                // Method getReceiving:()Lnet/minecraft/network/protocol/PacketFlow;
+        16: if_acmpeq     41
+        19: new           #169                // class java/lang/IllegalStateException
+        22: dup
+        23: aload_1
+        24: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        29: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        32: invokedynamic #260,  0            // InvokeDynamic #4:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+        37: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        40: athrow
+        41: aload_0
+        42: aload_2
+        43: putfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+        46: aload_0
+        47: aconst_null
+        48: putfield      #261                // Field disconnectListener:Lnet/minecraft/network/PacketListener;
+        51: aload_1
+        52: invokestatic  #264                // Method net/minecraft/network/UnconfiguredPipelineHandler.setupInboundProtocol:(Lnet/minecraft/network/ProtocolInfo;)Lnet/minecraft/network/UnconfiguredPipelineHandler$InboundConfigurationTask;
+        55: astore_3
+        56: aload_1
+        57: invokeinterface #270,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.bundlerInfo:()Lnet/minecraft/network/protocol/BundlerInfo;
+        62: astore        4
+        64: aload         4
+        66: ifnull        94
+        69: new           #274                // class net/minecraft/network/PacketBundlePacker
+        72: dup
+        73: aload         4
+        75: invokespecial #276                // Method net/minecraft/network/PacketBundlePacker."<init>":(Lnet/minecraft/network/protocol/BundlerInfo;)V
+        78: astore        5
+        80: aload_3
+        81: aload         5
+        83: invokedynamic #279,  0            // InvokeDynamic #5:run:(Lnet/minecraft/network/PacketBundlePacker;)Lnet/minecraft/network/UnconfiguredPipelineHandler$InboundConfigurationTask;
+        88: invokeinterface #282,  2          // InterfaceMethod net/minecraft/network/UnconfiguredPipelineHandler$InboundConfigurationTask.andThen:(Lnet/minecraft/network/UnconfiguredPipelineHandler$InboundConfigurationTask;)Lnet/minecraft/network/UnconfiguredPipelineHandler$InboundConfigurationTask;
+        93: astore_3
+        94: aload_0
+        95: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        98: aload_3
+        99: invokeinterface #288,  2          // InterfaceMethod io/netty/channel/Channel.writeAndFlush:(Ljava/lang/Object;)Lio/netty/channel/ChannelFuture;
+       104: invokestatic  #292                // Method syncAfterConfigurationChange:(Lio/netty/channel/ChannelFuture;)V
+       107: return
+
+  public void setupOutboundProtocol(net.minecraft.network.ProtocolInfo<?>);
+    Code:
+         0: aload_1
+         1: invokeinterface #256,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.flow:()Lnet/minecraft/network/protocol/PacketFlow;
+         6: aload_0
+         7: invokevirtual #135                // Method getSending:()Lnet/minecraft/network/protocol/PacketFlow;
+        10: if_acmpeq     35
+        13: new           #169                // class java/lang/IllegalStateException
+        16: dup
+        17: aload_1
+        18: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        23: invokestatic  #106                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+        26: invokedynamic #296,  0            // InvokeDynamic #6:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+        31: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        34: athrow
+        35: aload_1
+        36: invokestatic  #297                // Method net/minecraft/network/UnconfiguredPipelineHandler.setupOutboundProtocol:(Lnet/minecraft/network/ProtocolInfo;)Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;
+        39: astore_2
+        40: aload_1
+        41: invokeinterface #270,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.bundlerInfo:()Lnet/minecraft/network/protocol/BundlerInfo;
+        46: astore_3
+        47: aload_3
+        48: ifnull        75
+        51: new           #301                // class net/minecraft/network/PacketBundleUnpacker
+        54: dup
+        55: aload_3
+        56: invokespecial #303                // Method net/minecraft/network/PacketBundleUnpacker."<init>":(Lnet/minecraft/network/protocol/BundlerInfo;)V
+        59: astore        4
+        61: aload_2
+        62: aload         4
+        64: invokedynamic #304,  0            // InvokeDynamic #7:run:(Lnet/minecraft/network/PacketBundleUnpacker;)Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;
+        69: invokeinterface #307,  2          // InterfaceMethod net/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask.andThen:(Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;)Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;
+        74: astore_2
+        75: aload_1
+        76: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        81: getstatic     #312                // Field net/minecraft/network/ConnectionProtocol.LOGIN:Lnet/minecraft/network/ConnectionProtocol;
+        84: if_acmpne     91
+        87: iconst_1
+        88: goto          92
+        91: iconst_0
+        92: istore        4
+        94: aload_0
+        95: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        98: aload_2
+        99: aload_0
+       100: iload         4
+       102: invokedynamic #318,  0            // InvokeDynamic #8:run:(Lnet/minecraft/network/Connection;Z)Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;
+       107: invokeinterface #307,  2          // InterfaceMethod net/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask.andThen:(Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;)Lnet/minecraft/network/UnconfiguredPipelineHandler$OutboundConfigurationTask;
+       112: invokeinterface #288,  2          // InterfaceMethod io/netty/channel/Channel.writeAndFlush:(Ljava/lang/Object;)Lio/netty/channel/ChannelFuture;
+       117: invokestatic  #292                // Method syncAfterConfigurationChange:(Lio/netty/channel/ChannelFuture;)V
+       120: return
+
+  public void setListenerForServerboundHandshake(net.minecraft.network.PacketListener);
+    Code:
+         0: aload_0
+         1: getfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+         4: ifnull        18
+         7: new           #169                // class java/lang/IllegalStateException
+        10: dup
+        11: ldc_w         #321                // String Listener already set
+        14: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        17: athrow
+        18: aload_0
+        19: getfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+        22: getstatic     #323                // Field net/minecraft/network/protocol/PacketFlow.SERVERBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+        25: if_acmpne     57
+        28: aload_1
+        29: invokeinterface #221,  1          // InterfaceMethod net/minecraft/network/PacketListener.flow:()Lnet/minecraft/network/protocol/PacketFlow;
+        34: getstatic     #323                // Field net/minecraft/network/protocol/PacketFlow.SERVERBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+        37: if_acmpne     57
+        40: aload_1
+        41: invokeinterface #227,  1          // InterfaceMethod net/minecraft/network/PacketListener.protocol:()Lnet/minecraft/network/ConnectionProtocol;
+        46: getstatic     #326                // Field INITIAL_PROTOCOL:Lnet/minecraft/network/ProtocolInfo;
+        49: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        54: if_acmpeq     68
+        57: new           #169                // class java/lang/IllegalStateException
+        60: dup
+        61: ldc_w         #330                // String Invalid initial listener
+        64: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        67: athrow
+        68: aload_0
+        69: aload_1
+        70: putfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+        73: return
+
+  public void initiateServerboundStatusConnection(java.lang.String, int, net.minecraft.network.protocol.status.ClientStatusPacketListener);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: getstatic     #332                // Field net/minecraft/network/protocol/status/StatusProtocols.SERVERBOUND:Lnet/minecraft/network/ProtocolInfo;
+         6: getstatic     #336                // Field net/minecraft/network/protocol/status/StatusProtocols.CLIENTBOUND:Lnet/minecraft/network/ProtocolInfo;
+         9: aload_3
+        10: getstatic     #338                // Field net/minecraft/network/protocol/handshake/ClientIntent.STATUS:Lnet/minecraft/network/protocol/handshake/ClientIntent;
+        13: invokevirtual #344                // Method initiateServerboundConnection:(Ljava/lang/String;ILnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ClientboundPacketListener;Lnet/minecraft/network/protocol/handshake/ClientIntent;)V
+        16: return
+
+  public void initiateServerboundPlayConnection(java.lang.String, int, net.minecraft.network.protocol.login.ClientLoginPacketListener);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: getstatic     #348                // Field net/minecraft/network/protocol/login/LoginProtocols.SERVERBOUND:Lnet/minecraft/network/ProtocolInfo;
+         6: getstatic     #351                // Field net/minecraft/network/protocol/login/LoginProtocols.CLIENTBOUND:Lnet/minecraft/network/ProtocolInfo;
+         9: aload_3
+        10: getstatic     #352                // Field net/minecraft/network/protocol/handshake/ClientIntent.LOGIN:Lnet/minecraft/network/protocol/handshake/ClientIntent;
+        13: invokevirtual #344                // Method initiateServerboundConnection:(Ljava/lang/String;ILnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ClientboundPacketListener;Lnet/minecraft/network/protocol/handshake/ClientIntent;)V
+        16: return
+
+  public <S extends net.minecraft.network.ServerboundPacketListener, C extends net.minecraft.network.ClientboundPacketListener> void initiateServerboundPlayConnection(java.lang.String, int, net.minecraft.network.ProtocolInfo<S>, net.minecraft.network.ProtocolInfo<C>, C, boolean);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iload_2
+         3: aload_3
+         4: aload         4
+         6: aload         5
+         8: iload         6
+        10: ifeq          19
+        13: getstatic     #354                // Field net/minecraft/network/protocol/handshake/ClientIntent.TRANSFER:Lnet/minecraft/network/protocol/handshake/ClientIntent;
+        16: goto          22
+        19: getstatic     #352                // Field net/minecraft/network/protocol/handshake/ClientIntent.LOGIN:Lnet/minecraft/network/protocol/handshake/ClientIntent;
+        22: invokevirtual #344                // Method initiateServerboundConnection:(Ljava/lang/String;ILnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ClientboundPacketListener;Lnet/minecraft/network/protocol/handshake/ClientIntent;)V
+        25: return
+
+  private <S extends net.minecraft.network.ServerboundPacketListener, C extends net.minecraft.network.ClientboundPacketListener> void initiateServerboundConnection(java.lang.String, int, net.minecraft.network.ProtocolInfo<S>, net.minecraft.network.ProtocolInfo<C>, C, net.minecraft.network.protocol.handshake.ClientIntent);
+    Code:
+         0: aload_3
+         1: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+         6: aload         4
+         8: invokeinterface #231,  1          // InterfaceMethod net/minecraft/network/ProtocolInfo.id:()Lnet/minecraft/network/ConnectionProtocol;
+        13: if_acmpeq     27
+        16: new           #169                // class java/lang/IllegalStateException
+        19: dup
+        20: ldc_w         #357                // String Mismatched initial protocols
+        23: invokespecial #173                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        26: athrow
+        27: aload_0
+        28: aload         5
+        30: putfield      #261                // Field disconnectListener:Lnet/minecraft/network/PacketListener;
+        33: aload_0
+        34: aload_0
+        35: aload         4
+        37: aload         5
+        39: aload_1
+        40: iload_2
+        41: aload         6
+        43: aload_3
+        44: invokedynamic #359,  0            // InvokeDynamic #9:accept:(Lnet/minecraft/network/Connection;Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/ClientboundPacketListener;Ljava/lang/String;ILnet/minecraft/network/protocol/handshake/ClientIntent;Lnet/minecraft/network/ProtocolInfo;)Ljava/util/function/Consumer;
+        49: invokevirtual #363                // Method runOnceConnected:(Ljava/util/function/Consumer;)V
+        52: return
+
+  public void send(net.minecraft.network.protocol.Packet<?>);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aconst_null
+         3: invokevirtual #160                // Method send:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V
+         6: return
+
+  public void send(net.minecraft.network.protocol.Packet<?>, io.netty.channel.ChannelFutureListener);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: iconst_1
+         4: invokevirtual #367                // Method send:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+         7: return
+
+  public void send(net.minecraft.network.protocol.Packet<?>, io.netty.channel.ChannelFutureListener, boolean);
+    Code:
+         0: aload_0
+         1: invokevirtual #370                // Method isConnected:()Z
+         4: ifeq          21
+         7: aload_0
+         8: invokevirtual #373                // Method flushQueue:()V
+        11: aload_0
+        12: aload_1
+        13: aload_2
+        14: iload_3
+        15: invokevirtual #376                // Method sendPacket:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+        18: goto          39
+        21: aload_0
+        22: getfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        25: aload_1
+        26: aload_2
+        27: iload_3
+        28: invokedynamic #379,  0            // InvokeDynamic #10:accept:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)Ljava/util/function/Consumer;
+        33: invokeinterface #382,  2          // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        38: pop
+        39: return
+
+  public void runOnceConnected(java.util.function.Consumer<net.minecraft.network.Connection>);
+    Code:
+         0: aload_0
+         1: invokevirtual #370                // Method isConnected:()Z
+         4: ifeq          21
+         7: aload_0
+         8: invokevirtual #373                // Method flushQueue:()V
+        11: aload_1
+        12: aload_0
+        13: invokeinterface #388,  2          // InterfaceMethod java/util/function/Consumer.accept:(Ljava/lang/Object;)V
+        18: goto          32
+        21: aload_0
+        22: getfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        25: aload_1
+        26: invokeinterface #382,  2          // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        31: pop
+        32: return
+
+  private void sendPacket(net.minecraft.network.protocol.Packet<?>, io.netty.channel.ChannelFutureListener, boolean);
+    Code:
+         0: aload_0
+         1: dup
+         2: getfield      #393                // Field sentPackets:I
+         5: iconst_1
+         6: iadd
+         7: putfield      #393                // Field sentPackets:I
+        10: aload_0
+        11: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        14: invokeinterface #396,  1          // InterfaceMethod io/netty/channel/Channel.eventLoop:()Lio/netty/channel/EventLoop;
+        19: invokeinterface #400,  1          // InterfaceMethod io/netty/channel/EventLoop.inEventLoop:()Z
+        24: ifeq          37
+        27: aload_0
+        28: aload_1
+        29: aload_2
+        30: iload_3
+        31: invokevirtual #405                // Method doSendPacket:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+        34: goto          60
+        37: aload_0
+        38: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        41: invokeinterface #396,  1          // InterfaceMethod io/netty/channel/Channel.eventLoop:()Lio/netty/channel/EventLoop;
+        46: aload_0
+        47: aload_1
+        48: aload_2
+        49: iload_3
+        50: invokedynamic #408,  0            // InvokeDynamic #11:run:(Lnet/minecraft/network/Connection;Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)Ljava/lang/Runnable;
+        55: invokeinterface #411,  2          // InterfaceMethod io/netty/channel/EventLoop.execute:(Ljava/lang/Runnable;)V
+        60: return
+
+  private void doSendPacket(net.minecraft.network.protocol.Packet<?>, io.netty.channel.ChannelFutureListener, boolean);
+    Code:
+         0: aload_2
+         1: ifnull        45
+         4: iload_3
+         5: ifeq          21
+         8: aload_0
+         9: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        12: aload_1
+        13: invokeinterface #288,  2          // InterfaceMethod io/netty/channel/Channel.writeAndFlush:(Ljava/lang/Object;)Lio/netty/channel/ChannelFuture;
+        18: goto          31
+        21: aload_0
+        22: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        25: aload_1
+        26: invokeinterface #415,  2          // InterfaceMethod io/netty/channel/Channel.write:(Ljava/lang/Object;)Lio/netty/channel/ChannelFuture;
+        31: astore        4
+        33: aload         4
+        35: aload_2
+        36: invokeinterface #418,  2          // InterfaceMethod io/netty/channel/ChannelFuture.addListener:(Lio/netty/util/concurrent/GenericFutureListener;)Lio/netty/channel/ChannelFuture;
+        41: pop
+        42: goto          92
+        45: iload_3
+        46: ifeq          72
+        49: aload_0
+        50: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        53: aload_1
+        54: aload_0
+        55: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        58: invokeinterface #422,  1          // InterfaceMethod io/netty/channel/Channel.voidPromise:()Lio/netty/channel/ChannelPromise;
+        63: invokeinterface #426,  3          // InterfaceMethod io/netty/channel/Channel.writeAndFlush:(Ljava/lang/Object;Lio/netty/channel/ChannelPromise;)Lio/netty/channel/ChannelFuture;
+        68: pop
+        69: goto          92
+        72: aload_0
+        73: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        76: aload_1
+        77: aload_0
+        78: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        81: invokeinterface #422,  1          // InterfaceMethod io/netty/channel/Channel.voidPromise:()Lio/netty/channel/ChannelPromise;
+        86: invokeinterface #429,  3          // InterfaceMethod io/netty/channel/Channel.write:(Ljava/lang/Object;Lio/netty/channel/ChannelPromise;)Lio/netty/channel/ChannelFuture;
+        91: pop
+        92: return
+
+  public void flushChannel();
+    Code:
+         0: aload_0
+         1: invokevirtual #370                // Method isConnected:()Z
+         4: ifeq          14
+         7: aload_0
+         8: invokevirtual #431                // Method flush:()V
+        11: goto          29
+        14: aload_0
+        15: getfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        18: invokedynamic #434,  0            // InvokeDynamic #12:accept:()Ljava/util/function/Consumer;
+        23: invokeinterface #382,  2          // InterfaceMethod java/util/Queue.add:(Ljava/lang/Object;)Z
+        28: pop
+        29: return
+
+  private void flush();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: invokeinterface #396,  1          // InterfaceMethod io/netty/channel/Channel.eventLoop:()Lio/netty/channel/EventLoop;
+         9: invokeinterface #400,  1          // InterfaceMethod io/netty/channel/EventLoop.inEventLoop:()Z
+        14: ifeq          30
+        17: aload_0
+        18: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        21: invokeinterface #437,  1          // InterfaceMethod io/netty/channel/Channel.flush:()Lio/netty/channel/Channel;
+        26: pop
+        27: goto          50
+        30: aload_0
+        31: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        34: invokeinterface #396,  1          // InterfaceMethod io/netty/channel/Channel.eventLoop:()Lio/netty/channel/EventLoop;
+        39: aload_0
+        40: invokedynamic #439,  0            // InvokeDynamic #13:run:(Lnet/minecraft/network/Connection;)Ljava/lang/Runnable;
+        45: invokeinterface #411,  2          // InterfaceMethod io/netty/channel/EventLoop.execute:(Ljava/lang/Runnable;)V
+        50: return
+
+  private void flushQueue();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnull        19
+         7: aload_0
+         8: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        11: invokeinterface #92,  1           // InterfaceMethod io/netty/channel/Channel.isOpen:()Z
+        16: ifne          20
+        19: return
+        20: aload_0
+        21: getfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        24: dup
+        25: astore_1
+        26: monitorenter
+        27: aload_0
+        28: getfield      #19                 // Field pendingActions:Ljava/util/Queue;
+        31: invokeinterface #442,  1          // InterfaceMethod java/util/Queue.poll:()Ljava/lang/Object;
+        36: checkcast     #389                // class java/util/function/Consumer
+        39: dup
+        40: astore_2
+        41: ifnull        54
+        44: aload_2
+        45: aload_0
+        46: invokeinterface #388,  2          // InterfaceMethod java/util/function/Consumer.accept:(Ljava/lang/Object;)V
+        51: goto          27
+        54: aload_1
+        55: monitorexit
+        56: goto          64
+        59: astore_3
+        60: aload_1
+        61: monitorexit
+        62: aload_3
+        63: athrow
+        64: return
+      Exception table:
+         from    to  target type
+            27    56    59   any
+            59    62    59   any
+
+  public void tick();
+    Code:
+         0: aload_0
+         1: invokevirtual #373                // Method flushQueue:()V
+         4: aload_0
+         5: getfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+         8: astore_2
+         9: aload_2
+        10: instanceof    #446                // class net/minecraft/network/TickablePacketListener
+        13: ifeq          27
+        16: aload_2
+        17: checkcast     #446                // class net/minecraft/network/TickablePacketListener
+        20: astore_1
+        21: aload_1
+        22: invokeinterface #448,  1          // InterfaceMethod net/minecraft/network/TickablePacketListener.tick:()V
+        27: aload_0
+        28: invokevirtual #370                // Method isConnected:()Z
+        31: ifne          45
+        34: aload_0
+        35: getfield      #451                // Field disconnectionHandled:Z
+        38: ifne          45
+        41: aload_0
+        42: invokevirtual #454                // Method handleDisconnection:()V
+        45: aload_0
+        46: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        49: ifnull        62
+        52: aload_0
+        53: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        56: invokeinterface #437,  1          // InterfaceMethod io/netty/channel/Channel.flush:()Lio/netty/channel/Channel;
+        61: pop
+        62: aload_0
+        63: dup
+        64: getfield      #457                // Field tickCount:I
+        67: dup_x1
+        68: iconst_1
+        69: iadd
+        70: putfield      #457                // Field tickCount:I
+        73: bipush        20
+        75: irem
+        76: ifne          83
+        79: aload_0
+        80: invokevirtual #462                // Method tickSecond:()V
+        83: aload_0
+        84: getfield      #465                // Field bandwidthDebugMonitor:Lnet/minecraft/network/BandwidthDebugMonitor;
+        87: ifnull        97
+        90: aload_0
+        91: getfield      #465                // Field bandwidthDebugMonitor:Lnet/minecraft/network/BandwidthDebugMonitor;
+        94: invokevirtual #469                // Method net/minecraft/network/BandwidthDebugMonitor.tick:()V
+        97: return
+
+  protected void tickSecond();
+    Code:
+         0: aload_0
+         1: ldc_w         #472                // float 0.75f
+         4: aload_0
+         5: getfield      #393                // Field sentPackets:I
+         8: i2f
+         9: aload_0
+        10: getfield      #473                // Field averageSentPackets:F
+        13: invokestatic  #477                // Method net/minecraft/util/Mth.lerp:(FFF)F
+        16: putfield      #473                // Field averageSentPackets:F
+        19: aload_0
+        20: ldc_w         #472                // float 0.75f
+        23: aload_0
+        24: getfield      #206                // Field receivedPackets:I
+        27: i2f
+        28: aload_0
+        29: getfield      #483                // Field averageReceivedPackets:F
+        32: invokestatic  #477                // Method net/minecraft/util/Mth.lerp:(FFF)F
+        35: putfield      #483                // Field averageReceivedPackets:F
+        38: aload_0
+        39: iconst_0
+        40: putfield      #393                // Field sentPackets:I
+        43: aload_0
+        44: iconst_0
+        45: putfield      #206                // Field receivedPackets:I
+        48: return
+
+  public java.net.SocketAddress getRemoteAddress();
+    Code:
+         0: aload_0
+         1: getfield      #46                 // Field address:Ljava/net/SocketAddress;
+         4: areturn
+
+  public java.lang.String getLoggableAddress(boolean);
+    Code:
+         0: aload_0
+         1: getfield      #46                 // Field address:Ljava/net/SocketAddress;
+         4: ifnonnull     11
+         7: ldc_w         #486                // String local
+        10: areturn
+        11: iload_1
+        12: ifeq          23
+        15: aload_0
+        16: getfield      #46                 // Field address:Ljava/net/SocketAddress;
+        19: invokevirtual #488                // Method java/lang/Object.toString:()Ljava/lang/String;
+        22: areturn
+        23: ldc_w         #492                // String IP hidden
+        26: areturn
+
+  public void disconnect(net.minecraft.network.chat.Component);
+    Code:
+         0: aload_0
+         1: new           #129                // class net/minecraft/network/DisconnectionDetails
+         4: dup
+         5: aload_1
+         6: invokespecial #131                // Method net/minecraft/network/DisconnectionDetails."<init>":(Lnet/minecraft/network/chat/Component;)V
+         9: invokevirtual #54                 // Method disconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+        12: return
+
+  public void disconnect(net.minecraft.network.DisconnectionDetails);
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnonnull     12
+         7: aload_0
+         8: aload_1
+         9: putfield      #50                 // Field delayedDisconnect:Lnet/minecraft/network/DisconnectionDetails;
+        12: aload_0
+        13: invokevirtual #370                // Method isConnected:()Z
+        16: ifeq          39
+        19: aload_0
+        20: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        23: invokeinterface #494,  1          // InterfaceMethod io/netty/channel/Channel.close:()Lio/netty/channel/ChannelFuture;
+        28: invokeinterface #497,  1          // InterfaceMethod io/netty/channel/ChannelFuture.awaitUninterruptibly:()Lio/netty/channel/ChannelFuture;
+        33: pop
+        34: aload_0
+        35: aload_1
+        36: putfield      #500                // Field disconnectionDetails:Lnet/minecraft/network/DisconnectionDetails;
+        39: return
+
+  public boolean isMemoryConnection();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: instanceof    #503                // class io/netty/channel/local/LocalChannel
+         7: ifne          20
+        10: aload_0
+        11: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        14: instanceof    #505                // class io/netty/channel/local/LocalServerChannel
+        17: ifeq          24
+        20: iconst_1
+        21: goto          25
+        24: iconst_0
+        25: ireturn
+
+  public net.minecraft.network.protocol.PacketFlow getReceiving();
+    Code:
+         0: aload_0
+         1: getfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+         4: areturn
+
+  public net.minecraft.network.protocol.PacketFlow getSending();
+    Code:
+         0: aload_0
+         1: getfield      #23                 // Field receiving:Lnet/minecraft/network/protocol/PacketFlow;
+         4: invokevirtual #507                // Method net/minecraft/network/protocol/PacketFlow.getOpposite:()Lnet/minecraft/network/protocol/PacketFlow;
+         7: areturn
+
+  public static net.minecraft.network.Connection connectToServer(java.net.InetSocketAddress, net.minecraft.server.network.EventLoopGroupHolder, net.minecraft.util.debugchart.LocalSampleLogger);
+    Code:
+         0: new           #8                  // class net/minecraft/network/Connection
+         3: dup
+         4: getstatic     #139                // Field net/minecraft/network/protocol/PacketFlow.CLIENTBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+         7: invokespecial #510                // Method "<init>":(Lnet/minecraft/network/protocol/PacketFlow;)V
+        10: astore_3
+        11: aload_2
+        12: ifnull        20
+        15: aload_3
+        16: aload_2
+        17: invokevirtual #513                // Method setBandwidthLogger:(Lnet/minecraft/util/debugchart/LocalSampleLogger;)V
+        20: aload_0
+        21: aload_1
+        22: aload_3
+        23: invokestatic  #517                // Method connect:(Ljava/net/InetSocketAddress;Lnet/minecraft/server/network/EventLoopGroupHolder;Lnet/minecraft/network/Connection;)Lio/netty/channel/ChannelFuture;
+        26: astore        4
+        28: aload         4
+        30: invokeinterface #237,  1          // InterfaceMethod io/netty/channel/ChannelFuture.syncUninterruptibly:()Lio/netty/channel/ChannelFuture;
+        35: pop
+        36: aload_3
+        37: areturn
+
+  public static io.netty.channel.ChannelFuture connect(java.net.InetSocketAddress, net.minecraft.server.network.EventLoopGroupHolder, net.minecraft.network.Connection);
+    Code:
+         0: new           #521                // class io/netty/bootstrap/Bootstrap
+         3: dup
+         4: invokespecial #523                // Method io/netty/bootstrap/Bootstrap."<init>":()V
+         7: aload_1
+         8: invokevirtual #524                // Method net/minecraft/server/network/EventLoopGroupHolder.eventLoopGroup:()Lio/netty/channel/EventLoopGroup;
+        11: invokevirtual #530                // Method io/netty/bootstrap/Bootstrap.group:(Lio/netty/channel/EventLoopGroup;)Lio/netty/bootstrap/AbstractBootstrap;
+        14: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        17: new           #534                // class net/minecraft/network/Connection$1
+        20: dup
+        21: aload_2
+        22: invokespecial #536                // Method net/minecraft/network/Connection$1."<init>":(Lnet/minecraft/network/Connection;)V
+        25: invokevirtual #539                // Method io/netty/bootstrap/Bootstrap.handler:(Lio/netty/channel/ChannelHandler;)Lio/netty/bootstrap/AbstractBootstrap;
+        28: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        31: aload_1
+        32: invokevirtual #543                // Method net/minecraft/server/network/EventLoopGroupHolder.channelCls:()Ljava/lang/Class;
+        35: invokevirtual #546                // Method io/netty/bootstrap/Bootstrap.channel:(Ljava/lang/Class;)Lio/netty/bootstrap/AbstractBootstrap;
+        38: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        41: aload_0
+        42: invokevirtual #549                // Method java/net/InetSocketAddress.getAddress:()Ljava/net/InetAddress;
+        45: aload_0
+        46: invokevirtual #555                // Method java/net/InetSocketAddress.getPort:()I
+        49: invokevirtual #559                // Method io/netty/bootstrap/Bootstrap.connect:(Ljava/net/InetAddress;I)Lio/netty/channel/ChannelFuture;
+        52: areturn
+
+  private static java.lang.String outboundHandlerName(boolean);
+    Code:
+         0: iload_0
+         1: ifeq          10
+         4: ldc_w         #564                // String encoder
+         7: goto          13
+        10: ldc_w         #566                // String outbound_config
+        13: areturn
+
+  private static java.lang.String inboundHandlerName(boolean);
+    Code:
+         0: iload_0
+         1: ifeq          10
+         4: ldc_w         #568                // String decoder
+         7: goto          13
+        10: ldc_w         #570                // String inbound_config
+        13: areturn
+
+  public void configurePacketHandler(io.netty.channel.ChannelPipeline);
+    Code:
+         0: aload_1
+         1: ldc_w         #572                // String hackfix
+         4: new           #574                // class net/minecraft/network/Connection$2
+         7: dup
+         8: aload_0
+         9: invokespecial #576                // Method net/minecraft/network/Connection$2."<init>":(Lnet/minecraft/network/Connection;)V
+        12: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        17: ldc_w         #583                // String packet_handler
+        20: aload_0
+        21: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        26: pop
+        27: return
+
+  public static void configureSerialization(io.netty.channel.ChannelPipeline, net.minecraft.network.protocol.PacketFlow, boolean, net.minecraft.network.BandwidthDebugMonitor);
+    Code:
+         0: aload_1
+         1: invokevirtual #507                // Method net/minecraft/network/protocol/PacketFlow.getOpposite:()Lnet/minecraft/network/protocol/PacketFlow;
+         4: astore        4
+         6: aload_1
+         7: getstatic     #323                // Field net/minecraft/network/protocol/PacketFlow.SERVERBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+        10: if_acmpne     17
+        13: iconst_1
+        14: goto          18
+        17: iconst_0
+        18: istore        5
+        20: aload         4
+        22: getstatic     #323                // Field net/minecraft/network/protocol/PacketFlow.SERVERBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+        25: if_acmpne     32
+        28: iconst_1
+        29: goto          33
+        32: iconst_0
+        33: istore        6
+        35: aload_0
+        36: ldc_w         #585                // String splitter
+        39: aload_3
+        40: iload_2
+        41: invokestatic  #587                // Method createFrameDecoder:(Lnet/minecraft/network/BandwidthDebugMonitor;Z)Lio/netty/channel/ChannelInboundHandler;
+        44: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        49: iconst_1
+        50: anewarray     #591                // class io/netty/channel/ChannelHandler
+        53: dup
+        54: iconst_0
+        55: new           #593                // class io/netty/handler/flow/FlowControlHandler
+        58: dup
+        59: invokespecial #595                // Method io/netty/handler/flow/FlowControlHandler."<init>":()V
+        62: aastore
+        63: invokeinterface #596,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:([Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        68: iload         5
+        70: invokestatic  #599                // Method inboundHandlerName:(Z)Ljava/lang/String;
+        73: iload         5
+        75: ifeq          91
+        78: new           #603                // class net/minecraft/network/PacketDecoder
+        81: dup
+        82: getstatic     #326                // Field INITIAL_PROTOCOL:Lnet/minecraft/network/ProtocolInfo;
+        85: invokespecial #605                // Method net/minecraft/network/PacketDecoder."<init>":(Lnet/minecraft/network/ProtocolInfo;)V
+        88: goto          98
+        91: new           #608                // class net/minecraft/network/UnconfiguredPipelineHandler$Inbound
+        94: dup
+        95: invokespecial #610                // Method net/minecraft/network/UnconfiguredPipelineHandler$Inbound."<init>":()V
+        98: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+       103: ldc_w         #611                // String prepender
+       106: iload_2
+       107: invokestatic  #613                // Method createFrameEncoder:(Z)Lio/netty/channel/ChannelOutboundHandler;
+       110: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+       115: iload         6
+       117: invokestatic  #617                // Method outboundHandlerName:(Z)Ljava/lang/String;
+       120: iload         6
+       122: ifeq          138
+       125: new           #620                // class net/minecraft/network/PacketEncoder
+       128: dup
+       129: getstatic     #326                // Field INITIAL_PROTOCOL:Lnet/minecraft/network/ProtocolInfo;
+       132: invokespecial #622                // Method net/minecraft/network/PacketEncoder."<init>":(Lnet/minecraft/network/ProtocolInfo;)V
+       135: goto          145
+       138: new           #623                // class net/minecraft/network/UnconfiguredPipelineHandler$Outbound
+       141: dup
+       142: invokespecial #625                // Method net/minecraft/network/UnconfiguredPipelineHandler$Outbound."<init>":()V
+       145: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+       150: pop
+       151: return
+
+  private static io.netty.channel.ChannelOutboundHandler createFrameEncoder(boolean);
+    Code:
+         0: iload_0
+         1: ifeq          14
+         4: new           #626                // class net/minecraft/network/LocalFrameEncoder
+         7: dup
+         8: invokespecial #628                // Method net/minecraft/network/LocalFrameEncoder."<init>":()V
+        11: goto          21
+        14: new           #629                // class net/minecraft/network/Varint21LengthFieldPrepender
+        17: dup
+        18: invokespecial #631                // Method net/minecraft/network/Varint21LengthFieldPrepender."<init>":()V
+        21: areturn
+
+  private static io.netty.channel.ChannelInboundHandler createFrameDecoder(net.minecraft.network.BandwidthDebugMonitor, boolean);
+    Code:
+         0: iload_1
+         1: ifne          13
+         4: new           #632                // class net/minecraft/network/Varint21FrameDecoder
+         7: dup
+         8: aload_0
+         9: invokespecial #634                // Method net/minecraft/network/Varint21FrameDecoder."<init>":(Lnet/minecraft/network/BandwidthDebugMonitor;)V
+        12: areturn
+        13: aload_0
+        14: ifnull        26
+        17: new           #637                // class net/minecraft/network/MonitoredLocalFrameDecoder
+        20: dup
+        21: aload_0
+        22: invokespecial #639                // Method net/minecraft/network/MonitoredLocalFrameDecoder."<init>":(Lnet/minecraft/network/BandwidthDebugMonitor;)V
+        25: areturn
+        26: new           #640                // class net/minecraft/network/LocalFrameDecoder
+        29: dup
+        30: invokespecial #642                // Method net/minecraft/network/LocalFrameDecoder."<init>":()V
+        33: areturn
+
+  public static void configureInMemoryPipeline(io.netty.channel.ChannelPipeline, net.minecraft.network.protocol.PacketFlow);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iconst_1
+         3: aconst_null
+         4: invokestatic  #643                // Method configureSerialization:(Lio/netty/channel/ChannelPipeline;Lnet/minecraft/network/protocol/PacketFlow;ZLnet/minecraft/network/BandwidthDebugMonitor;)V
+         7: return
+
+  public static net.minecraft.network.Connection connectToLocalServer(java.net.SocketAddress);
+    Code:
+         0: new           #8                  // class net/minecraft/network/Connection
+         3: dup
+         4: getstatic     #139                // Field net/minecraft/network/protocol/PacketFlow.CLIENTBOUND:Lnet/minecraft/network/protocol/PacketFlow;
+         7: invokespecial #510                // Method "<init>":(Lnet/minecraft/network/protocol/PacketFlow;)V
+        10: astore_1
+        11: new           #521                // class io/netty/bootstrap/Bootstrap
+        14: dup
+        15: invokespecial #523                // Method io/netty/bootstrap/Bootstrap."<init>":()V
+        18: invokestatic  #647                // Method net/minecraft/server/network/EventLoopGroupHolder.local:()Lnet/minecraft/server/network/EventLoopGroupHolder;
+        21: invokevirtual #524                // Method net/minecraft/server/network/EventLoopGroupHolder.eventLoopGroup:()Lio/netty/channel/EventLoopGroup;
+        24: invokevirtual #530                // Method io/netty/bootstrap/Bootstrap.group:(Lio/netty/channel/EventLoopGroup;)Lio/netty/bootstrap/AbstractBootstrap;
+        27: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        30: new           #650                // class net/minecraft/network/Connection$3
+        33: dup
+        34: aload_1
+        35: invokespecial #652                // Method net/minecraft/network/Connection$3."<init>":(Lnet/minecraft/network/Connection;)V
+        38: invokevirtual #539                // Method io/netty/bootstrap/Bootstrap.handler:(Lio/netty/channel/ChannelHandler;)Lio/netty/bootstrap/AbstractBootstrap;
+        41: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        44: invokestatic  #647                // Method net/minecraft/server/network/EventLoopGroupHolder.local:()Lnet/minecraft/server/network/EventLoopGroupHolder;
+        47: invokevirtual #543                // Method net/minecraft/server/network/EventLoopGroupHolder.channelCls:()Ljava/lang/Class;
+        50: invokevirtual #546                // Method io/netty/bootstrap/Bootstrap.channel:(Ljava/lang/Class;)Lio/netty/bootstrap/AbstractBootstrap;
+        53: checkcast     #521                // class io/netty/bootstrap/Bootstrap
+        56: aload_0
+        57: invokevirtual #653                // Method io/netty/bootstrap/Bootstrap.connect:(Ljava/net/SocketAddress;)Lio/netty/channel/ChannelFuture;
+        60: invokeinterface #237,  1          // InterfaceMethod io/netty/channel/ChannelFuture.syncUninterruptibly:()Lio/netty/channel/ChannelFuture;
+        65: pop
+        66: aload_1
+        67: areturn
+
+  public static net.minecraft.network.Connection fromChannel(io.netty.channel.Channel, net.minecraft.network.protocol.PacketFlow, net.minecraft.util.debugchart.LocalSampleLogger);
+    Code:
+         0: new           #8                  // class net/minecraft/network/Connection
+         3: dup
+         4: aload_1
+         5: invokespecial #510                // Method "<init>":(Lnet/minecraft/network/protocol/PacketFlow;)V
+         8: astore_3
+         9: aload_2
+        10: ifnull        18
+        13: aload_3
+        14: aload_2
+        15: invokevirtual #513                // Method setBandwidthLogger:(Lnet/minecraft/util/debugchart/LocalSampleLogger;)V
+        18: aload_0
+        19: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+        24: ldc_w         #660                // String timeout
+        27: new           #662                // class io/netty/handler/timeout/ReadTimeoutHandler
+        30: dup
+        31: bipush        30
+        33: invokespecial #664                // Method io/netty/handler/timeout/ReadTimeoutHandler."<init>":(I)V
+        36: invokeinterface #577,  3          // InterfaceMethod io/netty/channel/ChannelPipeline.addLast:(Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        41: astore        4
+        43: aload         4
+        45: aload_1
+        46: iconst_0
+        47: aload_3
+        48: getfield      #465                // Field bandwidthDebugMonitor:Lnet/minecraft/network/BandwidthDebugMonitor;
+        51: invokestatic  #643                // Method configureSerialization:(Lio/netty/channel/ChannelPipeline;Lnet/minecraft/network/protocol/PacketFlow;ZLnet/minecraft/network/BandwidthDebugMonitor;)V
+        54: aload_3
+        55: aload         4
+        57: invokevirtual #667                // Method configurePacketHandler:(Lio/netty/channel/ChannelPipeline;)V
+        60: invokestatic  #647                // Method net/minecraft/server/network/EventLoopGroupHolder.local:()Lnet/minecraft/server/network/EventLoopGroupHolder;
+        63: invokevirtual #524                // Method net/minecraft/server/network/EventLoopGroupHolder.eventLoopGroup:()Lio/netty/channel/EventLoopGroup;
+        66: aload_0
+        67: invokeinterface #671,  2          // InterfaceMethod io/netty/channel/EventLoopGroup.register:(Lio/netty/channel/Channel;)Lio/netty/channel/ChannelFuture;
+        72: invokeinterface #237,  1          // InterfaceMethod io/netty/channel/ChannelFuture.syncUninterruptibly:()Lio/netty/channel/ChannelFuture;
+        77: pop
+        78: aload_3
+        79: areturn
+
+  public void setEncryptionKey(javax.crypto.Cipher, javax.crypto.Cipher);
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+         9: ldc_w         #585                // String splitter
+        12: ldc_w         #677                // String decrypt
+        15: new           #679                // class net/minecraft/network/CipherDecoder
+        18: dup
+        19: aload_1
+        20: invokespecial #681                // Method net/minecraft/network/CipherDecoder."<init>":(Ljavax/crypto/Cipher;)V
+        23: invokeinterface #684,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addBefore:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        28: pop
+        29: aload_0
+        30: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        33: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+        38: ldc_w         #611                // String prepender
+        41: ldc_w         #688                // String encrypt
+        44: new           #690                // class net/minecraft/network/CipherEncoder
+        47: dup
+        48: aload_2
+        49: invokespecial #692                // Method net/minecraft/network/CipherEncoder."<init>":(Ljavax/crypto/Cipher;)V
+        52: invokeinterface #684,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addBefore:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        57: pop
+        58: return
+
+  public boolean isConnected();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnull        23
+         7: aload_0
+         8: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        11: invokeinterface #92,  1           // InterfaceMethod io/netty/channel/Channel.isOpen:()Z
+        16: ifeq          23
+        19: iconst_1
+        20: goto          24
+        23: iconst_0
+        24: ireturn
+
+  public boolean isConnecting();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnonnull     11
+         7: iconst_1
+         8: goto          12
+        11: iconst_0
+        12: ireturn
+
+  public net.minecraft.network.PacketListener getPacketListener();
+    Code:
+         0: aload_0
+         1: getfield      #119                // Field packetListener:Lnet/minecraft/network/PacketListener;
+         4: areturn
+
+  public net.minecraft.network.DisconnectionDetails getDisconnectionDetails();
+    Code:
+         0: aload_0
+         1: getfield      #500                // Field disconnectionDetails:Lnet/minecraft/network/DisconnectionDetails;
+         4: areturn
+
+  public void setReadOnly();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnull        23
+         7: aload_0
+         8: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        11: invokeinterface #693,  1          // InterfaceMethod io/netty/channel/Channel.config:()Lio/netty/channel/ChannelConfig;
+        16: iconst_0
+        17: invokeinterface #697,  2          // InterfaceMethod io/netty/channel/ChannelConfig.setAutoRead:(Z)Lio/netty/channel/ChannelConfig;
+        22: pop
+        23: return
+
+  public void setupCompression(int, boolean);
+    Code:
+         0: iload_1
+         1: iflt          149
+         4: aload_0
+         5: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         8: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+        13: ldc_w         #703                // String decompress
+        16: invokeinterface #705,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.get:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+        21: astore        4
+        23: aload         4
+        25: instanceof    #709                // class net/minecraft/network/CompressionDecoder
+        28: ifeq          46
+        31: aload         4
+        33: checkcast     #709                // class net/minecraft/network/CompressionDecoder
+        36: astore_3
+        37: aload_3
+        38: iload_1
+        39: iload_2
+        40: invokevirtual #711                // Method net/minecraft/network/CompressionDecoder.setThreshold:(IZ)V
+        43: goto          76
+        46: aload_0
+        47: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        50: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+        55: ldc_w         #585                // String splitter
+        58: ldc_w         #703                // String decompress
+        61: new           #709                // class net/minecraft/network/CompressionDecoder
+        64: dup
+        65: iload_1
+        66: iload_2
+        67: invokespecial #715                // Method net/minecraft/network/CompressionDecoder."<init>":(IZ)V
+        70: invokeinterface #717,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addAfter:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        75: pop
+        76: aload_0
+        77: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        80: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+        85: ldc_w         #720                // String compress
+        88: invokeinterface #705,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.get:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+        93: astore        4
+        95: aload         4
+        97: instanceof    #722                // class net/minecraft/network/CompressionEncoder
+       100: ifeq          117
+       103: aload         4
+       105: checkcast     #722                // class net/minecraft/network/CompressionEncoder
+       108: astore_3
+       109: aload_3
+       110: iload_1
+       111: invokevirtual #724                // Method net/minecraft/network/CompressionEncoder.setThreshold:(I)V
+       114: goto          231
+       117: aload_0
+       118: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+       121: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+       126: ldc_w         #611                // String prepender
+       129: ldc_w         #720                // String compress
+       132: new           #722                // class net/minecraft/network/CompressionEncoder
+       135: dup
+       136: iload_1
+       137: invokespecial #726                // Method net/minecraft/network/CompressionEncoder."<init>":(I)V
+       140: invokeinterface #717,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addAfter:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+       145: pop
+       146: goto          231
+       149: aload_0
+       150: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+       153: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+       158: ldc_w         #703                // String decompress
+       161: invokeinterface #705,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.get:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+       166: instanceof    #709                // class net/minecraft/network/CompressionDecoder
+       169: ifeq          190
+       172: aload_0
+       173: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+       176: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+       181: ldc_w         #703                // String decompress
+       184: invokeinterface #727,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.remove:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+       189: pop
+       190: aload_0
+       191: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+       194: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+       199: ldc_w         #720                // String compress
+       202: invokeinterface #705,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.get:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+       207: instanceof    #722                // class net/minecraft/network/CompressionEncoder
+       210: ifeq          231
+       213: aload_0
+       214: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+       217: invokeinterface #656,  1          // InterfaceMethod io/netty/channel/Channel.pipeline:()Lio/netty/channel/ChannelPipeline;
+       222: ldc_w         #720                // String compress
+       225: invokeinterface #727,  2          // InterfaceMethod io/netty/channel/ChannelPipeline.remove:(Ljava/lang/String;)Lio/netty/channel/ChannelHandler;
+       230: pop
+       231: return
+
+  public void handleDisconnection();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: ifnull        19
+         7: aload_0
+         8: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+        11: invokeinterface #92,  1           // InterfaceMethod io/netty/channel/Channel.isOpen:()Z
+        16: ifeq          20
+        19: return
+        20: aload_0
+        21: getfield      #451                // Field disconnectionHandled:Z
+        24: ifeq          39
+        27: getstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+        30: ldc_w         #730                // String handleDisconnection() called twice
+        33: invokeinterface #732,  2          // InterfaceMethod org/slf4j/Logger.warn:(Ljava/lang/String;)V
+        38: return
+        39: aload_0
+        40: iconst_1
+        41: putfield      #451                // Field disconnectionHandled:Z
+        44: aload_0
+        45: invokevirtual #735                // Method getPacketListener:()Lnet/minecraft/network/PacketListener;
+        48: astore_1
+        49: aload_1
+        50: ifnull        57
+        53: aload_1
+        54: goto          61
+        57: aload_0
+        58: getfield      #261                // Field disconnectListener:Lnet/minecraft/network/PacketListener;
+        61: astore_2
+        62: aload_2
+        63: ifnull        89
+        66: aload_0
+        67: invokevirtual #739                // Method getDisconnectionDetails:()Lnet/minecraft/network/DisconnectionDetails;
+        70: invokedynamic #743,  0            // InvokeDynamic #14:get:()Ljava/util/function/Supplier;
+        75: invokestatic  #746                // Method java/util/Objects.requireNonNullElseGet:(Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;
+        78: checkcast     #129                // class net/minecraft/network/DisconnectionDetails
+        81: astore_3
+        82: aload_2
+        83: aload_3
+        84: invokeinterface #750,  2          // InterfaceMethod net/minecraft/network/PacketListener.onDisconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+        89: return
+
+  public float getAverageReceivedPackets();
+    Code:
+         0: aload_0
+         1: getfield      #483                // Field averageReceivedPackets:F
+         4: freturn
+
+  public float getAverageSentPackets();
+    Code:
+         0: aload_0
+         1: getfield      #473                // Field averageSentPackets:F
+         4: freturn
+
+  public void setBandwidthLogger(net.minecraft.util.debugchart.LocalSampleLogger);
+    Code:
+         0: aload_0
+         1: new           #470                // class net/minecraft/network/BandwidthDebugMonitor
+         4: dup
+         5: aload_1
+         6: invokespecial #753                // Method net/minecraft/network/BandwidthDebugMonitor."<init>":(Lnet/minecraft/util/debugchart/LocalSampleLogger;)V
+         9: putfield      #465                // Field bandwidthDebugMonitor:Lnet/minecraft/network/BandwidthDebugMonitor;
+        12: return
+
+  protected void channelRead0(io.netty.channel.ChannelHandlerContext, java.lang.Object) throws java.lang.Exception;
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: checkcast     #195                // class net/minecraft/network/protocol/Packet
+         6: invokevirtual #755                // Method channelRead0:(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V
+         9: return
+
+  private static net.minecraft.network.DisconnectionDetails lambda$handleDisconnection$0();
+    Code:
+         0: new           #129                // class net/minecraft/network/DisconnectionDetails
+         3: dup
+         4: ldc_w         #759                // String multiplayer.disconnect.generic
+         7: invokestatic  #60                 // InterfaceMethod net/minecraft/network/chat/Component.translatable:(Ljava/lang/String;)Lnet/minecraft/network/chat/MutableComponent;
+        10: invokespecial #131                // Method net/minecraft/network/DisconnectionDetails."<init>":(Lnet/minecraft/network/chat/Component;)V
+        13: areturn
+
+  private void lambda$flush$0();
+    Code:
+         0: aload_0
+         1: getfield      #37                 // Field channel:Lio/netty/channel/Channel;
+         4: invokeinterface #437,  1          // InterfaceMethod io/netty/channel/Channel.flush:()Lio/netty/channel/Channel;
+         9: pop
+        10: return
+
+  private void lambda$sendPacket$0(net.minecraft.network.protocol.Packet, io.netty.channel.ChannelFutureListener, boolean);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: iload_3
+         4: invokevirtual #405                // Method doSendPacket:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+         7: return
+
+  private static void lambda$send$0(net.minecraft.network.protocol.Packet, io.netty.channel.ChannelFutureListener, boolean, net.minecraft.network.Connection);
+    Code:
+         0: aload_3
+         1: aload_0
+         2: aload_1
+         3: iload_2
+         4: invokevirtual #376                // Method sendPacket:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+         7: return
+
+  private void lambda$initiateServerboundConnection$0(net.minecraft.network.ProtocolInfo, net.minecraft.network.ClientboundPacketListener, java.lang.String, int, net.minecraft.network.protocol.handshake.ClientIntent, net.minecraft.network.ProtocolInfo, net.minecraft.network.Connection);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: invokevirtual #761                // Method setupInboundProtocol:(Lnet/minecraft/network/ProtocolInfo;Lnet/minecraft/network/PacketListener;)V
+         6: aload         7
+         8: new           #763                // class net/minecraft/network/protocol/handshake/ClientIntentionPacket
+        11: dup
+        12: invokestatic  #765                // Method net/minecraft/SharedConstants.getCurrentVersion:()Lnet/minecraft/WorldVersion;
+        15: invokeinterface #769,  1          // InterfaceMethod net/minecraft/WorldVersion.protocolVersion:()I
+        20: aload_3
+        21: iload         4
+        23: aload         5
+        25: invokespecial #774                // Method net/minecraft/network/protocol/handshake/ClientIntentionPacket."<init>":(ILjava/lang/String;ILnet/minecraft/network/protocol/handshake/ClientIntent;)V
+        28: aconst_null
+        29: iconst_1
+        30: invokevirtual #376                // Method sendPacket:(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V
+        33: aload_0
+        34: aload         6
+        36: invokevirtual #777                // Method setupOutboundProtocol:(Lnet/minecraft/network/ProtocolInfo;)V
+        39: return
+
+  private void lambda$setupOutboundProtocol$1(boolean, io.netty.channel.ChannelHandlerContext);
+    Code:
+         0: aload_0
+         1: iload_1
+         2: putfield      #7                  // Field sendLoginDisconnect:Z
+         5: return
+
+  private static void lambda$setupOutboundProtocol$0(net.minecraft.network.PacketBundleUnpacker, io.netty.channel.ChannelHandlerContext);
+    Code:
+         0: aload_1
+         1: invokeinterface #779,  1          // InterfaceMethod io/netty/channel/ChannelHandlerContext.pipeline:()Lio/netty/channel/ChannelPipeline;
+         6: ldc_w         #564                // String encoder
+         9: ldc_w         #780                // String unbundler
+        12: aload_0
+        13: invokeinterface #717,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addAfter:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        18: pop
+        19: return
+
+  private static void lambda$setupInboundProtocol$0(net.minecraft.network.PacketBundlePacker, io.netty.channel.ChannelHandlerContext);
+    Code:
+         0: aload_1
+         1: invokeinterface #779,  1          // InterfaceMethod io/netty/channel/ChannelHandlerContext.pipeline:()Lio/netty/channel/ChannelPipeline;
+         6: ldc_w         #568                // String decoder
+         9: ldc_w         #782                // String bundler
+        12: aload_0
+        13: invokeinterface #717,  4          // InterfaceMethod io/netty/channel/ChannelPipeline.addAfter:(Ljava/lang/String;Ljava/lang/String;Lio/netty/channel/ChannelHandler;)Lio/netty/channel/ChannelPipeline;
+        18: pop
+        19: return
+
+  private void lambda$exceptionCaught$0(net.minecraft.network.DisconnectionDetails);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokevirtual #54                 // Method disconnect:(Lnet/minecraft/network/DisconnectionDetails;)V
+         5: return
+
+  private static void lambda$static$2(org.slf4j.Marker);
+    Code:
+         0: aload_0
+         1: getstatic     #784                // Field PACKET_MARKER:Lorg/slf4j/Marker;
+         4: invokeinterface #788,  2          // InterfaceMethod org/slf4j/Marker.add:(Lorg/slf4j/Marker;)V
+         9: return
+
+  private static void lambda$static$1(org.slf4j.Marker);
+    Code:
+         0: aload_0
+         1: getstatic     #784                // Field PACKET_MARKER:Lorg/slf4j/Marker;
+         4: invokeinterface #788,  2          // InterfaceMethod org/slf4j/Marker.add:(Lorg/slf4j/Marker;)V
+         9: return
+
+  private static void lambda$static$0(org.slf4j.Marker);
+    Code:
+         0: aload_0
+         1: getstatic     #793                // Field ROOT_MARKER:Lorg/slf4j/Marker;
+         4: invokeinterface #788,  2          // InterfaceMethod org/slf4j/Marker.add:(Lorg/slf4j/Marker;)V
+         9: return
+
+  static {};
+    Code:
+         0: invokestatic  #796                // Method com/mojang/logging/LogUtils.getLogger:()Lorg/slf4j/Logger;
+         3: putstatic     #71                 // Field LOGGER:Lorg/slf4j/Logger;
+         6: ldc_w         #802                // String NETWORK
+         9: invokestatic  #804                // Method org/slf4j/MarkerFactory.getMarker:(Ljava/lang/String;)Lorg/slf4j/Marker;
+        12: putstatic     #793                // Field ROOT_MARKER:Lorg/slf4j/Marker;
+        15: ldc_w         #810                // String NETWORK_PACKETS
+        18: invokestatic  #804                // Method org/slf4j/MarkerFactory.getMarker:(Ljava/lang/String;)Lorg/slf4j/Marker;
+        21: invokedynamic #812,  0            // InvokeDynamic #15:accept:()Ljava/util/function/Consumer;
+        26: invokestatic  #813                // Method net/minecraft/util/Util.make:(Ljava/lang/Object;Ljava/util/function/Consumer;)Ljava/lang/Object;
+        29: checkcast     #789                // class org/slf4j/Marker
+        32: putstatic     #784                // Field PACKET_MARKER:Lorg/slf4j/Marker;
+        35: ldc_w         #819                // String PACKET_RECEIVED
+        38: invokestatic  #804                // Method org/slf4j/MarkerFactory.getMarker:(Ljava/lang/String;)Lorg/slf4j/Marker;
+        41: invokedynamic #821,  0            // InvokeDynamic #16:accept:()Ljava/util/function/Consumer;
+        46: invokestatic  #813                // Method net/minecraft/util/Util.make:(Ljava/lang/Object;Ljava/util/function/Consumer;)Ljava/lang/Object;
+        49: checkcast     #789                // class org/slf4j/Marker
+        52: putstatic     #822                // Field PACKET_RECEIVED_MARKER:Lorg/slf4j/Marker;
+        55: ldc_w         #825                // String PACKET_SENT
+        58: invokestatic  #804                // Method org/slf4j/MarkerFactory.getMarker:(Ljava/lang/String;)Lorg/slf4j/Marker;
+        61: invokedynamic #827,  0            // InvokeDynamic #17:accept:()Ljava/util/function/Consumer;
+        66: invokestatic  #813                // Method net/minecraft/util/Util.make:(Ljava/lang/Object;Ljava/util/function/Consumer;)Ljava/lang/Object;
+        69: checkcast     #789                // class org/slf4j/Marker
+        72: putstatic     #828                // Field PACKET_SENT_MARKER:Lorg/slf4j/Marker;
+        75: getstatic     #831                // Field net/minecraft/network/protocol/handshake/HandshakeProtocols.SERVERBOUND:Lnet/minecraft/network/ProtocolInfo;
+        78: putstatic     #326                // Field INITIAL_PROTOCOL:Lnet/minecraft/network/ProtocolInfo;
+        81: return
+}

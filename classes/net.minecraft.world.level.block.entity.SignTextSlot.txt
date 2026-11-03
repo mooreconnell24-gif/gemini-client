@@ -1,0 +1,16 @@
+Compiled from "SignTextSlot.java"
+public final class net.minecraft.world.level.block.entity.SignTextSlot extends java.lang.Enum<net.minecraft.world.level.block.entity.SignTextSlot> {
+  public static final net.minecraft.world.level.block.entity.SignTextSlot BACK;
+  public static final net.minecraft.world.level.block.entity.SignTextSlot FRONT;
+  private final int id;
+  private static final java.util.function.IntFunction<net.minecraft.world.level.block.entity.SignTextSlot> BY_ID;
+  public static final net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, net.minecraft.world.level.block.entity.SignTextSlot> STREAM_CODEC;
+  private static final net.minecraft.world.level.block.entity.SignTextSlot[] $VALUES;
+  public static net.minecraft.world.level.block.entity.SignTextSlot[] values();
+  public static net.minecraft.world.level.block.entity.SignTextSlot valueOf(java.lang.String);
+  private net.minecraft.world.level.block.entity.SignTextSlot(int);
+  private static net.minecraft.world.level.block.entity.SignTextSlot[] $values();
+  private static int lambda$static$1(net.minecraft.world.level.block.entity.SignTextSlot);
+  private static int lambda$static$0(net.minecraft.world.level.block.entity.SignTextSlot);
+  static {};
+}
