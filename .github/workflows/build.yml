@@ -36,7 +36,7 @@ jobs:
             ./gradlew runClient --no-configuration-cache > client.log 2>&1
           code=$?
           set -e
-          grep -E "Created: .*atlas|ERROR|Mixin" client.log | grep -v flite | head -40 || true
+          grep -E "Created: .*atlas|ERROR|Mixin|baritone|Baritone" client.log | grep -v flite | head -40 || true
           if ls run/crash-reports/*.txt > /dev/null 2>&1; then
             echo "::error::The client crashed on startup"; cat run/crash-reports/*.txt | head -80; exit 1
           fi
@@ -44,3 +44,4 @@ jobs:
             echo "::error::The client exited early (code $code)"; tail -60 client.log; exit 1
           fi
           grep -q "Created: .*atlas" client.log || { echo "::error::The client never finished loading resources"; tail -60 client.log; exit 1; }
+          grep -q -- "- baritone-fork" client.log || { echo "::error::The bundled Baritone was not loaded"; sed -n '/Loading [0-9]* mods/,/mixinextras/p' client.log; exit 1; }
