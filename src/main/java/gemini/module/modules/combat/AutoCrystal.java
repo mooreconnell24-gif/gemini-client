@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -100,7 +101,7 @@ public final class AutoCrystal extends Module {
                   float[] rot = RotationManager.toward(player, bestCrystal);
                   if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
                      client.gameMode.attack(player, bestCrystal);
-                     player.swing(InteractionHand.MAIN_HAND);
+                     Swing.attack(player, InteractionHand.MAIN_HAND);
                      this.breakTimer = this.breakDelay.intValue();
                   }
                }
@@ -138,7 +139,7 @@ public final class AutoCrystal extends Module {
                      }
 
                      client.gameMode.useItemOn(player, hand, new BlockHitResult(hitVec, Direction.UP, bestBase, false));
-                     player.swing(hand);
+                     Swing.interact(player, hand);
                      if (swapped && this.autoSwitch.is("Silent")) {
                         player.getInventory().setSelectedSlot(prev);
                      }

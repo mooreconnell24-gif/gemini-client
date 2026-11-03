@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -40,7 +41,7 @@ public final class Fucker extends Module {
                RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, ActionPriority.WORLD_UTILITY);
                BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(pos.immutable(), Direction.UP);
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(player, InteractionHand.MAIN_HAND);
                return;
             }
          }

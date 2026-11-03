@@ -29,3 +29,4 @@ net.minecraft.client.input.KeyEvent
 net.minecraft.client.input.MouseButtonInfo
 net.minecraft.client.MouseHandler
 net.minecraft.client.KeyboardHandler
+com.mojang.blaze3d.platform.InputConstants$Type

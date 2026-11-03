@@ -1,5 +1,6 @@
 package gemini.ui.clickgui;
 
+import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import gemini.Gemini;
@@ -653,7 +654,7 @@ public final class WindowGuiScreen extends Screen {
    public boolean mouseClicked(MouseButtonEvent rawEvent, boolean doubled) {
       double mx = rawEvent.x() / this.uiScale;
       double my = rawEvent.y() / this.uiScale - this.slide;
-      int button = rawEvent.button();
+      int button = Keys.glfwButton(rawEvent.button());
       if (this.binding != null || this.bindingMenu) {
          this.binding = null;
          this.bindingMenu = false;
@@ -809,7 +810,7 @@ public final class WindowGuiScreen extends Screen {
    public boolean keyPressed(KeyEvent event) {
       int key = event.key();
       if (this.bindingMenu) {
-         if (key != 256) {
+         if (key != Keys.ESCAPE) {
             GeminiKeys.OPEN_GUI.setKey(InputConstants.getKey(event));
             KeyMapping.resetMapping();
             this.minecraft.options.save();
@@ -819,8 +820,8 @@ public final class WindowGuiScreen extends Screen {
          this.bindingMenu = false;
          return true;
       } else if (this.binding != null) {
-         if (key != 256) {
-            if (key == 261 || key == 259) {
+         if (key != Keys.ESCAPE) {
+            if (key == Keys.DELETE || key == Keys.BACKSPACE) {
                this.binding.setKeybind(-1);
                this.showNotice(this.binding.getName() + " unbound");
             } else {
@@ -832,7 +833,7 @@ public final class WindowGuiScreen extends Screen {
 
          this.binding = null;
          return true;
-      } else if (key == 256) {
+      } else if (key == Keys.ESCAPE) {
          if (!this.search.isEmpty()) {
             this.leaveSearch();
          } else {
@@ -843,26 +844,26 @@ public final class WindowGuiScreen extends Screen {
       } else if (!this.searchFocused && GeminiKeys.OPEN_GUI.matches(event)) {
          this.onClose();
          return true;
-      } else if (key == 70 && ctrlDown()) {
+      } else if (key == Keys.F && ctrlDown()) {
          this.searchFocused = true;
          return true;
-      } else if (key == 259) {
+      } else if (key == Keys.BACKSPACE) {
          if (!this.search.isEmpty()) {
             this.search = this.search.substring(0, this.search.length() - 1);
             this.listScrollTarget = 0.0F;
          }
 
          return true;
-      } else if (key == 264 || key == 265) {
-         this.moveSelection(key == 264 ? 1 : -1);
+      } else if (key == Keys.DOWN || key == Keys.UP) {
+         this.moveSelection(key == Keys.DOWN ? 1 : -1);
          return true;
-      } else if (key == 257 || key == 335) {
+      } else if (Keys.isEnter(key)) {
          if (this.selected != null) {
             this.toggle(this.selected);
          }
 
          return true;
-      } else if (key == 258) {
+      } else if (key == Keys.TAB) {
          Category[] all = Category.values();
          int index = this.category.ordinal() + (shiftDown() ? all.length - 1 : 1);
          this.selectCategory(all[index % all.length]);
@@ -1080,12 +1081,12 @@ public final class WindowGuiScreen extends Screen {
 
    private static boolean ctrlDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 341) || InputConstants.isKeyDown(window, 345);
+      return InputConstants.isKeyDown(Keys.LEFT_CONTROL) || InputConstants.isKeyDown(Keys.RIGHT_CONTROL);
    }
 
    private static boolean shiftDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 340) || InputConstants.isKeyDown(window, 344);
+      return InputConstants.isKeyDown(Keys.LEFT_SHIFT) || InputConstants.isKeyDown(Keys.RIGHT_SHIFT);
    }
 
    static String fit(Font font, String text, int maxWidth) {

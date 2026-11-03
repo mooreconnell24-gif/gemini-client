@@ -206,7 +206,7 @@ final class UtilityCommands {
          List<Integer> slots = new ArrayList<>();
          switch (what) {
             case "hand":
-               player.drop(true);
+               Minecraft.getInstance().gameMode.dropItem(player, true);
                feedback("§aDropped the stack in your hand.");
                return;
             case "offhand":

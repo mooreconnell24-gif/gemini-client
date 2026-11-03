@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.util.Hands;
@@ -66,7 +67,7 @@ public final class Flamethrower extends Module {
                      player.getInventory().setSelectedSlot(slot);
                      Vec3 hit = Vec3.atCenterOf(feet.below()).add(0.0, 0.5, 0.0);
                      client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, feet.below(), false));
-                     player.swing(InteractionHand.MAIN_HAND);
+                     Swing.interact(player, InteractionHand.MAIN_HAND);
                      player.getInventory().setSelectedSlot(previous);
                      return;
                   }

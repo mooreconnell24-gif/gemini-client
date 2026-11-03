@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.util.Hands;
@@ -135,7 +136,7 @@ public final class AutoFarm extends Module {
                BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, Direction.UP);
                if (this.swing.get()) {
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.attack(player, InteractionHand.MAIN_HAND);
                }
 
                return;
@@ -208,7 +209,7 @@ public final class AutoFarm extends Module {
             }
 
             if (worked && this.swing.get()) {
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(player, InteractionHand.MAIN_HAND);
             }
 
             this.cooldown = worked ? this.delay.intValue() : 6;

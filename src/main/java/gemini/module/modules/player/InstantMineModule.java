@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -31,7 +32,7 @@ public final class InstantMineModule extends Module {
                client.getConnection().send(new ServerboundPlayerActionPacket(Action.STOP_DESTROY_BLOCK, target, Direction.UP));
             }
             client.level.destroyBlock(target, drop, client.player);
-            client.player.swing(InteractionHand.MAIN_HAND);
+            Swing.attack(client.player, InteractionHand.MAIN_HAND);
             AttributeBoost.onServer(serverPlayer -> {
                if (drop) {
                   serverPlayer.gameMode.destroyBlock(target);

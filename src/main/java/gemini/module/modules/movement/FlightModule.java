@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -30,7 +31,7 @@ public final class FlightModule extends Module {
    private boolean previousFlying;
 
    public FlightModule() {
-      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, 71);
+      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, Keys.fromGlfw('G'));
    }
 
    private boolean creativeMode() {

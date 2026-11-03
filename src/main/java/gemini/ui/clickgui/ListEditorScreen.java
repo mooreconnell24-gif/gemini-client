@@ -1,5 +1,6 @@
 package gemini.ui.clickgui;
 
+import gemini.input.Keys;
 import gemini.Gemini;
 import gemini.module.Module;
 import gemini.module.modules.misc.ClickGuiModule;
@@ -271,7 +272,7 @@ public final class ListEditorScreen extends Screen {
       int fieldRight = this.panelX + this.panelW - 10 - doneW - clearW - 8;
       int clearX = fieldRight + 4;
       int doneX = clearX + clearW + 4;
-      if (event.button() == 0 && my >= fieldTop && my < fieldTop + 16) {
+      if (Keys.glfwButton(event.button()) == 0 && my >= fieldTop && my < fieldTop + 16) {
          if (mx >= doneX && mx < doneX + doneW) {
             this.onClose();
             return true;
@@ -285,7 +286,7 @@ public final class ListEditorScreen extends Screen {
       }
 
       if (!(mx < this.panelX) && !(mx > this.panelX + this.panelW) && !(my < this.panelY) && !(my > this.panelY + this.panelH)) {
-         if (my >= this.bodyTop && my < this.bodyBottom && (event.button() == 0 || event.button() == 1)) {
+         if (my >= this.bodyTop && my < this.bodyBottom && (Keys.glfwButton(event.button()) == 0 || Keys.glfwButton(event.button()) == 1)) {
             int offset = Math.round(this.scroll);
             ListEditorScreen.Entry clicked = null;
             if (this.grid()) {
@@ -324,14 +325,14 @@ public final class ListEditorScreen extends Screen {
    }
 
    public boolean keyPressed(KeyEvent event) {
-      if (event.key() == 256) {
+      if (event.key() == Keys.ESCAPE) {
          this.onClose();
          return true;
-      } else if (event.key() == 259 && !this.search.isEmpty()) {
+      } else if (event.key() == Keys.BACKSPACE && !this.search.isEmpty()) {
          this.search = this.search.substring(0, this.search.length() - 1);
          this.scroll = 0.0F;
          return true;
-      } else if (event.key() != 257 && event.key() != 335) {
+      } else if (!Keys.isEnter(event.key())) {
          return super.keyPressed(event);
       } else {
          if (!this.search.isBlank()

@@ -8,7 +8,7 @@ import gemini.util.Rotations;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
@@ -27,7 +27,7 @@ public final class EndermanLook extends Module {
       return this.mode.get();
    }
 
-   private static boolean lookingAt(LocalPlayer player, EnderMan enderman, double margin) {
+   private static boolean lookingAt(LocalPlayer player, Enderman enderman, double margin) {
       Vec3 look = player.getViewVector(1.0F).normalize();
       Vec3 toward = new Vec3(enderman.getX() - player.getX(), enderman.getEyeY() - player.getEyeY(), enderman.getZ() - player.getZ());
       double distance = toward.length();
@@ -41,10 +41,10 @@ public final class EndermanLook extends Module {
          LocalPlayer player = client.player;
          boolean away = this.mode.is("Look Away");
          if (!away || !player.getItemBySlot(EquipmentSlot.HEAD).is(Items.CARVED_PUMPKIN)) {
-            EnderMan nearest = null;
+            Enderman nearest = null;
             double nearestDistance = Double.MAX_VALUE;
 
-            for (EnderMan enderman : client.level.getEntitiesOfClass(EnderMan.class, player.getBoundingBox().inflate(this.range.get()))) {
+            for (Enderman enderman : client.level.getEntitiesOfClass(Enderman.class, player.getBoundingBox().inflate(this.range.get()))) {
                if (enderman.isAlive()) {
                   if (away) {
                      if (lookingAt(player, enderman, 0.12)) {

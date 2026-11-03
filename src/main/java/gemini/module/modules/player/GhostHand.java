@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -42,7 +43,7 @@ public final class GhostHand extends Module {
                   || s.getBlock() instanceof ShulkerBoxBlock
                   || s.getBlock() instanceof BarrelBlock) {
                   client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.interact(player, InteractionHand.MAIN_HAND);
                   break;
                }
             }

@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.util.Hands;
 import gemini.module.Module;
@@ -92,7 +93,7 @@ public final class AutoClutch extends Module {
                      if (!stack.is(Items.WATER_BUCKET) && !stack.is(Items.POWDER_SNOW_BUCKET)) {
                         Vec3 hit = Vec3.atCenterOf(ground).add(0.0, 0.5, 0.0);
                         client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, ground, false));
-                        player.swing(InteractionHand.MAIN_HAND);
+                        Swing.interact(player, InteractionHand.MAIN_HAND);
                      } else {
                         RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
                         if (stack.is(Items.WATER_BUCKET)) {

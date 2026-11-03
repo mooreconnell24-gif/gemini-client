@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import net.minecraft.client.Minecraft;
@@ -24,7 +25,7 @@ public final class Extinguish extends Module {
             BlockState s = client.level.getBlockState(pos);
             if (s.is(Blocks.FIRE) || s.is(Blocks.SOUL_FIRE)) {
                client.gameMode.startDestroyBlock(pos.immutable(), Direction.UP);
-               client.player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(client.player, InteractionHand.MAIN_HAND);
                return;
             }
          }

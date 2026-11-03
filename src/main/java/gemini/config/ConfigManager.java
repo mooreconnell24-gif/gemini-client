@@ -1,5 +1,6 @@
 package gemini.config;
 
+import gemini.input.Keys;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -84,7 +85,7 @@ public final class ConfigManager {
             }
 
             int fileVersion = ConfigMigrations.versionOf(root);
-            if (fileVersion > 5) {
+            if (fileVersion > ConfigMigrations.CURRENT_VERSION) {
                this.backupNewer(fileVersion);
             }
 
@@ -105,7 +106,7 @@ public final class ConfigManager {
          }
 
          if (!upgrades.isEmpty()) {
-            Gemini.LOGGER.info("Upgraded gemini_config.json to version {}: {}", 5, String.join("; ", upgrades));
+            Gemini.LOGGER.info("Upgraded gemini_config.json to version {}: {}", ConfigMigrations.CURRENT_VERSION, String.join("; ", upgrades));
             this.save();
          }
       }
@@ -119,7 +120,7 @@ public final class ConfigManager {
          Gemini.LOGGER
             .warn(
                "gemini_config.json was written by a newer Gemini (config version {}, this build writes {}). A copy is in {}.",
-               new Object[]{fileVersion, 5, backup}
+               new Object[]{fileVersion, ConfigMigrations.CURRENT_VERSION, backup}
             );
       } catch (IOException var4) {
          Gemini.LOGGER.warn("Could not back up the newer config before loading it", var4);
@@ -154,7 +155,7 @@ public final class ConfigManager {
          } else if (root.has("menuKeyCode") && root.get("menuKeyCode").isJsonPrimitive()) {
             int code = root.get("menuKeyCode").getAsInt();
             if (code > 0) {
-               GeminiKeys.OPEN_GUI.setKey(Type.KEYSYM.getOrCreate(code));
+               GeminiKeys.OPEN_GUI.setKey(Type.KEYBOARD.getOrCreate(Keys.fromGlfw(code)));
                KeyMapping.resetMapping();
             }
          }
@@ -353,7 +354,7 @@ public final class ConfigManager {
       if (this.dirty && !this.suppressAutosave && !this.savingPaused) {
          this.dirty = false;
          JsonObject root = new JsonObject();
-         root.addProperty("version", 5);
+         root.addProperty("version", ConfigMigrations.CURRENT_VERSION);
          root.addProperty("menuKey", GeminiKeys.OPEN_GUI.saveString());
          root.add("modules", this.buildModules(true));
          root.add("panels", this.buildPanels());
@@ -388,7 +389,7 @@ public final class ConfigManager {
          return false;
       } else {
          JsonObject root = new JsonObject();
-         root.addProperty("version", 5);
+         root.addProperty("version", ConfigMigrations.CURRENT_VERSION);
          root.addProperty("presetName", clean);
          root.addProperty("menuKey", GeminiKeys.OPEN_GUI.saveString());
          root.add("modules", this.buildModules(true));

@@ -1,5 +1,6 @@
 package gemini.ui.clickgui;
 
+import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
@@ -706,7 +707,7 @@ public final class CategoryPanel {
       if (!this.contains(mx, my)) {
          return false;
       } else {
-         int button = event.button();
+         int button = Keys.glfwButton(event.button());
          int w = this.width();
          int top = this.state.y + this.slide;
          int vpTop = top + 22;
@@ -792,7 +793,7 @@ public final class CategoryPanel {
    }
 
    private void handleItemClick(CategoryPanel.Item item, MouseButtonEvent event, int itemY, ClickGuiScreen screen) {
-      int button = event.button();
+      int button = Keys.glfwButton(event.button());
       Module module = item.row.module;
       if (item.kind == 0) {
          if (button == 0) {
@@ -865,7 +866,7 @@ public final class CategoryPanel {
    }
 
    public boolean mouseDragged(MouseButtonEvent event) {
-      if (this.drag != CategoryPanel.Drag.NONE && event.button() == 0) {
+      if (this.drag != CategoryPanel.Drag.NONE && Keys.glfwButton(event.button()) == 0) {
          double mx = event.x();
          double my = event.y();
          switch (this.drag) {
@@ -1007,12 +1008,12 @@ public final class CategoryPanel {
 
    private static boolean isShiftDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 340) || InputConstants.isKeyDown(window, 344);
+      return InputConstants.isKeyDown(Keys.LEFT_SHIFT) || InputConstants.isKeyDown(Keys.RIGHT_SHIFT);
    }
 
    private static boolean isAltDown() {
       Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(window, 342) || InputConstants.isKeyDown(window, 346);
+      return InputConstants.isKeyDown(Keys.LEFT_ALT) || InputConstants.isKeyDown(Keys.RIGHT_ALT);
    }
 
    private static void save() {

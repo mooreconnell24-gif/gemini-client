@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -61,7 +62,7 @@ public final class NukerModule extends Module {
                BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, face(player, this.current));
                if (this.swing.get()) {
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.attack(player, InteractionHand.MAIN_HAND);
                }
 
                return;
@@ -84,7 +85,7 @@ public final class NukerModule extends Module {
             }
 
             if (this.swing.get()) {
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(player, InteractionHand.MAIN_HAND);
             }
          }
       }

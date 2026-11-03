@@ -24,3 +24,4 @@ net.minecraft.client.input.InputQuirks
 net.minecraft.client.gui.components.events.GuiEventListener
 net.minecraft.client.gui.screens.Screen
 net.minecraft.client.KeyboardHandler
+net.minecraft.client.renderer.state.level.PlayerRenderState

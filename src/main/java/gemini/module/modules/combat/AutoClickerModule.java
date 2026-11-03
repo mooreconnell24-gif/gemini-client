@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -15,7 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult.Type;
-import org.lwjgl.glfw.GLFW;
 
 public final class AutoClickerModule extends Module {
    private final NumberSetting cps = this.addSetting(new NumberSetting("CPS", "Clicks per second", 8.0, 1.0, 20.0, 1.0));
@@ -53,7 +53,7 @@ public final class AutoClickerModule extends Module {
       if (player != null
          && client.gameMode != null
          && client.gui.screen() == null
-         && (!this.requireMouse.get() || GLFW.glfwGetMouseButton(client.getWindow().handle(), 0) == 1)
+         && (!this.requireMouse.get() || client.mouseHandler.isLeftPressed())
          && client.hitResult != null
          && client.hitResult.getType() == Type.ENTITY
          && !player.isUsingItem()
@@ -63,7 +63,7 @@ public final class AutoClickerModule extends Module {
             Entity entity = ((EntityHitResult)client.hitResult).getEntity();
             this.nextClick = now + this.nextDelay();
             client.gameMode.attack(player, entity);
-            player.swing(InteractionHand.MAIN_HAND);
+            Swing.attack(player, InteractionHand.MAIN_HAND);
          }
       }
    }

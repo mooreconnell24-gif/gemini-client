@@ -99,7 +99,7 @@ public final class AntiLag extends Module {
    @Override
    public boolean onReceivePacket(Packet<?> packet) {
       if (!(this.packetGuard.get() && packet instanceof ClientboundLevelParticlesPacket p)
-         || p.getCount() <= 150 && (!this.mode.is("Aggressive") || p.getCount() <= 40)) {
+         || p.count() <= 150 && (!this.mode.is("Aggressive") || p.count() <= 40)) {
          return false;
       } else {
          this.totalBlocked++;

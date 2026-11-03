@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -16,7 +17,7 @@ public final class Fullbright extends Module {
    private boolean gammaApplied;
 
    public Fullbright() {
-      super("Fullbright", "See clearly in caves and at night.", Category.RENDER, 66);
+      super("Fullbright", "See clearly in caves and at night.", Category.RENDER, Keys.fromGlfw('B'));
    }
 
    @Override

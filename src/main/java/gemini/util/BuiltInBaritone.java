@@ -724,7 +724,7 @@ public final class BuiltInBaritone {
          player.getInventory().setSelectedSlot(seedSlot);
          Vec3 hit = Vec3.atCenterOf(best).add(0.0, 0.5, 0.0);
          client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, best, false));
-         player.swing(InteractionHand.MAIN_HAND);
+         Swing.interact(player, InteractionHand.MAIN_HAND);
          player.getInventory().setSelectedSlot(prev);
       }
    }
@@ -741,7 +741,7 @@ public final class BuiltInBaritone {
          RotationManager.request(player, rot[0], rot[1], 80.0F, true, ActionPriority.BOT, 8.0F);
          BlockBreaking.keep();
          client.gameMode.continueDestroyBlock(pos, Direction.UP);
-         player.swing(InteractionHand.MAIN_HAND);
+         Swing.attack(player, InteractionHand.MAIN_HAND);
          lastMineClock = clock;
       }
    }

@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -68,7 +69,7 @@ public final class AutoRod extends Module {
                   this.previousSlot = player.getInventory().getSelectedSlot();
                   player.getInventory().setSelectedSlot(slot);
                   RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
-                  player.swing(InteractionHand.MAIN_HAND);
+                  Swing.interact(player, InteractionHand.MAIN_HAND);
                   this.retractTicks = 3;
                   this.wait = this.delay.intValue();
                }

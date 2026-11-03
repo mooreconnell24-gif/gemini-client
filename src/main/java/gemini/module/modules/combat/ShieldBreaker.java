@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
 import net.minecraft.client.Minecraft;
@@ -25,7 +26,7 @@ public final class ShieldBreaker extends Module {
          if (CombatHelpers.nearestEnemy(client, player, 4.2, false) instanceof Player targetPlayer && targetPlayer.isBlocking()) {
             CombatHelpers.withSlot(player, s -> s.is(ItemTags.AXES), () -> {
                client.gameMode.attack(player, targetPlayer);
-               player.swing(InteractionHand.MAIN_HAND);
+               Swing.attack(player, InteractionHand.MAIN_HAND);
                this.cooldown = 6;
             });
          }

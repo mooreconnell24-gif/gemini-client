@@ -1,5 +1,6 @@
 package gemini.command;
 
+import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import gemini.Gemini;
@@ -1050,30 +1051,30 @@ public final class CommandManager {
             return -1;
          case "rshift":
          case "right_shift":
-            return 344;
+            return Keys.RIGHT_SHIFT;
          case "lshift":
          case "left_shift":
          case "shift":
-            return 340;
+            return Keys.LEFT_SHIFT;
          case "rctrl":
          case "right_control":
          case "right_ctrl":
-            return 345;
+            return Keys.RIGHT_CONTROL;
          case "lctrl":
          case "left_control":
          case "left_ctrl":
          case "ctrl":
          case "control":
-            return 341;
+            return Keys.LEFT_CONTROL;
          case "alt":
          case "left_alt":
          case "lalt":
-            return 342;
+            return Keys.LEFT_ALT;
          case "right_alt":
          case "ralt":
-            return 346;
+            return Keys.RIGHT_ALT;
          case "space":
-            return 32;
+            return Keys.SPACE;
          default:
             try {
                Key key = InputConstants.getKey("key.keyboard." + name.replace('_', '.'));
