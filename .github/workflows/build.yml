@@ -29,9 +29,6 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 libgles2 > /dev/null
           mkdir -p run/mods /tmp/out
-          if git fetch -q origin bundle-baritone 2>/dev/null; then
-            git show FETCH_HEAD:gemini-3.0.0.jar > /tmp/bundled.jar && unzip -p /tmp/bundled.jar META-INF/jars/baritone-1.20.0.jar > run/mods/baritone-1.20.0.jar || true
-          fi
           ls -la run/mods
           export LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEO_X11_FORCE_EGL=1 SDL_VIDEO_FORCE_EGL=1
           glxinfo -B 2>/dev/null | head -5 || true
