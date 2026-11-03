@@ -78,6 +78,7 @@ import gemini.module.modules.render.EntityRender;
 import gemini.module.modules.render.RenderExtras;
 import gemini.module.modules.render.WorldRender;
 import gemini.module.modules.world.WorldExtras;
+import gemini.module.modules.world.SandboxModules;
 import gemini.module.modules.world.WorldModules;
 import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
@@ -325,6 +326,7 @@ public final class ModuleManager {
       PlayerExtras.register(this::register);
       WorldModules.register(this::register);
       WorldExtras.register(this::register);
+      SandboxModules.register(this::register);
       MiscModules.register(this::register);
       MiscExtras.register(this::register);
       BaritoneModules.register(this::register);
