@@ -386,6 +386,8 @@ public final class WindowGuiScreen extends Screen {
          outline(g, x, y, x + w, y + CARD_H, GeminiMark.withAlpha(accent, this.a(110)));
       }
 
+      // The card is registered before its switch so a click on the switch toggles instead of selecting.
+      this.hit(WindowGuiScreen.Kind.CARD, x, y, w, CARD_H, module, this.listViewTop, this.listViewBottom);
       boolean toggleable = !(module instanceof ClickGuiModule);
       int right = x + w - 8;
       if (toggleable) {
@@ -409,7 +411,6 @@ public final class WindowGuiScreen extends Screen {
       g.text(this.font, fit(this.font, module.getName(), right - textX - 2), textX, y + 5, GeminiMark.withAlpha(nameColor, this.a(255)), false);
       String description = searchMode ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
       g.text(this.font, fit(this.font, description, x + w - 34 - textX), textX, y + 16, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
-      this.hit(WindowGuiScreen.Kind.CARD, x, y, w, CARD_H, module, this.listViewTop, this.listViewBottom);
    }
 
    private void drawSettings(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
@@ -674,9 +675,8 @@ public final class WindowGuiScreen extends Screen {
       switch (hit.kind) {
          case SEARCH -> this.searchFocused = true;
          case CLEAR -> {
-            this.search = "";
+            this.leaveSearch();
             this.searchFocused = true;
-            this.listScrollTarget = 0.0F;
          }
          case FILTER -> {
             this.filter = (String)hit.target;
@@ -829,9 +829,7 @@ public final class WindowGuiScreen extends Screen {
          return true;
       } else if (key == 256) {
          if (!this.search.isEmpty()) {
-            this.search = "";
-            this.searchFocused = false;
-            this.listScrollTarget = 0.0F;
+            this.leaveSearch();
          } else {
             this.onClose();
          }
@@ -897,6 +895,17 @@ public final class WindowGuiScreen extends Screen {
    }
 
    // ------------------------------------------------------------------ actions
+
+   /** Clears the search but stays on the module you picked from the results by opening its category. */
+   private void leaveSearch() {
+      this.search = "";
+      this.searchFocused = false;
+      this.listScrollTarget = 0.0F;
+      if (this.selected != null) {
+         this.category = this.selected.getCategory();
+         this.revealed = false;
+      }
+   }
 
    private void selectCategory(Category cat) {
       this.category = cat;
