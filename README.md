@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
+  273 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -101,7 +101,7 @@ The rest:
 
 | | |
 |---|---|
-| **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
+| **273 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 19 |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
@@ -119,7 +119,7 @@ The rest:
 | World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Mob Sweeper, Summoner, Time, Weather, Waypoints |
 | Render | ESP, StorageESP, Xray, Tracers, Nametags, Freecam, Zoom, Fullbright, Search |
 | HUD | FPS, CPS, Armor, Potion Timers, Radar, TargetHUD, Keystrokes, Inventory Viewer |
-| Misc | ClickGUI, HUD, Macro 1–3, Panic, Presets, NameProtect, Better Chat |
+| Misc | ClickGUI, HUD, Macro 1–3, Panic, Presets, Inferno Bypass, NameProtect, Better Chat |
 
 ### Clutch
 
@@ -134,6 +134,10 @@ Clutch (Player) watches for whatever is about to kill you and answers it with th
 | Low health | Moves a totem into your offhand |
 
 **Last Resort** (single-player) steps in when no item can help: it resets fall damage just before you land, gives fire resistance, water breathing or healing, or teleports you to the last safe ground. **Danger / Fall / Lava / Health Modules** are lists of other modules Clutch switches on during that danger (Lava defaults to Jesus, Health to AutoTotem); **Restore Modules** turns them back off once you have been safe for **Restore Delay** ticks. Edit them in the menu or with `.set Clutch Lava_Modules add <module>`.
+
+### Inferno Bypass
+
+Inferno Bypass (Misc) gets Gemini's modules past the [Inferno anti-cheat](docs/inferno-bypass.md) in a single-player world with Inferno installed. **Packet Tunnel** sends packets underneath the hook Inferno reads them from. **Hide Boosts** gives Step, High Jump, Reach and Fast Break attribute boosts ids Inferno doesn't look for. **Safe Block Reach** keeps Reach under Inferno's 5.35-block limit. [docs/inferno-bypass.md](docs/inferno-bypass.md) lists every Inferno check, which ones the bypass beats, and which ones Inferno still wins.
 
 ## Installation
 

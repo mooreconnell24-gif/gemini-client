@@ -9,6 +9,7 @@
 		"CameraMixin",
 		"ChatComponentMixin",
 		"ClientCommonPacketListenerImplMixin",
+		"ClientCommonPacketListenerImplLateMixin",
 		"ClientLevelMixin",
 		"ClientPacketListenerMixin",
 		"EntityMixin",

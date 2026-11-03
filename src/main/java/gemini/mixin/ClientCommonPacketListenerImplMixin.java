@@ -1,7 +1,6 @@
 package gemini.mixin;
 
-import gemini.Gemini;
-import net.minecraft.client.Minecraft;
+import gemini.util.PacketTunnel;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
 import net.minecraft.network.protocol.Packet;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/** Gemini's outgoing packet hook at the default priority; see {@link PacketTunnel}. */
 @Mixin({ClientCommonPacketListenerImpl.class})
 public abstract class ClientCommonPacketListenerImplMixin {
    @Inject(
@@ -18,8 +18,7 @@ public abstract class ClientCommonPacketListenerImplMixin {
       require = 0
    )
    private void gemini$outgoing(Packet<?> packet, CallbackInfo ci) {
-      Gemini gemini = Gemini.getInstance();
-      if (gemini != null && gemini.modules() != null && Minecraft.getInstance().player != null && gemini.modules().sendPacket(packet)) {
+      if (PacketTunnel.onSend(this, packet)) {
          ci.cancel();
       }
    }

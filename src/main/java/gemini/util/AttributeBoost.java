@@ -1,5 +1,6 @@
 package gemini.util;
 
+import gemini.module.modules.misc.InfernoBypass;
 import java.util.UUID;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
@@ -19,7 +20,15 @@ public final class AttributeBoost {
    }
 
    private static Identifier id(String id) {
-      return Identifier.fromNamespaceAndPath("gemini", id);
+      return id(id, InfernoBypass.hideBoosts());
+   }
+
+   /**
+    * The modifier id for a boost. Hidden ids get a prefix, because the Inferno anti-cheat strips modifiers by their
+    * exact {@code gemini:<name>} id every tick (see {@link InfernoBypass}).
+    */
+   private static Identifier id(String id, boolean hidden) {
+      return Identifier.fromNamespaceAndPath("gemini", hidden ? "boost_" + id : id);
    }
 
    public static void apply(Holder<Attribute> attribute, String id, double amount, Operation operation) {
@@ -33,13 +42,17 @@ public final class AttributeBoost {
             && Math.abs(own.getModifier(identifier).amount() - amount) < 1.0E-6
             && own.getModifier(identifier).operation() == operation;
          if (!upToDate) {
+            // Drop the boost under its other id, left over from before Inferno Bypass was switched on or off.
+            Identifier stale = id(id, !InfernoBypass.hideBoosts());
             if (own != null) {
+               own.removeModifier(stale);
                own.addOrUpdateTransientModifier(new AttributeModifier(identifier, amount, operation));
             }
 
             onServer(serverPlayer -> {
                AttributeInstance instance = serverPlayer.getAttribute(attribute);
                if (instance != null) {
+                  instance.removeModifier(stale);
                   instance.addOrUpdateTransientModifier(new AttributeModifier(identifier, amount, operation));
                }
             });
@@ -49,18 +62,21 @@ public final class AttributeBoost {
 
    public static void clear(Holder<Attribute> attribute, String id) {
       Minecraft client = Minecraft.getInstance();
-      Identifier identifier = id(id);
+      Identifier plain = id(id, false);
+      Identifier hidden = id(id, true);
       if (client.player != null) {
          AttributeInstance own = client.player.getAttribute(attribute);
          if (own != null) {
-            own.removeModifier(identifier);
+            own.removeModifier(plain);
+            own.removeModifier(hidden);
          }
       }
 
       onServer(serverPlayer -> {
          AttributeInstance instance = serverPlayer.getAttribute(attribute);
          if (instance != null) {
-            instance.removeModifier(identifier);
+            instance.removeModifier(plain);
+            instance.removeModifier(hidden);
          }
       });
    }

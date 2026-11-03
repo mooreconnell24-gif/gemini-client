@@ -91,6 +91,7 @@ import gemini.module.modules.hud.Welcome;
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.modules.misc.AutoGG;
 import gemini.module.modules.misc.BetterChat;
+import gemini.module.modules.misc.InfernoBypass;
 import gemini.module.modules.misc.Aim;
 import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.misc.DeathCoords;
@@ -640,6 +641,7 @@ public final class ModuleManager {
       this.register(new PortalMenu());
       this.register(new DeathCoords());
       this.register(new Presets());
+      this.register(new InfernoBypass());
       this.register(new AutoGG());
       this.register(new Notifier());
       this.register(new Teams());

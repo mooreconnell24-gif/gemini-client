@@ -10,6 +10,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class ArrowDamageModule extends Module {
    public static ArrowDamageModule instance;
@@ -25,8 +29,43 @@ public final class ArrowDamageModule extends Module {
          ArrowDamageModule module = instance;
          if (module != null && module.isEnabled() && entity instanceof AbstractArrow arrow && module.boosts(arrow) && firedByLocalPlayer(arrow)) {
             arrow.setBaseDamage(module.damage.get());
+            // Another mod listening to the same event (the Inferno anti-cheat resets arrows to 2) may run after
+            // this one, so set the damage once more on the next server tick, after every listener has run.
+            module.pending.add(arrow);
          }
       });
+   }
+
+   private final Queue<AbstractArrow> pending = new ConcurrentLinkedQueue<>();
+
+   @Override
+   public void onDisable() {
+      this.pending.clear();
+   }
+
+   @Override
+   public void onTick() {
+      if (this.pending.isEmpty()) {
+         return;
+      }
+
+      List<AbstractArrow> arrows = new ArrayList<>();
+      AbstractArrow next;
+      while ((next = this.pending.poll()) != null) {
+         arrows.add(next);
+      }
+
+      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+      double value = this.damage.get();
+      if (server != null) {
+         server.execute(() -> {
+            for (AbstractArrow arrow : arrows) {
+               if (!arrow.isRemoved()) {
+                  arrow.setBaseDamage(value);
+               }
+            }
+         });
+      }
    }
 
    private boolean boosts(AbstractArrow arrow) {
