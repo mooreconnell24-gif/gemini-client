@@ -108,6 +108,8 @@ public final class WindowGuiScreen extends Screen {
 
    @Override
    protected void init() {
+      // Minecraft 26.3 reads keys through SDL, which only sends typed characters to a screen that asks for them.
+      this.minecraft.textInputManager().startTextInput(this);
       ClickGuiModule style = style();
       float base = style == null ? 1.0F : style.scale();
       float scale = base;
@@ -889,6 +891,7 @@ public final class WindowGuiScreen extends Screen {
 
    @Override
    public void removed() {
+      this.minecraft.textInputManager().stopTextInput(this);
       lastCategory = this.category;
       lastModule = this.selected == null ? null : this.selected.getName();
       rememberedSearch = this.search;

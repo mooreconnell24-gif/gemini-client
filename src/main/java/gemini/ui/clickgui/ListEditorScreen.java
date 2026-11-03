@@ -90,6 +90,8 @@ public final class ListEditorScreen extends Screen {
    }
 
    protected void init() {
+      // Minecraft 26.3 reads keys through SDL, which only sends typed characters to a screen that asks for them.
+      this.minecraft.textInputManager().startTextInput(this);
       this.panelW = Math.min(this.width - 24, 480);
       this.panelH = Math.min(this.height - 24, 360);
       this.panelX = (this.width - this.panelW) / 2;
@@ -363,6 +365,11 @@ public final class ListEditorScreen extends Screen {
 
    public void onClose() {
       this.minecraft.gui.setScreen(this.parent);
+   }
+
+   @Override
+   public void removed() {
+      this.minecraft.textInputManager().stopTextInput(this);
    }
 
    public boolean isPauseScreen() {
