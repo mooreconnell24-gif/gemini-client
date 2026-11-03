@@ -31,7 +31,7 @@ public final class BlockHitModule extends Module {
    private boolean armedThisTick;
 
    public BlockHitModule() {
-      super("BlockHit", "Raise your shield right after a hit so the counter.", Category.COMBAT);
+      super("BlockHit", "Raise your shield right after each hit to block the counter-attack.", Category.COMBAT);
    }
 
    public static boolean wantsShield() {

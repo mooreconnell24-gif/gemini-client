@@ -201,7 +201,7 @@ public final class WorldModules {
       private int cooldown;
 
       public AutoBreed() {
-         super("Auto Breed", "Feed nearby animals with the food in your hotbar so.", Category.WORLD);
+         super("Auto Breed", "Feed nearby animals with food from your hotbar so they breed.", Category.WORLD);
       }
 
       @Override
@@ -533,7 +533,7 @@ public final class WorldModules {
       private boolean warned;
 
       public AutoNametag() {
-         super("Auto Nametag", "Name every nearby unnamed mob using a renamed name.", Category.WORLD);
+         super("Auto Nametag", "Name nearby unnamed mobs with a renamed name tag from your hotbar.", Category.WORLD);
       }
 
       @Override

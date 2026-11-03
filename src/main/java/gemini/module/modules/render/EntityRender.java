@@ -389,7 +389,7 @@ public final class EntityRender {
       private final ColorSetting hitColor = this.addSetting(new ColorSetting("Hit Color", "Color of the landing marker", 0));
 
       public Trajectories() {
-         super("Trajectories", "Predict where arrows, pearls and other projectiles.", Category.RENDER);
+         super("Trajectories", "Predict where arrows, pearls and other projectiles will land.", Category.RENDER);
       }
 
       @Override

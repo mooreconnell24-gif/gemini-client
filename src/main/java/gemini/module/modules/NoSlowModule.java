@@ -13,7 +13,7 @@ public final class NoSlowModule extends Module {
    );
 
    public NoSlowModule() {
-      super("NoSlow", "Remove the slowdown from eating.", Category.MOVEMENT);
+      super("NoSlow", "Remove the slowdown from eating, drinking and blocking.", Category.MOVEMENT);
    }
 
    @Override

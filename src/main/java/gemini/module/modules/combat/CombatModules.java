@@ -767,7 +767,7 @@ public final class CombatModules {
       private int startY;
 
       public Surround() {
-         super("Surround", "Surround your feet with obsidian to block crystal.", Category.COMBAT);
+         super("Surround", "Surround your feet with obsidian to block crystal damage.", Category.COMBAT);
       }
 
       @Override

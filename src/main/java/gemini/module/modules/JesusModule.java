@@ -61,13 +61,13 @@ public final class JesusModule extends Module {
       new BooleanSetting("Dip On Sneak", "Hold sneak to sink down into the fluid", true)
    );
    private final BooleanSetting dipBurning = this.addSetting(
-      new BooleanSetting("Dip If Burning", "Sink into water when you are on fire so it puts you", true)
+      new BooleanSetting("Dip If Burning", "Sink into water when you are on fire so it puts the fire out", true)
    );
    private final BooleanSetting dipFall = this.addSetting(
-      new BooleanSetting("Dip On Fall", "Break through the surface after a long fall so you", true)
+      new BooleanSetting("Dip On Fall", "Break through the surface after a long fall so the water catches you", true)
    );
    private final NumberSetting fallHeight = this.addSetting(
-      new NumberSetting("Fall Height", "Fall distance, in blocks, that makes you break", 4.0, 1.0, 20.0, 1.0).showIf(this.dipFall::get)
+      new NumberSetting("Fall Height", "Fall distance, in blocks, that makes you break through the surface", 4.0, 1.0, 20.0, 1.0).showIf(this.dipFall::get)
    );
    private int surfaceTick = -1073741824;
 

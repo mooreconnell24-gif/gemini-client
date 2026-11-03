@@ -40,7 +40,7 @@ public final class NoFallModule extends Module {
    private int pickup;
 
    public NoFallModule() {
-      super("NoFall", "Cancels fall damage.", Category.MOVEMENT);
+      super("NoFall", "Cancel fall damage.", Category.MOVEMENT);
    }
 
    @Override

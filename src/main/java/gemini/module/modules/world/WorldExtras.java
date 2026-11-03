@@ -231,7 +231,7 @@ public final class WorldExtras {
       private final PlaceSettings placer = new PlaceSettings(this, 0, 4, 4.5);
 
       public BlockIn() {
-         super("BlockIn", "Rapidly build a full 1x2 protective shell around.", Category.WORLD);
+         super("BlockIn", "Rapidly build a full 1x2 protective shell around yourself.", Category.WORLD);
       }
 
       @Override
