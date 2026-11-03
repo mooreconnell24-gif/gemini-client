@@ -92,7 +92,7 @@ public final class BlockPlacer {
             return false;
          } else {
             BlockHitResult hit = findPlacement(client.level, target, allowAir);
-            if (hit != null && (!checkEntities || !occupied(client.level, target))) {
+            if (hit != null && (!checkEntities || !occupied(client.level, target)) && Hands.claimMainHand()) {
                int previous = player.getInventory().getSelectedSlot();
                if (slot != previous) {
                   player.getInventory().setSelectedSlot(slot);

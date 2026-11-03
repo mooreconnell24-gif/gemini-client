@@ -7,7 +7,7 @@ import gemini.input.GeminiKeys;
 import gemini.input.KeybindReport;
 import gemini.module.Category;
 import gemini.module.Module;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
@@ -17,6 +17,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudOverlay;
+import gemini.ui.Fuzzy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -990,11 +991,15 @@ public final class WindowGuiScreen extends Screen {
 
       String query = this.search.trim().toLowerCase(Locale.ROOT);
       List<Module> list = new ArrayList<>();
+      Map<Module, Integer> scores = new HashMap<>();
       for (Module module : query.isEmpty() ? modules(this.category) : Gemini.getInstance().modules().getModules()) {
-         if (!query.isEmpty()
-            && !module.getName().toLowerCase(Locale.ROOT).contains(query)
-            && !module.getDescription().toLowerCase(Locale.ROOT).contains(query)) {
-            continue;
+         if (!query.isEmpty()) {
+            int score = Fuzzy.moduleScore(query, module);
+            if (score == 0) {
+               continue;
+            }
+
+            scores.put(module, score);
          }
 
          if ("On".equals(this.filter) && !module.isEnabled() || "Bound".equals(this.filter) && module.getKeybind() == -1) {
@@ -1008,11 +1013,8 @@ public final class WindowGuiScreen extends Screen {
       if (query.isEmpty()) {
          list.sort(byName);
       } else {
-         // Names that start with the query first, then names containing it, then description matches.
-         list.sort(Comparator.<Module>comparingInt(m -> {
-            String name = m.getName().toLowerCase(Locale.ROOT);
-            return name.startsWith(query) ? 0 : (name.contains(query) ? 1 : 2);
-         }).thenComparing(byName));
+         // Best fuzzy match first (name hits beat description and setting hits), then alphabetical.
+         list.sort(Comparator.<Module>comparingInt(m -> -scores.getOrDefault(m, 0)).thenComparing(byName));
       }
 
       return list;

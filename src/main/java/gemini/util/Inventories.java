@@ -43,7 +43,7 @@ public final class Inventories {
    }
 
    public static void swapToOffhand(Minecraft client, LocalPlayer player, int index) {
-      if (client.gameMode != null) {
+      if (client.gameMode != null && Hands.claimOffhand()) {
          int container = player.inventoryMenu.containerId;
          if (index < 9) {
             client.gameMode.handleContainerInput(container, 45, index, ContainerInput.SWAP, player);

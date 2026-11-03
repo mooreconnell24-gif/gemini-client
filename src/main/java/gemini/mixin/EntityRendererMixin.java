@@ -1,8 +1,8 @@
 package gemini.mixin;
 
-import gemini.module.modules.misc.MiscModules;
-import gemini.module.modules.render.EntityRender;
-import gemini.module.modules.render.RenderExtras;
+import gemini.module.modules.misc.AntiLag;
+import gemini.module.modules.render.EntityCulling;
+import gemini.module.modules.render.Nametags;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.Entity;
@@ -21,15 +21,15 @@ public abstract class EntityRendererMixin {
    private void gemini$hideVanillaName(
       Entity entity, EntityRenderState state, float partialTicks, double nameTagDistance, double belowNameDistance, CallbackInfo ci
    ) {
-      EntityRender.Nametags nametags = EntityRender.Nametags.instance;
+      Nametags nametags = Nametags.instance;
       if (nametags != null && nametags.replacesVanilla(entity)) {
          state.nameTag = null;
       } else {
-         MiscModules.AntiLag antiLag = MiscModules.AntiLag.instance;
+         AntiLag antiLag = AntiLag.instance;
          if (antiLag != null && antiLag.shouldCullNametag(entity, nameTagDistance)) {
             state.nameTag = null;
          } else {
-            RenderExtras.EntityCulling culling = RenderExtras.EntityCulling.instance;
+            EntityCulling culling = EntityCulling.instance;
             if (culling != null && culling.shouldCullNametag(entity, nameTagDistance)) {
                state.nameTag = null;
             }

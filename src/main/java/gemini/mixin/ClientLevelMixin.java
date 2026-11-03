@@ -1,5 +1,6 @@
 package gemini.mixin;
 
+import gemini.Gemini;
 import gemini.util.ChunkChanges;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -18,5 +19,9 @@ public abstract class ClientLevelMixin {
    )
    private void gemini$trackChanges(BlockPos pos, BlockState oldState, BlockState newState, CallbackInfo ci) {
       ChunkChanges.blockChanged(pos);
+      Gemini gemini = Gemini.getInstance();
+      if (gemini != null && gemini.modules() != null) {
+         gemini.modules().blockUpdate(pos, oldState, newState);
+      }
    }
 }

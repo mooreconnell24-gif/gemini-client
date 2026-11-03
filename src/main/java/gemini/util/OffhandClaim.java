@@ -1,8 +1,8 @@
 package gemini.util;
 
 import gemini.Gemini;
-import gemini.module.modules.AutoTotemModule;
-import gemini.module.modules.combat.CombatModules;
+import gemini.module.modules.combat.AutoTotemModule;
+import gemini.module.modules.combat.Offhand;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Items;
 
@@ -22,7 +22,7 @@ public final class OffhandClaim {
             if (totem != null && totem.isEnabled() && totem.wantsOffhand(player)) {
                return true;
             } else {
-               CombatModules.Offhand offhand = gemini.modules().byClass(CombatModules.Offhand.class).orElse(null);
+               Offhand offhand = gemini.modules().byClass(Offhand.class).orElse(null);
                return offhand != null && offhand.isEnabled() && offhand.wantsTotem(player);
             }
          }
@@ -35,7 +35,7 @@ public final class OffhandClaim {
       } else {
          Gemini gemini = Gemini.getInstance();
          if (gemini != null && player != null) {
-            CombatModules.Offhand offhand = gemini.modules().byClass(CombatModules.Offhand.class).orElse(null);
+            Offhand offhand = gemini.modules().byClass(Offhand.class).orElse(null);
             return offhand != null && offhand.isEnabled() && !player.getOffhandItem().is(Items.AIR);
          } else {
             return false;

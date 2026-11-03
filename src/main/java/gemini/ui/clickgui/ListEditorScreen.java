@@ -2,7 +2,7 @@ package gemini.ui.clickgui;
 
 import gemini.Gemini;
 import gemini.module.Module;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.setting.ListSetting;
 import gemini.ui.GeminiMark;
 import java.util.ArrayList;

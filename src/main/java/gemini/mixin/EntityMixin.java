@@ -1,10 +1,11 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.EspModule;
-import gemini.module.modules.combat.CombatModules;
-import gemini.module.modules.movement.MovementModules;
-import gemini.module.modules.render.CameraModules;
+import gemini.module.modules.combat.Hitboxes;
+import gemini.module.modules.movement.NoWeb;
+import gemini.module.modules.render.EspModule;
+import gemini.module.modules.render.FreeLook;
+import gemini.module.modules.render.Freecam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -52,11 +53,11 @@ public abstract class EntityMixin {
    private void gemini$redirectTurn(double dx, double dy, CallbackInfo ci) {
       Entity self = (Entity)(Object)this;
       if (self == Minecraft.getInstance().player) {
-         CameraModules.Freecam freecam = CameraModules.Freecam.instance;
+         Freecam freecam = Freecam.instance;
          if (freecam != null && freecam.consumeTurn(self, dx, dy)) {
             ci.cancel();
          } else {
-            CameraModules.FreeLook look = CameraModules.FreeLook.instance;
+            FreeLook look = FreeLook.instance;
             if (look != null && look.consumeTurn(self, dx, dy)) {
                ci.cancel();
             }
@@ -71,7 +72,7 @@ public abstract class EntityMixin {
       require = 0
    )
    private void gemini$widenHitbox(CallbackInfoReturnable<Float> cir) {
-      CombatModules.Hitboxes hitboxes = CombatModules.Hitboxes.instance;
+      Hitboxes hitboxes = Hitboxes.instance;
       if (hitboxes != null && hitboxes.isEnabled()) {
          float extra = hitboxes.extra((Entity)(Object)this);
          if (extra > 0.0F) {
@@ -89,7 +90,7 @@ public abstract class EntityMixin {
       require = 0
    )
    private void gemini$noWeb(BlockState state, Vec3 multiplier, CallbackInfo ci) {
-      if ((Object)this == Minecraft.getInstance().player && MovementModules.NoWeb.cancels(state)) {
+      if ((Object)this == Minecraft.getInstance().player && NoWeb.cancels(state)) {
          ci.cancel();
       }
    }

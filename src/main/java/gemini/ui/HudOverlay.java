@@ -3,14 +3,14 @@ package gemini.ui;
 import gemini.input.GeminiKeys;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
-import gemini.module.modules.ClickGuiModule;
-import gemini.module.modules.CoordinatesModule;
-import gemini.module.modules.EspModule;
-import gemini.module.modules.HudModule;
-import gemini.module.modules.StorageEspModule;
-import gemini.module.modules.WaypointsModule;
+import gemini.module.modules.misc.ClickGuiModule;
+import gemini.module.modules.render.CoordinatesModule;
+import gemini.module.modules.render.EspModule;
+import gemini.module.modules.render.HudModule;
+import gemini.module.modules.render.StorageEspModule;
+import gemini.module.modules.world.WaypointsModule;
 import gemini.module.setting.ColorSetting;
-import gemini.util.BuiltInBaritone;
+import gemini.util.BaritoneBridge;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,7 +32,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
 public final class HudOverlay {
    private static final int LINE = 11;
@@ -167,8 +166,9 @@ public final class HudOverlay {
          meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
       }
 
-      if (BuiltInBaritone.isActive()) {
-         meta.add("Baritone: " + BuiltInBaritone.task().label);
+      String botTask = BaritoneBridge.taskLabel();
+      if (botTask != null) {
+         meta.add("Baritone: " + botTask);
       }
 
       String metaLine = String.join("  ·  ", meta);

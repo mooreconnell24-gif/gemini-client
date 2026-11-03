@@ -2,7 +2,7 @@ package gemini.mixin;
 
 import gemini.Gemini;
 import gemini.command.CommandManager;
-import gemini.module.modules.VelocityModule;
+import gemini.module.modules.combat.VelocityModule;
 import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;

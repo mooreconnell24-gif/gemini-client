@@ -1,6 +1,6 @@
 package gemini.mixin;
 
-import gemini.module.modules.movement.MovementModules;
+import gemini.module.modules.movement.Slippy;
 import gemini.xray.XrayConfig;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
@@ -32,7 +32,7 @@ public abstract class BlockMixin {
       require = 0
    )
    private void gemini$slippy(CallbackInfoReturnable<Float> cir) {
-      MovementModules.Slippy slippy = MovementModules.Slippy.instance;
+      Slippy slippy = Slippy.instance;
       if (slippy != null && slippy.isEnabled()) {
          cir.setReturnValue(slippy.override((Block)(Object)this, (Float)cir.getReturnValue()));
       }

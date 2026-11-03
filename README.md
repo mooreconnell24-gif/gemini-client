@@ -5,15 +5,15 @@
 
   **A single-player utility / sandbox client for Minecraft 26.2 (Fabric).**
 
-  267 modules · window or panel ClickGUI · 33 HUD widgets · built-in Baritone-style pathfinding
+  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (drives the real Baritone when installed)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
-  [![Version](https://img.shields.io/badge/Release-2.2.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
+  [![Version](https://img.shields.io/badge/Release-3.0.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
   [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-220) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
+  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-300) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
 </div>
 
 ---
@@ -33,7 +33,36 @@ Everything runs locally. There is no account system, API key, cloud service or t
   <br><sub>Window layout (rendered offline; in game the text uses the Minecraft font)</sub>
 </div>
 
-## What's new in 2.2.0
+## What's new in 3.0.0
+
+**Real Baritone first.** Put the [Baritone](https://github.com/cabaletta/baritone) jar for your Minecraft version in `mods` and every bot module and `#` command (`#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate`, `#set`...) runs on it, Gemini's combat and manual pauses stop it mid-path, and Path Renderer colours its path. Baritone is a separate LGPL mod, so it is not bundled; without it the built-in pathfinder takes over. `#status` tells you which engine is active.
+
+**Built-in pathfinder rebuilt.** The fallback engine now prices mining by what your best hotbar tool needs (stone is cheap with a pickaxe and avoided with bare hands), adds the cost of sand or gravel pouring into a hole, never digs into or next to lava, swims instead of refusing water, jumps one- and two-block gaps and drop-jumps down ledges, remembers where it got stuck and routes around it, gives up on an unreachable target and picks the next one, and caps each search at a few milliseconds so repathing never hitches. `#mine` and `#farm` use the incremental chunk scanner instead of reading a million blocks per tick; `#excavate` sweeps the box top-down with a resumable cursor.
+
+**Block breaking fixed.** Vanilla aborts a block in progress on every tick the attack key is up, so Nuker, VeinMiner, Fucker, PacketMine and the bot's own mining could only ever break instant blocks. A small mixin keeps module-driven breaking alive, so stone, ores and obsidian now break at the normal speed.
+
+**Modules never fight over your hands.** Every module runs at an `ActionPriority` (survival > combat > movement > world utility > bot). AutoTotem, Offhand, AutoGapple, SmartEat, AutoTool, Scaffold and the pathfinder claim the main hand or offhand through one arbiter per tick, so a totem swap is never undone by a tool switch, and rotations work the same way. Silent aim is spring-smoothed and the new **Aim** settings draw a marker where the client is really looking.
+
+**One file per module, one event bus.** The module containers were split into `gemini/module/modules/<category>/<Module>.java` with no change to config keys, and modules subscribe to tick, render, packet, attack and block-update hooks through a pre-sorted, allocation-free event bus (`@EventHandler` picks a priority per hook). A crashing module is still isolated and switched off.
+
+**Smoother menus.** Searching in either menu is fuzzy and covers names, aliases, descriptions and setting names (`cps` finds AutoClicker, `kaura` finds KillAura), results are ranked, HUD widgets snap to the screen edges, the centre and each other with guide lines while you drag, and the animations are framerate independent.
+
+**New modules**
+
+| Module | What it does |
+|---|---|
+| Auto Heal | `/effect` heal (instant health, regeneration or full heal, plus saturation) when your health drops below a threshold |
+| Kits | PvP, Crystal, Builder, Miner, Explorer or Food loadouts with `/give` and `/item`, armour equipped straight away |
+| Mob Sweeper | Clears hostile mobs, all mobs or dropped items around you with `/kill` on an interval |
+| Summoner | Summons a chosen mob (or lightning) a few blocks in front of you, bindable |
+| Aim | Spring smoothing and the silent-aim marker for every rotating module |
+
+**Also fixed.** VoidESP, TunnelESP and BedPlates no longer scan their whole radius in one tick; the HUD shows the real Baritone's task; Panic stops the real Baritone too; the farm bot no longer reads 300k blocks every tick; the pathfinder could path through a solid block when dropping two or more levels.
+
+Configs from 2.x are upgraded automatically.
+
+<details>
+<summary>What was new in 2.2.0</summary>
 
 **New window menu.** One centred window with a category sidebar, a module list that searches every category, and a settings pane for the selected module. Switches, sliders, a hue picker, mode steppers and list editors are all inline, and right-click resets a setting. The classic draggable panels are still there: ClickGUI › Layout.
 
@@ -72,14 +101,17 @@ The rest:
 - PacketLogger hides per-tick packets.
 - Smaller fixes landed in AirJump, AutoGapple, AutoWalk, AutoBlock, KillAura, Nuker, Slime Chunks and Presets.
 
+</details>
+
 ## Highlights
 
 | | |
 |---|---|
-| **267 modules** | Combat 40 · Movement 45 · Player 46 · World 36 · Render 50 · HUD 33 · Misc 17 |
-| **Two menu layouts** | Window (search everything, settings side by side) or classic panels |
-| **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere |
-| **Built-in Baritone** | 3D A* with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
+| **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
+| **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
+| **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
+| **Pathfinding bot** | Drives the real Baritone when it is installed; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
+| **Priority arbitration** | Modules claim hands and rotations in priority order, so survival modules always win |
 | **Profiles** | Autosave plus named profiles via `.config` |
 | **Crash isolation** | A failing module is switched off and reported instead of taking the game down |
 
@@ -89,8 +121,8 @@ The rest:
 |---|---|
 | Combat | KillAura, AutoCrystal, AnchorAura, Criticals, Velocity, AutoTotem, TriggerBot, ProjectileAimbot |
 | Movement | Flight, Speed, Step, Jesus, Elytra Fly, NoFall, NoWeb, Spider, Boat Fly, Click TP |
-| Player | AutoArmor, AutoEat, AutoTool, AutoFish, Inventory Sorter, Durability Alert, Reach, FastBreak |
-| World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Time, Weather, Waypoints |
+| Player | AutoArmor, AutoEat, AutoTool, AutoFish, Auto Heal, Kits, Inventory Sorter, Durability Alert, Reach, FastBreak |
+| World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Mob Sweeper, Summoner, Time, Weather, Waypoints |
 | Render | ESP, StorageESP, Xray, Tracers, Nametags, Freecam, Zoom, Fullbright, Search |
 | HUD | FPS, CPS, Armor, Potion Timers, Radar, TargetHUD, Keystrokes, Inventory Viewer |
 | Misc | ClickGUI, HUD, Macro 1–3, Panic, Presets, NameProtect, Better Chat |
@@ -110,11 +142,10 @@ The rest:
 
 1. Install **Fabric Loader** for Minecraft 26.2.
 2. Put the matching **Fabric API** jar into your `mods` folder.
-3. Download [`gemini-2.2.0.jar`](gemini-2.2.0.jar) from this repo (or build it, see below) and put it in `mods`.
-4. Start the game with the Fabric profile and open a single-player world.
-5. Press **Right Shift** to open the menu.
-
-> Remove any standalone Baritone jar if you hit a conflict; Gemini ships its own pathfinder.
+3. Download [`gemini-3.0.0.jar`](gemini-3.0.0.jar) from this repo (or build it, see below) and put it in `mods`.
+4. Optional: add the [Baritone](https://github.com/cabaletta/baritone) jar for your Minecraft version. Gemini's bot modules and `#` commands then run on the real Baritone; without it the built-in pathfinder is used.
+5. Start the game with the Fabric profile and open a single-player world.
+6. Press **Right Shift** to open the menu.
 
 ## Controls
 
@@ -171,7 +202,9 @@ Pathfinding commands use `#` (`.b` also works):
 | `#tunnel [length]` / `#excavate [radius] [depth]` | Dig a tunnel or clear an area |
 | `#farm` / `#explore` | Harvest crops / spiral into new chunks |
 | `#sel pos1\|pos2\|clear` / `#thisway <distance>` / `#axis` | Selections and goals |
-| `#pause` / `#resume` / `#stop` / `#status` | Control the current task |
+| `#pause` / `#resume` / `#stop` / `#status` | Control the current task; `#status` names the engine in use |
+
+With Baritone installed, any other Baritone command (`#set`, `#build`, `#schematica`, `#find`, ...) is passed straight through to it.
 
 ## Configuration
 
@@ -192,7 +225,7 @@ cd gemini-client
 ./gradlew build
 ```
 
-On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-2.2.0.jar`. Run a development client with `./gradlew runClient`.
+On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-3.0.0.jar`. Run a development client with `./gradlew runClient`.
 
 ## Project layout
 
@@ -201,13 +234,14 @@ src/main/java/gemini/
 ├── Gemini.java              Client entrypoint
 ├── command/                 Chat command system
 ├── config/                  Config, migrations and profiles
+├── event/                   Priority event bus, @EventHandler, ActionPriority
 ├── input/                   Key mappings and keybind conflict checks
 ├── mixin/                   Fabric mixins; mixin/lock blocks server connections
 ├── module/                  Module framework, settings, categories
-│   └── modules/             Gameplay and HUD modules
+│   └── modules/<category>/  One file per module
 ├── render/                  3D rendering helpers
-├── ui/                      Menus (window + classic panels), HUD overlay
-├── util/                    Pathfinder, rotations, inventory, single-player gate
+├── ui/                      Menus (window + classic panels), HUD overlay, fuzzy search
+├── util/                    Baritone bridge + built-in pathfinder, rotations, hands arbiter, single-player gate
 └── xray/                    Xray data and compilation
 ```
 

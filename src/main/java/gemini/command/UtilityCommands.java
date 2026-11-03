@@ -1,15 +1,15 @@
 package gemini.command;
 
-import gemini.util.VersionBridge;
 import gemini.config.ConfigManager;
 import gemini.module.ModuleManager;
 import gemini.module.SelfTest;
-import gemini.module.modules.SoloModules;
+import gemini.module.modules.world.Home;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
 import gemini.util.Scheduler;
 import gemini.util.SingleplayerGate;
 import gemini.util.SpCommands;
+import gemini.util.VersionBridge;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -314,7 +314,7 @@ final class UtilityCommands {
    }
 
    private void home(String action) {
-      SoloModules.Home home = SoloModules.Home.get();
+      Home home = Home.get();
       if (home == null) {
          feedback("§cHome is not available.");
       } else {
@@ -334,7 +334,7 @@ final class UtilityCommands {
    private void gamemode(String[] parts) {
       if (parts.length < 2) {
          feedback("§cUsage: §f.gm survival|creative|adventure|spectator");
-      } else if (SoloModules.gamemode(parts[1])) {
+      } else if (SpCommands.gamemode(parts[1])) {
          feedback("§bGamemode §7" + parts[1].toLowerCase(Locale.ROOT) + ".");
       } else if (!SingleplayerGate.allowed()) {
          feedback(SingleplayerGate.denialMessage());

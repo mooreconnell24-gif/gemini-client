@@ -1,7 +1,7 @@
 package gemini.mixin;
 
-import gemini.module.modules.misc.MiscModules;
-import gemini.module.modules.render.CameraModules;
+import gemini.module.modules.misc.AntiLag;
+import gemini.module.modules.render.ParticleBlocker;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.core.particles.ParticleOptions;
@@ -21,11 +21,11 @@ public abstract class ParticleEngineMixin {
    private void gemini$blockParticle(
       ParticleOptions options, double x, double y, double z, double xa, double ya, double za, CallbackInfoReturnable<Particle> cir
    ) {
-      CameraModules.ParticleBlocker blocker = CameraModules.ParticleBlocker.instance;
+      ParticleBlocker blocker = ParticleBlocker.instance;
       if (blocker != null && blocker.isEnabled() && blocker.blocks(options)) {
          cir.setReturnValue(null);
       } else {
-         MiscModules.AntiLag antiLag = MiscModules.AntiLag.instance;
+         AntiLag antiLag = AntiLag.instance;
          if (antiLag != null && antiLag.shouldBlockParticle(options, x, y, z)) {
             cir.setReturnValue(null);
          }

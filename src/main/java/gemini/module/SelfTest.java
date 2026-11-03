@@ -2,7 +2,7 @@ package gemini.module;
 
 import gemini.Gemini;
 import gemini.command.CommandManager;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.setting.Setting;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
@@ -11,9 +11,9 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 import net.minecraft.client.Minecraft;
 
 public final class SelfTest {
@@ -38,12 +38,12 @@ public final class SelfTest {
       return current != null;
    }
 
-   static boolean profiling() {
+   public static boolean profiling() {
       SelfTest test = current;
       return test != null && test.ticks >= 20;
    }
 
-   static void record(Module module, long nanos) {
+   public static void record(Module module, long nanos) {
       SelfTest test = current;
       if (test != null) {
          test.cost.computeIfAbsent(module, key -> new long[1])[0] += nanos;

@@ -1,6 +1,6 @@
 package gemini.mixin;
 
-import gemini.module.modules.NoRenderModule;
+import gemini.module.modules.render.NoRenderModule;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;

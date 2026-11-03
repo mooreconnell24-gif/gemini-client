@@ -1,7 +1,7 @@
 package gemini.ui.clickgui;
 
 import gemini.Gemini;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import net.minecraft.client.gui.screens.Screen;
 
 /** Opens the menu in the layout picked in the ClickGUI module, and recognises either layout. */

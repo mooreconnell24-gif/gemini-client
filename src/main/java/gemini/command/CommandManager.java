@@ -248,7 +248,7 @@ public final class CommandManager {
                   feedback("§bBaritone §7resumed.");
                   break;
                case "status":
-                  feedback("§bBaritone §7status: §f" + BaritoneBridge.statusSummary());
+                  feedback("§bBaritone §7status: §f" + BaritoneBridge.statusSummary() + " §7[" + BaritoneBridge.engineDetail() + "]");
                   break;
                case "come":
                   BlockPos camPos = client.gameRenderer != null && client.gameRenderer.mainCamera() != null
@@ -440,8 +440,7 @@ public final class CommandManager {
             feedback("§cJoin a world first.");
          }
       } else {
-         String mode = BaritoneBridge.hasExternalBaritone() ? "Native Baritone API + Built-In 3D A*" : "Built-In 3D A* Engine";
-         feedback("§bBaritone §7(" + mode + ") commands (use §f#<cmd> §7or §f.b <cmd>§7):");
+         feedback("§bBaritone §7(" + BaritoneBridge.engineDetail() + ") commands (use §f#<cmd> §7or §f.b <cmd>§7):");
          feedback("§f#goto <x> [y] <z> §7- 3D A* pathfind to coordinates (with mining & bridging)");
          feedback("§f#mine <block1> [block2...] §7- scan, tunnel & mine target ores/blocks");
          feedback("§f#follow [playerName|players|mobs] §7- follow players or entities");

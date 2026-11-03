@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import com.mojang.blaze3d.platform.FramerateLimitTracker;
-import gemini.module.modules.render.CameraModules;
+import gemini.module.modules.render.UnfocusedCpu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,7 +16,7 @@ public abstract class FramerateLimitTrackerMixin {
       require = 0
    )
    private void gemini$backgroundCap(CallbackInfoReturnable<Integer> cir) {
-      CameraModules.UnfocusedCpu cpu = CameraModules.UnfocusedCpu.instance;
+      UnfocusedCpu cpu = UnfocusedCpu.instance;
       if (cpu != null && cpu.isEnabled()) {
          cir.setReturnValue(cpu.cap(cir.getReturnValueI()));
       }

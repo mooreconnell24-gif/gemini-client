@@ -1,7 +1,10 @@
 package gemini.util;
 
 import gemini.command.CommandManager;
+import gemini.event.ActionPriority;
 import gemini.render.Render3D;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,29 +20,52 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * The fallback pathfinder used when the real Baritone mod is not installed (see {@link BaritoneBridge}).
+ *
+ * <p>It is a 3D A* over block positions with walking, stepping, dropping, swimming, climbing, pillaring, bridging,
+ * mining through walls and one- or two-block parkour. Move costs are in "blocks walked": breaking a block costs
+ * what the best hotbar tool needs (so a stone wall is cheap with a pickaxe and avoided with bare hands), sand or
+ * gravel above a block to break adds the time it takes to clear the pour, standing next to lava is penalised and
+ * lava, fire and magma are never entered. Each search runs for at most a few milliseconds on the client thread;
+ * when it runs out it returns the best partial path and continues from there on the next repath. Spots the player
+ * got stuck at are avoided for a while so a failed jump or a mob in the way does not loop forever. Block
+ * searches for the mine and farm tasks use the incremental {@link ChunkScanner} instead of rescanning a cube
+ * around the player every tick.
+ */
 public final class BuiltInBaritone {
-   private static final int MAX_A_STAR_ITERATIONS = 3600;
+   private static final int MAX_A_STAR_ITERATIONS = 9000;
+   private static final long PATH_BUDGET_NANOS = 4_500_000L;
    private static final int[] VERTICAL_STEPS = new int[]{1, -1};
    private static final int[][] OFFSETS_8 = new int[][]{{0, -1}, {0, 1}, {1, 0}, {-1, 0}, {1, -1}, {1, 1}, {-1, -1}, {-1, 1}};
    private static final int[][] CARDINAL_4 = new int[][]{{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
+   private static final double AVOID_PENALTY = 8.0;
+   private static final int AVOID_TICKS = 240;
+   private static final int TARGET_GIVE_UP_TICKS = 600;
+   private static final int TARGET_AVOID_TICKS = 1200;
+   private static final MutableBlockPos SCRATCH = new MutableBlockPos();
+   private static final Long2LongOpenHashMap AVOID = new Long2LongOpenHashMap();
+   private static final Long2LongOpenHashMap AVOID_TARGETS = new Long2LongOpenHashMap();
+   private static final Map<BlockState, Double> BREAK_COSTS = new HashMap<>();
    private static BuiltInBaritone.TaskKind activeTask = BuiltInBaritone.TaskKind.NONE;
    private static BlockPos goalPos;
    private static BlockPos selPos1;
@@ -48,13 +74,27 @@ public final class BuiltInBaritone {
    private static int pathIndex;
    private static int repathTimer;
    private static int stuckTicks;
+   private static int clock;
+   private static int targetSince;
+   private static int failedPaths;
+   private static int lastMineClock = Integer.MIN_VALUE / 2;
    private static Vec3 lastPlayerPos = Vec3.ZERO;
+   private static LocalPlayer costPlayer;
    private static final Set<Block> mineTargets = new HashSet<>();
+   private static ChunkScanner mineScanner;
+   private static ChunkScanner farmScanner;
+   private static BlockPos pickBest;
+   private static double pickBestScore;
    private static Predicate<Entity> followFilter;
    private static Direction tunnelDirection = Direction.NORTH;
    private static int tunnelRemaining;
    private static BlockPos excavateMin;
    private static BlockPos excavateMax;
+   private static int excavateX;
+   private static int excavateY;
+   private static int excavateZ;
+   private static boolean excavateFoundInPass;
+   private static int excavateSkippedInPass;
    private static BlockPos exploreOrigin;
    private static int exploreStep;
    private static boolean allowBreak = true;
@@ -64,6 +104,11 @@ public final class BuiltInBaritone {
    private static boolean renderPath = true;
    private static int pathColor = -16722689;
    private static int goalColor = -12161025;
+
+   static {
+      AVOID.defaultReturnValue(Long.MIN_VALUE);
+      AVOID_TARGETS.defaultReturnValue(Long.MIN_VALUE);
+   }
 
    private BuiltInBaritone() {
    }
@@ -153,7 +198,7 @@ public final class BuiltInBaritone {
       } else if (BaritoneBridge.isPaused()) {
          return "Paused (" + BaritoneBridge.pauseReason() + ")";
       } else {
-         String goalText = goalPos == null ? "" : " -> " + goalPos.getX() + " " + goalPos.getY() + " " + goalPos.getZ();
+         String goalText = goalPos == null ? (activeTask == BuiltInBaritone.TaskKind.MINE ? " · searching" : "") : " -> " + goalPos.getX() + " " + goalPos.getY() + " " + goalPos.getZ();
          return activeTask.label + goalText + " (" + Math.max(0, currentPath.size() - pathIndex) + " nodes)";
       }
    }
@@ -164,9 +209,20 @@ public final class BuiltInBaritone {
       currentPath.clear();
       pathIndex = 0;
       stuckTicks = 0;
+      failedPaths = 0;
       mineTargets.clear();
+      mineScanner = null;
+      farmScanner = null;
       followFilter = null;
       releaseControls();
+      if (mining()) {
+         lastMineClock = Integer.MIN_VALUE / 2;
+         BlockBreaking.release();
+         Minecraft client = Minecraft.getInstance();
+         if (client != null && client.gameMode != null) {
+            client.gameMode.stopDestroyBlock();
+         }
+      }
    }
 
    public static void gotoBlock(BlockPos target) {
@@ -174,6 +230,7 @@ public final class BuiltInBaritone {
       activeTask = BuiltInBaritone.TaskKind.GOTO;
       goalPos = target.immutable();
       repathTimer = 0;
+      targetSince = clock;
    }
 
    public static void gotoXZ(int x, int z) {
@@ -227,6 +284,7 @@ public final class BuiltInBaritone {
       stop();
       if (blocks != null && !blocks.isEmpty()) {
          mineTargets.addAll(blocks);
+         mineScanner = new ChunkScanner(state -> mineTargets.contains(state.getBlock()), 6, 4096).budgetMicros(500L);
          activeTask = BuiltInBaritone.TaskKind.MINE;
          repathTimer = 0;
       }
@@ -281,17 +339,24 @@ public final class BuiltInBaritone {
       stop();
       excavateMin = new BlockPos(Math.min(cornerA.getX(), cornerB.getX()), Math.min(cornerA.getY(), cornerB.getY()), Math.min(cornerA.getZ(), cornerB.getZ()));
       excavateMax = new BlockPos(Math.max(cornerA.getX(), cornerB.getX()), Math.max(cornerA.getY(), cornerB.getY()), Math.max(cornerA.getZ(), cornerB.getZ()));
+      excavateX = excavateMin.getX();
+      excavateY = excavateMax.getY();
+      excavateZ = excavateMin.getZ();
+      excavateFoundInPass = false;
+      excavateSkippedInPass = 0;
       activeTask = BuiltInBaritone.TaskKind.EXCAVATE;
       repathTimer = 0;
    }
 
    public static void startFarm() {
       stop();
+      farmScanner = new ChunkScanner(BuiltInBaritone::isRipe, 4, 1024).budgetMicros(300L);
       activeTask = BuiltInBaritone.TaskKind.FARM;
       repathTimer = 0;
    }
 
    public static void tick() {
+      clock++;
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       ClientLevel level = client.level;
@@ -331,32 +396,81 @@ public final class BuiltInBaritone {
       } else if (player.blockPosition().distManhattan(goalPos) <= 1) {
          CommandManager.feedback("§bBaritone §7arrived at §f" + goalPos.getX() + " " + goalPos.getY() + " " + goalPos.getZ() + "§7.");
          stop();
+      } else if (failedPaths >= 12) {
+         CommandManager.feedback("§bBaritone §7can't find a way to §f" + goalPos.toShortString() + "§7; stopping.");
+         stop();
       } else {
          followPathToGoal(client, player, level, goalPos, allowBreak);
       }
    }
 
-   private static void tickMine(Minecraft client, LocalPlayer player, Level level) {
+   private static void tickMine(Minecraft client, LocalPlayer player, ClientLevel level) {
       if (mineTargets.isEmpty()) {
          stop();
-      } else {
-         if (goalPos == null || !mineTargets.contains(level.getBlockState(goalPos).getBlock())) {
-            goalPos = findNearestBlock(level, player.blockPosition(), 64, state -> mineTargets.contains(state.getBlock()));
-            currentPath.clear();
-            if (goalPos == null) {
-               releaseControls();
-               return;
-            }
+         return;
+      }
+
+      if (mineScanner == null) {
+         mineScanner = new ChunkScanner(state -> mineTargets.contains(state.getBlock()), 6, 4096).budgetMicros(500L);
+      }
+
+      mineScanner.tick(level, player.getBlockX() >> 4, player.getBlockZ() >> 4, 4);
+      boolean goalValid = goalPos != null && mineTargets.contains(level.getBlockState(goalPos).getBlock());
+      if (goalValid && (clock - targetSince > TARGET_GIVE_UP_TICKS || failedPaths >= 6)) {
+         AVOID_TARGETS.put(goalPos.asLong(), (long)(clock + TARGET_AVOID_TICKS));
+         CommandManager.feedback("§bBaritone §7couldn't reach §f" + goalPos.toShortString() + "§7, trying another one.");
+         goalValid = false;
+      }
+
+      if (!goalValid) {
+         BlockPos next = nearestFound(mineScanner, player, level, state -> mineTargets.contains(state.getBlock()));
+         if (next == null) {
+            goalPos = null;
+            releaseControls();
+            return;
          }
 
-         double distSq = player.getEyePosition().distanceToSqr(Vec3.atCenterOf(goalPos));
-         if (distSq <= 19.5) {
-            releaseControls();
-            mineBlockAt(client, player, goalPos);
-         } else {
-            followPathToGoal(client, player, level, goalPos, true);
-         }
+         goalPos = next;
+         currentPath.clear();
+         targetSince = clock;
+         failedPaths = 0;
       }
+
+      double distSq = player.getEyePosition().distanceToSqr(Vec3.atCenterOf(goalPos));
+      if (distSq <= 19.5) {
+         releaseControls();
+         mineBlockAt(client, player, goalPos);
+      } else {
+         followPathToGoal(client, player, level, goalPos, true);
+      }
+   }
+
+   /**
+    * The closest scanner hit that is not on the give-up list, favouring blocks near the player's own level. The
+    * scanner lags a few ticks behind the world, so a candidate is checked against the live block before it wins.
+    */
+   private static BlockPos nearestFound(ChunkScanner scanner, LocalPlayer player, Level level, Predicate<BlockState> valid) {
+      pickBest = null;
+      pickBestScore = Double.MAX_VALUE;
+      double px = player.getX();
+      double py = player.getY();
+      double pz = player.getZ();
+      scanner.forEach((cx, cz) -> true, packed -> {
+         if (AVOID_TARGETS.get(packed) <= clock) {
+            double dx = BlockPos.getX(packed) + 0.5 - px;
+            double dy = BlockPos.getY(packed) + 0.5 - py;
+            double dz = BlockPos.getZ(packed) + 0.5 - pz;
+            double score = dx * dx + dz * dz + dy * dy * 4.0;
+            if (score < pickBestScore) {
+               BlockPos candidate = BlockPos.of(packed);
+               if (valid.test(level.getBlockState(candidate))) {
+                  pickBestScore = score;
+                  pickBest = candidate;
+               }
+            }
+         }
+      });
+      return pickBest;
    }
 
    private static void tickFollow(Minecraft client, LocalPlayer player, ClientLevel level) {
@@ -397,7 +511,12 @@ public final class BuiltInBaritone {
          BlockPos feet = player.blockPosition();
          BlockPos aheadFeet = feet.relative(tunnelDirection);
          BlockPos aheadHead = aheadFeet.above();
-         if (!passable(level, aheadHead)) {
+         if (isLava(level.getBlockState(aheadFeet)) || isLava(level.getBlockState(aheadHead)) || isLava(level.getBlockState(aheadFeet.below()))
+            || touchesLava(level, aheadFeet.getX(), aheadFeet.getY(), aheadFeet.getZ())
+            || touchesLava(level, aheadHead.getX(), aheadHead.getY(), aheadHead.getZ())) {
+            CommandManager.feedback("§bBaritone §7tunnel stopped: lava ahead at §f" + aheadFeet.toShortString() + "§7.");
+            stop();
+         } else if (!passable(level, aheadHead)) {
             releaseControls();
             mineBlockAt(client, player, aheadHead);
          } else if (!passable(level, aheadFeet)) {
@@ -423,7 +542,7 @@ public final class BuiltInBaritone {
          exploreOrigin = player.blockPosition();
       }
 
-      if (goalPos == null || player.blockPosition().distManhattan(goalPos) <= 3 || repathTimer > 140) {
+      if (goalPos == null || player.blockPosition().distManhattan(goalPos) <= 3 || repathTimer > 140 || failedPaths >= 6) {
          double angle = exploreStep * 1.15;
          int radius = 16 + exploreStep * 10;
          int gx = exploreOrigin.getX() + (int)Math.round(Math.cos(angle) * radius);
@@ -433,121 +552,240 @@ public final class BuiltInBaritone {
          exploreStep++;
          currentPath.clear();
          repathTimer = 0;
+         failedPaths = 0;
       }
 
       followPathToGoal(client, player, level, goalPos, allowBreak);
    }
 
-   private static void tickExcavate(Minecraft client, LocalPlayer player, Level level) {
-      if (excavateMin != null && excavateMax != null) {
-         BlockPos nextTarget = null;
-         MutableBlockPos cursor = new MutableBlockPos();
+   private static void tickExcavate(Minecraft client, LocalPlayer player, ClientLevel level) {
+      if (excavateMin == null || excavateMax == null) {
+         stop();
+         return;
+      }
 
-         for (int y = excavateMax.getY(); y >= excavateMin.getY() && nextTarget == null; y--) {
-            for (int x = excavateMin.getX(); x <= excavateMax.getX() && nextTarget == null; x++) {
-               for (int z = excavateMin.getZ(); z <= excavateMax.getZ(); z++) {
-                  cursor.set(x, y, z);
-                  BlockState state = level.getBlockState(cursor);
-                  if (!state.isAir() && breakable(level, cursor, state)) {
-                     nextTarget = cursor.immutable();
-                     break;
+      if (goalPos != null) {
+         BlockState state = level.getBlockState(goalPos);
+         if (state.isAir() || !breakable(level, goalPos, state)) {
+            goalPos = null;
+         } else if (clock - targetSince > TARGET_GIVE_UP_TICKS || failedPaths >= 6) {
+            AVOID_TARGETS.put(goalPos.asLong(), (long)(clock + TARGET_AVOID_TICKS));
+            goalPos = null;
+         }
+      }
+
+      if (goalPos == null) {
+         // resume the top-down sweep where it stopped; a few thousand blocks per tick keeps big boxes smooth
+         for (int scanned = 0; goalPos == null && scanned < 4096; scanned++) {
+            BlockState state = level.getBlockState(SCRATCH.set(excavateX, excavateY, excavateZ));
+            if (!state.isAir() && breakable(level, SCRATCH, state)) {
+               if (AVOID_TARGETS.get(BlockPos.asLong(excavateX, excavateY, excavateZ)) > clock || !safeToDig(player, level, excavateX, excavateY, excavateZ)) {
+                  excavateSkippedInPass++;
+               } else {
+                  goalPos = new BlockPos(excavateX, excavateY, excavateZ);
+                  excavateFoundInPass = true;
+                  currentPath.clear();
+                  targetSince = clock;
+                  failedPaths = 0;
+               }
+            }
+
+            if (advanceExcavateCursor()) {
+               if (!excavateFoundInPass) {
+                  CommandManager.feedback(
+                     excavateSkippedInPass > 0
+                        ? "§bBaritone §7excavation stopped: the remaining blocks sit on lava or over a drop."
+                        : "§bBaritone §7excavation finished."
+                  );
+                  stop();
+                  return;
+               }
+
+               excavateFoundInPass = false;
+               excavateSkippedInPass = 0;
+            }
+         }
+
+         if (goalPos == null) {
+            releaseControls();
+            return;
+         }
+      }
+
+      if (player.getEyePosition().distanceToSqr(Vec3.atCenterOf(goalPos)) <= 19.5) {
+         releaseControls();
+         mineBlockAt(client, player, goalPos);
+      } else {
+         followPathToGoal(client, player, level, goalPos, true);
+      }
+   }
+
+   /** Moves the excavate cursor one block (z, then x, then down a layer); true when a whole pass just completed. */
+   private static boolean advanceExcavateCursor() {
+      if (++excavateZ > excavateMax.getZ()) {
+         excavateZ = excavateMin.getZ();
+         if (++excavateX > excavateMax.getX()) {
+            excavateX = excavateMin.getX();
+            if (--excavateY < excavateMin.getY()) {
+               excavateY = excavateMax.getY();
+               return true;
+            }
+         }
+      }
+
+      return false;
+   }
+
+   /** Never dig into lava, and never open the floor under the player's feet onto lava or a long drop. */
+   private static boolean safeToDig(LocalPlayer player, Level level, int x, int y, int z) {
+      if (touchesLava(level, x, y, z)) {
+         return false;
+      } else if (x == player.getBlockX() && z == player.getBlockZ() && y == player.getBlockY() - 1) {
+         BlockState under = state(level, x, y - 1, z);
+         return !isLava(under) && !passable(level, under, x, y - 1, z);
+      } else {
+         return true;
+      }
+   }
+
+   private static void tickFarm(Minecraft client, LocalPlayer player, ClientLevel level) {
+      if (farmScanner == null) {
+         farmScanner = new ChunkScanner(BuiltInBaritone::isRipe, 4, 1024).budgetMicros(300L);
+      }
+
+      farmScanner.tick(level, player.getBlockX() >> 4, player.getBlockZ() >> 4, 2);
+      boolean goalValid = goalPos != null && isRipe(level.getBlockState(goalPos));
+      if (goalValid && (clock - targetSince > TARGET_GIVE_UP_TICKS / 2 || failedPaths >= 6)) {
+         AVOID_TARGETS.put(goalPos.asLong(), (long)(clock + TARGET_AVOID_TICKS));
+         goalValid = false;
+      }
+
+      if (!goalValid) {
+         goalPos = nearestFound(farmScanner, player, level, BuiltInBaritone::isRipe);
+         currentPath.clear();
+         targetSince = clock;
+         failedPaths = 0;
+      }
+
+      if (goalPos == null) {
+         releaseControls();
+         if ((clock & 7) == 0) {
+            replant(client, player, level);
+         }
+      } else if (player.getEyePosition().distanceToSqr(Vec3.atCenterOf(goalPos)) <= 16.0) {
+         releaseControls();
+         mineBlockAt(client, player, goalPos);
+      } else {
+         followPathToGoal(client, player, level, goalPos, false);
+      }
+   }
+
+   private static boolean isRipe(BlockState state) {
+      return state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state);
+   }
+
+   /** Plants a seed from the hotbar on the nearest empty farmland within reach. */
+   private static void replant(Minecraft client, LocalPlayer player, Level level) {
+      if (client.gameMode == null) {
+         return;
+      }
+
+      int seedSlot = Inventories.findHotbar(player, s -> s.is(Items.WHEAT_SEEDS) || s.is(Items.CARROT) || s.is(Items.POTATO) || s.is(Items.BEETROOT_SEEDS));
+      if (seedSlot < 0) {
+         return;
+      }
+
+      Vec3 eye = player.getEyePosition();
+      int px = player.getBlockX();
+      int py = player.getBlockY();
+      int pz = player.getBlockZ();
+      BlockPos best = null;
+      double bestDist = 20.25;
+
+      for (int dx = -4; dx <= 4; dx++) {
+         for (int dz = -4; dz <= 4; dz++) {
+            for (int dy = -2; dy <= 1; dy++) {
+               int x = px + dx;
+               int y = py + dy;
+               int z = pz + dz;
+               if (state(level, x, y, z).is(Blocks.FARMLAND) && state(level, x, y + 1, z).isAir()) {
+                  double d = eye.distanceToSqr(new Vec3(x + 0.5, y + 1.0, z + 0.5));
+                  if (d < bestDist) {
+                     bestDist = d;
+                     best = new BlockPos(x, y, z);
                   }
                }
             }
          }
-
-         if (nextTarget == null) {
-            CommandManager.feedback("§bBaritone §7excavation finished.");
-            stop();
-         } else {
-            goalPos = nextTarget;
-            if (player.getEyePosition().distanceToSqr(Vec3.atCenterOf(nextTarget)) <= 19.5) {
-               releaseControls();
-               mineBlockAt(client, player, nextTarget);
-            } else {
-               followPathToGoal(client, player, level, nextTarget, true);
-            }
-         }
-      } else {
-         stop();
       }
-   }
 
-   private static void tickFarm(Minecraft client, LocalPlayer player, Level level) {
-      BlockPos ripe = findNearestBlock(level, player.blockPosition(), 36, state -> state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state));
-      if (ripe == null) {
-         BlockPos farmland = findNearestBlock(level, player.blockPosition(), 12, state -> state.is(Blocks.FARMLAND));
-         if (farmland != null && level.getBlockState(farmland.above()).isAir() && player.getEyePosition().distanceToSqr(Vec3.atCenterOf(farmland)) <= 18.0) {
-            int seedSlot = Inventories.findHotbar(
-               player, s -> s.is(Items.WHEAT_SEEDS) || s.is(Items.CARROT) || s.is(Items.POTATO) || s.is(Items.BEETROOT_SEEDS)
-            );
-            if (seedSlot >= 0 && client.gameMode != null) {
-               int prev = player.getInventory().getSelectedSlot();
-               player.getInventory().setSelectedSlot(seedSlot);
-               Vec3 hit = Vec3.atCenterOf(farmland).add(0.0, 0.5, 0.0);
-               client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, farmland, false));
-               player.swing(InteractionHand.MAIN_HAND);
-               player.getInventory().setSelectedSlot(prev);
-               return;
-            }
-         }
-
-         releaseControls();
-      } else {
-         goalPos = ripe;
-         if (player.getEyePosition().distanceToSqr(Vec3.atCenterOf(ripe)) <= 16.0) {
-            releaseControls();
-            mineBlockAt(client, player, ripe);
-         } else {
-            followPathToGoal(client, player, level, ripe, false);
-         }
+      if (best != null && Hands.claimMainHand(BuiltInBaritone.class, ActionPriority.BOT)) {
+         int prev = player.getInventory().getSelectedSlot();
+         player.getInventory().setSelectedSlot(seedSlot);
+         Vec3 hit = Vec3.atCenterOf(best).add(0.0, 0.5, 0.0);
+         client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, Direction.UP, best, false));
+         player.swing(InteractionHand.MAIN_HAND);
+         player.getInventory().setSelectedSlot(prev);
       }
    }
 
    private static void mineBlockAt(Minecraft client, LocalPlayer player, BlockPos pos) {
       if (client.gameMode != null && client.level != null) {
-         equipBestTool(player, client.level.getBlockState(pos));
+         BlockState state = client.level.getBlockState(pos);
+         if (state.isAir()) {
+            return;
+         }
+
+         equipBestTool(player, state);
          float[] rot = RotationManager.toward(player, pos);
-         RotationManager.request(player, rot[0], rot[1], 80.0F, true, 5, 8.0F);
+         RotationManager.request(player, rot[0], rot[1], 80.0F, true, ActionPriority.BOT, 8.0F);
+         BlockBreaking.keep();
          client.gameMode.continueDestroyBlock(pos, Direction.UP);
          player.swing(InteractionHand.MAIN_HAND);
+         lastMineClock = clock;
       }
    }
 
+   /** Whether the bot was breaking a block this tick or the one before (standing still then is not being stuck). */
+   private static boolean mining() {
+      return clock - lastMineClock <= 1;
+   }
+
+   /** Switches to the fastest hotbar tool, unless a more important module already took the hand this tick. */
    private static void equipBestTool(LocalPlayer player, BlockState state) {
-      int bestSlot = player.getInventory().getSelectedSlot();
-      float bestSpeed = player.getInventory().getItem(bestSlot).getDestroySpeed(state);
-
-      for (int i = 0; i < 9; i++) {
-         ItemStack stack = player.getInventory().getItem(i);
-         float speed = stack.getDestroySpeed(state);
-         if (speed > bestSpeed) {
-            bestSpeed = speed;
-            bestSlot = i;
-         }
-      }
-
-      if (bestSlot != player.getInventory().getSelectedSlot()) {
-         player.getInventory().setSelectedSlot(bestSlot);
+      int best = Tools.bestSlot(player, state, true);
+      if (best != player.getInventory().getSelectedSlot() && Hands.claimMainHand(BuiltInBaritone.class, ActionPriority.BOT)) {
+         player.getInventory().setSelectedSlot(best);
       }
    }
 
    private static void followPathToGoal(Minecraft client, LocalPlayer player, Level level, BlockPos target, boolean canBreakWalls) {
       repathTimer++;
-      if (player.position().distanceToSqr(lastPlayerPos) < 0.004) {
-         stuckTicks++;
-      } else {
+      if (mining() || player.position().distanceToSqr(lastPlayerPos) >= 0.004) {
          stuckTicks = 0;
+      } else {
+         stuckTicks++;
       }
 
       lastPlayerPos = player.position();
-      if (currentPath.isEmpty() || pathIndex >= currentPath.size() || repathTimer >= 32 || stuckTicks >= 20) {
+      boolean stuck = stuckTicks >= 20;
+      if (stuck && !currentPath.isEmpty()) {
+         // remember where we got stuck so the next search routes around it instead of trying the same jump again
+         BlockPos node = currentPath.get(Math.min(pathIndex, currentPath.size() - 1));
+         AVOID.put(node.asLong(), (long)(clock + AVOID_TICKS));
+         if (pathIndex + 1 < currentPath.size()) {
+            AVOID.put(currentPath.get(pathIndex + 1).asLong(), (long)(clock + AVOID_TICKS));
+         }
+      }
+
+      if (currentPath.isEmpty() || pathIndex >= currentPath.size() || repathTimer >= 32 || stuck) {
          repathTimer = 0;
          stuckTicks = 0;
          List<BlockPos> computed = computePath(level, player.blockPosition(), target, canBreakWalls);
          currentPath.clear();
          currentPath.addAll(computed);
          pathIndex = 0;
+         failedPaths = computed.isEmpty() ? failedPaths + 1 : 0;
       }
 
       if (currentPath.isEmpty()) {
@@ -589,7 +827,7 @@ public final class BuiltInBaritone {
                }
 
                BlockPos floor = nextNode.below();
-               if (allowPlace && passable(level, floor) && !level.getBlockState(floor).is(Blocks.WATER) && !climbable(level, nextNode)) {
+               if (allowPlace && passable(level, floor) && !isWater(level.getBlockState(floor)) && !climbable(level, nextNode)) {
                   BlockPlacer.place(client, floor, BlockPlacer::solidFiller, true, true, true);
                }
 
@@ -644,176 +882,313 @@ public final class BuiltInBaritone {
       return computePath(level, start, goal, allowBreak);
    }
 
+   /**
+    * A* from {@code start} to within one block of {@code goal}. Returns the path (without the start) or, when the
+    * goal is out of reach within the iteration and time budget, the path to the explored node closest to it, so the
+    * caller still makes progress and searches again from there.
+    */
    public static List<BlockPos> computePath(Level level, BlockPos start, BlockPos goal, boolean canBreak) {
+      Minecraft client = Minecraft.getInstance();
+      costPlayer = client == null ? null : client.player;
+      BREAK_COSTS.clear();
+      pruneAvoided();
+      long deadline = System.nanoTime() + PATH_BUDGET_NANOS;
       PriorityQueue<BuiltInBaritone.Node> open = new PriorityQueue<>(Comparator.comparingDouble(n -> n.f));
-      Map<BlockPos, BuiltInBaritone.Node> all = new HashMap<>();
-      Set<BlockPos> closed = new HashSet<>();
-      BuiltInBaritone.Node startNode = new BuiltInBaritone.Node(start, null, 0.0, heuristic(start, goal));
+      Long2ObjectOpenHashMap<BuiltInBaritone.Node> all = new Long2ObjectOpenHashMap<>();
+      BuiltInBaritone.Node startNode = new BuiltInBaritone.Node(start.immutable(), null, 0.0, heuristic(start, goal));
       open.add(startNode);
-      all.put(start, startNode);
+      all.put(start.asLong(), startNode);
       BuiltInBaritone.Node bestFallback = startNode;
       int iterations = 0;
 
-      while (!open.isEmpty() && iterations++ < 3600) {
-         BuiltInBaritone.Node current = open.poll();
-         if (all.get(current.pos) == current && closed.add(current.pos)) {
-            if (current.h < bestFallback.h) {
-               bestFallback = current;
-            }
-
-            if (current.pos.distManhattan(goal) <= 1) {
-               return reconstruct(current);
-            }
-
-            for (int vdy : VERTICAL_STEPS) {
-               BlockPos vCand = current.pos.offset(0, vdy, 0);
-               if (!closed.contains(vCand)) {
-                  double vCost = verticalShaftCost(level, current.pos, vCand, vdy, canBreak);
-                  if (vCost >= 0.0) {
-                     tryOfferNode(open, all, current, vCand, current.g + vCost, goal);
-                  }
-               }
-            }
-
-            for (int[] off : OFFSETS_8) {
-               int ox = off[0];
-               int oz = off[1];
-               boolean diagonal = ox != 0 && oz != 0;
-               if (!diagonal || passable(level, current.pos.offset(ox, 0, 0)) && passable(level, current.pos.offset(0, 0, oz))) {
-                  for (int dy = 1; dy >= -3; dy--) {
-                     if (!diagonal || dy == 0) {
-                        BlockPos candidate = current.pos.offset(ox, dy, oz);
-                        if (!closed.contains(candidate)) {
-                           double moveCost = traversalCost(level, current.pos, candidate, dy, diagonal, canBreak);
-                           if (!(moveCost < 0.0)) {
-                              tryOfferNode(open, all, current, candidate, current.g + moveCost, goal);
-                              if (dy <= 0 && passable(level, candidate) && !passable(level, candidate.below())) {
-                                 break;
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-
-            if (allowParkour) {
-               for (int[] card : CARDINAL_4) {
-                  int ox = card[0];
-                  int oz = card[1];
-                  BlockPos gap = current.pos.offset(ox, 0, oz);
-                  BlockPos land = current.pos.offset(ox * 2, 0, oz * 2);
-                  if (!closed.contains(land)
-                     && passable(level, gap)
-                     && passable(level, gap.above())
-                     && passable(level, gap.below())
-                     && isStandable(level, land)) {
-                     tryOfferNode(open, all, current, land, current.g + 2.35, goal);
-                  }
-               }
-            }
+      while (!open.isEmpty()) {
+         if (++iterations > MAX_A_STAR_ITERATIONS || (iterations & 31) == 0 && System.nanoTime() >= deadline) {
+            break;
          }
+
+         BuiltInBaritone.Node current = open.poll();
+         if (current.closed || all.get(current.pos.asLong()) != current) {
+            continue;
+         }
+
+         current.closed = true;
+         if (current.h < bestFallback.h) {
+            bestFallback = current;
+         }
+
+         if (current.pos.distManhattan(goal) <= 1) {
+            return reconstruct(current);
+         }
+
+         expand(level, open, all, current, goal, canBreak);
       }
 
       return reconstruct(bestFallback);
    }
 
-   private static void tryOfferNode(
+   private static void expand(
+      Level level,
       PriorityQueue<BuiltInBaritone.Node> open,
-      Map<BlockPos, BuiltInBaritone.Node> all,
+      Long2ObjectOpenHashMap<BuiltInBaritone.Node> all,
+      BuiltInBaritone.Node current,
+      BlockPos goal,
+      boolean canBreak
+   ) {
+      BlockPos from = current.pos;
+      int x = from.getX();
+      int y = from.getY();
+      int z = from.getZ();
+      // the hazard of standing here (lava next to the feet) is charged once, on every move that leaves
+      double leave = leaveCost(level, x, y, z);
+
+      for (int vdy : VERTICAL_STEPS) {
+         double vCost = verticalShaftCost(level, from, vdy, canBreak);
+         if (vCost >= 0.0) {
+            offer(open, all, current, new BlockPos(x, y + vdy, z), current.g + vCost + leave, goal);
+         }
+      }
+
+      for (int[] off : OFFSETS_8) {
+         int ox = off[0];
+         int oz = off[1];
+         boolean diagonal = ox != 0 && oz != 0;
+         if (diagonal && !cornerClear(level, x, y, z, ox, oz)) {
+            continue;
+         }
+
+         for (int dy = 1; dy >= -3; dy--) {
+            if (!diagonal || dy == 0) {
+               double moveCost = traversalCost(level, from, ox, dy, oz, diagonal, canBreak);
+               if (moveCost >= 0.0) {
+                  offer(open, all, current, new BlockPos(x + ox, y + dy, z + oz), current.g + moveCost + leave, goal);
+                  if (dy <= 0 && passableAt(level, x + ox, y + dy, z + oz) && !passableAt(level, x + ox, y + dy - 1, z + oz)) {
+                     break; // found the floor on this side; no need to look further down
+                  }
+               }
+            }
+         }
+      }
+
+      if (allowParkour && passableAt(level, x, y + 2, z)) {
+         for (int[] card : CARDINAL_4) {
+            int ox = card[0];
+            int oz = card[1];
+            if (!gapClear(level, x + ox, y, z + oz)) {
+               continue;
+            }
+
+            int lx = x + 2 * ox;
+            int lz = z + 2 * oz;
+            if (isStandable(level, lx, y, lz)) {
+               offer(open, all, current, new BlockPos(lx, y, lz), current.g + 2.35 + leave, goal);
+            } else if (isStandable(level, lx, y - 1, lz) && passableAt(level, lx, y + 1, lz)) {
+               offer(open, all, current, new BlockPos(lx, y - 1, lz), current.g + 2.6 + leave, goal);
+            } else if (allowSprint && gapClear(level, lx, y, lz)) {
+               int l2x = x + 3 * ox;
+               int l2z = z + 3 * oz;
+               if (isStandable(level, l2x, y, l2z)) {
+                  offer(open, all, current, new BlockPos(l2x, y, l2z), current.g + 3.6 + leave, goal);
+               }
+            }
+         }
+      }
+   }
+
+   private static void offer(
+      PriorityQueue<BuiltInBaritone.Node> open,
+      Long2ObjectOpenHashMap<BuiltInBaritone.Node> all,
       BuiltInBaritone.Node current,
       BlockPos candidate,
       double g,
       BlockPos goal
    ) {
-      BuiltInBaritone.Node existing = all.get(candidate);
+      long key = candidate.asLong();
+      if (AVOID.get(key) > clock) {
+         g += AVOID_PENALTY;
+      }
+
+      BuiltInBaritone.Node existing = all.get(key);
       if (existing == null || g < existing.g) {
          BuiltInBaritone.Node next = new BuiltInBaritone.Node(candidate, current, g, heuristic(candidate, goal));
-         all.put(candidate, next);
+         all.put(key, next);
          open.add(next);
       }
    }
 
-   private static double verticalShaftCost(Level level, BlockPos from, BlockPos to, int dy, boolean canBreak) {
+   /** Expired entries are ignored on read; the maps are only emptied now and then so they cannot grow forever. */
+   private static void pruneAvoided() {
+      if (AVOID.size() > 2048 || (clock & 2047) == 0) {
+         AVOID.clear();
+      }
+
+      if (AVOID_TARGETS.size() > 2048) {
+         AVOID_TARGETS.clear();
+      }
+   }
+
+   /** Cost of a straight-up pillar or straight-down dig from {@code from}, or -1 when not possible. */
+   private static double verticalShaftCost(Level level, BlockPos from, int dy, boolean canBreak) {
+      int x = from.getX();
+      int y = from.getY();
+      int z = from.getZ();
       if (dy > 0) {
-         if (climbable(level, from) || climbable(level, to)) {
-            return passable(level, to.above()) ? 1.35 : -1.0;
+         if (climbable(level, from) || climbable(level, from.above())) {
+            return passableAt(level, x, y + 2, z) ? 1.35 : -1.0;
          } else if (!allowPlace) {
             return -1.0;
          } else {
-            BlockPos ceiling = from.above(2);
-            if (passable(level, ceiling)) {
+            BlockState ceiling = state(level, x, y + 2, z);
+            if (passable(level, ceiling, x, y + 2, z)) {
                return 2.6;
+            } else if (!canBreak || state(level, x, y + 3, z).getBlock() instanceof FallingBlock) {
+               return -1.0; // sand or gravel would pour onto our head
             } else {
-               return canBreak && breakable(level, ceiling, level.getBlockState(ceiling)) && !touchesLava(level, ceiling)
-                  ? 4.5 + Math.min(8.0, Math.max(0.5, (double)level.getBlockState(ceiling).getDestroySpeed(level, ceiling)))
-                  : -1.0;
+               double dig = breakCost(level, x, y + 2, z, ceiling);
+               return dig < 0.0 || touchesLava(level, x, y + 2, z) ? -1.0 : 4.5 + dig;
             }
          }
       } else if (!canBreak) {
          return -1.0;
       } else {
-         BlockState floor = level.getBlockState(to);
-         BlockState underFloor = level.getBlockState(to.below());
-         return !underFloor.is(Blocks.LAVA) && !underFloor.isAir() && breakable(level, to, floor) && !touchesLava(level, to)
-            ? 3.4 + Math.min(8.0, Math.max(0.5, (double)floor.getDestroySpeed(level, to)))
-            : -1.0;
+         BlockState floor = state(level, x, y - 1, z);
+         BlockState underFloor = state(level, x, y - 2, z);
+         if (isLava(underFloor) || underFloor.isAir() || isWater(underFloor) || touchesLava(level, x, y - 1, z)) {
+            return -1.0;
+         }
+
+         double dig = breakCost(level, x, y - 1, z, floor);
+         return dig < 0.0 ? -1.0 : 3.4 + dig;
       }
    }
 
-   private static double traversalCost(Level level, BlockPos from, BlockPos pos, int dy, boolean diagonal, boolean canBreak) {
-      BlockState feet = level.getBlockState(pos);
-      BlockState head = level.getBlockState(pos.above());
-      BlockState below = level.getBlockState(pos.below());
-      if (!feet.is(Blocks.LAVA) && !head.is(Blocks.LAVA) && !below.is(Blocks.LAVA) && !below.is(Blocks.FIRE) && !below.is(Blocks.MAGMA_BLOCK)) {
-         double cost = diagonal ? 1.414 : 1.0;
-         if (dy > 0) {
-            cost += 0.65;
-            BlockPos stepCeiling = from.above(2);
-            if (!passable(level, stepCeiling)) {
-               if (!canBreak || !breakable(level, stepCeiling, level.getBlockState(stepCeiling)) || touchesLava(level, stepCeiling)) {
-                  return -1.0;
-               }
-
-               cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)level.getBlockState(stepCeiling).getDestroySpeed(level, stepCeiling)));
-            }
-         } else if (dy < 0) {
-            cost += 0.3 * Math.abs(dy);
-         }
-
-         if (!passable(level, pos)) {
-            if (!canBreak || !breakable(level, pos, feet) || touchesLava(level, pos)) {
-               return -1.0;
-            }
-
-            cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)feet.getDestroySpeed(level, pos)));
-         }
-
-         if (!passable(level, pos.above())) {
-            if (!canBreak || !breakable(level, pos.above(), head) || touchesLava(level, pos.above())) {
-               return -1.0;
-            }
-
-            cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)head.getDestroySpeed(level, pos.above())));
-         }
-
-         boolean solidFloor = !below.getCollisionShape(level, pos.below()).isEmpty() || below.is(Blocks.WATER) || climbable(level, pos);
-         if (!solidFloor) {
-            if (!allowPlace || diagonal || dy != 0) {
-               return -1.0;
-            }
-
-            cost += 3.1;
-         }
-
-         return cost;
-      } else {
+   /** Cost of moving from {@code from} to the block {@code ox,dy,oz} away, or -1 when the move is not possible. */
+   private static double traversalCost(Level level, BlockPos from, int ox, int dy, int oz, boolean diagonal, boolean canBreak) {
+      int x = from.getX() + ox;
+      int y = from.getY() + dy;
+      int z = from.getZ() + oz;
+      BlockState feet = state(level, x, y, z);
+      BlockState head = state(level, x, y + 1, z);
+      BlockState below = state(level, x, y - 1, z);
+      if (isLava(feet) || isLava(head) || isLava(below) || below.is(Blocks.FIRE) || below.is(Blocks.SOUL_FIRE) || below.is(Blocks.MAGMA_BLOCK)) {
          return -1.0;
       }
+
+      double cost = diagonal ? 1.414 : 1.0;
+      if (dy > 0) {
+         cost += 0.65;
+         double clearance = blockCost(level, from.getX(), from.getY() + 2, from.getZ(), canBreak);
+         if (clearance < 0.0) {
+            return -1.0;
+         }
+
+         cost += clearance;
+      } else if (dy < 0) {
+         cost += 0.3 * -dy;
+         // walking off the edge: everything between the edge and the landing must already be open
+         for (int k = from.getY() + 1; k > y + 1; k--) {
+            if (!passableAt(level, x, k, z)) {
+               return -1.0;
+            }
+         }
+      }
+
+      double feetCost = blockCost(level, x, y, z, feet, canBreak);
+      if (feetCost < 0.0) {
+         return -1.0;
+      }
+
+      double headCost = blockCost(level, x, y + 1, z, head, canBreak);
+      if (headCost < 0.0) {
+         return -1.0;
+      }
+
+      cost += feetCost + headCost;
+      boolean solidFloor = !below.getCollisionShape(level, SCRATCH.set(x, y - 1, z)).isEmpty() || isWater(below) || climbable(level, feet);
+      if (!solidFloor) {
+         if (!allowPlace || diagonal || dy != 0) {
+            return -1.0;
+         }
+
+         cost += 3.1;
+      }
+
+      if (isWater(feet)) {
+         cost += isWater(head) ? 2.5 : 1.2;
+      }
+
+      return cost;
+   }
+
+   private static double blockCost(Level level, int x, int y, int z, boolean canBreak) {
+      return blockCost(level, x, y, z, state(level, x, y, z), canBreak);
+   }
+
+   /** 0 when the block is already open, the time to break it when we may, -1 when it blocks the way. */
+   private static double blockCost(Level level, int x, int y, int z, BlockState state, boolean canBreak) {
+      if (passable(level, state, x, y, z)) {
+         return 0.0;
+      } else if (!canBreak) {
+         return -1.0;
+      }
+
+      double cost = breakCost(level, x, y, z, state);
+      if (cost < 0.0 || touchesLava(level, x, y, z)) {
+         return -1.0;
+      }
+
+      if (state(level, x, y + 1, z).getBlock() instanceof FallingBlock) {
+         cost += 6.0; // the sand above pours into the gap and has to be dug again
+      }
+
+      return cost;
+   }
+
+   /** Blocks walked that breaking this block is worth, from the best hotbar tool's break time; -1 when unbreakable. */
+   private static double breakCost(Level level, int x, int y, int z, BlockState state) {
+      Double cached = BREAK_COSTS.get(state);
+      if (cached != null) {
+         return cached;
+      }
+
+      double cost;
+      if (!breakable(level, SCRATCH.set(x, y, z), state)) {
+         cost = -1.0;
+      } else {
+         int ticks = Tools.breakTicks(costPlayer, level, SCRATCH, state);
+         cost = ticks == Integer.MAX_VALUE ? -1.0 : 1.5 + Math.min(60.0, ticks / 4.0);
+      }
+
+      BREAK_COSTS.put(state, cost);
+      return cost;
+   }
+
+   /** Penalty for standing at a spot with lava beside the feet. */
+   private static double leaveCost(Level level, int x, int y, int z) {
+      double cost = 0.0;
+      for (int[] card : CARDINAL_4) {
+         if (isLava(state(level, x + card[0], y, z + card[1]))) {
+            cost += 3.0;
+         }
+      }
+
+      return cost;
+   }
+
+   private static boolean cornerClear(Level level, int x, int y, int z, int ox, int oz) {
+      return passableAt(level, x + ox, y, z) && passableAt(level, x + ox, y + 1, z) && passableAt(level, x, y, z + oz) && passableAt(level, x, y + 1, z + oz);
+   }
+
+   /** A column we can jump across: open at feet, head and jump height, and nothing to stand on. */
+   private static boolean gapClear(Level level, int x, int y, int z) {
+      return passableAt(level, x, y, z) && passableAt(level, x, y + 1, z) && passableAt(level, x, y + 2, z) && passableAt(level, x, y - 1, z);
    }
 
    private static boolean climbable(Level level, BlockPos pos) {
       return level.getBlockState(pos).is(BlockTags.CLIMBABLE);
+   }
+
+   private static boolean climbable(Level level, BlockState state) {
+      return state.is(BlockTags.CLIMBABLE);
    }
 
    private static boolean breakable(Level level, BlockPos pos, BlockState state) {
@@ -825,14 +1200,25 @@ public final class BuiltInBaritone {
       }
    }
 
-   private static boolean touchesLava(Level level, BlockPos pos) {
-      for (Direction dir : Direction.values()) {
-         if (level.getBlockState(pos.relative(dir)).is(Blocks.LAVA)) {
-            return true;
-         }
-      }
+   private static boolean touchesLava(Level level, int x, int y, int z) {
+      return isLava(state(level, x + 1, y, z))
+         || isLava(state(level, x - 1, y, z))
+         || isLava(state(level, x, y, z + 1))
+         || isLava(state(level, x, y, z - 1))
+         || isLava(state(level, x, y + 1, z))
+         || isLava(state(level, x, y - 1, z));
+   }
 
-      return false;
+   private static boolean isLava(BlockState state) {
+      return state.getFluidState().is(FluidTags.LAVA);
+   }
+
+   private static boolean isWater(BlockState state) {
+      return state.getFluidState().is(FluidTags.WATER);
+   }
+
+   private static BlockState state(Level level, int x, int y, int z) {
+      return level.getBlockState(SCRATCH.set(x, y, z));
    }
 
    private static List<BlockPos> reconstruct(BuiltInBaritone.Node node) {
@@ -854,11 +1240,8 @@ public final class BuiltInBaritone {
    }
 
    public static int findSurfaceY(Level level, int x, int z, int fallbackY) {
-      MutableBlockPos cursor = new MutableBlockPos(x, fallbackY + 16, z);
-
       for (int y = fallbackY + 16; y >= fallbackY - 24; y--) {
-         cursor.setY(y);
-         if (isStandable(level, cursor)) {
+         if (isStandable(level, x, y, z)) {
             return y;
          }
       }
@@ -866,12 +1249,14 @@ public final class BuiltInBaritone {
       return fallbackY;
    }
 
-   private static boolean isStandable(Level level, BlockPos pos) {
-      if (passable(level, pos) && passable(level, pos.above())) {
-         BlockState below = level.getBlockState(pos.below());
-         return !below.is(Blocks.LAVA) && !below.is(Blocks.FIRE) && !below.is(Blocks.MAGMA_BLOCK)
-            ? !below.getCollisionShape(level, pos.below()).isEmpty() || below.is(Blocks.WATER)
-            : false;
+   private static boolean isStandable(Level level, int x, int y, int z) {
+      if (passableAt(level, x, y, z) && passableAt(level, x, y + 1, z)) {
+         BlockState below = state(level, x, y - 1, z);
+         if (isLava(below) || below.is(Blocks.FIRE) || below.is(Blocks.SOUL_FIRE) || below.is(Blocks.MAGMA_BLOCK)) {
+            return false;
+         }
+
+         return !below.getCollisionShape(level, SCRATCH.set(x, y - 1, z)).isEmpty() || isWater(below);
       } else {
          return false;
       }
@@ -879,17 +1264,31 @@ public final class BuiltInBaritone {
 
    private static boolean passable(Level level, BlockPos pos) {
       BlockState state = level.getBlockState(pos);
-      return state.is(Blocks.LAVA) ? false : state.isAir() || state.getCollisionShape(level, pos).isEmpty();
+      return !isLava(state) && (state.isAir() || state.getCollisionShape(level, pos).isEmpty());
    }
 
+   private static boolean passableAt(Level level, int x, int y, int z) {
+      return passable(level, state(level, x, y, z), x, y, z);
+   }
+
+   private static boolean passable(Level level, BlockState state, int x, int y, int z) {
+      return !isLava(state) && (state.isAir() || state.getCollisionShape(level, SCRATCH.set(x, y, z)).isEmpty());
+   }
+
+   /**
+    * Brute-force nearest block search for one-off callers. The bot tasks use the incremental scanners instead;
+    * keep the radius small here because every block in the cube is read at once.
+    */
    public static BlockPos findNearestBlock(Level level, BlockPos origin, int radius, Predicate<BlockState> filter) {
       MutableBlockPos cursor = new MutableBlockPos();
       BlockPos best = null;
       double bestDist = Double.MAX_VALUE;
+      int r = Math.min(radius, 32);
+      int ry = Math.min(r, 16);
 
-      for (int dx = -radius; dx <= radius; dx++) {
-         for (int dy = -Math.min(radius, 32); dy <= Math.min(radius, 32); dy++) {
-            for (int dz = -radius; dz <= radius; dz++) {
+      for (int dx = -r; dx <= r; dx++) {
+         for (int dy = -ry; dy <= ry; dy++) {
+            for (int dz = -r; dz <= r; dz++) {
                double d2 = dx * dx + dy * dy + dz * dz;
                if (d2 < bestDist) {
                   cursor.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
@@ -927,6 +1326,7 @@ public final class BuiltInBaritone {
       final double g;
       final double h;
       final double f;
+      boolean closed;
 
       Node(BlockPos pos, BuiltInBaritone.Node parent, double g, double h) {
          this.pos = pos;

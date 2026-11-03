@@ -8,7 +8,7 @@ import gemini.config.ConfigManager;
 import gemini.input.GeminiKeys;
 import gemini.module.Category;
 import gemini.module.Module;
-import gemini.module.modules.ClickGuiModule;
+import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
@@ -18,6 +18,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudOverlay;
+import gemini.ui.Fuzzy;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -246,11 +247,7 @@ public final class CategoryPanel {
          for (CategoryPanel.Row row : this.rows) {
             if ((!activeOnly || row.module.isEnabled())
                && (!keyboundOnly || row.module.getKeybind() != -1)
-               && (
-                  needle.isEmpty()
-                     || row.module.getName().toLowerCase(Locale.ROOT).contains(needle)
-                     || row.module.getDescription().toLowerCase(Locale.ROOT).contains(needle)
-               )) {
+               && (needle.isEmpty() || Fuzzy.moduleScore(needle, row.module) > 0)) {
                list.add(row);
             }
          }
