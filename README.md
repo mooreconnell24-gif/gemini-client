@@ -3,11 +3,11 @@
 
   # Gemini Client
 
-  **A single-player utility / sandbox client for Minecraft 26.2 (Fabric).**
+  **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
   272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (drives the real Baritone when installed)
 
-  [![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
+  [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
   [![Version](https://img.shields.io/badge/Release-3.0.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
   [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
@@ -127,14 +127,14 @@ The rest:
 
 | Requirement | Version |
 |---|---|
-| Minecraft Java Edition | **26.2** |
+| Minecraft Java Edition | **26.3** |
 | Fabric Loader | 0.19.5 or newer |
-| Fabric API | Built for 26.2 (developed against `0.161.0+26.2`) |
+| Fabric API | Built for 26.3 (developed against `0.160.6+26.3`) |
 | Java | 25 or newer |
 
 ### Steps
 
-1. Install **Fabric Loader** for Minecraft 26.2.
+1. Install **Fabric Loader** for Minecraft 26.3.
 2. Put the matching **Fabric API** jar into your `mods` folder.
 3. Download [`gemini-3.0.0.jar`](gemini-3.0.0.jar) from this repo (or build it, see below) and put it in `mods`.
 4. Optional: add the [Baritone](https://github.com/cabaletta/baritone) jar for your Minecraft version. Gemini's bot modules and `#` commands then run on the real Baritone; without it the built-in pathfinder is used.
@@ -243,7 +243,7 @@ src/main/java/gemini/
 
 | Problem | Fix |
 |---|---|
-| Crash on launch | Check Minecraft 26.2, a matching Fabric Loader and Fabric API, and Java 25; see `logs/latest.log` |
+| Crash on launch | Check Minecraft 26.3, a matching Fabric Loader and Fabric API, and Java 25; see `logs/latest.log` |
 | "Server connections are blocked" | Expected: Gemini is single-player only. Remove the jar to play online |
 | Modules will not turn on | Open a single-player world; modules pause while the world is open to LAN |
 | Menu will not open | Check Options › Controls › Gemini Client › Open Gemini |
