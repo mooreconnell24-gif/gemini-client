@@ -3,7 +3,7 @@
 	"id": "gemini",
 	"version": "${version}",
 	"name": "Gemini Client",
-	"description": "Single-player utility / sandbox client for Minecraft 26.2: 260+ modules, a window or panel ClickGUI, a draggable HUD and built-in Baritone-style pathfinding. Server connections are blocked while it is installed.",
+	"description": "Single-player utility / sandbox client for Minecraft 26.2: 270+ modules, a window or panel ClickGUI, a draggable HUD and a pathfinding bot that drives the real Baritone when it is installed. Server connections are blocked while it is installed.",
 	"authors": [
 		"Gemini Client"
 	],
@@ -39,6 +39,6 @@
 		"baritone": "*"
 	},
 	"custom": {
-		"gemini:baritone": "Hooks baritone.api.BaritoneAPI when present and ships a built-in 3D A* engine (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate, #sel, #thisway, #axis)."
+		"gemini:baritone": "Drives baritone.api.BaritoneAPI when the Baritone mod is installed (all # commands pass through) and falls back to a built-in 3D A* engine (#goto, #mine, #follow, #tunnel, #farm, #explore, #excavate, #sel, #thisway, #axis)."
 	}
 }

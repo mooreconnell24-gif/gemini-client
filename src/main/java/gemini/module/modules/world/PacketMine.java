@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.render.Render3D;
@@ -32,6 +33,7 @@ public final class PacketMine extends Module {
 
          if (this.targetPos != null) {
             if (!client.level.getBlockState(this.targetPos).isAir() && BlockPlacer.inReach(client.player, this.targetPos, 5.2)) {
+               BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.targetPos, Direction.UP);
             } else {
                this.targetPos = null;

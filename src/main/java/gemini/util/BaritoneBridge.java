@@ -8,38 +8,112 @@ import java.lang.reflect.Proxy;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 
+/**
+ * Sends every pathing request to the real Baritone when it is installed next to Gemini, and to the built-in
+ * pathfinder otherwise.
+ *
+ * <p>Baritone is a separate LGPL mod, so it is not bundled: drop the Baritone jar for this Minecraft version into
+ * the mods folder and Gemini picks it up at startup (or on a later probe if it initialises after us). Every call
+ * goes through reflection on the public {@code baritone.api} interfaces, so a missing, older or newer Baritone can
+ * never break the client: a call that fails simply falls back to the built-in engine for that request.
+ */
 public final class BaritoneBridge {
    public static final String MOD_ID = "baritone";
-   private static final double COMBAT_PRIORITY = 5.0;
+   private static final double PAUSE_PRIORITY = 5.0;
+   private static final long REPROBE_NANOS = 5_000_000_000L;
    private static final Set<String> PAUSE_REASONS = ConcurrentHashMap.newKeySet();
    private static volatile boolean hooked;
    private static volatile Boolean apiAvailable;
+   private static volatile Boolean modLoaded;
+   private static volatile boolean probed;
+   private static volatile long lastProbe;
+   private static Method getPrimary;
+   private static Method getPathingBehavior;
+   private static Method isPathing;
+   private static Method getGoal;
+   private static Object provider;
 
    private BaritoneBridge() {
    }
 
+   /** Whether the Baritone mod is in the mods folder at all (cheap, cached). */
+   public static boolean modInstalled() {
+      Boolean cached = modLoaded;
+      if (cached == null) {
+         boolean present;
+         try {
+            present = FabricLoader.getInstance().getModContainer(MOD_ID).isPresent();
+         } catch (Throwable ignored) {
+            present = false;
+         }
+
+         modLoaded = present;
+         return present;
+      }
+
+      return cached;
+   }
+
+   /** The installed Baritone's version, or null without it. */
+   public static String installedVersion() {
+      try {
+         return FabricLoader.getInstance().getModContainer(MOD_ID).map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null);
+      } catch (Throwable ignored) {
+         return null;
+      }
+   }
+
+   /**
+    * Whether the real Baritone API answers. A positive answer is cached for good; a mod that is installed but not
+    * ready yet is probed again every few seconds, so Baritone initialising after Gemini is still picked up.
+    */
    public static boolean externalPresent() {
       Boolean cached = apiAvailable;
       if (cached != null) {
          return cached;
-      }
-
-      try {
-         Class<?> api = Class.forName("baritone.api.BaritoneAPI", false, BaritoneBridge.class.getClassLoader());
-         Object provider = api.getMethod("getProvider").invoke(null);
-         boolean ok = provider != null && provider.getClass().getMethod("getPrimaryBaritone").invoke(provider) != null;
-         apiAvailable = ok;
-         return ok;
-      } catch (Throwable ignored) {
+      } else if (!modInstalled()) {
          apiAvailable = false;
          return false;
       }
+
+      long now = System.nanoTime();
+      if (probed && now - lastProbe < REPROBE_NANOS) {
+         return false;
+      }
+
+      probed = true;
+      lastProbe = now;
+
+      try {
+         Class<?> api = Class.forName("baritone.api.BaritoneAPI", true, BaritoneBridge.class.getClassLoader());
+         Object found = api.getMethod("getProvider").invoke(null);
+         Class<?> providerType = Class.forName("baritone.api.IBaritoneProvider");
+         Method primary = providerType.getMethod("getPrimaryBaritone");
+         Object baritone = found == null ? null : primary.invoke(found);
+         if (baritone != null) {
+            Class<?> baritoneType = Class.forName("baritone.api.IBaritone");
+            Class<?> behaviorType = Class.forName("baritone.api.behavior.IPathingBehavior");
+            getPathingBehavior = baritoneType.getMethod("getPathingBehavior");
+            isPathing = behaviorType.getMethod("isPathing");
+            getGoal = behaviorType.getMethod("getGoal");
+            getPrimary = primary;
+            provider = found;
+            apiAvailable = true;
+            Gemini.LOGGER.info("Baritone {} found: it now drives the bot modules and # commands.", installedVersion());
+            return true;
+         }
+      } catch (Throwable t) {
+         Gemini.LOGGER.debug("Baritone API not ready: {}", t.toString());
+      }
+
+      return false;
    }
 
    public static boolean hasExternalBaritone() {
@@ -51,7 +125,18 @@ public final class BaritoneBridge {
    }
 
    public static String engineName() {
-      return externalPresent() ? "Baritone API (Native)" : "Baritone 3D A* Engine";
+      return externalPresent() ? "Baritone" : "Built-in pathfinder";
+   }
+
+   /** A longer description for status output: which engine, and how to get the real one when it is missing. */
+   public static String engineDetail() {
+      if (externalPresent()) {
+         return "Baritone " + installedVersion() + " (installed mod)";
+      } else if (modInstalled()) {
+         return "Baritone is installed but its API has not answered yet; using the built-in pathfinder";
+      } else {
+         return "built-in A* pathfinder (install the Baritone mod for the full engine)";
+      }
    }
 
    public static boolean isPaused() {
@@ -80,7 +165,11 @@ public final class BaritoneBridge {
    }
 
    public static void init() {
-      apiAvailable = null;
+      if (!Boolean.TRUE.equals(apiAvailable)) {
+         apiAvailable = null;
+         probed = false;
+      }
+
       ensureHooked();
    }
 
@@ -92,25 +181,75 @@ public final class BaritoneBridge {
       BuiltInBaritone.render3D();
    }
 
+   /** Whether either engine is working on something. */
    public static boolean isActive() {
+      return externalPathing() || BuiltInBaritone.isActive();
+   }
+
+   /** Whether the real Baritone is currently following a path. */
+   public static boolean externalPathing() {
       if (externalPresent()) {
          try {
-            Object baritone = primaryBaritone();
-            Object behavior = baritone.getClass().getMethod("getPathingBehavior").invoke(baritone);
-            if ((Boolean)behavior.getClass().getMethod("isPathing").invoke(behavior)) {
-               return true;
+            Object behavior = getPathingBehavior.invoke(primaryBaritone());
+            return (Boolean)isPathing.invoke(behavior);
+         } catch (Throwable ignored) {
+         }
+      }
+
+      return false;
+   }
+
+   /** A short word for the HUD ("Pathing", "Mine", ...), or null when nothing is running. */
+   public static String taskLabel() {
+      if (externalPresent()) {
+         try {
+            Object behavior = getPathingBehavior.invoke(primaryBaritone());
+            if ((Boolean)isPathing.invoke(behavior)) {
+               return "Pathing";
             }
          } catch (Throwable ignored) {
          }
       }
 
-      return BuiltInBaritone.isActive();
+      return BuiltInBaritone.isActive() ? BuiltInBaritone.task().label : null;
    }
 
    private static Object primaryBaritone() throws Exception {
+      if (getPrimary != null && provider != null) {
+         return getPrimary.invoke(provider);
+      }
+
       Class<?> api = Class.forName("baritone.api.BaritoneAPI");
-      Object provider = api.getMethod("getProvider").invoke(null);
-      return provider.getClass().getMethod("getPrimaryBaritone").invoke(provider);
+      Object found = api.getMethod("getProvider").invoke(null);
+      return Class.forName("baritone.api.IBaritoneProvider").getMethod("getPrimaryBaritone").invoke(found);
+   }
+
+   private static Object part(Object baritone, String getter) throws Exception {
+      return Class.forName("baritone.api.IBaritone").getMethod(getter).invoke(baritone);
+   }
+
+   private static Object call(String iface, Object target, String method, Class<?>[] types, Object... args) throws Exception {
+      return Class.forName(iface).getMethod(method, types).invoke(target, args);
+   }
+
+   /**
+    * Sets a field of Baritone's own settings (renderPath, allowBreak, colorCurrentPath...). Returns false when
+    * Baritone is absent or has no such setting; the built-in engine keeps its own copies regardless.
+    */
+   public static boolean setExternalSetting(String name, Object value) {
+      if (!externalPresent() || name == null) {
+         return false;
+      }
+
+      try {
+         Object settings = Class.forName("baritone.api.BaritoneAPI").getMethod("getSettings").invoke(null);
+         Object setting = settings.getClass().getField(name).get(settings);
+         setting.getClass().getField("value").set(setting, value);
+         return true;
+      } catch (Throwable t) {
+         Gemini.LOGGER.debug("Baritone setting {} not applied: {}", name, t.toString());
+         return false;
+      }
    }
 
    public static boolean executeCommand(String commandLine) {
@@ -120,14 +259,20 @@ public final class BaritoneBridge {
 
       try {
          ensureHooked();
-         Object baritone = primaryBaritone();
-         Object cmdManager = baritone.getClass().getMethod("getCommandManager").invoke(baritone);
-         Object res = cmdManager.getClass().getMethod("execute", String.class).invoke(cmdManager, commandLine.trim());
+         Object cmdManager = part(primaryBaritone(), "getCommandManager");
+         Object res = call("baritone.api.command.manager.ICommandManager", cmdManager, "execute", new Class<?>[]{String.class}, commandLine.trim());
          return !(res instanceof Boolean b) || b;
       } catch (Throwable t) {
-         Gemini.LOGGER.debug("External Baritone command fallback: {}", t.toString());
+         Gemini.LOGGER.debug("Baritone command fell back to the built-in engine: {}", t.toString());
          return false;
       }
+   }
+
+   private static boolean setGoalAndPath(Object goal) throws Exception {
+      Object customGoal = part(primaryBaritone(), "getCustomGoalProcess");
+      Class<?> goalInterface = Class.forName("baritone.api.pathing.goals.Goal");
+      call("baritone.api.process.ICustomGoalProcess", customGoal, "setGoalAndPath", new Class<?>[]{goalInterface}, goal);
+      return true;
    }
 
    public static boolean gotoBlock(BlockPos pos) {
@@ -138,14 +283,15 @@ public final class BaritoneBridge {
       if (externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object customGoal = baritone.getClass().getMethod("getCustomGoalProcess").invoke(baritone);
-            Class<?> goalInterface = Class.forName("baritone.api.pathing.goals.Goal");
             Class<?> goalBlockClass = Class.forName("baritone.api.pathing.goals.GoalBlock");
             Object goal = goalBlockClass.getConstructor(int.class, int.class, int.class).newInstance(pos.getX(), pos.getY(), pos.getZ());
-            customGoal.getClass().getMethod("setGoalAndPath", goalInterface).invoke(customGoal, goal);
-            return true;
+            if (setGoalAndPath(goal)) {
+               return true;
+            }
          } catch (Throwable ignored) {
+            if (executeCommand("goto " + pos.getX() + " " + pos.getY() + " " + pos.getZ())) {
+               return true;
+            }
          }
       }
 
@@ -157,14 +303,15 @@ public final class BaritoneBridge {
       if (externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object customGoal = baritone.getClass().getMethod("getCustomGoalProcess").invoke(baritone);
-            Class<?> goalInterface = Class.forName("baritone.api.pathing.goals.Goal");
             Class<?> goalXzClass = Class.forName("baritone.api.pathing.goals.GoalXZ");
             Object goal = goalXzClass.getConstructor(int.class, int.class).newInstance(x, z);
-            customGoal.getClass().getMethod("setGoalAndPath", goalInterface).invoke(customGoal, goal);
-            return true;
+            if (setGoalAndPath(goal)) {
+               return true;
+            }
          } catch (Throwable ignored) {
+            if (executeCommand("goto " + x + " " + z)) {
+               return true;
+            }
          }
       }
 
@@ -196,9 +343,8 @@ public final class BaritoneBridge {
       if (externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object mineProcess = baritone.getClass().getMethod("getMineProcess").invoke(baritone);
-            mineProcess.getClass().getMethod("mineByName", int.class, String[].class).invoke(mineProcess, 0, names);
+            Object mineProcess = part(primaryBaritone(), "getMineProcess");
+            call("baritone.api.process.IMineProcess", mineProcess, "mineByName", new Class<?>[]{int.class, String[].class}, 0, names);
             return true;
          } catch (Throwable ignored) {
             if (executeCommand("mine " + String.join(" ", names))) {
@@ -214,9 +360,8 @@ public final class BaritoneBridge {
       if (externalPresent() && filter != null) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object followProcess = baritone.getClass().getMethod("getFollowProcess").invoke(baritone);
-            followProcess.getClass().getMethod("follow", Predicate.class).invoke(followProcess, filter);
+            Object followProcess = part(primaryBaritone(), "getFollowProcess");
+            call("baritone.api.process.IFollowProcess", followProcess, "follow", new Class<?>[]{Predicate.class}, filter);
             return;
          } catch (Throwable ignored) {
          }
@@ -237,12 +382,11 @@ public final class BaritoneBridge {
       if (externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object farmProcess = baritone.getClass().getMethod("getFarmProcess").invoke(baritone);
-            farmProcess.getClass().getMethod("farm", int.class).invoke(farmProcess, range);
+            Object farmProcess = part(primaryBaritone(), "getFarmProcess");
+            call("baritone.api.process.IFarmProcess", farmProcess, "farm", new Class<?>[]{int.class}, range);
             return;
          } catch (Throwable ignored) {
-            if (executeCommand("farm " + range)) {
+            if (executeCommand("farm " + range) || executeCommand("farm")) {
                return;
             }
          }
@@ -255,9 +399,8 @@ public final class BaritoneBridge {
       if (origin != null && externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object exploreProcess = baritone.getClass().getMethod("getExploreProcess").invoke(baritone);
-            exploreProcess.getClass().getMethod("explore", int.class, int.class).invoke(exploreProcess, origin.getX(), origin.getZ());
+            Object exploreProcess = part(primaryBaritone(), "getExploreProcess");
+            call("baritone.api.process.IExploreProcess", exploreProcess, "explore", new Class<?>[]{int.class, int.class}, origin.getX(), origin.getZ());
             return;
          } catch (Throwable ignored) {
             if (executeCommand("explore " + origin.getX() + " " + origin.getZ())) {
@@ -275,9 +418,8 @@ public final class BaritoneBridge {
       if (cornerA != null && cornerB != null && externalPresent()) {
          try {
             ensureHooked();
-            Object baritone = primaryBaritone();
-            Object builderProcess = baritone.getClass().getMethod("getBuilderProcess").invoke(baritone);
-            builderProcess.getClass().getMethod("clearArea", BlockPos.class, BlockPos.class).invoke(builderProcess, cornerA, cornerB);
+            Object builderProcess = part(primaryBaritone(), "getBuilderProcess");
+            call("baritone.api.process.IBuilderProcess", builderProcess, "clearArea", new Class<?>[]{BlockPos.class, BlockPos.class}, cornerA, cornerB);
             return;
          } catch (Throwable ignored) {
          }
@@ -291,9 +433,8 @@ public final class BaritoneBridge {
    public static void stopAll() {
       if (externalPresent()) {
          try {
-            Object baritone = primaryBaritone();
-            Object behavior = baritone.getClass().getMethod("getPathingBehavior").invoke(baritone);
-            behavior.getClass().getMethod("cancelEverything").invoke(behavior);
+            Object behavior = getPathingBehavior.invoke(primaryBaritone());
+            call("baritone.api.behavior.IPathingBehavior", behavior, "cancelEverything", new Class<?>[0]);
          } catch (Throwable ignored) {
             executeCommand("stop");
          }
@@ -305,12 +446,14 @@ public final class BaritoneBridge {
    public static String statusSummary() {
       if (externalPresent()) {
          try {
-            Object baritone = primaryBaritone();
-            Object behavior = baritone.getClass().getMethod("getPathingBehavior").invoke(baritone);
-            boolean pathing = (Boolean)behavior.getClass().getMethod("isPathing").invoke(behavior);
-            Object goal = behavior.getClass().getMethod("getGoal").invoke(behavior);
+            Object behavior = getPathingBehavior.invoke(primaryBaritone());
+            boolean pathing = (Boolean)isPathing.invoke(behavior);
+            Object goal = getGoal.invoke(behavior);
             if (pathing || goal != null) {
-               return "Baritone API: " + (pathing ? "Pathing" : "Active") + (goal != null ? " -> " + goal.toString() : "");
+               String state = isPaused() ? "Paused (" + pauseReason() + ")" : pathing ? "Pathing" : "Goal set";
+               return "Baritone: " + state + (goal != null ? " -> " + goal : "");
+            } else if (!BuiltInBaritone.isActive()) {
+               return "Baritone: Idle";
             }
          } catch (Throwable ignored) {
          }
@@ -326,10 +469,10 @@ public final class BaritoneBridge {
                try {
                   registerPauseProcess();
                   hooked = true;
-                  Gemini.LOGGER.info("Hooked native BaritoneAPI alongside Built-In Baritone engine.");
-               } catch (Throwable var3) {
-                  apiAvailable = false;
-                  Gemini.LOGGER.info("Using Gemini Built-In Baritone engine.");
+                  Gemini.LOGGER.info("Registered Gemini's pause process with Baritone (combat and manual pauses stop it mid-path).");
+               } catch (Throwable t) {
+                  hooked = true;
+                  Gemini.LOGGER.info("Baritone pause hook unavailable ({}); #pause only pauses the built-in engine.", t.toString());
                }
             }
          }
@@ -339,7 +482,7 @@ public final class BaritoneBridge {
    @SuppressWarnings({"unchecked", "rawtypes"})
    private static void registerPauseProcess() throws Exception {
       Object baritone = primaryBaritone();
-      Object control = baritone.getClass().getMethod("getPathingControlManager").invoke(baritone);
+      Object control = part(baritone, "getPathingControlManager");
       Class<?> processType = Class.forName("baritone.api.process.IBaritoneProcess");
       Class<?> commandType = Class.forName("baritone.api.process.PathingCommand");
       Class<?> commandKind = Class.forName("baritone.api.process.PathingCommandType");
@@ -348,9 +491,14 @@ public final class BaritoneBridge {
       Object pauseCommand = commandCtor.newInstance(null, requestPause);
       InvocationHandler handler = new BaritoneBridge.CombatPauseHandler(pauseCommand);
       Object process = Proxy.newProxyInstance(processType.getClassLoader(), new Class[]{processType}, handler);
-      control.getClass().getMethod("registerProcess", processType).invoke(control, process);
+      call("baritone.api.pathing.calc.IPathingControlManager", control, "registerProcess", new Class<?>[]{processType}, process);
    }
 
+   /**
+    * A temporary Baritone process that is active while any pause reason is set and answers every tick with
+    * REQUEST_PAUSE. Baritone's control manager asks processes in priority order and lets a temporary one hold the
+    * tick without cancelling the others, so the mine/goto/follow task resumes as soon as the reason clears.
+    */
    private static final class CombatPauseHandler implements InvocationHandler {
       private final Object pauseCommand;
 
@@ -368,13 +516,13 @@ public final class BaritoneBridge {
          } else if ("isTemporary".equals(name)) {
             return Boolean.TRUE;
          } else if ("priority".equals(name)) {
-            return Double.valueOf(COMBAT_PRIORITY);
+            return Double.valueOf(PAUSE_PRIORITY);
          } else if ("displayName".equals(name) || "displayName0".equals(name)) {
-            return "Gemini Combat";
+            return "Gemini Pause";
          } else if ("onLostControl".equals(name)) {
             return null;
          } else if ("toString".equals(name)) {
-            return "GeminiCombatPause";
+            return "GeminiPause";
          } else if ("hashCode".equals(name)) {
             return Integer.valueOf(System.identityHashCode(proxy));
          } else if ("equals".equals(name)) {

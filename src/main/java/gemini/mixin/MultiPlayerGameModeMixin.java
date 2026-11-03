@@ -2,6 +2,7 @@ package gemini.mixin;
 
 import gemini.Gemini;
 import gemini.module.modules.player.InstantMineModule;
+import gemini.util.BlockBreaking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
@@ -40,6 +41,22 @@ public abstract class MultiPlayerGameModeMixin {
             this.isDestroying = false;
             cir.setReturnValue(true);
          }
+      }
+   }
+
+   /**
+    * Vanilla aborts the block being broken on every tick the attack key is up. While a module is breaking a block
+    * itself it keeps {@link BlockBreaking} alive each tick, and this skips that abort so the damage accumulates.
+    */
+   @Inject(
+      method = {"stopDestroyBlock"},
+      at = {@At("HEAD")},
+      cancellable = true,
+      require = 0
+   )
+   private void gemini$keepBreaking(CallbackInfo ci) {
+      if (this.isDestroying && BlockBreaking.active()) {
+         ci.cancel();
       }
    }
 

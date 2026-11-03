@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -39,6 +40,7 @@ public final class NukerModule extends Module {
    public void onDisable() {
       Minecraft client = Minecraft.getInstance();
       if (this.current != null && client.gameMode != null) {
+         BlockBreaking.release();
          client.gameMode.stopDestroyBlock();
       }
 
@@ -56,6 +58,7 @@ public final class NukerModule extends Module {
          if (this.current != null) {
             BlockState state = client.level.getBlockState(this.current);
             if (!state.isAir() && !(eye.distanceToSqr(Vec3.atCenterOf(this.current)) > (reach + 1.0) * (reach + 1.0))) {
+               BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, face(player, this.current));
                if (this.swing.get()) {
                   player.swing(InteractionHand.MAIN_HAND);
@@ -73,6 +76,7 @@ public final class NukerModule extends Module {
 
             for (int i = 0; i < Math.min(limit, targets.size()); i++) {
                BlockPos pos = targets.get(i);
+               BlockBreaking.keep();
                client.gameMode.startDestroyBlock(pos, face(player, pos));
                if (!player.isCreative()) {
                   this.current = pos;

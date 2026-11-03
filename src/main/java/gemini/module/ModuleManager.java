@@ -170,6 +170,8 @@ import gemini.module.modules.player.FastBreakModule;
 import gemini.module.modules.player.FastPlaceModule;
 import gemini.module.modules.player.FastUse;
 import gemini.module.modules.player.Gamemode;
+import gemini.module.modules.player.AutoHeal;
+import gemini.module.modules.player.Kits;
 import gemini.module.modules.player.GhostHand;
 import gemini.module.modules.player.HotbarSorter;
 import gemini.module.modules.player.InstantMineModule;
@@ -253,6 +255,8 @@ import gemini.module.modules.world.ChestAura;
 import gemini.module.modules.world.Collisions;
 import gemini.module.modules.world.EndermanLook;
 import gemini.module.modules.world.Extinguish;
+import gemini.module.modules.world.MobSweeper;
+import gemini.module.modules.world.Summoner;
 import gemini.module.modules.world.Flamethrower;
 import gemini.module.modules.world.Fucker;
 import gemini.module.modules.world.Home;
@@ -274,6 +278,7 @@ import gemini.module.modules.world.WorldRules;
 import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
+import gemini.util.BlockBreaking;
 import gemini.util.BuiltInBaritone;
 import gemini.util.Hands;
 import gemini.util.RotationManager;
@@ -620,6 +625,10 @@ public final class ModuleManager {
       this.register(new Macro(3));
       this.register(new InventorySorter());
       this.register(new DurabilityAlert());
+      this.register(new AutoHeal());
+      this.register(new Kits());
+      this.register(new MobSweeper());
+      this.register(new Summoner());
       this.register(new AntiLag());
       this.register(new Panic());
       this.register(new BetterChat());
@@ -715,6 +724,8 @@ public final class ModuleManager {
    }
 
    public void onEndTick(Minecraft client) {
+      BlockBreaking.tick();
+
       for (Module module : this.modules) {
          module.applyRuntimeState();
       }
@@ -758,7 +769,7 @@ public final class ModuleManager {
    }
 
    public void panic() {
-      BuiltInBaritone.stop();
+      BaritoneBridge.stopAll();
       if (this.configManager != null) {
          this.configManager.setSavingPaused(true);
       }

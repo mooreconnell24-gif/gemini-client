@@ -10,7 +10,7 @@ import gemini.module.modules.render.HudModule;
 import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.world.WaypointsModule;
 import gemini.module.setting.ColorSetting;
-import gemini.util.BuiltInBaritone;
+import gemini.util.BaritoneBridge;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -166,8 +166,9 @@ public final class HudOverlay {
          meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
       }
 
-      if (BuiltInBaritone.isActive()) {
-         meta.add("Baritone: " + BuiltInBaritone.task().label);
+      String botTask = BaritoneBridge.taskLabel();
+      if (botTask != null) {
+         meta.add("Baritone: " + botTask);
       }
 
       String metaLine = String.join("  ·  ", meta);

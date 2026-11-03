@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.util.Hands;
 import gemini.module.Module;
@@ -63,6 +64,7 @@ public final class AutoFarm extends Module {
    public void onDisable() {
       Minecraft client = Minecraft.getInstance();
       if (this.current != null && client.gameMode != null) {
+         BlockBreaking.release();
          client.gameMode.stopDestroyBlock();
       }
 
@@ -130,6 +132,7 @@ public final class AutoFarm extends Module {
          if (this.current != null) {
             BlockState state = level.getBlockState(this.current);
             if (!state.isAir() && ++this.stuck <= 80 && !(eye.distanceToSqr(Vec3.atCenterOf(this.current)) > (reach + 1.0) * (reach + 1.0))) {
+               BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, Direction.UP);
                if (this.swing.get()) {
                   player.swing(InteractionHand.MAIN_HAND);
@@ -180,6 +183,7 @@ public final class AutoFarm extends Module {
 
                BlockState state = level.getBlockState(pos);
                Item seed = seedFor(state.getBlock());
+               BlockBreaking.keep();
                client.gameMode.startDestroyBlock(pos, Direction.UP);
                worked = true;
                budget--;

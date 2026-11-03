@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -45,6 +46,7 @@ public final class VeinMiner extends Module {
    public void onDisable() {
       Minecraft client = Minecraft.getInstance();
       if (this.current != null && client.gameMode != null) {
+         BlockBreaking.release();
          client.gameMode.stopDestroyBlock();
       }
 
@@ -168,6 +170,7 @@ public final class VeinMiner extends Module {
       if (this.current != null) {
          if (!level.getBlockState(this.current).isAir() && ++this.stuck <= 80 && !(eye.distanceToSqr(Vec3.atCenterOf(this.current)) > reach * reach)) {
             if (!attacking) {
+               BlockBreaking.keep();
                client.gameMode.continueDestroyBlock(this.current, WorldHelpers.faceToward(player, this.current));
                if (this.swing.get()) {
                   player.swing(InteractionHand.MAIN_HAND);
@@ -190,6 +193,7 @@ public final class VeinMiner extends Module {
             BlockPos pos = this.queue.poll();
             BlockState state = level.getBlockState(pos);
             if (!state.isAir() && !(state.getDestroySpeed(level, pos) < 0.0F) && !(eye.distanceToSqr(Vec3.atCenterOf(pos)) > reach * reach)) {
+               BlockBreaking.keep();
                client.gameMode.startDestroyBlock(pos, WorldHelpers.faceToward(player, pos));
                if (!creative && !level.getBlockState(pos).isAir()) {
                   this.current = pos;
