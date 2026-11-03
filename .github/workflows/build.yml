@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew build --no-configuration-cache --stacktrace 2>&1 | tee build.log
+      - name: Publish build output to ci-out branch
+        if: always() && github.event_name == 'push'
+        run: |
+          mkdir -p /tmp/out
+          cp build.log /tmp/out/ 2>/dev/null || true
+          cp build/libs/*.jar /tmp/out/ 2>/dev/null || true
+          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*26\.3[^<]*</version>' | tail -5 > /tmp/out/fabric-api-26.3-versions.txt || true
+          curl -s https://meta.fabricmc.net/v2/versions/loader | grep -o '"version": *"[^"]*"' | head -3 > /tmp/out/loader-versions.txt || true
+          cd /tmp/out
+          git init -q -b ci-out
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "CI output for ${GITHUB_SHA} (${GITHUB_REF_NAME})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-out:ci-out-${GITHUB_REF_NAME}
