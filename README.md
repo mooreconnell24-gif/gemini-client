@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/gemini-logo-readme.svg" width="420" alt="Gemini Client logo" />
+  <img src="src/main/resources/assets/gemini/textures/gui/logo.png" width="260" alt="Gemini Client logo" />
 
   # Gemini Client
 
@@ -150,7 +150,7 @@ The rest:
 | **Right Shift** | Open / close the menu (rebind it from the sidebar or in Controls) |
 | **Click a module** | Show its settings |
 | **Click the switch** / **right-click** a module | Toggle it |
-| **Middle-click** a module | Bind a key (`Delete` clears, `Esc` cancels) |
+| **Middle-click a module** | Bind a key (`Delete` clears, `Esc` cancels) |
 | **Type anything** | Search every module; `Esc` clears and keeps your selection |
 | **↑ ↓**, **Enter**, **Tab** | Move the selection, toggle it, switch category |
 | **Right-click a setting** | Reset it to the default |
