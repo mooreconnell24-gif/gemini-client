@@ -129,7 +129,7 @@ The rest:
 |---|---|
 | Minecraft Java Edition | **26.3** |
 | Fabric Loader | 0.19.5 or newer |
-| Fabric API | Built for 26.3 (developed against `0.160.6+26.3`) |
+| Fabric API | Built for 26.3 (developed against `0.165.2+26.3`) |
 | Java | 25 or newer |
 
 ### Steps

@@ -18,7 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 
 /**
- * Sends every pathing request to the real Baritone when it is installed next to Gemini, and to the built-in
+ * Sends every pathing request to the Baritone bundled with Gemini (or one installed next to it), and to the built-in
  * pathfinder otherwise.
  *
  * <p>Baritone is a separate LGPL mod, so it is not bundled: drop the Baritone jar for this Minecraft version into
