@@ -6,7 +6,7 @@ import gemini.input.GeminiKeys;
 import gemini.module.ModuleManager;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
 import gemini.util.SingleplayerGate;
@@ -119,13 +119,13 @@ public final class Gemini implements ClientModInitializer {
    }
 
    private static void toggleMenu(Minecraft client) {
-      if (client.gui.screen() instanceof ClickGuiScreen) {
+      if (Menus.isMenu(client.gui.screen())) {
          client.gui.setScreen(null);
       } else if (client.player != null) {
          if (!SingleplayerGate.allowed()) {
             client.gui.hud.getChat().addClientSystemMessage(Component.literal(SingleplayerGate.denialMessage()));
          } else {
-            client.gui.setScreen(new ClickGuiScreen());
+            client.gui.setScreen(Menus.create());
          }
       }
    }

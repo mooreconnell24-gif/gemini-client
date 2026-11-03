@@ -63,6 +63,13 @@ public final class ClickGuiScreen extends Screen {
    private int vw;
    private int vh;
 
+   /** Opens the classic menu straight into HUD edit mode (used by the window layout's Edit HUD button). */
+   public static ClickGuiScreen hudEditor() {
+      ClickGuiScreen screen = new ClickGuiScreen();
+      screen.hudEditMode = true;
+      return screen;
+   }
+
    public ClickGuiScreen() {
       super(Component.literal("Gemini Client"));
       ClickGuiModule style = this.style();
@@ -121,7 +128,7 @@ public final class ClickGuiScreen extends Screen {
       int y = 35;
 
       for (String label : new String[]{
-         "All", "Active Only", "Keybound", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset"
+         "All", "Active Only", "Keybound", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
       }) {
          int w = this.font.width(label) + 12;
          this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
@@ -176,8 +183,8 @@ public final class ClickGuiScreen extends Screen {
       int total = Gemini.getInstance().modules().getModules().size();
       int fps = Minecraft.getInstance().getFps();
       String meta = this.hudEditMode
-         ? "NEXTGEN v2.5  ·  HUD EDIT MODE (drag widgets or click Edit HUD to exit)"
-         : "NEXTGEN v2.5  ·  " + fps + " FPS  ·  " + enabled + "/" + total + " modules active";
+         ? "v" + Gemini.VERSION + "  ·  HUD EDIT MODE (drag widgets or click Edit HUD to exit)"
+         : "v" + Gemini.VERSION + "  ·  " + fps + " FPS  ·  " + enabled + "/" + total + " modules active";
       graphics.text(this.font, meta, 56, 22, this.hudEditMode ? accentB : -8351581, false);
       String stats = "Ctrl+F search  ·  " + enabled + "/" + total + " active";
       int searchW = Math.min(180, Math.max(110, this.vw / 4));
@@ -521,6 +528,14 @@ public final class ClickGuiScreen extends Screen {
             this.hudEditMode = !this.hudEditMode;
             this.draggingWidget = null;
             this.flash(this.hudEditMode ? "HUD Edit Mode enabled · drag any HUD widget" : "Returned to module panels");
+            return;
+         case "Window layout":
+            ClickGuiModule layoutStyle = this.style();
+            if (layoutStyle != null) {
+               layoutStyle.setPanelLayout(false);
+            }
+
+            this.minecraft.gui.setScreen(new WindowGuiScreen());
             return;
          case "Save Preset":
             if (Gemini.getInstance().config().saveProfile("default")) {

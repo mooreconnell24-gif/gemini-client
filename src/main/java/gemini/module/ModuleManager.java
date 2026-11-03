@@ -80,7 +80,7 @@ import gemini.module.modules.render.WorldRender;
 import gemini.module.modules.world.WorldExtras;
 import gemini.module.modules.world.WorldModules;
 import gemini.ui.HudContext;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.RotationManager;
@@ -488,7 +488,7 @@ public final class ModuleManager {
 
          this.previousKeyState.clear();
          Minecraft client = Minecraft.getInstance();
-         if (client.gui.screen() instanceof ClickGuiScreen) {
+         if (Menus.isMenu(client.gui.screen())) {
             client.gui.setScreen(null);
          }
       } finally {

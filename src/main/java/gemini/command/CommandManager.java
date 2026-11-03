@@ -17,7 +17,7 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
-import gemini.ui.clickgui.ClickGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.SingleplayerGate;
@@ -992,7 +992,7 @@ public final class CommandManager {
       if (!SingleplayerGate.allowed()) {
          feedback(SingleplayerGate.denialMessage());
       } else {
-         client.execute(() -> client.gui.setScreen(new ClickGuiScreen()));
+         client.execute(() -> client.gui.setScreen(Menus.create()));
       }
    }
 
