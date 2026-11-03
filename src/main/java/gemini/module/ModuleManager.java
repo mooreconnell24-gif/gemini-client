@@ -149,6 +149,7 @@ import gemini.module.modules.player.AntiBreak;
 import gemini.module.modules.player.AntiVoidModule;
 import gemini.module.modules.player.AutoArmorModule;
 import gemini.module.modules.player.AutoClutch;
+import gemini.module.modules.player.Clutch;
 import gemini.module.modules.player.AutoDrop;
 import gemini.module.modules.player.AutoEatModule;
 import gemini.module.modules.player.AutoFishModule;
@@ -595,6 +596,7 @@ public final class ModuleManager {
       this.register(new GhostHand());
       this.register(new SmartEat());
       this.register(new AutoClutch());
+      this.register(new Clutch());
       this.register(new NoPush());
       this.register(new HotbarSorter());
       this.register(new AirPlace());
