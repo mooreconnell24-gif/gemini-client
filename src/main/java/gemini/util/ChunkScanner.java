@@ -28,6 +28,7 @@ public final class ChunkScanner {
    private int ringRadius = -1;
    private long idleClock = -1L;
    private int total;
+   private long budgetNanos = 600_000L;
 
    public ChunkScanner(Predicate<BlockState> test, int columnsPerTick, int maxResults) {
       this.test = test;
@@ -53,6 +54,12 @@ public final class ChunkScanner {
       return this.total;
    }
 
+   /** Caps the time one tick may spend scanning, whatever the column count allows. */
+   public ChunkScanner budgetMicros(long micros) {
+      this.budgetNanos = Math.max(50L, micros) * 1000L;
+      return this;
+   }
+
    public void tick(ClientLevel level, int centerChunkX, int centerChunkZ, int radiusChunks) {
       if (level != this.level) {
          this.clear();
@@ -67,7 +74,12 @@ public final class ChunkScanner {
       if (this.ring.length != 0 && clock != this.idleClock) {
          int scans = 0;
 
+         long deadline = System.nanoTime() + this.budgetNanos;
          for (int steps = 0; steps < this.ring.length && scans < this.columnsPerTick; steps++) {
+            if (scans > 0 && System.nanoTime() >= deadline) {
+               return; // out of time: continue from the cursor next tick
+            }
+
             if (this.cursor >= this.ring.length) {
                this.cursor = 0;
             }

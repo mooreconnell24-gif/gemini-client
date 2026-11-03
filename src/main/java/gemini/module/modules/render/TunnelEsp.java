@@ -7,6 +7,7 @@ import gemini.module.setting.ColorSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.VersionBridge;
+import gemini.util.AreaScan;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -25,6 +26,8 @@ public final class TunnelEsp extends Module {
    private final BooleanSetting fill = this.addSetting(new BooleanSetting("Fill", "Fill the highlighted blocks", true));
    private final List<BlockPos> found = new ArrayList<>();
    private int wait;
+   private final AreaScan scan = new AreaScan();
+   private final List<BlockPos> building = new ArrayList<>();
 
    public TunnelEsp() {
       super("Tunnel ESP", "Highlight 1x2 tunnels dug by players.", Category.RENDER);
@@ -40,28 +43,29 @@ public final class TunnelEsp extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       Level level = client.level;
-      if (player != null && level != null && this.wait-- <= 0) {
+      if (player == null || level == null) {
+         return;
+      }
+
+      if (!this.scan.running() && this.wait-- <= 0) {
          this.wait = this.interval.intValue();
-         this.found.clear();
+         this.building.clear();
          int r = this.radius.intValue();
          BlockPos center = player.blockPosition();
-         MutableBlockPos cursor = new MutableBlockPos();
          int yMin = Math.max(VersionBridge.minWorldY(level) + 1, center.getY() - this.below.intValue());
          int yMax = Math.min(VersionBridge.maxWorldY(level) - 2, center.getY() + 6);
+         this.scan.start(new BlockPos(center.getX() - r, yMin, center.getZ() - r), new BlockPos(center.getX() + r, yMax, center.getZ() + r));
+      }
 
-         for (int x = -r; x <= r; x++) {
-            for (int z = -r; z <= r; z++) {
-               for (int y = yMin; y <= yMax; y++) {
-                  cursor.set(center.getX() + x, y, center.getZ() + z);
-                  if (tunnel(level, cursor)) {
-                     this.found.add(cursor.immutable());
-                     if (this.found.size() >= 1500) {
-                        return;
-                     }
-                  }
-               }
-            }
+      if (this.scan.running() && this.scan.tick(300_000L, cursor -> {
+         if (tunnel(level, cursor)) {
+            this.building.add(cursor.immutable());
          }
+
+         return this.building.size() < 1500;
+      })) {
+         this.found.clear();
+         this.found.addAll(this.building);
       }
    }
 

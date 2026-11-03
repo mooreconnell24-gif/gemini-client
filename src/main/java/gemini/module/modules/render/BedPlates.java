@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
+import gemini.util.AreaScan;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -15,6 +16,8 @@ public final class BedPlates extends Module {
    private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Scan radius for beds", 24.0, 8.0, 48.0, 4.0));
    private final List<BlockPos> beds = new ArrayList<>();
    private int wait;
+   private final AreaScan scan = new AreaScan();
+   private final List<BlockPos> building = new ArrayList<>();
 
    public BedPlates() {
       super("BedPlates", "Show floating 3D defense tags above nearby beds.", Category.RENDER);
@@ -28,20 +31,27 @@ public final class BedPlates extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (client.player != null && client.level != null && this.wait-- <= 0) {
+      if (client.player == null || client.level == null) {
+         return;
+      }
+
+      if (!this.scan.running() && this.wait-- <= 0) {
          this.wait = 25;
-         this.beds.clear();
+         this.building.clear();
          int r = this.radius.intValue();
          BlockPos c = client.player.blockPosition();
+         this.scan.start(c.offset(-r, -6, -r), c.offset(r, 6, r));
+      }
 
-         for (BlockPos pos : BlockPos.betweenClosed(c.offset(-r, -6, -r), c.offset(r, 6, r))) {
-            if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {
-               this.beds.add(pos.immutable());
-               if (this.beds.size() >= 12) {
-                  break;
-               }
-            }
+      if (this.scan.running() && this.scan.tick(250_000L, pos -> {
+         if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {
+            this.building.add(pos.immutable());
          }
+
+         return this.building.size() < 12;
+      })) {
+         this.beds.clear();
+         this.beds.addAll(this.building);
       }
    }
 

@@ -84,6 +84,26 @@ public abstract class Module {
       return ActionPriority.defaultFor(this.category);
    }
 
+   /** Other names the search accepts for this module: the name without spaces and the class name. */
+   public List<String> aliases() {
+      List<String> list = new ArrayList<>(2);
+      String compact = this.name.replace(" ", "");
+      if (!compact.equals(this.name)) {
+         list.add(compact);
+      }
+
+      String simple = this.getClass().getSimpleName();
+      if (simple.endsWith("Module")) {
+         simple = simple.substring(0, simple.length() - 6);
+      }
+
+      if (!simple.equalsIgnoreCase(compact)) {
+         list.add(simple);
+      }
+
+      return list;
+   }
+
    public List<Setting<?>> settings() {
       if (this.exposedSettings == null) {
          List<Setting<?>> all = new ArrayList<>(this.settings);

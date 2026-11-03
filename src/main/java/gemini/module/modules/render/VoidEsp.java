@@ -7,6 +7,7 @@ import gemini.module.setting.ColorSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.VersionBridge;
+import gemini.util.AreaScan;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -23,6 +24,8 @@ public final class VoidEsp extends Module {
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 300));
    private final List<BlockPos> holes = new ArrayList<>();
    private int wait;
+   private final AreaScan scan = new AreaScan();
+   private final List<BlockPos> building = new ArrayList<>();
 
    public VoidEsp() {
       super("Void ESP", "Highlight open holes in bedrock leading into the void.", Category.RENDER);
@@ -38,36 +41,46 @@ public final class VoidEsp extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       Level level = client.level;
-      if (player != null && level != null && this.wait-- <= 0) {
+      if (player == null || level == null) {
+         return;
+      }
+
+      // The scan is spread over several ticks (about 0.3 ms each) instead of reading the whole radius at once.
+      if (!this.scan.running() && this.wait-- <= 0) {
          this.wait = this.interval.intValue();
-         this.holes.clear();
-         if (level.dimension() != Level.END) {
-            int r = this.radius.intValue();
-            BlockPos center = player.blockPosition();
-            int floor = VersionBridge.minWorldY(level);
-            MutableBlockPos cursor = new MutableBlockPos();
+         this.building.clear();
+         if (level.dimension() == Level.END) {
+            this.holes.clear();
+            return;
+         }
 
-            for (int x = -r; x <= r; x++) {
-               for (int z = -r; z <= r; z++) {
-                  cursor.set(center.getX() + x, floor, center.getZ() + z);
-                  if (level.hasChunkAt(cursor)) {
-                     if (level.getBlockState(cursor).isAir()) {
-                        this.holes.add(cursor.immutable());
-                     }
+         int r = this.radius.intValue();
+         BlockPos center = player.blockPosition();
+         int floor = VersionBridge.minWorldY(level);
+         this.scan.start(new BlockPos(center.getX() - r, floor, center.getZ() - r), new BlockPos(center.getX() + r, floor, center.getZ() + r));
+      }
 
-                     if (this.netherRoof.get() && level.dimension() == Level.NETHER) {
-                        cursor.setY(127);
-                        if (level.getBlockState(cursor).isAir() && !level.getBlockState(cursor.below()).is(Blocks.BEDROCK)) {
-                           this.holes.add(cursor.immutable());
-                        }
-                     }
+      if (this.scan.running()) {
+         boolean roof = this.netherRoof.get() && level.dimension() == Level.NETHER;
+         boolean done = this.scan.tick(300_000L, cursor -> {
+            if (level.hasChunkAt(cursor)) {
+               if (level.getBlockState(cursor).isAir()) {
+                  this.building.add(cursor.immutable());
+               }
 
-                     if (this.holes.size() >= 2000) {
-                        return;
-                     }
+               if (roof) {
+                  BlockPos top = new BlockPos(cursor.getX(), 127, cursor.getZ());
+                  if (level.getBlockState(top).isAir() && !level.getBlockState(top.below()).is(Blocks.BEDROCK)) {
+                     this.building.add(top);
                   }
                }
             }
+
+            return this.building.size() < 2000;
+         });
+         if (done) {
+            this.holes.clear();
+            this.holes.addAll(this.building);
          }
       }
    }

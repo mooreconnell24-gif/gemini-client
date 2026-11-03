@@ -47,6 +47,7 @@ public final class ClickGuiScreen extends Screen {
    private boolean bindingMenu;
    private boolean hudEditMode;
    private HudWidget draggingWidget;
+   private final HudWidget.Guides guides = new HudWidget.Guides();
    private float widgetGrabX;
    private float widgetGrabY;
    private String hoveredDescription = "LMB toggle   RMB settings   MMB bind   Shift+drag HUD widgets";
@@ -374,6 +375,18 @@ public final class ClickGuiScreen extends Screen {
       int hudH = Math.round(this.height / hudScale);
       graphics.fill(this.vw / 2, 54, this.vw / 2 + 1, this.vh - 30, GeminiMark.withAlpha(accentB, 40));
       graphics.fill(0, this.vh / 2, this.vw, this.vh / 2 + 1, GeminiMark.withAlpha(accentB, 40));
+      if (this.draggingWidget != null) {
+         // the lines the dragged widget is snapped to right now
+         if (!Float.isNaN(this.guides.lineX)) {
+            int gx = Math.round(this.guides.lineX * hudScale / this.uiScale);
+            graphics.fill(gx, 54, gx + 1, this.vh - 30, GeminiMark.withAlpha(accentB, 170));
+         }
+
+         if (!Float.isNaN(this.guides.lineY)) {
+            int gy = Math.round(this.guides.lineY * hudScale / this.uiScale);
+            graphics.fill(0, gy, this.vw, gy + 1, GeminiMark.withAlpha(accentB, 170));
+         }
+      }
 
       for (Module module : Gemini.getInstance().modules().of(Category.HUD)) {
          if (module instanceof HudWidget widget && widget.isEnabled() && widget.lastScreenW() > 0.0F) {
@@ -566,6 +579,7 @@ public final class ClickGuiScreen extends Screen {
 
    public boolean mouseReleased(MouseButtonEvent rawEvent) {
       this.draggingWidget = null;
+      this.guides.clear();
       MouseButtonEvent event = this.scaled(rawEvent);
 
       for (CategoryPanel panel : this.panels) {
@@ -584,7 +598,14 @@ public final class ClickGuiScreen extends Screen {
          int hudH = Math.round(this.height / hudScale);
          float newX = (float)(rawEvent.x() / hudScale) - this.widgetGrabX;
          float newY = (float)(rawEvent.y() / hudScale) - this.widgetGrabY;
-         this.draggingWidget.applyScreenPosition(hudW, hudH, newX, newY, style == null || style.snapGrid());
+         List<HudWidget> others = new ArrayList<>();
+         for (Module module : Gemini.getInstance().modules().of(Category.HUD)) {
+            if (module instanceof HudWidget widget && widget != this.draggingWidget) {
+               others.add(widget);
+            }
+         }
+
+         this.draggingWidget.applyScreenPosition(hudW, hudH, newX, newY, style == null || style.snapGrid(), others, this.guides);
          return true;
       } else {
          MouseButtonEvent event = this.scaled(rawEvent);
