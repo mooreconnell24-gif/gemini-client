@@ -23,6 +23,21 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           ./gradlew build --no-configuration-cache --stacktrace 2>&1 | tee build.log
+      - name: Launch smoke test (client to title screen)
+        if: success()
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
+          mkdir -p run/mods /tmp/out
+          if git fetch -q origin bundle-baritone 2>/dev/null; then
+            git show FETCH_HEAD:gemini-3.0.0.jar > /tmp/bundled.jar && unzip -p /tmp/bundled.jar META-INF/jars/baritone-1.20.0.jar > run/mods/baritone-1.20.0.jar || true
+          fi
+          ls -la run/mods
+          export LIBGL_ALWAYS_SOFTWARE=1
+          (timeout 300 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient --no-configuration-cache > /tmp/out/client.log 2>&1; echo "exit $?" >> /tmp/out/client.log) || true
+          cp run/logs/latest.log /tmp/out/latest.log 2>/dev/null || true
+          mkdir -p /tmp/out/crash && cp run/crash-reports/* /tmp/out/crash/ 2>/dev/null || true
+          grep -E "Mixin apply|InvalidInjection|MixinTransformerError|crash|Sound engine started|Created: .*atlas|Exception" /tmp/out/client.log | head -40 || true
       - name: Probe Minecraft classes
         if: always()
         run: |
