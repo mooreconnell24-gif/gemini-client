@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
+  273 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -101,7 +101,7 @@ The rest:
 
 | | |
 |---|---|
-| **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
+| **273 modules** | Combat 40 · Movement 45 · Player 49 · World 38 · Render 50 · HUD 33 · Misc 18 |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
@@ -115,11 +115,25 @@ The rest:
 |---|---|
 | Combat | KillAura, AutoCrystal, AnchorAura, Criticals, Velocity, AutoTotem, TriggerBot, ProjectileAimbot |
 | Movement | Flight, Speed, Step, Jesus, Elytra Fly, NoFall, NoWeb, Spider, Boat Fly, Click TP |
-| Player | AutoArmor, AutoEat, AutoTool, AutoFish, Auto Heal, Kits, Inventory Sorter, Durability Alert, Reach, FastBreak |
+| Player | Clutch, AutoArmor, AutoEat, AutoTool, AutoFish, Auto Heal, Kits, Inventory Sorter, Durability Alert, Reach, FastBreak |
 | World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Mob Sweeper, Summoner, Time, Weather, Waypoints |
 | Render | ESP, StorageESP, Xray, Tracers, Nametags, Freecam, Zoom, Fullbright, Search |
 | HUD | FPS, CPS, Armor, Potion Timers, Radar, TargetHUD, Keystrokes, Inventory Viewer |
 | Misc | ClickGUI, HUD, Macro 1–3, Panic, Presets, NameProtect, Better Chat |
+
+### Clutch
+
+Clutch (Player) watches for whatever is about to kill you and answers it with the best item in your hotbar or offhand.
+
+| Danger | What Clutch does |
+|---|---|
+| Lethal fall | Predicts the fall damage for the block you will land on and MLGs with a water bucket, cobweb, twisting vines, powder snow, slime, scaffolding or (when survivable) hay. **Brake** slows a very fast fall just enough to fit the MLG into reach, and **Scoop** picks the water back up |
+| Lava | Water or a block onto lava you are falling into, water and a swim out if you are in it, and **Lava Guard** stops you walking or stepping off into it |
+| Fire | Drops water at your feet once health is low enough to matter |
+| Void, drowning, suffocation | Swims up for air; with Last Resort, teleports you back to the last safe spot or gives water breathing |
+| Low health | Moves a totem into your offhand |
+
+**Last Resort** (single-player) steps in when no item can help: it resets fall damage just before you land, gives fire resistance, water breathing or healing, or teleports you to the last safe ground. **Danger / Fall / Lava / Health Modules** are lists of other modules Clutch switches on during that danger (Lava defaults to Jesus, Health to AutoTotem); **Restore Modules** turns them back off once you have been safe for **Restore Delay** ticks. Edit them in the menu or with `.set Clutch Lava_Modules add <module>`.
 
 ## Installation
 
