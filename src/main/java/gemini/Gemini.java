@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeGizmos;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.network.chat.Component;
@@ -32,7 +33,10 @@ import org.slf4j.LoggerFactory;
 public final class Gemini implements ClientModInitializer {
    public static final String MOD_ID = "gemini";
    public static final String NAME = "Gemini Client";
-   public static final String VERSION = "2.0.0";
+   public static final String VERSION = FabricLoader.getInstance()
+      .getModContainer("gemini")
+      .map(container -> container.getMetadata().getVersion().getFriendlyString())
+      .orElse("dev");
    public static final Logger LOGGER = LoggerFactory.getLogger("Gemini Client");
    private static Gemini instance;
    private ModuleManager moduleManager;
@@ -52,7 +56,7 @@ public final class Gemini implements ClientModInitializer {
       ClientLifecycleEvents.CLIENT_STARTED.register((ClientStarted)client -> {
          this.configManager.load();
          BaritoneBridge.init();
-         LOGGER.info("{} v{} configuration loaded (Built-in Baritone active).", "Gemini Client", "2.0.0");
+         LOGGER.info("{} v{} configuration loaded (Built-in Baritone active).", "Gemini Client", VERSION);
       });
       ClientTickEvents.END_CLIENT_TICK.register((EndTick)client -> {
          SingleplayerGate.tick(client);
@@ -89,7 +93,7 @@ public final class Gemini implements ClientModInitializer {
          this.moduleManager.shutdown();
          this.configManager.save();
       });
-      LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", "2.0.0");
+      LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", VERSION);
    }
 
    public static Gemini getInstance() {

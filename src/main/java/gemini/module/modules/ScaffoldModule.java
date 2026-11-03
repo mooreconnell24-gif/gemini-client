@@ -34,49 +34,23 @@ public final class ScaffoldModule extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between block placements", 0.0, 0.0, 6.0, 1.0));
    private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks bridged ahead", 0.0, 0.0, 4.0, 1.0));
    private final ModeSetting sprintMode = this.addSetting(
-      new ModeSetting(
-         "Sprint",
-         "Sprinting bridge style",
-         "Godbridge",
-         "Telly",
-         "Godbridge",
-         "Breeze",
-         "Eagle",
-         "Normal",
-         "Legit",
-         "Off"
-      )
+      new ModeSetting("Sprint", "Sprinting bridge style", "Godbridge", "Telly", "Godbridge", "Breeze", "Eagle", "Normal", "Legit", "Off")
    );
    private final ModeSetting rotate = this.addSetting(
-      new ModeSetting(
-         "Rotate",
-         "Aim mode: Silent packet rotations",
-         "Silent",
-         "Silent",
-         "Godbridge",
-         "Strict",
-         "Snap",
-         "None"
-      )
+      new ModeSetting("Rotate", "Aim mode: Silent packet rotations", "Silent", "Silent", "Godbridge", "Strict", "Snap", "None")
    );
    private final NumberSetting turnSpeed = this.addSetting(
       new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
    );
    private final ModeSetting towerMode = this.addSetting(
-      new ModeSetting("Tower", "Vertical tower motion while holding Jump", "Bypass", "Bypass", "Motion", "Constant", "Jump", "Off")
+      new ModeSetting("Tower", "Vertical tower motion while holding Jump", "Motion", "Motion", "Constant", "Jump", "Off")
    );
    private final NumberSetting towerSpeed = this.addSetting(
       new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02).showIf(() -> !this.towerMode.is("Off"))
    );
-   private final BooleanSetting keepY = this.addSetting(
-      new BooleanSetting("Keep Y", "Lock placement height to starting Y level", false)
-   );
-   private final BooleanSetting clutchSearch = this.addSetting(
-      new BooleanSetting("Clutch Search", "Search up to 3 blocks away for diagonal/air support", true)
-   );
-   private final BooleanSetting autoRefill = this.addSetting(
-      new BooleanSetting("Auto Refill", "Refill hotbar blocks from inventory automatically", true)
-   );
+   private final BooleanSetting keepY = this.addSetting(new BooleanSetting("Keep Y", "Lock placement height to starting Y level", false));
+   private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Search up to 3 blocks away for diagonal/air support", true));
+   private final BooleanSetting autoRefill = this.addSetting(new BooleanSetting("Auto Refill", "Refill hotbar blocks from inventory automatically", true));
    private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Prevent walking off block edges", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing hand on block placement", true));
    private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Restore original hotbar slot after placing", false));
@@ -97,7 +71,7 @@ public final class ScaffoldModule extends Module {
    @Override
    public void onEnable() {
       LocalPlayer player = Minecraft.getInstance().player;
-      this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01) - 1;
+      this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);
       this.sneaking = false;
       this.towerTicks = 0;
       this.breezeTick = 0;
@@ -134,12 +108,14 @@ public final class ScaffoldModule extends Module {
          }
 
          if (player.onGround() && !this.keepY.get() && !this.sprintMode.is("Telly")) {
-            this.startY = Mth.floor(player.getY() - 0.01) - 1;
+            this.startY = Mth.floor(player.getY() - 0.01);
          } else if (player.getY() < this.startY) {
-            this.startY = Mth.floor(player.getY() - 0.01) - 1;
+            this.startY = Mth.floor(player.getY() - 0.01);
          }
 
-         boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown() && (!MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly"));
+         boolean towering = !this.towerMode.is("Off")
+            && client.options.keyJump.isDown()
+            && (!MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly"));
          if (!towering) {
             this.towerTicks = 0;
          }
@@ -166,20 +142,21 @@ public final class ScaffoldModule extends Module {
 
          int targetY;
          if (towering) {
-            targetY = Mth.floor(player.getY() - 0.05) - 1;
+            targetY = Mth.floor(player.getY() - 0.05);
          } else if (this.downwards.get() && MoveUtil.physicalKeyDown(client.options.keyShift)) {
-            targetY = Mth.floor(player.getY() - 0.01) - 2;
+            targetY = Mth.floor(player.getY() - 0.01) - 1;
             this.startY = targetY;
          } else if (this.keepY.get() || this.sprintMode.is("Telly")) {
             targetY = this.startY;
+         } else if (player.onGround()) {
+            targetY = Mth.floor(player.getY() - 0.01);
          } else {
-            targetY = Mth.floor(player.getY() - 0.01) - 1;
+            targetY = this.startY;
          }
 
          BlockPos feet = new BlockPos(Mth.floor(player.getX()), targetY, Mth.floor(player.getZ()));
          List<BlockPos> targets = new ArrayList<>();
          targets.add(feet);
-
          Vec3 moveDir = MoveUtil.direction(player);
          if (moveDir != null && !towering) {
             BlockPos aheadHalf = new BlockPos(Mth.floor(player.getX() + moveDir.x * 0.45), targetY, Mth.floor(player.getZ() + moveDir.z * 0.45));
@@ -188,6 +165,7 @@ public final class ScaffoldModule extends Module {
             }
 
             int exp = this.expand.intValue();
+
             for (int i = 1; i <= exp; i++) {
                BlockPos expPos = new BlockPos(Mth.floor(player.getX() + moveDir.x * i), targetY, Mth.floor(player.getZ() + moveDir.z * i));
                if (!targets.contains(expPos)) {
@@ -196,7 +174,8 @@ public final class ScaffoldModule extends Module {
             }
          }
 
-         PlacementPlan plan = null;
+         ScaffoldModule.PlacementPlan plan = null;
+
          for (BlockPos candidate : targets) {
             if (replaceable(client.level, candidate)) {
                plan = findPlacementWithClutch(client.level, player, candidate, this.clutchSearch.get() ? 3 : 1);
@@ -275,7 +254,6 @@ public final class ScaffoldModule extends Module {
                if (!player.isCrouching()) {
                   player.setSprinting(true);
                }
-               break;
          }
       }
    }
@@ -289,10 +267,11 @@ public final class ScaffoldModule extends Module {
          float[] exact = RotationManager.toward(player, hit.getLocation());
          if (this.rotate.is("Strict")) {
             return exact;
+         } else {
+            float moveYaw = MoveUtil.hasInput(player) ? Mth.wrapDegrees(movementYaw(player) + 180.0F) : exact[0];
+            float blendedYaw = moveYaw + Mth.wrapDegrees(exact[0] - moveYaw) * 0.65F;
+            return new float[]{Mth.wrapDegrees(blendedYaw), Mth.clamp(exact[1], 70.0F, 88.5F)};
          }
-         float moveYaw = MoveUtil.hasInput(player) ? Mth.wrapDegrees(movementYaw(player) + 180.0F) : exact[0];
-         float blendedYaw = moveYaw + Mth.wrapDegrees(exact[0] - moveYaw) * 0.65F;
-         return new float[]{Mth.wrapDegrees(blendedYaw), Mth.clamp(exact[1], 70.0F, 88.5F)};
       } else {
          float moveYaw = movementYaw(player);
          return new float[]{Mth.wrapDegrees(moveYaw + 180.0F), 79.5F};
@@ -308,14 +287,7 @@ public final class ScaffoldModule extends Module {
       this.towerTicks++;
       Vec3 motion = player.getDeltaMovement();
       double horizScale = MoveUtil.hasInput(player) ? 0.65 : 0.15;
-      if (this.towerMode.is("Bypass")) {
-         if (this.towerTicks % 8 == 0) {
-            player.setDeltaMovement(motion.x * horizScale, -0.0784, motion.z * horizScale);
-            this.towerTicks = 0;
-         } else {
-            player.setDeltaMovement(motion.x * horizScale, this.towerSpeed.get(), motion.z * horizScale);
-         }
-      } else if (this.towerMode.is("Motion")) {
+      if (this.towerMode.is("Motion")) {
          if (player.getY() - (target.getY() + 1.0) > -0.15) {
             player.setDeltaMovement(motion.x * horizScale, this.towerSpeed.get(), motion.z * horizScale);
          }
@@ -331,7 +303,7 @@ public final class ScaffoldModule extends Module {
          this.releaseSneak();
       } else {
          Level level = client.level;
-         BlockPos belowCenter = new BlockPos(Mth.floor(player.getX()), Mth.floor(player.getY() - 0.05) - 1, Mth.floor(player.getZ()));
+         BlockPos belowCenter = new BlockPos(Mth.floor(player.getX()), Mth.floor(player.getY() - 0.05), Mth.floor(player.getZ()));
          boolean overAir = replaceable(level, belowCenter);
          if (overAir) {
             this.sneaking = true;
@@ -367,39 +339,39 @@ public final class ScaffoldModule extends Module {
       return !state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
    }
 
-   private static PlacementPlan findPlacementWithClutch(Level level, LocalPlayer player, BlockPos goal, int maxRadius) {
+   private static ScaffoldModule.PlacementPlan findPlacementWithClutch(Level level, LocalPlayer player, BlockPos goal, int maxRadius) {
       BlockHitResult direct = findDirectHit(level, player, goal);
       if (direct != null) {
-         return new PlacementPlan(goal, direct);
-      }
-
-      if (maxRadius <= 1) {
+         return new ScaffoldModule.PlacementPlan(goal, direct);
+      } else if (maxRadius <= 1) {
          return null;
-      }
+      } else {
+         List<BlockPos> candidates = new ArrayList<>();
 
-      List<BlockPos> candidates = new ArrayList<>();
-      for (int dx = -maxRadius; dx <= maxRadius; dx++) {
-         for (int dy = -2; dy <= 0; dy++) {
-            for (int dz = -maxRadius; dz <= maxRadius; dz++) {
-               if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= maxRadius) {
-                  BlockPos pos = goal.offset(dx, dy, dz);
-                  if (replaceable(level, pos) && findDirectHit(level, player, pos) != null) {
-                     candidates.add(pos);
+         for (int dx = -maxRadius; dx <= maxRadius; dx++) {
+            for (int dy = -2; dy <= 0; dy++) {
+               for (int dz = -maxRadius; dz <= maxRadius; dz++) {
+                  if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= maxRadius) {
+                     BlockPos pos = goal.offset(dx, dy, dz);
+                     if (replaceable(level, pos) && findDirectHit(level, player, pos) != null) {
+                        candidates.add(pos);
+                     }
                   }
                }
             }
          }
-      }
 
-      candidates.sort(Comparator.comparingDouble(pos -> pos.distSqr(goal)));
-      for (BlockPos bridgeStep : candidates) {
-         BlockHitResult stepHit = findDirectHit(level, player, bridgeStep);
-         if (stepHit != null) {
-            return new PlacementPlan(bridgeStep, stepHit);
+         candidates.sort(Comparator.comparingDouble(posx -> posx.distSqr(goal)));
+
+         for (BlockPos bridgeStep : candidates) {
+            BlockHitResult stepHit = findDirectHit(level, player, bridgeStep);
+            if (stepHit != null) {
+               return new ScaffoldModule.PlacementPlan(bridgeStep, stepHit);
+            }
          }
-      }
 
-      return null;
+         return null;
+      }
    }
 
    private static BlockHitResult findDirectHit(Level level, LocalPlayer player, BlockPos target) {
@@ -454,6 +426,7 @@ public final class ScaffoldModule extends Module {
       } else {
          int bestSlot = -1;
          int bestCount = 0;
+
          for (int i = 0; i < 9; i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (usable(stack) && stack.getCount() > bestCount) {

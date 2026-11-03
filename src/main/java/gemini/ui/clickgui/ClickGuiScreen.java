@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.Window;
 import gemini.Gemini;
 import gemini.config.ConfigManager;
 import gemini.input.GeminiKeys;
+import gemini.input.KeybindReport;
 import gemini.module.Category;
 import gemini.module.HudWidget;
 import gemini.module.Module;
@@ -620,6 +621,10 @@ public final class ClickGuiScreen extends Screen {
          } else {
             if (event.key() != 261 && event.key() != 259) {
                this.bindingModule.setKeybind(event.key());
+               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.bindingModule, event.key());
+               if (clash != null) {
+                  this.flash("§e" + clash);
+               }
             } else {
                this.bindingModule.setKeybind(-1);
             }

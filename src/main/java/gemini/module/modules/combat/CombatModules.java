@@ -483,14 +483,11 @@ public final class CombatModules {
       private final ModeSetting priority = this.addSetting(
          new ModeSetting("Priority", "Target sorting priority", "Distance", "Distance", "Health", "Angle", "Armor")
       );
-      private final ModeSetting bypass = this.addSetting(
-         new ModeSetting("Bypass Mode", "Anti-cheat rotation & timing profile", "Vulcan", "Grim", "Strict", "Vulcan", "Matrix", "Vanilla")
-      );
       private final ModeSetting versionMode = this.addSetting(
-         new ModeSetting("Version", "Combat version mechanics (1.8 CPS vs 1.9+ Cooldown)", "Auto", "Auto", "1.9+ Cooldown", "1.8 Legacy CPS")
+         new ModeSetting("Version", "Wait for the attack cooldown, or click at a fixed rate", "1.9+ Cooldown", "1.9+ Cooldown", "1.8 Legacy CPS")
       );
       private final NumberSetting legacyCps = this.addSetting(
-         new NumberSetting("Legacy CPS", "Clicks per second in 1.8/1.7 combat mode", 14.0, 4.0, 20.0, 1.0)
+         new NumberSetting("Legacy CPS", "Clicks per second in 1.8 Legacy CPS mode", 14.0, 4.0, 20.0, 1.0).showIf(() -> this.versionMode.is("1.8 Legacy CPS"))
       );
       private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum attack reach", 4.2, 2.5, 6.0, 0.1));
       private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Maximum reach through walls", 3.0, 0.0, 6.0, 0.1));
@@ -521,7 +518,7 @@ public final class CombatModules {
       private long lastLegacyAttackMs;
 
       public KillAura() {
-         super("KillAura", "Attack nearby enemies with smooth rotations and lag.", Category.COMBAT);
+         super("KillAura", "Automatically attack nearby mobs and players with smooth aim.", Category.COMBAT);
       }
 
       @Override
@@ -531,7 +528,7 @@ public final class CombatModules {
 
       @Override
       public String info() {
-         return this.currentTarget != null ? this.currentTarget.getName().getString() : this.bypass.get();
+         return this.currentTarget != null ? this.currentTarget.getName().getString() : this.priority.get();
       }
 
       @Override
@@ -559,17 +556,10 @@ public final class CombatModules {
 
                   double pred = this.effectivePredictionTicks(client, player);
                   float[] rotation = Rotations.face(player, this.currentTarget, pred);
-                  if (this.bypass.is("Vulcan") || this.bypass.is("Matrix") || this.bypass.is("Grim")) {
-                     float jitter = (float)Math.sin(player.tickCount * 0.75) * 0.55F;
-                     rotation[0] = Mth.wrapDegrees(rotation[0] + jitter);
-                     rotation[1] = Mth.clamp(rotation[1] + jitter * 0.45F, -89.5F, 89.5F);
-                  }
-
-                  float speed = this.bypass.is("Vanilla") ? 180.0F : this.turnSpeed.floatValue();
-                  boolean aimed = RotationManager.request(player, rotation[0], rotation[1], speed, this.silentRotate.get(), 10, 8.0F);
-                  if (aimed || this.bypass.is("Vanilla")) {
-                     boolean useLegacy = this.versionMode.is("1.8 Legacy CPS") || (this.versionMode.is("Auto") && VersionBridge.isLegacyCombat());
-                     float cooldownRequired = this.bypass.is("Strict") || this.bypass.is("Grim") ? 0.94F : 0.9F;
+                  boolean aimed = RotationManager.request(player, rotation[0], rotation[1], this.turnSpeed.floatValue(), this.silentRotate.get(), 10, 8.0F);
+                  if (aimed) {
+                     boolean useLegacy = this.versionMode.is("1.8 Legacy CPS");
+                     float cooldownRequired = 0.9F;
                      long nowMs = System.currentTimeMillis();
                      long minDelayMs = (long)Math.max(45.0, 1000.0 / Math.max(1.0, this.legacyCps.get()));
                      boolean readyToHit = useLegacy ? (nowMs - this.lastLegacyAttackMs >= minDelayMs) : (player.getAttackStrengthScale(0.0F) >= cooldownRequired);

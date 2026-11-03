@@ -228,11 +228,7 @@ public final class MovementModules {
       private final NumberSetting vertical = this.addSetting(
          new NumberSetting("Vertical Speed", "Climb and descent speed with Jump and Sneak", 0.5, 0.1, 2.0, 0.1)
       );
-      private final BooleanSetting antiKick = this.addSetting(
-         new BooleanSetting("Anti Kick", "Sink a little now and then so servers don't kick", true)
-      );
       private AbstractBoat flying;
-      private int hoverTicks;
 
       public BoatFly() {
          super("Boat Fly", "Fly while sitting in a boat.", Category.MOVEMENT);
@@ -266,10 +262,6 @@ public final class MovementModules {
 
                if (keys.shift()) {
                   y -= this.vertical.get();
-               }
-
-               if (y == 0.0 && this.antiKick.get() && ++this.hoverTicks % 30 == 0) {
-                  y = -0.04;
                }
 
                Vec3 direction = MoveUtil.direction(player);

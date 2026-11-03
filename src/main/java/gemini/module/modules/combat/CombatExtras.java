@@ -15,7 +15,6 @@ import gemini.util.PlaceSettings;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
-import gemini.util.VersionBridge;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -337,7 +336,7 @@ public final class CombatExtras {
       private LivingEntity tracked;
 
       public Backtrack() {
-         super("Backtrack", "Track delayed enemy hitboxes across recent ticks.", Category.COMBAT);
+         super("Backtrack", "Show where your combat target was a few ticks ago.", Category.COMBAT);
       }
 
       @Override
@@ -661,7 +660,7 @@ public final class CombatExtras {
          Minecraft client = Minecraft.getInstance();
          if (CombatModules.ready(client) && client.gui.screen() == null && client.hitResult != null && client.hitResult.getType() == Type.ENTITY) {
             LocalPlayer player = client.player;
-            if (!player.isUsingItem() && (VersionBridge.isLegacyCombat() || player.getAttackStrengthScale(0.0F) * 100.0F >= this.cooldown.floatValue())) {
+            if (!player.isUsingItem() && player.getAttackStrengthScale(0.0F) * 100.0F >= this.cooldown.floatValue()) {
                if (this.critsOnly.get() && !player.onGround() && player.getDeltaMovement().y >= -0.02) {
                   return;
                }

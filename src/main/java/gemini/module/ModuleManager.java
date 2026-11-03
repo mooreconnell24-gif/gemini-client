@@ -64,6 +64,7 @@ import gemini.module.modules.WeatherControlModule;
 import gemini.module.modules.XrayModule;
 import gemini.module.modules.ZoomModule;
 import gemini.module.modules.bot.BaritoneModules;
+import gemini.module.modules.combat.ArrowDamageModule;
 import gemini.module.modules.combat.CombatExtras;
 import gemini.module.modules.combat.CombatModules;
 import gemini.module.modules.hud.HudWidgets;
@@ -256,6 +257,7 @@ public final class ModuleManager {
       this.register(new AutoTotemModule());
       this.register(new AutoGappleModule());
       this.register(new CriticalsModule());
+      this.register(new ArrowDamageModule());
       this.register(new AutoClickerModule());
       this.register(new KeepSprintModule());
       this.register(new FlightModule());

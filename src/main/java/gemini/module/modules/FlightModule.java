@@ -17,36 +17,20 @@ import net.minecraft.world.phys.Vec3;
 public final class FlightModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
-         "Mode",
-         "Flight mode",
-         "Strict",
-         "Auto",
-         "Strict",
-         "Packet",
-         "VulcanGlide",
-         "Creative",
-         "Velocity",
-         "Glide",
-         "Jetpack"
+         "Mode", "Auto flies like creative mode in your single-player world", "Auto", "Auto", "Strict", "Packet", "Creative", "Velocity", "Glide", "Jetpack"
       )
    );
    private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal flight speed", 0.55, 0.2, 5.0, 0.1));
    private final NumberSetting vertical = this.addSetting(
       new NumberSetting("Vertical", "Vertical climb/descent speed", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
    );
-   private final BooleanSetting antiKick = this.addSetting(
-      new BooleanSetting("Anti Kick", "Dip periodically to bypass vanilla fly kick", true).showIf(() -> !this.mode.is("Creative"))
-   );
-   private final BooleanSetting setbackPause = this.addSetting(
-      new BooleanSetting("Setback Damp", "Smooth velocity on server position setback", true)
-   );
+   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Damp", "Smooth velocity on server position setback", true));
    private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying", true));
    private boolean previousMayFly;
    private boolean previousFlying;
-   private int airTicks;
 
    public FlightModule() {
-      super("Flight", "Multi-mode flight with anti-kick and setback.", Category.MOVEMENT, 71);
+      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, 71);
    }
 
    private boolean creativeMode() {
@@ -59,7 +43,6 @@ public final class FlightModule extends Module {
       if (player != null) {
          this.previousMayFly = player.getAbilities().mayfly;
          this.previousFlying = player.getAbilities().flying;
-         this.airTicks = 0;
       }
    }
 
@@ -84,7 +67,7 @@ public final class FlightModule extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null) {
-         if (this.setbackPause.get() && MoveUtil.hasRecentSetback()) {
+         if (this.setbackPause.get() && !this.creativeMode() && MoveUtil.hasRecentSetback()) {
             MoveUtil.smoothVelocity(player, 0.35);
             return;
          }
@@ -105,8 +88,6 @@ public final class FlightModule extends Module {
 
             if (this.mode.is("Jetpack")) {
                this.jetpack(player);
-            } else if (this.mode.is("VulcanGlide")) {
-               this.vulcanGlide(player);
             } else if (this.mode.is("Glide")) {
                this.glide(player);
             } else if (this.mode.is("Packet")) {
@@ -120,21 +101,6 @@ public final class FlightModule extends Module {
       }
    }
 
-   private void vulcanGlide(LocalPlayer player) {
-      this.airTicks++;
-      double y = this.airTicks % 2 == 0 ? -0.1 : -0.16;
-      if (player.input != null && player.input.keyPresses.jump() && this.airTicks % 6 == 0) {
-         y = 0.42;
-      }
-      player.setDeltaMovement(player.getDeltaMovement().x, y, player.getDeltaMovement().z);
-      if (MoveUtil.hasInput(player)) {
-         MoveUtil.setHorizontal(player, 0.2806 * Math.min(1.35, this.speed.get()));
-      }
-      if (this.noFall.get()) {
-         player.resetFallDistance();
-      }
-   }
-
    private void strictFlight(LocalPlayer player) {
       boolean jump = player.input != null && player.input.keyPresses.jump();
       boolean sneak = player.input != null && player.input.keyPresses.shift();
@@ -143,9 +109,6 @@ public final class FlightModule extends Module {
          targetY = Math.min(0.42, this.vertical.get());
       } else if (sneak) {
          targetY = -Math.min(0.42, this.vertical.get());
-      } else if (this.antiKick.get()) {
-         this.airTicks++;
-         targetY = this.airTicks % 24 == 0 ? -0.032 : (this.airTicks % 24 == 1 ? 0.032 : 0.0);
       }
 
       double maxHoriz = 0.2806 * Math.min(this.speed.get(), 1.65);
@@ -164,7 +127,7 @@ public final class FlightModule extends Module {
    private void packetFlight(Minecraft client, LocalPlayer player) {
       boolean jump = player.input != null && player.input.keyPresses.jump();
       boolean sneak = player.input != null && player.input.keyPresses.shift();
-      double dy = jump ? 0.062 : (sneak ? -0.062 : (this.antiKick.get() && ++this.airTicks % 20 == 0 ? -0.04 : 0.0));
+      double dy = jump ? 0.062 : (sneak ? -0.062 : 0.0);
       Vec3 dir = MoveUtil.direction(player);
       double step = 0.22 * Math.min(this.speed.get(), 1.5);
       double dx = dir == null ? 0.0 : dir.x * step;
@@ -193,15 +156,6 @@ public final class FlightModule extends Module {
 
       if (sneak) {
          y -= this.vertical.get();
-      }
-
-      if (y == 0.0 && this.antiKick.get()) {
-         this.airTicks++;
-         if (this.airTicks % 30 == 0) {
-            y = -0.04;
-         }
-      } else {
-         this.airTicks = 0;
       }
 
       player.setDeltaMovement(motion.x, y, motion.z);
@@ -242,15 +196,6 @@ public final class FlightModule extends Module {
          y = -Math.max(0.2, this.vertical.get());
       } else {
          y = -0.03;
-      }
-
-      if (!jump && !sneak && this.antiKick.get()) {
-         this.airTicks++;
-         if (this.airTicks % 40 == 0) {
-            y = -0.08;
-         }
-      } else {
-         this.airTicks = 0;
       }
 
       player.setDeltaMovement(player.getDeltaMovement().x, y, player.getDeltaMovement().z);

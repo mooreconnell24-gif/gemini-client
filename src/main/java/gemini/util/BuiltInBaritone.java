@@ -37,13 +37,9 @@ import net.minecraft.world.phys.Vec3;
 
 public final class BuiltInBaritone {
    private static final int MAX_A_STAR_ITERATIONS = 3600;
-   private static final int[][] OFFSETS_8 = new int[][]{
-      {0, -1}, {0, 1}, {1, 0}, {-1, 0},
-      {1, -1}, {1, 1}, {-1, -1}, {-1, 1}
-   };
-   private static final int[][] CARDINAL_4 = new int[][]{
-      {0, -1}, {0, 1}, {1, 0}, {-1, 0}
-   };
+   private static final int[] VERTICAL_STEPS = new int[]{1, -1};
+   private static final int[][] OFFSETS_8 = new int[][]{{0, -1}, {0, 1}, {1, 0}, {-1, 0}, {1, -1}, {1, 1}, {-1, -1}, {-1, 1}};
+   private static final int[][] CARDINAL_4 = new int[][]{{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
    private static BuiltInBaritone.TaskKind activeTask = BuiltInBaritone.TaskKind.NONE;
    private static BlockPos goalPos;
    private static BlockPos selPos1;
@@ -129,6 +125,7 @@ public final class BuiltInBaritone {
    public static boolean setSetting(String key, String value) {
       String clean = key.toLowerCase(Locale.ROOT).trim();
       boolean boolVal = "true".equalsIgnoreCase(value) || "1".equals(value) || "on".equalsIgnoreCase(value);
+
       return switch (clean) {
          case "allowbreak" -> {
             allowBreak = boolVal;
@@ -207,6 +204,7 @@ public final class BuiltInBaritone {
          gx = x;
          gz = 0;
       }
+
       int gy = findSurfaceY(player.level(), gx, gz, player.getBlockY());
       gotoBlock(new BlockPos(gx, gy, gz));
    }
@@ -300,15 +298,26 @@ public final class BuiltInBaritone {
       if (player != null && level != null && activeTask != BuiltInBaritone.TaskKind.NONE) {
          if (!BaritoneBridge.isPaused() && client.gui.screen() == null) {
             switch (activeTask) {
-               case GOTO -> tickGoto(client, player, level);
-               case MINE -> tickMine(client, player, level);
-               case FOLLOW -> tickFollow(client, player, level);
-               case TUNNEL -> tickTunnel(client, player, level);
-               case EXPLORE -> tickExplore(client, player, level);
-               case EXCAVATE -> tickExcavate(client, player, level);
-               case FARM -> tickFarm(client, player, level);
-               default -> {
-               }
+               case GOTO:
+                  tickGoto(client, player, level);
+                  break;
+               case MINE:
+                  tickMine(client, player, level);
+                  break;
+               case FOLLOW:
+                  tickFollow(client, player, level);
+                  break;
+               case TUNNEL:
+                  tickTunnel(client, player, level);
+                  break;
+               case EXPLORE:
+                  tickExplore(client, player, level);
+                  break;
+               case EXCAVATE:
+                  tickExcavate(client, player, level);
+                  break;
+               case FARM:
+                  tickFarm(client, player, level);
             }
          } else {
             releaseControls();
@@ -467,13 +476,10 @@ public final class BuiltInBaritone {
    private static void tickFarm(Minecraft client, LocalPlayer player, Level level) {
       BlockPos ripe = findNearestBlock(level, player.blockPosition(), 36, state -> state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state));
       if (ripe == null) {
-         BlockPos farmland = findNearestBlock(
-            level, player.blockPosition(), 12, state -> state.is(Blocks.FARMLAND)
-         );
+         BlockPos farmland = findNearestBlock(level, player.blockPosition(), 12, state -> state.is(Blocks.FARMLAND));
          if (farmland != null && level.getBlockState(farmland.above()).isAir() && player.getEyePosition().distanceToSqr(Vec3.atCenterOf(farmland)) <= 18.0) {
             int seedSlot = Inventories.findHotbar(
-               player,
-               s -> s.is(Items.WHEAT_SEEDS) || s.is(Items.CARROT) || s.is(Items.POTATO) || s.is(Items.BEETROOT_SEEDS)
+               player, s -> s.is(Items.WHEAT_SEEDS) || s.is(Items.CARROT) || s.is(Items.POTATO) || s.is(Items.BEETROOT_SEEDS)
             );
             if (seedSlot >= 0 && client.gameMode != null) {
                int prev = player.getInventory().getSelectedSlot();
@@ -485,6 +491,7 @@ public final class BuiltInBaritone {
                return;
             }
          }
+
          releaseControls();
       } else {
          goalPos = ripe;
@@ -546,59 +553,65 @@ public final class BuiltInBaritone {
       if (currentPath.isEmpty()) {
          steerToward(client, player, Vec3.atBottomCenterOf(target), player.horizontalCollision);
       } else {
-         while (pathIndex < currentPath.size() - 1) {
-            BlockPos node = currentPath.get(pathIndex);
-            double dx = node.getX() + 0.5 - player.getX();
-            double dz = node.getZ() + 0.5 - player.getZ();
-            if (dx * dx + dz * dz < 0.36 && Math.abs(node.getY() - player.getY()) <= 1.35) {
-               pathIndex++;
-            } else {
+         while (true) {
+            if (pathIndex < currentPath.size() - 1) {
+               BlockPos node = currentPath.get(pathIndex);
+               double dx = node.getX() + 0.5 - player.getX();
+               double dz = node.getZ() + 0.5 - player.getZ();
+               if (dx * dx + dz * dz < 0.36 && Math.abs(node.getY() - player.getY()) <= 1.35) {
+                  pathIndex++;
+                  continue;
+               }
+            }
+
+            BlockPos nextNode = currentPath.get(Math.min(pathIndex, currentPath.size() - 1));
+            BlockPos headBlock = nextNode.above();
+            if (nextNode.getY() > player.getBlockY() && !passable(level, player.blockPosition().above(2))) {
+               releaseControls();
+               mineBlockAt(client, player, player.blockPosition().above(2));
                break;
             }
-         }
 
-         BlockPos nextNode = currentPath.get(Math.min(pathIndex, currentPath.size() - 1));
-         BlockPos headBlock = nextNode.above();
-         if (nextNode.getY() > player.getBlockY() && !passable(level, player.blockPosition().above(2))) {
-            releaseControls();
-            mineBlockAt(client, player, player.blockPosition().above(2));
-         } else if (!passable(level, headBlock)) {
-            releaseControls();
-            mineBlockAt(client, player, headBlock);
-         } else if (!passable(level, nextNode)) {
-            releaseControls();
-            mineBlockAt(client, player, nextNode);
-         } else {
-            if (nextNode.getY() < player.getBlockY() && nextNode.getX() == player.getBlockX() && nextNode.getZ() == player.getBlockZ()) {
-               BlockPos belowFeet = player.blockPosition().below();
-               if (!passable(level, belowFeet)) {
-                  releaseControls();
-                  mineBlockAt(client, player, belowFeet);
-                  return;
+            if (!passable(level, headBlock)) {
+               releaseControls();
+               mineBlockAt(client, player, headBlock);
+            } else if (!passable(level, nextNode)) {
+               releaseControls();
+               mineBlockAt(client, player, nextNode);
+            } else {
+               if (nextNode.getY() < player.getBlockY() && nextNode.getX() == player.getBlockX() && nextNode.getZ() == player.getBlockZ()) {
+                  BlockPos belowFeet = player.blockPosition().below();
+                  if (!passable(level, belowFeet)) {
+                     releaseControls();
+                     mineBlockAt(client, player, belowFeet);
+                     return;
+                  }
                }
-            }
 
-            BlockPos floor = nextNode.below();
-            if (allowPlace && passable(level, floor) && !level.getBlockState(floor).is(Blocks.WATER) && !climbable(level, nextNode)) {
-               BlockPlacer.place(client, floor, BlockPlacer::solidFiller, true, true, true);
-            }
-
-            if (nextNode.getY() > player.getBlockY() && nextNode.getX() == player.getBlockX() && nextNode.getZ() == player.getBlockZ()) {
-               if (climbable(level, player.blockPosition()) || climbable(level, nextNode)) {
-                  steerToward(client, player, new Vec3(nextNode.getX() + 0.5, nextNode.getY(), nextNode.getZ() + 0.5), true);
-                  return;
+               BlockPos floor = nextNode.below();
+               if (allowPlace && passable(level, floor) && !level.getBlockState(floor).is(Blocks.WATER) && !climbable(level, nextNode)) {
+                  BlockPlacer.place(client, floor, BlockPlacer::solidFiller, true, true, true);
                }
-               if (allowPlace) {
-                  player.jumpFromGround();
-                  BlockPlacer.place(client, player.blockPosition(), BlockPlacer::solidFiller, true, true, true, false);
-                  return;
-               }
-            }
 
-            double horizDistSq = Math.pow(nextNode.getX() + 0.5 - player.getX(), 2) + Math.pow(nextNode.getZ() + 0.5 - player.getZ(), 2);
-            boolean parkourLeap = horizDistSq > 1.75 && player.onGround();
-            boolean jump = nextNode.getY() > player.getBlockY() || player.horizontalCollision || parkourLeap;
-            steerToward(client, player, new Vec3(nextNode.getX() + 0.5, nextNode.getY(), nextNode.getZ() + 0.5), jump);
+               if (nextNode.getY() > player.getBlockY() && nextNode.getX() == player.getBlockX() && nextNode.getZ() == player.getBlockZ()) {
+                  if (climbable(level, player.blockPosition()) || climbable(level, nextNode)) {
+                     steerToward(client, player, new Vec3(nextNode.getX() + 0.5, nextNode.getY(), nextNode.getZ() + 0.5), true);
+                     return;
+                  }
+
+                  if (allowPlace) {
+                     player.jumpFromGround();
+                     BlockPlacer.place(client, player.blockPosition(), BlockPlacer::solidFiller, true, true, true, false);
+                     return;
+                  }
+               }
+
+               double horizDistSq = Math.pow(nextNode.getX() + 0.5 - player.getX(), 2.0) + Math.pow(nextNode.getZ() + 0.5 - player.getZ(), 2.0);
+               boolean parkourLeap = horizDistSq > 1.75 && player.onGround();
+               boolean jump = nextNode.getY() > player.getBlockY() || player.horizontalCollision || parkourLeap;
+               steerToward(client, player, new Vec3(nextNode.getX() + 0.5, nextNode.getY(), nextNode.getZ() + 0.5), jump);
+            }
+            break;
          }
       }
    }
@@ -641,70 +654,62 @@ public final class BuiltInBaritone {
       BuiltInBaritone.Node bestFallback = startNode;
       int iterations = 0;
 
-      while (!open.isEmpty() && iterations++ < MAX_A_STAR_ITERATIONS) {
+      while (!open.isEmpty() && iterations++ < 3600) {
          BuiltInBaritone.Node current = open.poll();
-         if (current.h < bestFallback.h) {
-            bestFallback = current;
-         }
-
-         if (current.pos.distManhattan(goal) <= 1) {
-            return reconstruct(current);
-         }
-
-         closed.add(current.pos);
-
-         for (int vdy : new int[]{1, -1}) {
-            BlockPos vCand = current.pos.offset(0, vdy, 0);
-            if (!closed.contains(vCand)) {
-               double vCost = verticalShaftCost(level, current.pos, vCand, vdy, canBreak);
-               if (vCost >= 0.0) {
-                  tryOfferNode(open, all, current, vCand, current.g + vCost, goal);
-               }
-            }
-         }
-
-         for (int[] off : OFFSETS_8) {
-            int ox = off[0];
-            int oz = off[1];
-            boolean diagonal = ox != 0 && oz != 0;
-            if (diagonal && (!passable(level, current.pos.offset(ox, 0, 0)) || !passable(level, current.pos.offset(0, 0, oz)))) {
-               continue;
+         if (all.get(current.pos) == current && closed.add(current.pos)) {
+            if (current.h < bestFallback.h) {
+               bestFallback = current;
             }
 
-            for (int dy = 1; dy >= -3; dy--) {
-               if (diagonal && dy != 0) {
-                  continue;
-               }
+            if (current.pos.distManhattan(goal) <= 1) {
+               return reconstruct(current);
+            }
 
-               BlockPos candidate = current.pos.offset(ox, dy, oz);
-               if (closed.contains(candidate)) {
-                  continue;
-               }
-
-               double moveCost = traversalCost(level, current.pos, candidate, dy, diagonal, canBreak);
-               if (moveCost < 0.0) {
-                  continue;
-               }
-
-               tryOfferNode(open, all, current, candidate, current.g + moveCost, goal);
-               if (dy <= 0 && passable(level, candidate) && !passable(level, candidate.below())) {
-                  break;
+            for (int vdy : VERTICAL_STEPS) {
+               BlockPos vCand = current.pos.offset(0, vdy, 0);
+               if (!closed.contains(vCand)) {
+                  double vCost = verticalShaftCost(level, current.pos, vCand, vdy, canBreak);
+                  if (vCost >= 0.0) {
+                     tryOfferNode(open, all, current, vCand, current.g + vCost, goal);
+                  }
                }
             }
-         }
 
-         if (allowParkour) {
-            for (int[] card : CARDINAL_4) {
-               int ox = card[0];
-               int oz = card[1];
-               BlockPos gap = current.pos.offset(ox, 0, oz);
-               BlockPos land = current.pos.offset(ox * 2, 0, oz * 2);
-               if (!closed.contains(land)
-                  && passable(level, gap)
-                  && passable(level, gap.above())
-                  && passable(level, gap.below())
-                  && isStandable(level, land)) {
-                  tryOfferNode(open, all, current, land, current.g + 2.35, goal);
+            for (int[] off : OFFSETS_8) {
+               int ox = off[0];
+               int oz = off[1];
+               boolean diagonal = ox != 0 && oz != 0;
+               if (!diagonal || passable(level, current.pos.offset(ox, 0, 0)) && passable(level, current.pos.offset(0, 0, oz))) {
+                  for (int dy = 1; dy >= -3; dy--) {
+                     if (!diagonal || dy == 0) {
+                        BlockPos candidate = current.pos.offset(ox, dy, oz);
+                        if (!closed.contains(candidate)) {
+                           double moveCost = traversalCost(level, current.pos, candidate, dy, diagonal, canBreak);
+                           if (!(moveCost < 0.0)) {
+                              tryOfferNode(open, all, current, candidate, current.g + moveCost, goal);
+                              if (dy <= 0 && passable(level, candidate) && !passable(level, candidate.below())) {
+                                 break;
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+
+            if (allowParkour) {
+               for (int[] card : CARDINAL_4) {
+                  int ox = card[0];
+                  int oz = card[1];
+                  BlockPos gap = current.pos.offset(ox, 0, oz);
+                  BlockPos land = current.pos.offset(ox * 2, 0, oz * 2);
+                  if (!closed.contains(land)
+                     && passable(level, gap)
+                     && passable(level, gap.above())
+                     && passable(level, gap.below())
+                     && isStandable(level, land)) {
+                     tryOfferNode(open, all, current, land, current.g + 2.35, goal);
+                  }
                }
             }
          }
@@ -733,28 +738,26 @@ public final class BuiltInBaritone {
       if (dy > 0) {
          if (climbable(level, from) || climbable(level, to)) {
             return passable(level, to.above()) ? 1.35 : -1.0;
-         }
-         if (!allowPlace) {
+         } else if (!allowPlace) {
             return -1.0;
-         }
-         BlockPos ceiling = from.above(2);
-         if (!passable(level, ceiling)) {
-            if (!canBreak || !breakable(level, ceiling, level.getBlockState(ceiling)) || touchesLava(level, ceiling)) {
-               return -1.0;
+         } else {
+            BlockPos ceiling = from.above(2);
+            if (passable(level, ceiling)) {
+               return 2.6;
+            } else {
+               return canBreak && breakable(level, ceiling, level.getBlockState(ceiling)) && !touchesLava(level, ceiling)
+                  ? 4.5 + Math.min(8.0, Math.max(0.5, (double)level.getBlockState(ceiling).getDestroySpeed(level, ceiling)))
+                  : -1.0;
             }
-            return 4.5 + Math.min(8.0, Math.max(0.5, level.getBlockState(ceiling).getDestroySpeed(level, ceiling)));
          }
-         return 2.6;
+      } else if (!canBreak) {
+         return -1.0;
       } else {
-         if (!canBreak) {
-            return -1.0;
-         }
          BlockState floor = level.getBlockState(to);
          BlockState underFloor = level.getBlockState(to.below());
-         if (underFloor.is(Blocks.LAVA) || underFloor.isAir() || !breakable(level, to, floor) || touchesLava(level, to)) {
-            return -1.0;
-         }
-         return 3.4 + Math.min(8.0, Math.max(0.5, floor.getDestroySpeed(level, to)));
+         return !underFloor.is(Blocks.LAVA) && !underFloor.isAir() && breakable(level, to, floor) && !touchesLava(level, to)
+            ? 3.4 + Math.min(8.0, Math.max(0.5, (double)floor.getDestroySpeed(level, to)))
+            : -1.0;
       }
    }
 
@@ -762,50 +765,51 @@ public final class BuiltInBaritone {
       BlockState feet = level.getBlockState(pos);
       BlockState head = level.getBlockState(pos.above());
       BlockState below = level.getBlockState(pos.below());
-      if (feet.is(Blocks.LAVA) || head.is(Blocks.LAVA) || below.is(Blocks.LAVA) || below.is(Blocks.FIRE) || below.is(Blocks.MAGMA_BLOCK)) {
-         return -1.0;
-      }
+      if (!feet.is(Blocks.LAVA) && !head.is(Blocks.LAVA) && !below.is(Blocks.LAVA) && !below.is(Blocks.FIRE) && !below.is(Blocks.MAGMA_BLOCK)) {
+         double cost = diagonal ? 1.414 : 1.0;
+         if (dy > 0) {
+            cost += 0.65;
+            BlockPos stepCeiling = from.above(2);
+            if (!passable(level, stepCeiling)) {
+               if (!canBreak || !breakable(level, stepCeiling, level.getBlockState(stepCeiling)) || touchesLava(level, stepCeiling)) {
+                  return -1.0;
+               }
 
-      double cost = diagonal ? 1.414 : 1.0;
-      if (dy > 0) {
-         cost += 0.65;
-         BlockPos stepCeiling = from.above(2);
-         if (!passable(level, stepCeiling)) {
-            if (!canBreak || !breakable(level, stepCeiling, level.getBlockState(stepCeiling)) || touchesLava(level, stepCeiling)) {
+               cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)level.getBlockState(stepCeiling).getDestroySpeed(level, stepCeiling)));
+            }
+         } else if (dy < 0) {
+            cost += 0.3 * Math.abs(dy);
+         }
+
+         if (!passable(level, pos)) {
+            if (!canBreak || !breakable(level, pos, feet) || touchesLava(level, pos)) {
                return -1.0;
             }
-            cost += 2.6 + Math.min(8.0, Math.max(0.5, level.getBlockState(stepCeiling).getDestroySpeed(level, stepCeiling)));
-         }
-      } else if (dy < 0) {
-         cost += 0.3 * Math.abs(dy);
-      }
 
-      if (!passable(level, pos)) {
-         if (!canBreak || !breakable(level, pos, feet) || touchesLava(level, pos)) {
-            return -1.0;
+            cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)feet.getDestroySpeed(level, pos)));
          }
 
-         cost += 2.6 + Math.min(8.0, Math.max(0.5, feet.getDestroySpeed(level, pos)));
-      }
+         if (!passable(level, pos.above())) {
+            if (!canBreak || !breakable(level, pos.above(), head) || touchesLava(level, pos.above())) {
+               return -1.0;
+            }
 
-      if (!passable(level, pos.above())) {
-         if (!canBreak || !breakable(level, pos.above(), head) || touchesLava(level, pos.above())) {
-            return -1.0;
+            cost += 2.6 + Math.min(8.0, Math.max(0.5, (double)head.getDestroySpeed(level, pos.above())));
          }
 
-         cost += 2.6 + Math.min(8.0, Math.max(0.5, head.getDestroySpeed(level, pos.above())));
-      }
+         boolean solidFloor = !below.getCollisionShape(level, pos.below()).isEmpty() || below.is(Blocks.WATER) || climbable(level, pos);
+         if (!solidFloor) {
+            if (!allowPlace || diagonal || dy != 0) {
+               return -1.0;
+            }
 
-      boolean solidFloor = !below.getCollisionShape(level, pos.below()).isEmpty() || below.is(Blocks.WATER) || climbable(level, pos);
-      if (!solidFloor) {
-         if (!allowPlace || diagonal || dy != 0) {
-            return -1.0;
+            cost += 3.1;
          }
 
-         cost += 3.1;
+         return cost;
+      } else {
+         return -1.0;
       }
-
-      return cost;
    }
 
    private static boolean climbable(Level level, BlockPos pos) {
@@ -813,12 +817,12 @@ public final class BuiltInBaritone {
    }
 
    private static boolean breakable(Level level, BlockPos pos, BlockState state) {
-      if (state.isAir() || state.getBlock() instanceof LiquidBlock) {
+      if (!state.isAir() && !(state.getBlock() instanceof LiquidBlock)) {
+         float speed = state.getDestroySpeed(level, pos);
+         return speed >= 0.0F && speed < 45.0F;
+      } else {
          return false;
       }
-
-      float speed = state.getDestroySpeed(level, pos);
-      return speed >= 0.0F && speed < 45.0F;
    }
 
    private static boolean touchesLava(Level level, BlockPos pos) {
@@ -907,11 +911,7 @@ public final class BuiltInBaritone {
             BlockPos a = currentPath.get(i);
             BlockPos b = currentPath.get(i + 1);
             Render3D.line(
-               new Vec3(a.getX() + 0.5, a.getY() + 0.15, a.getZ() + 0.5),
-               new Vec3(b.getX() + 0.5, b.getY() + 0.15, b.getZ() + 0.5),
-               pathColor,
-               2.2F,
-               true
+               new Vec3(a.getX() + 0.5, a.getY() + 0.15, a.getZ() + 0.5), new Vec3(b.getX() + 0.5, b.getY() + 0.15, b.getZ() + 0.5), pathColor, 2.2F, true
             );
          }
 

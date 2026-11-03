@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "gemini.mixin.lock",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"ConnectScreenMixin",
+		"ConnectionMixin",
+		"RealmsConnectMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

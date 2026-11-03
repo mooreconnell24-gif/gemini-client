@@ -1,7 +1,6 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.util.VersionBridge;
 import gemini.module.modules.EspModule;
 import gemini.module.modules.combat.CombatModules;
 import gemini.module.modules.render.CameraModules;
@@ -69,13 +68,12 @@ public abstract class EntityMixin {
       require = 0
    )
    private void gemini$widenHitbox(CallbackInfoReturnable<Float> cir) {
-      float extra = VersionBridge.legacyHitboxMargin();
       CombatModules.Hitboxes hitboxes = CombatModules.Hitboxes.instance;
       if (hitboxes != null && hitboxes.isEnabled()) {
-         extra += hitboxes.extra((Entity)(Object)this);
-      }
-      if (extra > 0.0F) {
-         cir.setReturnValue((Float)cir.getReturnValue() + extra);
+         float extra = hitboxes.extra((Entity)(Object)this);
+         if (extra > 0.0F) {
+            cir.setReturnValue((Float)cir.getReturnValue() + extra);
+         }
       }
    }
 

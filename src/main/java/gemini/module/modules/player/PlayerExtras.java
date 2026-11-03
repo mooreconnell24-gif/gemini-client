@@ -6,14 +6,12 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.render.Render3D;
 import gemini.util.BlockPlacer;
 import gemini.util.Damage;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
 import gemini.util.OffhandClaim;
 import gemini.util.RotationManager;
-import java.util.ArrayDeque;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
@@ -23,7 +21,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -40,7 +37,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnderChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -58,8 +54,6 @@ public final class PlayerExtras {
       sink.accept(new PlayerExtras.InventoryCleaner());
       sink.accept(new PlayerExtras.FastUse());
       sink.accept(new PlayerExtras.NoRotateSet());
-      sink.accept(new PlayerExtras.AntiAfk());
-      sink.accept(new PlayerExtras.Blink());
       sink.accept(new PlayerExtras.AutoWindCharge());
       sink.accept(new PlayerExtras.GhostHand());
       sink.accept(new PlayerExtras.SmartEat());
@@ -75,27 +69,6 @@ public final class PlayerExtras {
 
    static boolean mending(ItemStack stack) {
       return !stack.isEmpty() && stack.isDamageableItem() && EnchantmentHelper.has(stack, EnchantmentEffectComponents.REPAIR_WITH_XP);
-   }
-
-   public static final class AntiAfk extends Module {
-      private final NumberSetting interval = this.addSetting(new NumberSetting("Interval Seconds", "Seconds between anti-AFK actions", 15.0, 3.0, 60.0, 1.0));
-      private int wait;
-
-      public AntiAfk() {
-         super("AntiAFK", "Periodically move and swing to prevent AFK kicks.", Category.PLAYER);
-      }
-
-      @Override
-      public void onTick() {
-         Minecraft client = Minecraft.getInstance();
-         if (PlayerExtras.ready(client) && this.wait-- <= 0) {
-            this.wait = this.interval.intValue() * 20;
-            client.player.swing(InteractionHand.MAIN_HAND);
-            if (client.player.onGround()) {
-               client.player.jumpFromGround();
-            }
-         }
-      }
    }
 
    public static final class AntiBreak extends Module {
@@ -429,73 +402,6 @@ public final class PlayerExtras {
       }
    }
 
-   public static final class Blink extends Module {
-      private final ArrayDeque<Packet<?>> packets = new ArrayDeque<>();
-      private Vec3 startPos;
-      private boolean flushing;
-
-      public Blink() {
-         super("Blink", "Queue movement packets and flush them on disable.", Category.PLAYER);
-      }
-
-      @Override
-      public boolean selfTestExempt() {
-         return true;
-      }
-
-      @Override
-      public void onEnable() {
-         LocalPlayer player = Minecraft.getInstance().player;
-         this.startPos = player == null ? null : player.position();
-         this.packets.clear();
-      }
-
-      @Override
-      public void onDisable() {
-         Minecraft client = Minecraft.getInstance();
-         if (client.getConnection() != null && !this.packets.isEmpty()) {
-            this.flushing = true;
-
-            try {
-               while (!this.packets.isEmpty()) {
-                  client.getConnection().send(this.packets.removeFirst());
-               }
-            } finally {
-               this.flushing = false;
-            }
-         } else {
-            this.packets.clear();
-         }
-
-         this.startPos = null;
-      }
-
-      @Override
-      public String info() {
-         return Integer.toString(this.packets.size());
-      }
-
-      @Override
-      public boolean onSendPacket(Packet<?> packet) {
-         if (!this.flushing && packet instanceof ServerboundMovePlayerPacket) {
-            this.packets.addLast(packet);
-            return true;
-         } else {
-            return false;
-         }
-      }
-
-      @Override
-      public void onRender3D(float partialTick) {
-         if (this.startPos != null) {
-            AABB box = new AABB(
-               this.startPos.x - 0.3, this.startPos.y, this.startPos.z - 0.3, this.startPos.x + 0.3, this.startPos.y + 1.8, this.startPos.z + 0.3
-            );
-            Render3D.box(box, -16722689, true, true, 1.8F, 55, true);
-         }
-      }
-   }
-
    public static final class Eagle extends Module {
       private final ModeSetting mode = this.addSetting(
          new ModeSetting("Mode", "Edge sneaks at drops; Always sneaks over air", "Edge", "Edge", "Always")
@@ -805,7 +711,7 @@ public final class PlayerExtras {
       );
 
       public Phase() {
-         super("Phase", "No clip through blocks on servers without movement.", Category.PLAYER);
+         super("Phase", "No-clip through blocks.", Category.PLAYER);
       }
 
       @Override
