@@ -43,9 +43,10 @@ import net.minecraft.util.Util;
  */
 public final class WindowGuiScreen extends Screen {
    private static final int SIDEBAR = 116;
-   private static final int CARD_H = 27;
-   private static final int CARD_GAP = 3;
-   private static final int FOOTER = 18;
+   private static final int CARD_H = 30;
+   private static final int CARD_GAP = 4;
+   private static final int FOOTER = 20;
+   private static final int LINE = 12;
    private static final int TEXT = -1;
    private static final int TEXT_DIM = -5592406;
    private static final int TEXT_FAINT = -8355185;
@@ -220,13 +221,16 @@ public final class WindowGuiScreen extends Screen {
 
          int iconColor = active ? accent2 : HudOverlay.lerp(cat.accent(), -1, 0.35F);
          icon(g, cat, x + 14, iy + 7, GeminiMark.withAlpha(iconColor, this.a(active || over ? 255 : 190)));
-         g.text(this.font, cat.displayName(), x + 27, iy + 6, GeminiMark.withAlpha(active ? TEXT : (over ? -2302756 : TEXT_DIM), this.a(255)), false);
          int on = 0;
          for (Module module : modules(cat)) {
             if (module.isEnabled() && module.isListed()) {
                on++;
             }
          }
+
+         int badge = on > 0 ? this.font.width(Integer.toString(on)) + 6 + 8 : 0;
+         String catName = fit(this.font, cat.displayName(), SIDEBAR - 27 - 10 - badge);
+         g.text(this.font, catName, x + 27, iy + 6, GeminiMark.withAlpha(active ? TEXT : (over ? -2302756 : TEXT_DIM), this.a(255)), false);
 
          if (on > 0) {
             String count = Integer.toString(on);
@@ -330,7 +334,7 @@ public final class WindowGuiScreen extends Screen {
       g.text(this.font, fit(this.font, heading, w - 40), x + 2, top, GeminiMark.withAlpha(TEXT, this.a(255)), false);
       String count = this.shown.size() + (this.shown.size() == 1 ? " module" : " modules");
       g.text(this.font, count, x + w - this.font.width(count), top, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
-      this.listViewTop = top + 13;
+      this.listViewTop = top + 17;
       this.listViewBottom = bottom - 4;
       int viewH = this.listViewBottom - this.listViewTop;
       int contentH = this.shown.size() * (CARD_H + CARD_GAP);
@@ -392,7 +396,7 @@ public final class WindowGuiScreen extends Screen {
       int right = x + w - 8;
       if (toggleable) {
          int sx = right - 18;
-         this.drawSwitch(g, sx, y + 9, on, accent, accent2, blocked);
+         this.drawSwitch(g, sx, y + 10, on, accent, accent2, blocked);
          this.hit(WindowGuiScreen.Kind.SWITCH, sx - 4, y, 26, CARD_H, module, this.listViewTop, this.listViewBottom);
          right = sx - 6;
       }
@@ -401,16 +405,16 @@ public final class WindowGuiScreen extends Screen {
       if (key != null && !"NONE".equals(key)) {
          String label = module.isHoldBind() ? key + " hold" : key;
          int kw = this.font.width(label) + 6;
-         roundRect(g, right - kw, y + 5, right, y + 15, 3, GeminiMark.withAlpha(SURFACE, this.a(255)));
-         g.text(this.font, label, right - kw + 3, y + 6, GeminiMark.withAlpha(this.binding == module ? accent2 : TEXT_DIM, this.a(255)), false);
-         right -= kw + 4;
+         roundRect(g, right - kw, y + 6, right, y + 17, 3, GeminiMark.withAlpha(SURFACE, this.a(255)));
+         g.text(this.font, label, right - kw + 3, y + 8, GeminiMark.withAlpha(this.binding == module ? accent2 : TEXT_DIM, this.a(255)), false);
+         right -= kw + 6;
       }
 
       int nameColor = blocked ? TEXT_FAINT : (module.isEnabled() ? TEXT : (over ? -2302756 : -3355444));
       int textX = x + 9 + Math.round(hover * 2.0F);
-      g.text(this.font, fit(this.font, module.getName(), right - textX - 2), textX, y + 5, GeminiMark.withAlpha(nameColor, this.a(255)), false);
+      g.text(this.font, fit(this.font, module.getName(), right - textX - 6), textX, y + 6, GeminiMark.withAlpha(nameColor, this.a(255)), false);
       String description = searchMode ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
-      g.text(this.font, fit(this.font, description, x + w - 34 - textX), textX, y + 16, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
+      g.text(this.font, fit(this.font, description, x + w - 38 - textX), textX, y + 18, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
    }
 
    private void drawSettings(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
@@ -424,22 +428,22 @@ public final class WindowGuiScreen extends Screen {
          return;
       }
 
-      g.text(this.font, fit(this.font, module.getName(), w - 44), x + 9, top + 5, GeminiMark.withAlpha(TEXT, this.a(255)), true);
+      g.text(this.font, fit(this.font, module.getName(), w - 50), x + 9, top + 6, GeminiMark.withAlpha(TEXT, this.a(255)), true);
       if (!(module instanceof ClickGuiModule)) {
          float on = this.anim(this.enableAnim, module, module.isEnabled() ? 1.0F : 0.0F, delta, 12.0F);
          int sx = x + w - 27;
-         this.drawSwitch(g, sx, top + 5, on, accent, accent2, !module.canActivate());
-         this.hit(WindowGuiScreen.Kind.SWITCH, sx - 3, top + 1, 24, 16, module);
+         this.drawSwitch(g, sx, top + 6, on, accent, accent2, !module.canActivate());
+         this.hit(WindowGuiScreen.Kind.SWITCH, sx - 3, top + 2, 24, 16, module);
       }
 
       List<String> lines = wrap(this.font, module.getDescription(), w - 18);
-      int ty = top + 18;
+      int ty = top + 21;
       for (int i = 0; i < Math.min(3, lines.size()); i++) {
          g.text(this.font, lines.get(i), x + 9, ty, GeminiMark.withAlpha(TEXT_DIM, this.a(255)), false);
-         ty += 10;
+         ty += LINE;
       }
 
-      this.settingsViewTop = ty + 4;
+      this.settingsViewTop = ty + 6;
       this.settingsViewBottom = bottom - 8;
       g.fill(x + 8, this.settingsViewTop - 2, x + w - 8, this.settingsViewTop - 1, GeminiMark.withAlpha(-1, this.a(16)));
       List<Setting<?>> settings = new ArrayList<>();
@@ -450,7 +454,7 @@ public final class WindowGuiScreen extends Screen {
       }
 
       boolean bindable = module.isBindable();
-      int contentH = (bindable ? 20 : 0) + 2;
+      int contentH = (bindable ? 22 : 0) + 4;
       for (Setting<?> setting : settings) {
          contentH += rowHeight(setting);
       }
@@ -460,10 +464,10 @@ public final class WindowGuiScreen extends Screen {
       this.settingsScrollTarget = Mth.clamp(this.settingsScrollTarget, 0.0F, maxScroll);
       this.settingsScroll = approach(this.settingsScroll, this.settingsScrollTarget, delta, 18.0F);
       g.enableScissor(x, this.settingsViewTop, x + w, this.settingsViewBottom);
-      int ry = this.settingsViewTop + 2 - Math.round(this.settingsScroll);
+      int ry = this.settingsViewTop + 4 - Math.round(this.settingsScroll);
       if (bindable) {
          this.drawBindRow(g, module, x + 4, ry, w - 8, mouseX, mouseY, accent2);
-         ry += 20;
+         ry += 22;
       }
 
       for (Setting<?> setting : settings) {
@@ -489,13 +493,13 @@ public final class WindowGuiScreen extends Screen {
    }
 
    private void drawBindRow(GuiGraphicsExtractor g, Module module, int x, int y, int w, int mouseX, int mouseY, int accent2) {
-      boolean over = inside(mouseX, mouseY, x, y, w, 18) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
+      boolean over = inside(mouseX, mouseY, x, y, w, 20) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
       if (over) {
-         roundRect(g, x, y, x + w, y + 18, 3, GeminiMark.withAlpha(-1, this.a(10)));
+         roundRect(g, x, y, x + w, y + 20, 3, GeminiMark.withAlpha(-1, this.a(10)));
          this.tip = "Click and press a key to bind  ·  right-click clears  ·  Bind Mode picks Toggle or Hold";
       }
 
-      g.text(this.font, "Keybind", x + 6, y + 5, GeminiMark.withAlpha(TEXT_DIM, this.a(255)), false);
+      g.text(this.font, "Keybind", x + 8, y + 6, GeminiMark.withAlpha(TEXT_DIM, this.a(255)), false);
       String key;
       if (this.binding == module) {
          key = "Press a key...";
@@ -507,9 +511,9 @@ public final class WindowGuiScreen extends Screen {
       }
 
       int kw = this.font.width(key) + 10;
-      roundRect(g, x + w - 6 - kw, y + 3, x + w - 6, y + 15, 3, GeminiMark.withAlpha(this.binding == module ? accent2 : SURFACE_3, this.a(this.binding == module ? 120 : 255)));
-      g.text(this.font, key, x + w - 6 - kw + 5, y + 5, GeminiMark.withAlpha(TEXT, this.a(255)), false);
-      this.hit(WindowGuiScreen.Kind.BIND, x, y, w, 18, module, this.settingsViewTop, this.settingsViewBottom);
+      roundRect(g, x + w - 8 - kw, y + 4, x + w - 8, y + 16, 3, GeminiMark.withAlpha(this.binding == module ? accent2 : SURFACE_3, this.a(this.binding == module ? 120 : 255)));
+      g.text(this.font, key, x + w - 8 - kw + 5, y + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
+      this.hit(WindowGuiScreen.Kind.BIND, x, y, w, 20, module, this.settingsViewTop, this.settingsViewBottom);
    }
 
    private void drawSetting(
@@ -519,46 +523,46 @@ public final class WindowGuiScreen extends Screen {
          roundRect(g, x, y, x + w, y + h, 3, GeminiMark.withAlpha(-1, this.a(8)));
       }
 
-      int left = x + 6;
-      int right = x + w - 6;
+      int left = x + 8;
+      int right = x + w - 8;
       int label = GeminiMark.withAlpha(!setting.isDefault() && !(setting instanceof ActionSetting) ? -1250068 : TEXT_DIM, this.a(255));
       if (setting instanceof BooleanSetting bool) {
          float on = this.settingAnim(setting, bool.get() ? 1.0F : 0.0F, delta);
-         g.text(this.font, fit(this.font, setting.name(), right - left - 28), left, y + 5, label, false);
-         this.drawSwitch(g, right - 18, y + 4, on, accent, accent2, false);
+         g.text(this.font, fit(this.font, setting.name(), right - left - 34), left, y + 6, label, false);
+         this.drawSwitch(g, right - 18, y + 5, on, accent, accent2, false);
          this.hit(WindowGuiScreen.Kind.BOOL, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof NumberSetting number) {
          String value = number.display();
          int vw = this.font.width(value);
-         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 8), left, y + 3, label, false);
-         g.text(this.font, value, right - vw, y + 3, GeminiMark.withAlpha(accent2, this.a(255)), false);
+         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 12), left, y + 5, label, false);
+         g.text(this.font, value, right - vw, y + 5, GeminiMark.withAlpha(accent2, this.a(255)), false);
          float pct = this.settingAnim(setting, (float)number.percent(), delta);
-         this.drawTrack(g, left, right, y + 16, pct, accent, accent2, false, this.dragging == setting || over);
-         this.hit(WindowGuiScreen.Kind.NUMBER, left - 3, y + 11, right - left + 6, 13, setting, this.settingsViewTop, this.settingsViewBottom);
+         this.drawTrack(g, left, right, y + 20, pct, accent, accent2, false, this.dragging == setting || over);
+         this.hit(WindowGuiScreen.Kind.NUMBER, left - 3, y + 14, right - left + 6, 14, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ColorSetting color) {
-         g.text(this.font, fit(this.font, setting.name(), right - left - 22), left, y + 3, label, false);
-         roundRect(g, right - 16, y + 2, right, y + 11, 2, GeminiMark.withAlpha(-16777216, this.a(255)));
-         g.fill(right - 15, y + 3, right - 1, y + 10, GeminiMark.withAlpha(color.argb(), this.a(255)));
+         g.text(this.font, fit(this.font, setting.name(), right - left - 28), left, y + 5, label, false);
+         roundRect(g, right - 16, y + 4, right, y + 13, 2, GeminiMark.withAlpha(-16777216, this.a(255)));
+         g.fill(right - 15, y + 5, right - 1, y + 12, GeminiMark.withAlpha(color.argb(), this.a(255)));
          float pct = this.settingAnim(setting, (float)color.percent(), delta);
-         this.drawTrack(g, left, right, y + 16, pct, accent, accent2, true, this.dragging == setting || over);
-         this.hit(WindowGuiScreen.Kind.COLOR, left - 3, y + 11, right - left + 6, 13, setting, this.settingsViewTop, this.settingsViewBottom);
+         this.drawTrack(g, left, right, y + 20, pct, accent, accent2, true, this.dragging == setting || over);
+         this.hit(WindowGuiScreen.Kind.COLOR, left - 3, y + 14, right - left + 6, 14, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ModeSetting mode) {
          String value = mode.get();
-         int pillW = Math.min(right - left - 40, this.font.width(value) + 24);
+         int pillW = Math.min(right - left - 56, this.font.width(value) + 28);
          int pillL = right - pillW;
-         g.text(this.font, fit(this.font, setting.name(), pillL - left - 6), left, y + 5, label, false);
-         roundRect(g, pillL, y + 2, right, y + 15, 3, GeminiMark.withAlpha(accent, this.a(over ? 70 : 40)));
-         g.text(this.font, "<", pillL + 4, y + 5, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
-         g.text(this.font, ">", right - 9, y + 5, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
+         g.text(this.font, fit(this.font, setting.name(), pillL - left - 10), left, y + 6, label, false);
+         roundRect(g, pillL, y + 3, right, y + 16, 3, GeminiMark.withAlpha(accent, this.a(over ? 70 : 40)));
+         g.text(this.font, "<", pillL + 5, y + 6, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
+         g.text(this.font, ">", right - 10, y + 6, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
          String shownValue = fit(this.font, value, pillW - 22);
-         g.text(this.font, shownValue, pillL + (pillW - this.font.width(shownValue)) / 2, y + 5, GeminiMark.withAlpha(TEXT, this.a(255)), false);
+         g.text(this.font, shownValue, pillL + (pillW - this.font.width(shownValue)) / 2, y + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.MODE, pillL, y, pillW, h, setting, this.settingsViewTop, this.settingsViewBottom);
          this.hit(WindowGuiScreen.Kind.MODE, x, y, pillL - x, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ListSetting list) {
          String value = list.size() + (list.size() == 1 ? " entry  >" : " entries  >");
          int vw = this.font.width(value);
-         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 8), left, y + 5, label, false);
-         g.text(this.font, value, right - vw, y + 5, GeminiMark.withAlpha(over ? TEXT : accent2, this.a(255)), false);
+         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 12), left, y + 6, label, false);
+         g.text(this.font, value, right - vw, y + 6, GeminiMark.withAlpha(over ? TEXT : accent2, this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.LIST, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ActionSetting) {
          roundRect(g, left, y + 2, right, y + h - 2, 4, GeminiMark.withAlpha(accent, this.a(over ? 150 : 85)));
@@ -570,9 +574,9 @@ public final class WindowGuiScreen extends Screen {
 
    private static int rowHeight(Setting<?> setting) {
       if (setting instanceof NumberSetting || setting instanceof ColorSetting) {
-         return 26;
+         return 30;
       } else {
-         return setting instanceof ActionSetting ? 20 : 18;
+         return setting instanceof ActionSetting ? 24 : 20;
       }
    }
 
@@ -636,10 +640,10 @@ public final class WindowGuiScreen extends Screen {
 
       text = text.replaceAll("§.", "");
       g.text(
-         this.font, fit(this.font, text, w - hintW - 28), x + 8, y + 5,
+         this.font, fit(this.font, text, w - hintW - 36), x + 8, y + 6,
          GeminiMark.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : TEXT_DIM, this.a(255)), false
       );
-      g.text(this.font, hint, x + w - 8 - hintW, y + 5, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
+      g.text(this.font, hint, x + w - 8 - hintW, y + 6, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
    }
 
    // ------------------------------------------------------------------ input
