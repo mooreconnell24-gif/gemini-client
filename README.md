@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src/main/resources/assets/gemini/textures/gui/logo.png" width="260" alt="Gemini Client logo" />
+  <img src="docs/logo.png" width="260" alt="Gemini Client logo" />
 
   # Gemini Client
 
