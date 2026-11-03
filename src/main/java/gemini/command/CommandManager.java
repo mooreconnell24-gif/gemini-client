@@ -472,7 +472,7 @@ public final class CommandManager {
       feedback("§f.gm survival|creative|adventure|spectator §7/ §f.day §7/ §f.night §7/ §f.sun §7/ §f.rain §7/ §f.heal §7/ §f.feed");
       feedback("§f.selftest §7- crash-test every module in a throwaway world");
       feedback("§f.panic §7- turn every module off (also the Panic module)  §f.gui §7- open the menu  §f.version §7- build info");
-      feedback("§7Module commands: §f.xray reload§7, §f.marker add|remove|list|clear");
+      feedback("§7Module commands: §f.xray reload§7, §f.marker add|remove|list|clear§7, §f.waypoints add|remove|list|tp|clear");
    }
 
    private Optional<Module> module(String name) {

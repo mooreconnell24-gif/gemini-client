@@ -3,7 +3,7 @@
 	"id": "gemini",
 	"version": "${version}",
 	"name": "Gemini Client",
-	"description": "Single-player utility / sandbox client for Minecraft 26.2: 250+ modules, a glassmorphic ClickGUI, a draggable HUD and built-in Baritone-style pathfinding. Server connections are blocked while it is installed.",
+	"description": "Single-player utility / sandbox client for Minecraft 26.2: 260+ modules, a window or panel ClickGUI, a draggable HUD and built-in Baritone-style pathfinding. Server connections are blocked while it is installed.",
 	"authors": [
 		"Gemini Client"
 	],
