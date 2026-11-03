@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (drives the real Baritone when installed)
+  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -35,7 +35,7 @@ Everything runs locally. There is no account system, API key, cloud service or t
 
 ## What's new in 3.0.0
 
-**Real Baritone first.** Put the [Baritone](https://github.com/cabaletta/baritone) jar for your Minecraft version in `mods` and every bot module and `#` command (`#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate`) runs on it. Without it, Gemini falls back to its built-in pathfinder.
+**Baritone built in.** The jar bundles a [Baritone](https://github.com/cabaletta/baritone) build for Minecraft 26.3, so every bot module and `#` command (`#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate`) runs on it with no extra download. If Baritone fails to load, Gemini falls back to its built-in pathfinder.
 
 **Built-in pathfinder rebuilt.** The fallback engine now prices mining by what your best hotbar tool needs, adds the cost of sand or gravel, and correctly handles drop jumps and lava.
 
@@ -104,7 +104,7 @@ The rest:
 | **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
-| **Pathfinding bot** | Drives the real Baritone when it is installed; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
+| **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
 | **Priority arbitration** | Modules claim hands and rotations in priority order, so survival modules always win |
 | **Profiles** | Autosave plus named profiles via `.config` |
 | **Crash isolation** | A failing module is switched off and reported instead of taking the game down |
@@ -137,7 +137,7 @@ The rest:
 1. Install **Fabric Loader** for Minecraft 26.3.
 2. Put the matching **Fabric API** jar into your `mods` folder.
 3. Download [`gemini-3.0.0.jar`](gemini-3.0.0.jar) from this repo (or build it, see below) and put it in `mods`.
-4. Optional: add the [Baritone](https://github.com/cabaletta/baritone) jar for your Minecraft version. Gemini's bot modules and `#` commands then run on the real Baritone; without it the built-in pathfinder is used.
+4. Baritone is already bundled inside the jar. Do not add a separate Baritone jar to `mods`.
 5. Start the game with the Fabric profile and open a single-player world.
 6. Press **Right Shift** to open the menu.
 
@@ -198,7 +198,7 @@ Pathfinding commands use `#` (`.b` also works):
 | `#sel pos1\|pos2\|clear` / `#thisway <distance>` / `#axis` | Selections and goals |
 | `#pause` / `#resume` / `#stop` / `#status` | Control the current task; `#status` names the engine in use |
 
-With Baritone installed, any other Baritone command (`#set`, `#build`, `#schematica`, `#find`, ...) is passed straight through to it.
+Any other Baritone command (`#set`, `#build`, `#schematica`, `#find`, ...) is passed straight through to it.
 
 ## Configuration
 
@@ -260,11 +260,13 @@ Gemini Client is not affiliated with Mojang, Microsoft, Fabric, LiquidBounce or 
 
 - **Fabric** for the mod loader and API
 - **LiquidBounce Nextgen**, **Rise** and **Meteor** for UI and feature inspiration
-- **Baritone** for pathfinding ideas
+- **Baritone** for pathfinding, bundled in the release jar
 - Testers and issue reporters
 
 ## License
 
 Released under the [MIT License](LICENSE).
+
+The jar bundles Baritone, licensed under the [LGPL-3.0](https://github.com/cabaletta/baritone/blob/master/LICENSE). The bundled build is an unofficial Minecraft 26.3 port by dysnasia ([source](https://github.com/dysnasia/baritone-26.2)) of [cabaletta/baritone](https://github.com/cabaletta/baritone), and includes [nether-pathfinder](https://github.com/babbaj/nether-pathfinder) 1.4.1.
 
 Copyright © 2026 Gemini Client.
