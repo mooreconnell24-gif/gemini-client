@@ -1,7 +1,7 @@
 package gemini.util;
 
 import gemini.Gemini;
-import gemini.module.modules.misc.InfernoBypass;
+import gemini.module.modules.misc.BypassModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.Packet;
@@ -11,7 +11,7 @@ import net.minecraft.network.protocol.Packet;
  *
  * <p>Gemini hooks {@code send} twice, at mixin priority 1000 and 3000, so that one of them always runs before any
  * other mod's hook in between (Inferno uses 2000), whichever way the mixin order falls. The first hook to see a
- * packet runs Gemini's modules on it; with {@link InfernoBypass#tunnel()} on, it then hands the packet straight to
+ * packet runs Gemini's modules on it; with {@link BypassModule#tunnel()} on, it then hands the packet straight to
  * the network connection and cancels {@code send}, so hooks further down never see it.
  */
 public final class PacketTunnel {
@@ -36,7 +36,7 @@ public final class PacketTunnel {
          }
       }
 
-      if (InfernoBypass.tunnel() && listener instanceof ClientPacketListener game && game.getConnection() != null) {
+      if (BypassModule.tunnel() && listener instanceof ClientPacketListener game && game.getConnection() != null) {
          game.getConnection().send(packet);
          return true;
       }

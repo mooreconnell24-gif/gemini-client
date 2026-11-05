@@ -4,13 +4,16 @@ import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
 import gemini.input.GeminiKeys;
 import gemini.module.ModuleManager;
+import gemini.module.modules.misc.BypassModule;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
 import gemini.ui.clickgui.Menus;
+import gemini.util.AttributeBoost;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
 import gemini.util.SingleplayerGate;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.ClientStarted;
@@ -66,6 +69,16 @@ public final class Gemini implements ClientModInitializer {
 
          this.moduleManager.onEndTick(client);
          this.configManager.tick();
+      });
+      // A second end-tick listener in a phase ordered after the default one, so it runs after every other mod's
+      // end-tick hook. Re-applying the attribute boosts here puts back anything a client-side anti-cheat stripped
+      // on its own hook; see BypassModule.
+      Identifier reassertPhase = Identifier.fromNamespaceAndPath("gemini", "reassert");
+      ClientTickEvents.END_CLIENT_TICK.addPhaseOrdering(Event.DEFAULT_PHASE, reassertPhase);
+      ClientTickEvents.END_CLIENT_TICK.register(reassertPhase, (EndTick)client -> {
+         if (BypassModule.reassert()) {
+            AttributeBoost.reapplyActive();
+         }
       });
       ClientSendMessageEvents.ALLOW_CHAT.register((AllowChat)message -> {
          if (message != null && (message.startsWith(".") || message.startsWith("#")) && !CommandManager.rawSending()) {

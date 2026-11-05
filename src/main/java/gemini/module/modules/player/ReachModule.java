@@ -2,7 +2,7 @@ package gemini.module.modules.player;
 
 import gemini.module.Category;
 import gemini.module.Module;
-import gemini.module.modules.misc.InfernoBypass;
+import gemini.module.modules.misc.BypassModule;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.AttributeBoost;
@@ -28,9 +28,9 @@ public final class ReachModule extends Module {
 
    @Override
    public void onTick() {
-      AttributeBoost.apply(Attributes.BLOCK_INTERACTION_RANGE, "reach", InfernoBypass.blockReach(this.blocks.get()) - 4.5, Operation.ADD_VALUE);
+      AttributeBoost.apply(Attributes.BLOCK_INTERACTION_RANGE, "reach", BypassModule.blockReach(this.blocks.get()) - 4.5, Operation.ADD_VALUE);
       if (this.entityReach.get()) {
-         AttributeBoost.apply(Attributes.ENTITY_INTERACTION_RANGE, "entity_reach", this.entities.get() - 3.0, Operation.ADD_VALUE);
+         AttributeBoost.apply(Attributes.ENTITY_INTERACTION_RANGE, "entity_reach", BypassModule.entityReach(this.entities.get()) - 3.0, Operation.ADD_VALUE);
       } else {
          AttributeBoost.clear(Attributes.ENTITY_INTERACTION_RANGE, "entity_reach");
       }
