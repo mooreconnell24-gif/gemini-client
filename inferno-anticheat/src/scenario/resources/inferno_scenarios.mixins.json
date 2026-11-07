@@ -1,0 +1,9 @@
+{
+	"required": true,
+	"package": "com.inferno.scenario.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": ["FakePlayerChunkMixin"],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

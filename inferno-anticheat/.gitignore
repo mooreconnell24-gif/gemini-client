@@ -1,0 +1,7 @@
+.gradle/
+build/
+run/
+run-server/
+run-scenario/
+*.log
+run-prod-server/

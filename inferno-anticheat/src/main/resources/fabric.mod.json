@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "inferno",
+	"version": "5.2.0+ops",
+	"name": "Inferno Anti Cheat+",
+	"description": "Personal fork of Inferno Anti Cheat for single-player and LAN worlds, with expanded admin tools and checks. 5.2 adds 36 checks so every LiquidBounce module that a server can see is covered (see docs/LIQUIDBOUNCE_COVERAGE.md). Press I for the panel.",
+	"authors": [
+		"Inferno",
+		"Personal Fork"
+	],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/inferno/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.inferno.fabric.InfernoMod"
+		],
+		"client": [
+			"com.inferno.fabric.client.InfernoClient"
+		]
+	},
+	"mixins": [
+		"inferno.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.17.0",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
