@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "inferno_scenarios",
+	"version": "1.0.0",
+	"name": "Inferno scenario tests",
+	"description": "End-to-end tests for Inferno Anti Cheat+. Only active with -Dinferno.scenarios=true.",
+	"license": "All-Rights-Reserved",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.inferno.scenario.ScenarioMod"
+		]
+	},
+	"depends": {
+		"inferno": "*",
+		"fabric-api": "*"
+	},
+	"mixins": [
+		"inferno_scenarios.mixins.json"
+	]
+}

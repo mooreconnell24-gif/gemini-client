@@ -1,0 +1,17 @@
+{
+	"required": true,
+	"package": "com.inferno.fabric.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ServerPlayNetworkHandlerMixin",
+		"ServerCommonNetworkHandlerMixin",
+		"LivingEntityMixin",
+		"FishingBobberEntityAccessor",
+		"CommandsMixin",
+		"ConnectionMixin",
+		"ServerCommonBrandMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
