@@ -12,6 +12,7 @@ import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.world.WaypointsModule;
 import gemini.module.setting.ColorSetting;
 import gemini.util.BaritoneBridge;
+import gemini.util.SingleplayerGate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -76,7 +77,7 @@ public final class HudOverlay {
 
    public void onHudRender(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
       Minecraft client = Minecraft.getInstance();
-      if (client.player != null && !client.gui.hud.isHidden()) {
+      if (client.player != null && !client.gui.hud.isHidden() && SingleplayerGate.sandboxMode()) {
          HudModule hud = this.modules.byClass(HudModule.class).orElse(null);
          if (hud == null || hud.isEnabled()) {
             ClickGuiModule style = this.modules.byClass(ClickGuiModule.class).orElse(null);

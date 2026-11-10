@@ -292,6 +292,7 @@ import gemini.util.BuiltInBaritone;
 import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
+import gemini.util.SingleplayerGate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -327,11 +328,6 @@ public final class ModuleManager {
    });
    private ConfigManager configManager;
    private static final ArrayDeque<ModuleManager.Failure> FAILURES = new ArrayDeque<>();
-
-   /** A module turned on or off: the bus rebuilds its subscriber lists before the next event. */
-   public static void invalidateActive() {
-      EventBus.invalidate();
-   }
 
    private static String key(String name) {
       return name.toLowerCase(Locale.ROOT).replace(" ", "").replace("_", "").replace("-", "");
@@ -741,7 +737,32 @@ public final class ModuleManager {
       }
    }
 
+   /**
+    * Stops everything that could still be acting: every module's runtime state, the bot engines, queued tasks and
+    * held rotations. Saved on/off switches are untouched, so modules come back when Gemini may run again.
+    */
+   public void suspendAll() {
+      BaritoneBridge.stopAll();
+      BaritoneBridge.resumeAll();
+      for (Module module : this.modules) {
+         module.forceDisableRuntime();
+      }
+
+      this.keysDown.clear();
+      Scheduler.clear();
+      RotationManager.clear();
+   }
+
    public void onEndTick(Minecraft client) {
+      if (!SingleplayerGate.sandboxMode()) {
+         // Switched off: no hooks, no key binds, no bot. applyRuntimeState keeps every module's runtime flag down.
+         for (Module module : this.modules) {
+            module.applyRuntimeState();
+         }
+
+         return;
+      }
+
       BlockBreaking.tick();
 
       for (Module module : this.modules) {

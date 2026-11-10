@@ -4,7 +4,10 @@ import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import gemini.Gemini;
+import com.google.gson.JsonObject;
 import gemini.config.ConfigManager;
+import gemini.config.JsonFiles;
+import gemini.config.ProfileBundle;
 import gemini.diags.MixinReport;
 import gemini.input.GeminiKeys;
 import gemini.input.KeybindConflicts;
@@ -24,12 +27,14 @@ import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.SingleplayerGate;
 import gemini.util.VersionBridge;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 import net.minecraft.client.Minecraft;
@@ -54,6 +59,7 @@ public final class CommandManager {
       "reset",
       "panic",
       "config",
+      "sandbox",
       "gui",
       "menu",
       "version",
@@ -121,6 +127,19 @@ public final class CommandManager {
       }
    }
 
+   /** Commands that answer even when Gemini may not act (switched off, in a menu, world open to LAN). */
+   private static final Set<String> ALWAYS_AVAILABLE = Set.of("help", "?", "sandbox", "version", "ver", "config", "cfg", "binds", "keybinds", "modules");
+
+   /** Whether the chat line is a command that still works while Gemini is switched off. */
+   public static boolean worksWhileDormant(String rawMessage) {
+      if (rawMessage == null || !rawMessage.startsWith(".")) {
+         return false;
+      }
+
+      String[] parts = rawMessage.substring(1).trim().split("\\s+");
+      return parts.length > 0 && "sandbox".equals(parts[0].toLowerCase(Locale.ROOT));
+   }
+
    public boolean handle(String rawMessage) {
       if (rawMessage != null && (rawMessage.startsWith(".") || rawMessage.startsWith("#"))) {
          boolean hashPrefix = rawMessage.startsWith("#");
@@ -130,6 +149,12 @@ public final class CommandManager {
          } else {
             String[] parts = trimmed.split("\\s+");
             String command = parts[0].toLowerCase(Locale.ROOT);
+            if (!SingleplayerGate.allowed() && (hashPrefix || !ALWAYS_AVAILABLE.contains(command))) {
+               // One gate for every command: nothing acts on the world or the player outside the sandbox.
+               feedback(SingleplayerGate.denialMessage());
+               return true;
+            }
+
             if (hashPrefix) {
                this.handleBaritoneCommand(parts);
                return true;
@@ -178,6 +203,9 @@ public final class CommandManager {
                      case "config":
                      case "cfg":
                         this.handleConfig(parts);
+                        break;
+                     case "sandbox":
+                        this.handleSandbox(parts);
                         break;
                      case "gui":
                      case "menu":
@@ -465,7 +493,9 @@ public final class CommandManager {
       feedback("§f.<module> <setting> [value] §7- shortcut for get and set");
       feedback("§f.bind <module> <key> §7/ §f.unbind <module> §7/ §f.binds §7- keybinds (§f.binds §7flags keys used twice)");
       feedback("§f.modules [category] §7- list modules");
-      feedback("§f.config save|load|list|reset <name> §7/ §f.reload §7- profiles and the config file");
+      feedback("§f.config save|load|delete|list|reset <name> §7/ §f.reload §7- profiles and the config file");
+      feedback("§f.config export <name> [clipboard] §7/ §f.config import <name> [clipboard] §7- share profiles as files or text");
+      feedback("§f.sandbox [on|off] §7- on: Gemini active, single-player only  ·  off: Gemini switched off, online play allowed");
       feedback("§f.vclip <blocks> §7/ §f.hclip <blocks> §7/ §f.rotate <yaw> [pitch] §7- move and aim");
       feedback("§f.drop hand|offhand|hotbar|inventory|all §7/ §f.dismount §7- inventory and mounts");
       feedback("§f.say <text> §7/ §f.leave [reason] §7/ §f.coords §7/ §f.clear");
@@ -974,6 +1004,22 @@ public final class CommandManager {
                feedback("§cNo profile named §f" + parts[2]);
             }
             break;
+         case "delete":
+         case "remove":
+            if (parts.length < 3) {
+               feedback("§cUsage: §f.config delete <name>");
+            } else if (this.configManager.deleteProfile(parts[2])) {
+               feedback("§aDeleted profile §f" + parts[2]);
+            } else {
+               feedback("§cNo profile named §f" + parts[2]);
+            }
+            break;
+         case "export":
+            this.handleConfigExport(parts);
+            break;
+         case "import":
+            this.handleConfigImport(parts);
+            break;
          case "reset":
             this.configManager.resetAllSettings();
             feedback("§aEvery setting is back to its default.");
@@ -981,6 +1027,82 @@ public final class CommandManager {
          default:
             List<String> profiles = this.configManager.profiles();
             feedback(profiles.isEmpty() ? "§7No saved profiles yet. Use §f.config save <name>" : "§bProfiles: §f" + String.join(", ", profiles));
+      }
+   }
+
+   private void handleConfigExport(String[] parts) {
+      if (parts.length < 3) {
+         feedback("§cUsage: §f.config export <name> [clipboard]");
+         return;
+      }
+
+      boolean toClipboard = parts.length >= 4 && "clipboard".equalsIgnoreCase(parts[3]);
+      if (toClipboard) {
+         Minecraft.getInstance().keyboardHandler.setClipboard(JsonFiles.GSON.toJson(this.configManager.exportBundle(parts[2])));
+         feedback("§aCopied profile §f" + parts[2] + " §ato the clipboard. §7Paste it anywhere; the other side runs §f.config import <name> clipboard");
+      } else {
+         Path file = this.configManager.exportProfile(parts[2]);
+         if (file == null) {
+            feedback("§cThe profile name needs letters or digits.");
+         } else {
+            feedback("§aExported your settings to §f" + this.configManager.exportDir().getFileName() + "/" + file.getFileName());
+            feedback("§7Waypoints, your home, panel positions and the sandbox switch are not included.");
+         }
+      }
+   }
+
+   private void handleConfigImport(String[] parts) {
+      if (parts.length < 3) {
+         List<String> exports = this.configManager.exports();
+         feedback("§cUsage: §f.config import <name> [clipboard]");
+         if (!exports.isEmpty()) {
+            feedback("§7Files in " + this.configManager.exportDir().getFileName() + ": §f" + String.join(", ", exports));
+         }
+
+         return;
+      }
+
+      try {
+         int modules;
+         if (parts.length >= 4 && "clipboard".equalsIgnoreCase(parts[3])) {
+            String text = Minecraft.getInstance().keyboardHandler.getClipboard();
+            if (text == null || text.isBlank()) {
+               feedback("§cThe clipboard is empty.");
+               return;
+            }
+
+            JsonObject document;
+            try {
+               document = JsonFiles.parse(text);
+            } catch (RuntimeException e) {
+               feedback("§cThe clipboard does not hold a Gemini profile.");
+               return;
+            }
+
+            modules = this.configManager.importProfile(parts[2], document);
+         } else {
+            modules = this.configManager.importProfileFile(parts[2]);
+         }
+
+         feedback("§aImported profile §f" + parts[2] + " §7(" + modules + " modules). Apply it with §f.config load " + parts[2]);
+      } catch (ProfileBundle.FormatException e) {
+         feedback("§cImport failed: §7" + e.getMessage() + ".");
+      }
+   }
+
+   private void handleSandbox(String[] parts) {
+      String action = parts.length > 1 ? parts[1].toLowerCase(Locale.ROOT) : "status";
+      switch (action) {
+         case "on", "enable", "true" -> feedback(SingleplayerGate.setSandboxMode(true).message());
+         case "off", "disable", "false" -> feedback(SingleplayerGate.setSandboxMode(false).message());
+         default -> {
+            feedback(
+               SingleplayerGate.sandboxMode()
+                  ? "§bGemini §7sandbox mode is §aon§7: modules work in single-player worlds and server connections are refused."
+                  : "§bGemini §7is switched §coff§7: online play is allowed; modules, HUD and commands are disabled."
+            );
+            feedback("§7Change it with §f.sandbox on §7or §f.sandbox off§7, or the button on the title screen.");
+         }
       }
    }
 
