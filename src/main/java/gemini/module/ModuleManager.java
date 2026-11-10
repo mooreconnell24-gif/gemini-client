@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
+import gemini.diags.MixinReport;
 import gemini.event.EventBus;
 import gemini.module.modules.bot.AutoExcavate;
 import gemini.module.modules.bot.AutoExplore;
@@ -90,6 +91,7 @@ import gemini.module.modules.hud.Tps;
 import gemini.module.modules.hud.Welcome;
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.modules.misc.AutoGG;
+import gemini.module.modules.misc.AutoSave;
 import gemini.module.modules.misc.BetterChat;
 import gemini.module.modules.misc.Aim;
 import gemini.module.modules.misc.ClickGuiModule;
@@ -100,6 +102,7 @@ import gemini.module.modules.misc.NameProtect;
 import gemini.module.modules.misc.Notifier;
 import gemini.module.modules.misc.PacketLogger;
 import gemini.module.modules.misc.Panic;
+import gemini.module.modules.misc.Performance;
 import gemini.module.modules.misc.Presets;
 import gemini.module.modules.misc.SoundBlocker;
 import gemini.module.modules.movement.AirJumpModule;
@@ -159,11 +162,13 @@ import gemini.module.modules.player.AutoRespawnModule;
 import gemini.module.modules.player.AutoSleep;
 import gemini.module.modules.player.AutoToolModule;
 import gemini.module.modules.player.AutoWindCharge;
+import gemini.module.modules.player.Buffs;
 import gemini.module.modules.player.ChestStealerModule;
 import gemini.module.modules.player.ChestSwap;
 import gemini.module.modules.player.Derp;
 import gemini.module.modules.player.DurabilityAlert;
 import gemini.module.modules.player.Eagle;
+import gemini.module.modules.player.Enchanter;
 import gemini.module.modules.player.ExpThrower;
 import gemini.module.modules.player.FakePlayer;
 import gemini.module.modules.player.FastBreakModule;
@@ -173,6 +178,7 @@ import gemini.module.modules.player.Gamemode;
 import gemini.module.modules.player.AutoHeal;
 import gemini.module.modules.player.Kits;
 import gemini.module.modules.player.GhostHand;
+import gemini.module.modules.player.GiveList;
 import gemini.module.modules.player.HotbarSorter;
 import gemini.module.modules.player.InstantMineModule;
 import gemini.module.modules.player.InventoryCleaner;
@@ -204,6 +210,7 @@ import gemini.module.modules.render.BreakIndicators;
 import gemini.module.modules.render.CameraTweaks;
 import gemini.module.modules.render.ChinaHat;
 import gemini.module.modules.render.ChunkBorders;
+import gemini.module.modules.render.CinematicCamera;
 import gemini.module.modules.render.CoordinatesModule;
 import gemini.module.modules.render.CrosshairPlus;
 import gemini.module.modules.render.DamageParticles;
@@ -255,6 +262,7 @@ import gemini.module.modules.world.ChestAura;
 import gemini.module.modules.world.Collisions;
 import gemini.module.modules.world.EndermanLook;
 import gemini.module.modules.world.Extinguish;
+import gemini.module.modules.world.Locate;
 import gemini.module.modules.world.MobSweeper;
 import gemini.module.modules.world.Summoner;
 import gemini.module.modules.world.Flamethrower;
@@ -264,6 +272,7 @@ import gemini.module.modules.world.LawnMower;
 import gemini.module.modules.world.LiquidFiller;
 import gemini.module.modules.world.NukerModule;
 import gemini.module.modules.world.PacketMine;
+import gemini.module.modules.world.Platform;
 import gemini.module.modules.world.ScaffoldModule;
 import gemini.module.modules.world.SeedModule;
 import gemini.module.modules.world.SpawnProofer;
@@ -285,14 +294,13 @@ import gemini.util.RotationManager;
 import gemini.util.Scheduler;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
@@ -301,7 +309,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class ModuleManager {
    private final ArrayList<Module> modules = new ArrayList<>();
-   private final Map<Integer, Boolean> previousKeyState = new HashMap<>();
+   /** Bound keys that were down on the previous tick; swapped with {@link #keysDownNext} every poll so no boxing or map churn happens per tick. */
+   private BitSet keysDown = new BitSet();
+   private BitSet keysDownNext = new BitSet();
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
@@ -654,6 +664,14 @@ public final class ModuleManager {
       this.register(new AutoExcavate());
       this.register(new AutoHighway());
       this.register(new PathRenderer());
+      this.register(new Buffs());
+      this.register(new Enchanter());
+      this.register(new GiveList());
+      this.register(new Platform());
+      this.register(new Locate());
+      this.register(new AutoSave());
+      this.register(new Performance());
+      this.register(new CinematicCamera());
    }
 
    public void bindConfig(ConfigManager configManager) {
@@ -731,13 +749,21 @@ public final class ModuleManager {
       }
 
       if (client.player == null) {
-         this.previousKeyState.clear();
+         this.keysDown.clear();
          Scheduler.clear();
          RotationManager.clear();
          BuiltInBaritone.stop();
          BaritoneBridge.resumeAll();
          SelfTest.abort("you left the world");
       } else {
+         if (MixinReport.shouldAnnounce()) {
+            List<String> missed = MixinReport.missed();
+            CommandManager.feedback("§eGemini §7could not hook " + missed.size() + " Minecraft method(s); the features behind them are inactive:");
+            for (String entry : missed) {
+               CommandManager.feedback("§8 - §7" + entry);
+            }
+         }
+
          Scheduler.tick();
          RotationManager.beginTick();
          Hands.beginTick();
@@ -765,7 +791,7 @@ public final class ModuleManager {
          module.forceDisableRuntime();
       }
 
-      this.previousKeyState.clear();
+      this.keysDown.clear();
    }
 
    public void panic() {
@@ -784,7 +810,7 @@ public final class ModuleManager {
             }
          }
 
-         this.previousKeyState.clear();
+         this.keysDown.clear();
          Minecraft client = Minecraft.getInstance();
          if (Menus.isMenu(client.gui.screen())) {
             client.gui.setScreen(null);
@@ -800,15 +826,19 @@ public final class ModuleManager {
    }
 
    private void pollKeybinds(Minecraft client, boolean inGame) {
-      Set<Integer> seen = new HashSet<>();
+      BitSet down = this.keysDownNext;
+      down.clear();
 
       for (Module module : this.modules) {
          if (!(module instanceof ClickGuiModule)) {
             int key = module.getKeybind();
-            if (key != -1 && key != 0) {
+            if (key > 0) {
                boolean pressed = InputConstants.isKeyDown(key);
-               boolean wasPressed = this.previousKeyState.getOrDefault(key, false);
-               seen.add(key);
+               boolean wasPressed = this.keysDown.get(key);
+               if (pressed) {
+                  down.set(key);
+               }
+
                if (module.isHoldBind()) {
                   if (inGame && pressed && !wasPressed) {
                      module.setHeld(true);
@@ -822,11 +852,8 @@ public final class ModuleManager {
          }
       }
 
-      for (int key : seen) {
-         this.previousKeyState.put(key, InputConstants.isKeyDown(key));
-      }
-
-      this.previousKeyState.keySet().removeIf(keyx -> !seen.contains(keyx));
+      this.keysDownNext = this.keysDown;
+      this.keysDown = down;
    }
 
    public record Failure(String module, String hook, String error) {

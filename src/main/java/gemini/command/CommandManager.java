@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import gemini.Gemini;
 import gemini.config.ConfigManager;
+import gemini.diags.MixinReport;
 import gemini.input.GeminiKeys;
 import gemini.input.KeybindConflicts;
 import gemini.input.KeybindReport;
@@ -985,6 +986,12 @@ public final class CommandManager {
 
    private void handleVersion(String[] parts) {
       feedback("§bGemini Client §f" + Gemini.VERSION + " §7on Minecraft §f" + VersionBridge.activeVersionLabel());
+      List<String> missed = MixinReport.missed();
+      if (missed.isEmpty()) {
+         feedback("§7All Minecraft hooks applied.");
+      } else {
+         feedback("§e" + missed.size() + " hook(s) found no target: §7" + String.join(", ", missed));
+      }
    }
 
    private void openGui() {
