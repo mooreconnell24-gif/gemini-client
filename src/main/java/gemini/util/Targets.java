@@ -1,6 +1,7 @@
 package gemini.util;
 
 import gemini.module.modules.combat.Teams;
+import java.util.function.Predicate;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,5 +62,33 @@ public final class Targets {
 
    public static boolean visible(LocalPlayer self, Entity entity) {
       return self.hasLineOfSight(entity);
+   }
+
+   /**
+    * The entity nearest to the player that passes the filter and lies within {@code range} blocks, or null. One
+    * pass over the loaded entities, no list and no sort.
+    */
+   public static <T extends Entity> T nearest(LocalPlayer self, Iterable<Entity> entities, Class<T> type, double range, Predicate<? super T> filter) {
+      T best = null;
+      double bestDistance = range * range;
+      for (Entity entity : entities) {
+         if (entity != self && type.isInstance(entity)) {
+            double distance = self.distanceToSqr(entity);
+            if (distance < bestDistance) {
+               T candidate = type.cast(entity);
+               if (filter.test(candidate)) {
+                  bestDistance = distance;
+                  best = candidate;
+               }
+            }
+         }
+      }
+
+      return best;
+   }
+
+   /** The nearest player or (optionally) hostile mob in range: the shared target pick of the combat modules. */
+   public static LivingEntity nearestEnemy(LocalPlayer self, Iterable<Entity> entities, double range, boolean mobs) {
+      return nearest(self, entities, LivingEntity.class, range, living -> isCandidate(self, living, true, mobs, false, true));
    }
 }

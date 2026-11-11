@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -89,7 +90,7 @@ public final class KillAura extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (!player.isUsingItem()) {
             List<LivingEntity> candidates = this.collectTargets(client, player);

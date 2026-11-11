@@ -60,6 +60,7 @@ public final class BaritoneBridge {
    private static Boolean chatControlApplied;
    private static Boolean savedChatControl;
    private static Boolean savedPrefixControl;
+   private static Boolean savedChatControlAnyway;
 
    private BaritoneBridge() {
    }
@@ -342,13 +343,16 @@ public final class BaritoneBridge {
          if (savedChatControl != null) {
             setExternalSetting("chatControl", savedChatControl);
             setExternalSetting("prefixControl", savedPrefixControl == null ? Boolean.TRUE : savedPrefixControl);
+            setExternalSetting("chatControlAnyway", savedChatControlAnyway == null ? Boolean.FALSE : savedChatControlAnyway);
             savedChatControl = null;
             savedPrefixControl = null;
+            savedChatControlAnyway = null;
          }
       } else {
          if (savedChatControl == null) {
             savedChatControl = externalSetting("chatControl") instanceof Boolean b ? b : Boolean.TRUE;
             savedPrefixControl = externalSetting("prefixControl") instanceof Boolean b ? b : Boolean.TRUE;
+            savedChatControlAnyway = externalSetting("chatControlAnyway") instanceof Boolean b ? b : Boolean.FALSE;
          }
 
          setExternalSetting("chatControl", Boolean.FALSE);

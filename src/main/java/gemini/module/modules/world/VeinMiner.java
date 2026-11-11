@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
@@ -102,7 +103,7 @@ public final class VeinMiner extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (!WorldHelpers.readyNoScreen(client)) {
+      if (!ClientState.readyNoScreen(client)) {
          this.queue.clear();
          this.current = null;
          this.watchedPos = null;

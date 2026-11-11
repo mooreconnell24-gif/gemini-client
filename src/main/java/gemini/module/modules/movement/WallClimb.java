@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -26,7 +27,7 @@ public final class WallClimb extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && client.player.horizontalCollision && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && client.player.horizontalCollision && MoveUtil.hasInput(client.player)) {
          LocalPlayer player = client.player;
          this.tick++;
          Vec3 m = player.getDeltaMovement();

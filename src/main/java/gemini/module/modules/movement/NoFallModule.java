@@ -141,10 +141,7 @@ public final class NoFallModule extends Module {
          if (gap != 0 && gap <= 4 && Hands.claimMainHand()) {
             RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.CRITICAL_SURVIVAL, 180.0F);
             int slot = Inventories.findHotbar(player, stack -> stack.is(Items.WATER_BUCKET));
-            int previous = player.getInventory().getSelectedSlot();
-            player.getInventory().setSelectedSlot(slot);
-            RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
-            player.getInventory().setSelectedSlot(previous);
+            Inventories.withHotbarSlot(player, slot, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)));
             player.resetFallDistance();
             this.pickup = 10;
             return true;
@@ -160,10 +157,7 @@ public final class NoFallModule extends Module {
       int slot = Inventories.findHotbar(player, stack -> stack.is(Items.BUCKET));
       if (slot >= 0 && client.gameMode != null && Hands.claimMainHand()) {
          RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.CRITICAL_SURVIVAL, 180.0F);
-         int previous = player.getInventory().getSelectedSlot();
-         player.getInventory().setSelectedSlot(slot);
-         RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
-         player.getInventory().setSelectedSlot(previous);
+         Inventories.withHotbarSlot(player, slot, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)));
       }
    }
 

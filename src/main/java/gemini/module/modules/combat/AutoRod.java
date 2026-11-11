@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -42,7 +44,7 @@ public final class AutoRod extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (this.retractTicks > 0) {
             this.retractTicks--;
@@ -60,7 +62,7 @@ public final class AutoRod extends Module {
             return;
          }
 
-         LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
+         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
          if (enemy != null && player.distanceTo(enemy) > 3.1) {
             int slot = Inventories.findHotbar(player, s -> s.is(Items.FISHING_ROD));
             if (slot >= 0 && Hands.claimMainHand()) {

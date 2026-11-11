@@ -1,6 +1,7 @@
 package gemini.ui;
 
 import gemini.util.SingleplayerGate;
+import java.util.function.Supplier;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -28,14 +29,20 @@ public final class SandboxUi {
     * back to {@code parent} so the player can join; "Back" just goes back.
     */
    public static Screen blockedScreen(Minecraft client, Screen parent) {
+      return blockedScreen(client, parent, () -> parent);
+   }
+
+   /** As {@link #blockedScreen(Minecraft, Screen)}, with a different screen to continue on once Gemini was switched off. */
+   public static Screen blockedScreen(Minecraft client, Screen back, Supplier<Screen> afterSwitchOff) {
       return new ConfirmScreen(
          switchOff -> {
             if (switchOff) {
                SingleplayerGate.Change change = SingleplayerGate.setSandboxMode(false);
                toast(client, "Gemini switched off", change.changed() ? "Online play is allowed. Switch it back on from the title screen." : "Nothing changed.");
+               client.gui.setScreen(afterSwitchOff.get());
+            } else {
+               client.gui.setScreen(back);
             }
-
-            client.gui.setScreen(parent);
          },
          Component.literal(SingleplayerGate.BLOCKED_TITLE),
          Component.literal(SingleplayerGate.BLOCKED_BODY),
@@ -57,7 +64,8 @@ public final class SandboxUi {
          // Replace it with the explanation once the current screen change has finished.
          client.execute(() -> {
             if (client.gui.screen() == screen && SingleplayerGate.connectionsBlocked()) {
-               showBlocked(client, new TitleScreen());
+               // "Back" returns to the title screen; switching Gemini off carries on to the server list that was asked for.
+               client.gui.setScreen(blockedScreen(client, new TitleScreen(), () -> new JoinMultiplayerScreen(new TitleScreen())));
             }
          });
       }

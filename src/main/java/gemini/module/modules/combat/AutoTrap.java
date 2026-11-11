@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -38,9 +40,9 @@ public final class AutoTrap extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.targetRange.get(), true);
+         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.targetRange.get(), true);
          if (enemy == null) {
             this.currentPlan.clear();
          } else {

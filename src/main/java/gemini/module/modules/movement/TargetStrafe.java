@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -35,7 +36,7 @@ public final class TargetStrafe extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (!MovementHelpers.ready(client)) {
+      if (!ClientState.ready(client)) {
          this.activeTarget = null;
       } else {
          LocalPlayer player = client.player;

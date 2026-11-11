@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
@@ -124,7 +125,7 @@ public final class AutoFarm extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.readyNoScreen(client)) {
+      if (ClientState.readyNoScreen(client)) {
          LocalPlayer player = client.player;
          ClientLevel level = client.level;
          double reach = this.range.get();
@@ -263,10 +264,7 @@ public final class AutoFarm extends Module {
       if (slot < 0 || !Hands.claimMainHand()) {
          return false;
       } else {
-         int previous = player.getInventory().getSelectedSlot();
-         player.getInventory().setSelectedSlot(slot);
-         client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
-         player.getInventory().setSelectedSlot(previous);
+         Inventories.withHotbarSlot(player, slot, () -> client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false)));
          return true;
       }
    }

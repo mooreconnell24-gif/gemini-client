@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -19,7 +20,7 @@ public final class AnchorPull extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client)) {
+      if (ClientState.ready(client)) {
          LocalPlayer player = client.player;
          BlockPos pos = player.blockPosition();
 

@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -20,7 +21,7 @@ public final class HoleSnap extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client)) {
+      if (ClientState.ready(client)) {
          LocalPlayer player = client.player;
          if (!Holes.isHole(client.level, player.blockPosition())) {
             List<BlockPos> found = Holes.around(client.level, player.blockPosition(), this.range.intValue(), 2);

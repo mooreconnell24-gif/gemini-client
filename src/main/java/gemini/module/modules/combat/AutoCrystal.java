@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -86,10 +88,10 @@ public final class AutoCrystal extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          ClientLevel level = client.level;
-         LivingEntity target = CombatHelpers.nearestEnemy(client, player, this.targetRange.get(), true);
+         LivingEntity target = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.targetRange.get(), true);
          if (target == null) {
             this.renderPos = null;
          } else {

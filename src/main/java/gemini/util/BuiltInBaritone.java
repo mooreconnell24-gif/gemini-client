@@ -1321,6 +1321,8 @@ public final class BuiltInBaritone {
    }
 
    public static int findSurfaceY(Level level, int x, int z, int fallbackY) {
+      // Called from commands as well as from tasks: never trust chunks cached by an earlier tick.
+      VIEW.begin(level);
       for (int y = fallbackY + 16; y >= fallbackY - 24; y--) {
          if (isStandable(level, x, y, z)) {
             return y;

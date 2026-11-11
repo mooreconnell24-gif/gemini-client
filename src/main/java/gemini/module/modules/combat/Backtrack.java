@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -42,11 +44,11 @@ public final class Backtrack extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (!CombatHelpers.ready(client)) {
+      if (!ClientState.ready(client)) {
          this.history.clear();
       } else {
          if (this.tracked == null || !this.tracked.isAlive() || this.tracked.distanceToSqr(client.player) > 49.0) {
-            this.tracked = CombatHelpers.nearestEnemy(client, client.player, 6.0, true);
+            this.tracked = Targets.nearestEnemy(client.player, client.level.entitiesForRendering(), 6.0, true);
             this.history.clear();
          }
 

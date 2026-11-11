@@ -134,7 +134,6 @@ import gemini.module.modules.movement.NoJumpDelayModule;
 import gemini.module.modules.movement.NoSlowModule;
 import gemini.module.modules.movement.NoWeb;
 import gemini.module.modules.movement.ParkourModule;
-import gemini.module.modules.movement.ReverseStepModule;
 import gemini.module.modules.movement.SafeWalkModule;
 import gemini.module.modules.movement.Slippy;
 import gemini.module.modules.movement.Sneak;
@@ -416,7 +415,6 @@ public final class ModuleManager {
       this.register(new InventoryMoveModule());
       this.register(new NoJumpDelayModule());
       this.register(new ElytraBoostModule());
-      this.register(new ReverseStepModule());
       this.register(new AutoWalkModule());
       this.register(new FastLadderModule());
       this.register(new InstantMineModule());

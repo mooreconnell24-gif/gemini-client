@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -21,7 +22,7 @@ public final class EdgeJump extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && client.player.onGround() && !client.player.isShiftKeyDown() && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && client.player.onGround() && !client.player.isShiftKeyDown() && MoveUtil.hasInput(client.player)) {
          LocalPlayer player = client.player;
          Vec3 motion = player.getDeltaMovement();
          AABB nextBox = player.getBoundingBox().move(motion.x, -0.5, motion.z).deflate(this.edgeOffset.get(), 0.0, this.edgeOffset.get());

@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -33,7 +34,7 @@ public final class Burrow extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       ClientPacketListener conn = client.getConnection();
-      if (CombatHelpers.ready(client) && conn != null && player.onGround()) {
+      if (ClientState.ready(client) && conn != null && player.onGround()) {
          BlockPos feet = player.blockPosition();
          Predicate<ItemStack> burrowBlock = CombatHelpers.obsidianOrResistant().or(s -> s.is(Items.ANVIL) || s.is(Items.CHIPPED_ANVIL));
          int slot = Inventories.findHotbar(player, burrowBlock);
