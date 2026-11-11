@@ -439,4 +439,11 @@ public final class XrayModule extends Module {
 
    private record Preset(String label, String description, int color, boolean defaultOn, String... ids) {
    }
+
+   /** Section coordinates repeat between dimensions, so what was collected in the old world would show up in the wrong place. */
+   @Override
+   public void onWorldChange() {
+      XrayData.clear();
+      this.scan.clear();
+   }
 }

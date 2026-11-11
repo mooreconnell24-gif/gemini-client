@@ -71,11 +71,21 @@ public final class AutoShearer extends Module {
                this.cooldown = 8;
             } else {
                WorldHelpers.useOnEntity(client, player, best, this::usableShears, this.swing.get());
+               if (this.nextTry.size() > 1024) {
+                  this.nextTry.clear();
+               }
+
                this.nextTry.put(best.getId(), now + 40L);
                this.cooldown = this.delay.intValue();
                WorldHelpers.trim(this.nextTry);
             }
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.nextTry.clear();
    }
 }

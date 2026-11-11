@@ -93,6 +93,11 @@ public final class AutoBreed extends Module {
             WorldHelpers.useOnEntity(client, player, best, best::isFood, this.swing.get());
             int id = best.getId();
             int tries = this.misses.get(id);
+            if (this.nextTry.size() > 1024) {
+               this.nextTry.clear();
+               this.loveUntil.clear();
+            }
+
             this.nextTry.put(id, now + Math.min(6000L, 100L << Math.min(tries, 6)));
             this.misses.put(id, tries + 1);
             this.cooldown = this.delay.intValue();
@@ -103,5 +108,13 @@ public final class AutoBreed extends Module {
             }
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.loveUntil.clear();
+      this.nextTry.clear();
+      this.misses.clear();
    }
 }

@@ -86,4 +86,10 @@ public final class AutoTrap extends Module {
          }
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.currentPlan.clear();
+   }
 }

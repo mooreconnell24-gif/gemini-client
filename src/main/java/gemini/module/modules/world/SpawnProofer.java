@@ -118,4 +118,11 @@ public final class SpawnProofer extends Module {
          }
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.recent.clear();
+      this.recentTick.clear();
+   }
 }

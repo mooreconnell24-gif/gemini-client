@@ -233,4 +233,10 @@ public final class KillAura extends Module {
          Render3D.box(box, -6467875, true, true, 1.8F, 45, true);
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.currentTarget = null;
+   }
 }

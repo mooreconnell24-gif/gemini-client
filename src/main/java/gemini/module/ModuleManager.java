@@ -293,6 +293,7 @@ import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
 import gemini.util.SingleplayerGate;
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -303,6 +304,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
@@ -313,6 +315,9 @@ public final class ModuleManager {
    /** Bound keys that were down on the previous tick; swapped with {@link #keysDownNext} every poll so no boxing or map churn happens per tick. */
    private BitSet keysDown = new BitSet();
    private BitSet keysDownNext = new BitSet();
+   private static final WeakReference<ClientLevel> NO_LEVEL = new WeakReference<>(null);
+   /** The world of the previous tick, held weakly so the manager never keeps a closed world alive. */
+   private WeakReference<ClientLevel> lastLevel = NO_LEVEL;
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
@@ -775,6 +780,7 @@ public final class ModuleManager {
          RotationManager.clear();
          BuiltInBaritone.stop();
          BaritoneBridge.resumeAll();
+         this.lastLevel = NO_LEVEL;
          SelfTest.abort("you left the world");
       } else {
          if (MixinReport.shouldAnnounce()) {
@@ -782,6 +788,14 @@ public final class ModuleManager {
             CommandManager.feedback("§eGemini §7could not hook " + missed.size() + " Minecraft method(s); the features behind them are inactive:");
             for (String entry : missed) {
                CommandManager.feedback("§8 - §7" + entry);
+            }
+         }
+
+         if (client.level != this.lastLevel.get()) {
+            boolean first = this.lastLevel.get() == null;
+            this.lastLevel = new WeakReference<>(client.level);
+            if (!first) {
+               this.worldChanged();
             }
          }
 
@@ -794,6 +808,19 @@ public final class ModuleManager {
          BaritoneBridge.tick();
          RotationManager.endTick();
          SelfTest.tick(this);
+      }
+   }
+
+   /** Tells every running module that the world under the player was swapped; a failing hook disables only that module. */
+   private void worldChanged() {
+      for (Module module : this.modules) {
+         if (module.isEnabled()) {
+            try {
+               module.onWorldChange();
+            } catch (RuntimeException | LinkageError error) {
+               this.disableAfterFailure(module, "onWorldChange", error);
+            }
+         }
       }
    }
 

@@ -113,4 +113,11 @@ public final class TunnelEsp extends Module {
    public String info() {
       return this.found.isEmpty() ? null : this.found.size() + " blocks";
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.found.clear();
+      this.building.clear();
+   }
 }

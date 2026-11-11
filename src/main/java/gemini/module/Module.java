@@ -296,6 +296,14 @@ public abstract class Module {
    public void onDisable() {
    }
 
+   /**
+    * The player moved to a different world while this module stayed on (a portal, a respawn in another dimension).
+    * Leaving a world altogether disables the module instead, so this is the only moment remembered positions and
+    * entities can outlive their world. Modules that remember either drop them here.
+    */
+   public void onWorldChange() {
+   }
+
    public void onTick() {
    }
 

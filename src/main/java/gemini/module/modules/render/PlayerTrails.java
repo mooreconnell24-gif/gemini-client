@@ -62,4 +62,10 @@ public final class PlayerTrails extends Module {
          }
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.samples.clear();
+   }
 }

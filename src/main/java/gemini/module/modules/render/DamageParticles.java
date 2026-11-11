@@ -31,6 +31,11 @@ public final class DamageParticles extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       if (client.level != null && client.player != null) {
+         if (this.lastHealth.size() > 1024) {
+            // Entity ids are never reused, so entries for mobs long gone would otherwise pile up for as long as this stays on.
+            this.lastHealth.clear();
+         }
+
          for (Entity entity : client.level.entitiesForRendering()) {
             if (entity != client.player && entity instanceof LivingEntity living && entity.distanceToSqr(client.player) <= 400.0) {
                float hp = living.getHealth() + living.getAbsorptionAmount();
@@ -71,5 +76,12 @@ public final class DamageParticles extends Module {
    }
 
    private record Popup(String text, Vec3 pos, int color, long createdAt) {
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.lastHealth.clear();
+      this.popups.clear();
    }
 }

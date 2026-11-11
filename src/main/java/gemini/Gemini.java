@@ -66,6 +66,7 @@ public final class Gemini implements ClientModInitializer {
       });
       ClientTickEvents.END_CLIENT_TICK.register((EndTick)client -> {
          SingleplayerGate.tick(client);
+         BaritoneBridge.syncChatControl(SingleplayerGate.allowed());
          if (SingleplayerGate.allowed() != this.wasAllowed) {
             this.wasAllowed = !this.wasAllowed;
             if (!this.wasAllowed) {

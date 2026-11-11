@@ -270,4 +270,10 @@ public final class AutoFarm extends Module {
          return true;
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.seeds.clear();
+   }
 }

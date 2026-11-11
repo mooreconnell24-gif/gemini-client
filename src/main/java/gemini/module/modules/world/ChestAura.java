@@ -94,4 +94,10 @@ public final class ChestAura extends Module {
    public String info() {
       return this.opened.isEmpty() ? null : this.opened.size() + " opened";
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.opened.clear();
+   }
 }

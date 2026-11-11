@@ -66,4 +66,11 @@ public final class Backtrack extends Module {
          Render3D.box(this.history.getFirst(), -16722689, true, true, 1.5F, 40, true);
       }
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.history.clear();
+      this.tracked = null;
+   }
 }

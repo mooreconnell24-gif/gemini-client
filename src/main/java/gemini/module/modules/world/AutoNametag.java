@@ -103,11 +103,21 @@ public final class AutoNametag extends Module {
                this.cooldown = 10;
             } else {
                WorldHelpers.useOnEntity(client, player, best, AutoNametag::namedTag, this.swing.get());
+               if (this.nextTry.size() > 1024) {
+                  this.nextTry.clear();
+               }
+
                this.nextTry.put(best.getId(), now + 60L);
                this.cooldown = this.delay.intValue();
                WorldHelpers.trim(this.nextTry);
             }
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.nextTry.clear();
    }
 }
