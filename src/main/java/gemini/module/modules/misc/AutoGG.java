@@ -41,4 +41,15 @@ public final class AutoGG extends Module {
          }
       }
    }
+
+   @Override
+   public void onDisable() {
+      this.lastAttacked = null;
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.lastAttacked = null;
+   }
 }

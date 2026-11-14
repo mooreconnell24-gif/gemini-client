@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -26,7 +27,7 @@ public final class PacketMine extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          if (client.options.keyAttack.isDown() && client.hitResult instanceof BlockHitResult bhr && bhr.getType() == Type.BLOCK) {
             this.targetPos = bhr.getBlockPos().immutable();
          }

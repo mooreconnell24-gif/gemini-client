@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -25,13 +26,13 @@ public final class AimAssist extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (this.weaponOnly.get() && !AutoWeapon.isWeapon(player.getMainHandItem())) {
             return;
          }
 
-         LivingEntity target = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
+         LivingEntity target = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
          if (target != null && Targets.inFov(player, target, this.fov.get())) {
             float[] look = Rotations.face(player, target);
             RotationManager.request(player, look[0], look[1], this.speed.floatValue(), false, ActionPriority.WORLD_UTILITY, 2.0F);

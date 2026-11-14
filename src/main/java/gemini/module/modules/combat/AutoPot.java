@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Inventories;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -35,12 +37,12 @@ public final class AutoPot extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (!(player.getHealth() > this.health.get())
             && this.wait-- <= 0
             && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.CRITICAL_SURVIVAL, 2.0F)
-            && CombatHelpers.withSlot(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
+            && Inventories.withHotbarItem(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
             this.wait = this.delay.intValue();
          }
       }

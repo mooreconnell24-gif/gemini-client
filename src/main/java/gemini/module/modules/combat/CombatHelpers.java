@@ -23,44 +23,9 @@ public final class CombatHelpers {
    private CombatHelpers() {
    }
 
-   static LivingEntity nearestEnemy(Minecraft client, LocalPlayer player, double range, boolean mobs) {
-      LivingEntity best = null;
-      double bestDistance = range * range;
-
-      for (Entity entity : client.level.entitiesForRendering()) {
-         if (Targets.isCandidate(player, entity, true, mobs, false, true)) {
-            double distance = player.distanceToSqr(entity);
-            if (distance < bestDistance) {
-               bestDistance = distance;
-               best = (LivingEntity)entity;
-            }
-         }
-      }
-
-      return best;
-   }
-
    static boolean click(Minecraft client, LocalPlayer player, BlockPos pos, Direction face) {
       Vec3 hit = Vec3.atCenterOf(pos).add(face.getStepX() * 0.5, face.getStepY() * 0.5, face.getStepZ() * 0.5);
       return client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, face, pos, false)).consumesAction();
-   }
-
-   static boolean withSlot(LocalPlayer player, Predicate<ItemStack> filter, Runnable action) {
-      int slot = Inventories.findHotbar(player, filter);
-      if (slot < 0 || !Hands.claimMainHand()) {
-         return false;
-      } else {
-         int previous = player.getInventory().getSelectedSlot();
-         player.getInventory().setSelectedSlot(slot);
-
-         try {
-            action.run();
-         } finally {
-            player.getInventory().setSelectedSlot(previous);
-         }
-
-         return true;
-      }
    }
 
    static boolean armorDamaged(LocalPlayer player, int percent) {
@@ -75,11 +40,6 @@ public final class CombatHelpers {
       }
 
       return false;
-   }
-
-   static boolean ready(Minecraft client) {
-      LocalPlayer player = client.player;
-      return player != null && client.level != null && client.gameMode != null && !player.isSpectator() && !player.isDeadOrDying();
    }
 
    static Predicate<ItemStack> obsidianOrResistant() {

@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.Inventories;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -9,7 +10,6 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
-import gemini.util.InventoryUtil;
 import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import java.util.ArrayList;
@@ -410,7 +410,7 @@ public final class ScaffoldModule extends Module {
       for (int i = 9; i < 36; i++) {
          ItemStack stack = player.getInventory().getItem(i);
          if (usable(stack)) {
-            InventoryUtil.moveToHotbar(client, player, i, player.getInventory().getSelectedSlot());
+            Inventories.moveToHotbar(client, player, i, player.getInventory().getSelectedSlot());
             return;
          }
       }

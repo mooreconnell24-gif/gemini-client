@@ -3,10 +3,12 @@ package gemini.module.modules.world;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
+import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.SpCommands;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -16,6 +18,7 @@ import net.minecraft.client.Minecraft;
 public final class WorldRules extends Module {
    private final List<WorldRules.Rule> rules = new ArrayList<>();
    private final NumberSetting tickSpeed;
+   private final ModeSetting difficulty;
    private final BooleanSetting restore = this.addSetting(
       new BooleanSetting("Restore On Disable", "Put every rule back to its vanilla default when you switch this off", false)
    );
@@ -36,6 +39,16 @@ public final class WorldRules extends Module {
          new NumberSetting("Random Tick Speed", "How fast crops, saplings and grass grow (vanilla is 3)", 3.0, 0.0, 300.0, 1.0)
             .onChange(() -> this.sendTickSpeed(false))
       );
+      this.difficulty = this.addSetting(
+         new ModeSetting("Difficulty", "World difficulty; Keep leaves it alone", "Keep", "Keep", "Peaceful", "Easy", "Normal", "Hard")
+            .onChange(() -> this.sendDifficulty(false))
+      );
+   }
+
+   private void sendDifficulty(boolean force) {
+      if (!this.difficulty.is("Keep") && (force || this.isEnabled() && !this.applying)) {
+         SpCommands.run("difficulty " + this.difficulty.get().toLowerCase(Locale.ROOT));
+      }
    }
 
    private void rule(String name, String description, boolean ruleDefault, boolean vanilla, String... ids) {
@@ -69,6 +82,8 @@ public final class WorldRules extends Module {
          if (this.tickSpeed.intValue() != 3) {
             this.sendTickSpeed(true);
          }
+
+         this.sendDifficulty(true);
       } finally {
          this.applying = false;
       }

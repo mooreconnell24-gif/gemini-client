@@ -240,14 +240,17 @@ public final class CategoryPanel {
       String needle = search == null ? "" : search.toLowerCase(Locale.ROOT).trim();
       boolean activeOnly = "Active Only".equals(this.filterMode);
       boolean keyboundOnly = "Keybound".equals(this.filterMode);
-      if (needle.isEmpty() && !activeOnly && !keyboundOnly) {
+      boolean favoritesOnly = "Favorites".equals(this.filterMode);
+      if (needle.isEmpty() && !activeOnly && !keyboundOnly && !favoritesOnly) {
          return this.rows;
       } else {
+         ClickGuiModule style = Gemini.getInstance() == null ? null : Gemini.getInstance().modules().byClass(ClickGuiModule.class).orElse(null);
          List<CategoryPanel.Row> list = new ArrayList<>();
 
          for (CategoryPanel.Row row : this.rows) {
             if ((!activeOnly || row.module.isEnabled())
                && (!keyboundOnly || row.module.getKeybind() != -1)
+               && (!favoritesOnly || style != null && style.isFavorite(row.module))
                && (needle.isEmpty() || Fuzzy.moduleScore(needle, row.module) > 0)) {
                list.add(row);
             }
@@ -366,8 +369,8 @@ public final class CategoryPanel {
       }
 
       graphics.fill(x - 1, top - 1, x + w + 1, bottom + 1, GeminiMark.withAlpha(panelAccent, (int)(75.0F * look.open())));
-      graphics.fill(x, top, x + w, bottom, GeminiMark.withAlpha(-15987178, bodyAlpha));
-      graphics.fill(x, top, x + w, top + 22, GeminiMark.withAlpha(-15329245, Math.min(255, bodyAlpha + 12)));
+      graphics.fill(x, top, x + w, bottom, GeminiMark.withAlpha(look.body(), bodyAlpha));
+      graphics.fill(x, top, x + w, top + 22, GeminiMark.withAlpha(look.header(), Math.min(255, bodyAlpha + 12)));
       drawGradientStrip(graphics, x, top, x + w, top + 2, panelAccent, accent2);
       graphics.fill(x, top + 21, x + w, top + 22, GeminiMark.withAlpha(panelAccent, (int)(65.0F * look.open())));
       graphics.text(font, this.category.displayName().toUpperCase(Locale.ROOT), x + 8, top + 8, -526345, false);
@@ -1088,7 +1091,13 @@ public final class CategoryPanel {
       }
    }
 
-   public record Look(int accent, int accent2, float opacity, boolean animate, float open, float scrollSpeed, boolean glow, boolean snapGrid) {
+   public record Look(
+      int accent, int accent2, float opacity, boolean animate, float open, float scrollSpeed, boolean glow, boolean snapGrid, int body, int header
+   ) {
+      /** The default dark surface, for callers that do not theme the panel body. */
+      public Look(int accent, int accent2, float opacity, boolean animate, float open, float scrollSpeed, boolean glow, boolean snapGrid) {
+         this(accent, accent2, opacity, animate, open, scrollSpeed, glow, snapGrid, -15987178, -15329501);
+      }
    }
 
    private static final class Row {

@@ -8,20 +8,34 @@ import net.minecraft.core.SectionPos;
 
 public final class XrayData {
    private static final ConcurrentHashMap<Long, long[]> SECTIONS = new ConcurrentHashMap<>();
+   private static final Object LOCK = new Object();
 
    private XrayData() {
    }
 
-   static void commit(long sectionKey, LongArrayList positions) {
-      if (positions.isEmpty()) {
-         SECTIONS.remove(sectionKey);
-      } else {
-         SECTIONS.put(sectionKey, positions.toLongArray());
+   /**
+    * Stores what a chunk builder thread found in one section. Sections are compiled on worker threads and can
+    * finish after Xray was switched off or its block list changed; such late results are dropped here, under the
+    * same lock as {@link #clear()}, so they can never repopulate the map once it was emptied.
+    */
+   static void commit(XrayConfig compiledUnder, long sectionKey, LongArrayList positions) {
+      synchronized (LOCK) {
+         if (compiledUnder == null || compiledUnder != XrayConfig.current()) {
+            return;
+         }
+
+         if (positions.isEmpty()) {
+            SECTIONS.remove(sectionKey);
+         } else {
+            SECTIONS.put(sectionKey, positions.toLongArray());
+         }
       }
    }
 
    public static void clear() {
-      SECTIONS.clear();
+      synchronized (LOCK) {
+         SECTIONS.clear();
+      }
    }
 
    public static int sections() {

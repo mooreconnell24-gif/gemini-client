@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ListSetting;
@@ -68,7 +69,7 @@ public final class SpawnProofer extends Module {
          this.recent.pollFirst();
       }
 
-      if (WorldHelpers.readyNoScreen(client) && this.placing.ready()) {
+      if (ClientState.readyNoScreen(client) && this.placing.ready()) {
          LocalPlayer player = client.player;
          ClientLevel level = client.level;
          double reach = this.placing.range.get();
@@ -117,5 +118,12 @@ public final class SpawnProofer extends Module {
             }
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.recent.clear();
+      this.recentTick.clear();
    }
 }

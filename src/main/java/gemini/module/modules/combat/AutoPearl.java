@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Inventories;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -28,9 +30,9 @@ public final class AutoPearl extends Module {
       Minecraft client = Minecraft.getInstance();
       if (this.cooldown > 0) {
          this.cooldown--;
-      } else if (CombatHelpers.ready(client) && client.gui.screen() == null && Damage.health(client.player) <= this.health.floatValue()) {
+      } else if (ClientState.ready(client) && client.gui.screen() == null && Damage.health(client.player) <= this.health.floatValue()) {
          LocalPlayer player = client.player;
-         if (CombatHelpers.withSlot(player, s -> s.is(Items.ENDER_PEARL), () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))) {
+         if (Inventories.withHotbarItem(player, s -> s.is(Items.ENDER_PEARL), () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))) {
             this.cooldown = 40;
          }
       }

@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -16,7 +17,7 @@ public final class Strafe extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && !client.player.onGround() && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && !client.player.onGround() && MoveUtil.hasInput(client.player)) {
          double currentSpeed = Math.max(MoveUtil.horizontalSpeed(client.player), MoveUtil.baseSpeed(client.player) * this.strength.get());
          MoveUtil.setHorizontal(client.player, currentSpeed);
       }

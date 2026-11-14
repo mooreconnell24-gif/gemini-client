@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -44,7 +45,7 @@ public final class AirPlace extends Module {
       Minecraft client = Minecraft.getInstance();
       if (this.cooldown > 0) {
          this.cooldown--;
-      } else if (WorldHelpers.readyNoScreen(client) && client.options.keyUse.isDown() && !client.player.isUsingItem() && aimingAtNothing(client)) {
+      } else if (ClientState.readyNoScreen(client) && client.options.keyUse.isDown() && !client.player.isUsingItem() && aimingAtNothing(client)) {
          Item held = client.player.getMainHandItem().getItem();
          if (held instanceof BlockItem
             && BlockPlacer.place(client, this.target(client.player, 1.0F), stack -> stack.getItem() == held, this.swing.get(), false, true)) {

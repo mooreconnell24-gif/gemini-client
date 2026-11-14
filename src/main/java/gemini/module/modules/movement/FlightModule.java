@@ -2,7 +2,7 @@ package gemini.module.modules.movement;
 
 import gemini.input.Keys;
 import gemini.module.Category;
-import gemini.module.Module;
+import gemini.module.LinearFlightModuleBase;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -15,7 +15,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.phys.Vec3;
 
-public final class FlightModule extends Module {
+public final class FlightModule extends LinearFlightModuleBase {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode", "Auto flies like creative mode in your single-player world", "Auto", "Auto", "Strict", "Packet", "Creative", "Velocity", "Glide", "Jetpack"
@@ -103,8 +103,8 @@ public final class FlightModule extends Module {
    }
 
    private void strictFlight(LocalPlayer player) {
-      boolean jump = player.input != null && player.input.keyPresses.jump();
-      boolean sneak = player.input != null && player.input.keyPresses.shift();
+      boolean jump = jumpHeld(player);
+      boolean sneak = sneakHeld(player);
       double targetY = 0.0;
       if (jump) {
          targetY = Math.min(0.42, this.vertical.get());
@@ -126,8 +126,8 @@ public final class FlightModule extends Module {
    }
 
    private void packetFlight(Minecraft client, LocalPlayer player) {
-      boolean jump = player.input != null && player.input.keyPresses.jump();
-      boolean sneak = player.input != null && player.input.keyPresses.shift();
+      boolean jump = jumpHeld(player);
+      boolean sneak = sneakHeld(player);
       double dy = jump ? 0.062 : (sneak ? -0.062 : 0.0);
       Vec3 dir = MoveUtil.direction(player);
       double step = 0.22 * Math.min(this.speed.get(), 1.5);
@@ -149,8 +149,8 @@ public final class FlightModule extends Module {
    private void velocityFlight(LocalPlayer player) {
       Vec3 motion = player.getDeltaMovement();
       double y = 0.0;
-      boolean jump = player.input != null && player.input.keyPresses.jump();
-      boolean sneak = player.input != null && player.input.keyPresses.shift();
+      boolean jump = jumpHeld(player);
+      boolean sneak = sneakHeld(player);
       if (jump) {
          y += this.vertical.get();
       }
@@ -172,7 +172,7 @@ public final class FlightModule extends Module {
    }
 
    private void jetpack(LocalPlayer player) {
-      boolean jump = player.input != null && player.input.keyPresses.jump();
+      boolean jump = jumpHeld(player);
       if (jump) {
          Vec3 motion = player.getDeltaMovement();
          double y = Math.min(this.vertical.get(), motion.y + 0.12);
@@ -188,8 +188,8 @@ public final class FlightModule extends Module {
    }
 
    private void glide(LocalPlayer player) {
-      boolean jump = player.input != null && player.input.keyPresses.jump();
-      boolean sneak = player.input != null && player.input.keyPresses.shift();
+      boolean jump = jumpHeld(player);
+      boolean sneak = sneakHeld(player);
       double y;
       if (jump) {
          y = this.vertical.get() * 0.35;

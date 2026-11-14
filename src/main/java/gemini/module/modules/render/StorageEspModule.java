@@ -109,15 +109,17 @@ public final class StorageEspModule extends Module {
             String mode = this.style.get();
             boolean outline = !mode.equals("Fill");
             boolean fill = mode.equals("Box + Fill") || mode.equals("Fill") || mode.equals("Glow");
+            boolean glow = mode.equals("Glow");
 
             for (StorageEspModule.Hit hit : this.allHits) {
                BlockPos pos = hit.pos();
                int color = colorFor(hit.label());
-               if (this.boxes3D.get() && Render3D.visibleBlock(pos.getX(), pos.getY(), pos.getZ())) {
-                  if (mode.equals("Glow")) {
+               if (this.boxes3D.get()) {
+                  // Both calls cull off-screen blocks themselves.
+                  if (glow) {
                      Render3D.boxGlow(new AABB(pos), color, 2.0F, 65, true);
                   } else {
-                     Render3D.block(pos, color, outline, fill, 1.6F, 50, true);
+                     Render3D.block(pos.getX(), pos.getY(), pos.getZ(), color, outline, fill, 1.6F, 50, true);
                   }
                }
 
@@ -125,7 +127,7 @@ public final class StorageEspModule extends Module {
                   Render3D.line(crosshair, Vec3.atCenterOf(pos), color, 1.2F, true);
                }
 
-               if (this.labels3D.get()) {
+               if (this.labels3D.get() && !Render3D.behindCamera(pos.getX() + 0.5, pos.getY() + 1.25, pos.getZ() + 0.5, 0.0)) {
                   int dist = (int)Math.sqrt(pos.distSqr(client.player.blockPosition()));
                   Render3D.text(hit.label() + " " + dist + "m", Vec3.atCenterOf(pos).add(0.0, 0.75, 0.0), color, 0.75F, true);
                }
@@ -164,5 +166,12 @@ public final class StorageEspModule extends Module {
    }
 
    public record Hit(BlockPos pos, String label) {
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.allHits.clear();
+      this.hits.clear();
    }
 }

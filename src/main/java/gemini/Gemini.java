@@ -6,9 +6,11 @@ import gemini.input.GeminiKeys;
 import gemini.module.ModuleManager;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
+import gemini.ui.SandboxUi;
 import gemini.ui.clickgui.Menus;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
+import gemini.util.ClientThread;
 import gemini.util.SingleplayerGate;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -19,6 +21,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.EndTic
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents.AllowChat;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.BeforeGizmos;
@@ -42,9 +45,12 @@ public final class Gemini implements ClientModInitializer {
    private ModuleManager moduleManager;
    private ConfigManager configManager;
    private CommandManager commandManager;
+   private boolean wasAllowed;
 
    public void onInitializeClient() {
       instance = this;
+      // Fabric runs client initializers on the client thread; everything Gemini owns belongs to it.
+      ClientThread.bind(Thread.currentThread(), Minecraft.getInstance());
       GeminiKeys.bootstrap();
       this.moduleManager = new ModuleManager();
       this.configManager = new ConfigManager(this.moduleManager);
@@ -60,6 +66,15 @@ public final class Gemini implements ClientModInitializer {
       });
       ClientTickEvents.END_CLIENT_TICK.register((EndTick)client -> {
          SingleplayerGate.tick(client);
+         BaritoneBridge.syncChatControl(SingleplayerGate.allowed());
+         if (SingleplayerGate.allowed() != this.wasAllowed) {
+            this.wasAllowed = !this.wasAllowed;
+            if (!this.wasAllowed) {
+               // Leaving the sandbox (world closed, opened to LAN, Gemini switched off): nothing keeps running.
+               this.moduleManager.suspendAll();
+            }
+         }
+
          while (GeminiKeys.OPEN_GUI.consumeClick()) {
             toggleMenu(client);
          }
@@ -68,18 +83,27 @@ public final class Gemini implements ClientModInitializer {
          this.configManager.tick();
       });
       ClientSendMessageEvents.ALLOW_CHAT.register((AllowChat)message -> {
-         if (message != null && (message.startsWith(".") || message.startsWith("#")) && !CommandManager.rawSending()) {
+         if (message == null || CommandManager.rawSending() || !(message.startsWith(".") || message.startsWith("#"))) {
+            return true;
+         } else if (!SingleplayerGate.sandboxMode() && !CommandManager.worksWhileDormant(message)) {
+            // Switched off: chat behaves like an unmodded client, except that # lines never reach the bundled Baritone.
+            if (message.startsWith("#")) {
+               CommandManager.feedback(SingleplayerGate.denialMessage());
+               return false;
+            }
+
+            return true;
+         } else {
             this.commandManager.handle(message);
             return false;
-         } else {
-            return true;
          }
       });
       HudElementRegistry.attachElementBefore(
          VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("gemini", "overlay"), new HudOverlay(this.moduleManager)::onHudRender
       );
+      ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> SandboxUi.onScreenInit(client, screen));
       LevelRenderEvents.BEFORE_GIZMOS.register((BeforeGizmos)context -> {
-         if (Minecraft.getInstance().player != null) {
+         if (Minecraft.getInstance().player != null && SingleplayerGate.allowed()) {
             CameraRenderState camera = context.levelState().cameraRenderState;
             Render3D.beginFrame(camera == null ? null : camera.cullFrustum);
 
@@ -92,8 +116,7 @@ public final class Gemini implements ClientModInitializer {
       });
       ClientLifecycleEvents.CLIENT_STOPPING.register((ClientStopping)client -> {
          this.moduleManager.shutdown();
-         this.configManager.save();
-         this.configManager.flush();
+         this.configManager.shutdown();
       });
       LOGGER.info("{} v{} initialized with Built-in Baritone.", "Gemini Client", VERSION);
    }

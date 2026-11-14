@@ -28,6 +28,10 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
 public final class Trajectories extends Module {
+   private final List<Vec3> path = new ArrayList<>();
+   private final List<Entity> candidates = new ArrayList<>();
+   private final List<AABB> candidateBoxes = new ArrayList<>();
+   private int candidatesTick = -1;
    private final BooleanSetting bows = this.addSetting(new BooleanSetting("Bows", "Bows and loaded crossbows", true));
    private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Thrown tridents", true));
    private final BooleanSetting throwables = this.addSetting(new BooleanSetting("Throwables", "Pearls, snowballs, eggs, potions and XP bottles", true));
@@ -98,10 +102,23 @@ public final class Trajectories extends Module {
       Vec3 own = player.getKnownMovement();
       Vec3 velocity = direction.scale(launch.speed()).add(own.x, player.onGround() ? 0.0 : own.y, own.z);
       Vec3 position = player.getEyePosition(partialTick).subtract(0.0, 0.1, 0.0);
-      List<Entity> candidates = this.entities.get()
-         ? level.getEntities((Entity)null, player.getBoundingBox().inflate(80.0), entity -> entity != player && entity.isPickable() && !entity.isSpectator())
-         : List.of();
-      List<Vec3> path = new ArrayList<>();
+      // Entities only move once a tick, so the broad-phase query and the padded boxes are reused for every frame of it.
+      if (player.tickCount != this.candidatesTick || !this.entities.get()) {
+         this.candidatesTick = player.tickCount;
+         this.candidates.clear();
+         this.candidateBoxes.clear();
+         if (this.entities.get()) {
+            for (Entity entity : level.getEntities(
+               (Entity)null, player.getBoundingBox().inflate(80.0), entity -> entity != player && entity.isPickable() && !entity.isSpectator()
+            )) {
+               this.candidates.add(entity);
+               this.candidateBoxes.add(entity.getBoundingBox().inflate(0.3));
+            }
+         }
+      }
+
+      List<Vec3> path = this.path;
+      path.clear();
       path.add(position);
       Entity struck = null;
       Vec3 end = null;
@@ -113,13 +130,13 @@ public final class Trajectories extends Module {
          Vec3 segmentEnd = block.getType() == Type.MISS ? next : block.getLocation();
          double best = Double.MAX_VALUE;
 
-         for (Entity candidate : candidates) {
-            Optional<Vec3> hit = candidate.getBoundingBox().inflate(0.3).clip(position, segmentEnd);
+         for (int c = 0; c < this.candidates.size(); c++) {
+            Optional<Vec3> hit = this.candidateBoxes.get(c).clip(position, segmentEnd);
             if (hit.isPresent()) {
                double distance = hit.get().distanceToSqr(position);
                if (distance < best) {
                   best = distance;
-                  struck = candidate;
+                  struck = this.candidates.get(c);
                   segmentEnd = hit.get();
                }
             }
@@ -140,9 +157,7 @@ public final class Trajectories extends Module {
       int path1 = this.pathColor.argb();
       float lineWidth = this.width.floatValue();
 
-      for (int i = 1; i < path.size(); i++) {
-         Render3D.line(path.get(i - 1), path.get(i), path1, lineWidth, true);
-      }
+      Render3D.polyline(path, path1, lineWidth, true);
 
       if (end != null && this.landing.get()) {
          int hit = this.hitColor.argb();
@@ -152,6 +167,23 @@ public final class Trajectories extends Module {
             Render3D.box(Render3D.interpolatedBox(struck, partialTick), hit, true, true, 2.0F, 40, true);
          }
       }
+   }
+
+   private void forget() {
+      this.candidates.clear();
+      this.candidateBoxes.clear();
+      this.path.clear();
+      this.candidatesTick = -1;
+   }
+
+   @Override
+   public void onDisable() {
+      this.forget();
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.forget();
    }
 
    private record Launch(double speed, double gravity, double pitchOffset, boolean arrow) {

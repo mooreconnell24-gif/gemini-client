@@ -9,21 +9,41 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 
+/**
+ * Upgrades saved configs and profiles to the current layout.
+ *
+ * <p>Every change to what a config means gets one numbered {@link Step}. A file records the version it was written
+ * at; {@link #migrate} runs each later step in order, so a config from any older release arrives at the current
+ * layout through the same path, and a new step can never be skipped or run twice. Steps only ever see the
+ * {@code modules} object and must tolerate anything in it: configs are hand-edited.
+ */
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 7;
+   public static final int CURRENT_VERSION = 8;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
+   /** In version order. The last entry's version is {@link #CURRENT_VERSION}. */
+   private static final List<Step> STEPS = List.of(
+      new Step(5, ConfigMigrations::toV5),
+      new Step(6, ConfigMigrations::toV6),
+      new Step(7, ConfigMigrations::toV7),
+      new Step(8, ConfigMigrations::toV8)
+   );
 
    private ConfigMigrations() {
+   }
+
+   /** One upgrade: brings the {@code modules} object to {@code version} and notes what it changed. */
+   private record Step(int version, BiConsumer<JsonObject, List<String>> upgrade) {
    }
 
    public static int versionOf(JsonObject root) {
       if (root != null && root.has("version") && root.get("version").isJsonPrimitive()) {
          try {
             return root.get("version").getAsInt();
-         } catch (RuntimeException var2) {
+         } catch (RuntimeException e) {
             return 0;
          }
       } else {
@@ -31,27 +51,97 @@ public final class ConfigMigrations {
       }
    }
 
+   /** Upgrades the config in place and returns a line per change made, for the log. Newer and current files are left alone. */
    public static List<String> migrate(JsonObject root) {
       List<String> notes = new ArrayList<>();
       int from = versionOf(root);
-      if (root != null && from < CURRENT_VERSION) {
-         JsonObject modules = root.has("modules") && root.get("modules").isJsonObject() ? root.getAsJsonObject("modules") : null;
-         if (modules != null && from < 5) {
-            toV5(modules, notes);
-         }
-
-         if (modules != null && from < 6) {
-            toV6(modules, notes);
-         }
-
-         if (modules != null && from < 7) {
-            toV7(modules, notes);
-         }
-
-         root.addProperty("version", CURRENT_VERSION);
+      if (root == null || from >= CURRENT_VERSION) {
          return notes;
+      }
+
+      JsonObject modules = root.has("modules") && root.get("modules").isJsonObject() ? root.getAsJsonObject("modules") : null;
+      if (modules != null) {
+         for (Step step : STEPS) {
+            if (from < step.version()) {
+               step.upgrade().accept(modules, notes);
+            }
+         }
+      }
+
+      root.addProperty("version", CURRENT_VERSION);
+      return notes;
+   }
+
+   /**
+    * ReverseStep became the "Ledges" mode of Fast Fall. Its switch, key bind and two settings move over; when both
+    * modules were on, Fast Fall runs in "Both".
+    */
+   private static void toV8(JsonObject modules, List<String> notes) {
+      String oldKey = findKey(modules, "ReverseStep");
+      if (oldKey == null) {
+         return;
+      }
+
+      JsonElement old = modules.remove(oldKey);
+      if (old == null || !old.isJsonObject()) {
+         return;
+      }
+
+      JsonObject from = old.getAsJsonObject();
+      String newKey = findKey(modules, "Fast Fall");
+      JsonObject to;
+      if (newKey != null && modules.get(newKey).isJsonObject()) {
+         to = modules.getAsJsonObject(newKey);
       } else {
-         return notes;
+         to = new JsonObject();
+         modules.add("Fast Fall", to);
+      }
+
+      JsonObject settings;
+      if (to.has("settings") && to.get("settings").isJsonObject()) {
+         settings = to.getAsJsonObject("settings");
+      } else {
+         settings = new JsonObject();
+         to.add("settings", settings);
+      }
+
+      JsonObject oldSettings = from.has("settings") && from.get("settings").isJsonObject() ? from.getAsJsonObject("settings") : new JsonObject();
+      copySetting(oldSettings, "Height", settings, "Ledge Height");
+      copySetting(oldSettings, "Speed", settings, "Ledge Speed");
+      boolean reverseOn = isOn(from);
+      boolean fastOn = isOn(to);
+      if (reverseOn) {
+         putSetting(settings, "When", new JsonPrimitive(fastOn ? "Both" : "Ledges"));
+         to.addProperty("enabled", true);
+      }
+
+      if (!isBound(to) && from.has("keybind") && from.get("keybind").isJsonPrimitive()) {
+         to.add("keybind", from.get("keybind"));
+      }
+
+      notes.add("ReverseStep was merged into Fast Fall" + (reverseOn ? " (mode " + (fastOn ? "Both" : "Ledges") + ")" : ""));
+   }
+
+   private static boolean isOn(JsonObject module) {
+      try {
+         return module.has("enabled") && module.get("enabled").isJsonPrimitive() && module.get("enabled").getAsBoolean();
+      } catch (RuntimeException e) {
+         return false;
+      }
+   }
+
+   private static boolean isBound(JsonObject module) {
+      try {
+         return module.has("keybind") && module.get("keybind").isJsonPrimitive() && module.get("keybind").getAsInt() > 0;
+      } catch (RuntimeException e) {
+         return false;
+      }
+   }
+
+   private static void copySetting(JsonObject from, String name, JsonObject to, String newName) {
+      String key = findKey(from, name);
+      if (key != null && from.get(key).isJsonPrimitive()) {
+         putSetting(to, newName, from.get(key));
       }
    }
 
@@ -74,13 +164,11 @@ public final class ConfigMigrations {
             modules.add("Clutch", to);
          }
 
-         boolean wasOn = from.has("enabled") && from.get("enabled").isJsonPrimitive() && from.get("enabled").getAsBoolean();
-         if (wasOn) {
+         if (isOn(from)) {
             to.addProperty("enabled", true);
          }
 
-         boolean clutchBound = to.has("keybind") && to.get("keybind").isJsonPrimitive() && to.get("keybind").getAsInt() > 0;
-         if (!clutchBound && from.has("keybind") && from.get("keybind").isJsonPrimitive()) {
+         if (!isBound(to) && from.has("keybind") && from.get("keybind").isJsonPrimitive()) {
             to.add("keybind", from.get("keybind"));
          }
       }

@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -39,9 +41,9 @@ public final class KeepRange extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.maxDistance.get(), true);
+         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.maxDistance.get(), true);
          if (enemy != null) {
             double dist = player.distanceTo(enemy);
             boolean recharging = !this.onlyDuringCooldown.get() || player.getAttackStrengthScale(0.0F) < 0.85F;

@@ -184,6 +184,10 @@ public final class Marker extends Module {
       this.boxes.clear();
       if (object.has("markers") && object.get("markers").isJsonArray()) {
          for (JsonElement element : object.getAsJsonArray("markers")) {
+            if (!element.isJsonArray()) {
+               continue;
+            }
+
             JsonArray entry = element.getAsJsonArray();
             if (entry.size() == 6) {
                this.boxes

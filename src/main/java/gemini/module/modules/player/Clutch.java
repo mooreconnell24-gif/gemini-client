@@ -660,10 +660,7 @@ public final class Clutch extends Module {
       }
 
       RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, this.silentAim.get(), ActionPriority.CRITICAL_SURVIVAL, 180.0F);
-      int previous = player.getInventory().getSelectedSlot();
-      player.getInventory().setSelectedSlot(slot);
-      RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
-      player.getInventory().setSelectedSlot(previous);
+      Inventories.withHotbarSlot(player, slot, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)));
       return true;
    }
 

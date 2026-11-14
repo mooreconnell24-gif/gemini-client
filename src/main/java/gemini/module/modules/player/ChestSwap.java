@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -44,7 +45,7 @@ public final class ChestSwap extends Module {
          this.done = true;
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
-         if (PlayerHelpers.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
+         if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
             this.swap(client, player);
          }
 

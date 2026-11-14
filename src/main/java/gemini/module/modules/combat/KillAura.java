@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -89,7 +90,7 @@ public final class KillAura extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (!player.isUsingItem()) {
             List<LivingEntity> candidates = this.collectTargets(client, player);
@@ -232,5 +233,11 @@ public final class KillAura extends Module {
          AABB box = Render3D.interpolatedBox(this.currentTarget, partialTick);
          Render3D.box(box, -6467875, true, true, 1.8F, 45, true);
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.currentTarget = null;
    }
 }

@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
@@ -47,7 +48,7 @@ public final class ChestAura extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.ready(client) && client.gui.screen() == null && this.wait-- <= 0) {
+      if (ClientState.ready(client) && client.gui.screen() == null && this.wait-- <= 0) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          Level level = client.level;
@@ -93,5 +94,11 @@ public final class ChestAura extends Module {
    @Override
    public String info() {
       return this.opened.isEmpty() ? null : this.opened.size() + " opened";
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.opened.clear();
    }
 }

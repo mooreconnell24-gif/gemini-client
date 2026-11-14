@@ -3,7 +3,7 @@
 	"id": "gemini",
 	"version": "${version}",
 	"name": "Gemini Client",
-	"description": "Single-player utility / sandbox client for Minecraft 26.3: 270+ modules, a window or panel ClickGUI, a draggable HUD and a pathfinding bot powered by a bundled Baritone. Server connections are blocked while it is installed.",
+	"description": "Single-player utility / sandbox client for Minecraft 26.3: 283 modules, a window or panel ClickGUI, a draggable HUD and a pathfinding bot powered by a bundled Baritone. Server connections are refused while sandbox mode is on; switching it off turns Gemini off.",
 	"authors": [
 		"Gemini Client"
 	],
@@ -33,7 +33,7 @@
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.3",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": ">=0.165.0"
 	},
 	"jars": [
 		{

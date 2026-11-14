@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -29,7 +30,7 @@ public final class ArrowDodge extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (CombatHelpers.ready(client) && (this.inAir.get() || player.onGround())) {
+      if (ClientState.ready(client) && (this.inAir.get() || player.onGround())) {
          AABB hitbox = player.getBoundingBox().inflate(0.35);
          double limit = this.range.get() * this.range.get();
          Vec3 away = null;

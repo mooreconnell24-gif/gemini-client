@@ -12,10 +12,14 @@ public final class HudContext {
    public final int height;
    public final int accent;
    public final int accent2;
+   /** Base panel colour of the active ClickGUI surface. */
+   public final int surface;
    public final boolean shadow;
    public final float partialTick;
 
-   public HudContext(GuiGraphicsExtractor graphics, Minecraft client, int width, int height, int accent, int accent2, boolean shadow, float partialTick) {
+   public HudContext(
+      GuiGraphicsExtractor graphics, Minecraft client, int width, int height, int accent, int accent2, int surface, boolean shadow, float partialTick
+   ) {
       this.graphics = graphics;
       this.client = client;
       this.font = client.font;
@@ -23,6 +27,7 @@ public final class HudContext {
       this.height = height;
       this.accent = accent;
       this.accent2 = accent2;
+      this.surface = surface;
       this.shadow = shadow;
       this.partialTick = partialTick;
    }
