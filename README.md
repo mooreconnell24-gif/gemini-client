@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  279 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
+  283 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -62,6 +62,16 @@ Everything runs locally. There is no account system, API key, cloud service or t
 - Xray could keep showing ore positions from before it was switched off or reconfigured, and from the previous dimension after a portal.
 - Combat and render modules kept targets and markers from the previous dimension after going through a portal.
 - The ClickGUI **Blur** switch did nothing.
+- One damaged entry in a saved Marker list no longer discards the whole list.
+
+**New modules**
+
+| Module | What it does |
+|---|---|
+| Cleanse | Clears harmful (or all) potion effects with one click or key |
+| Free Slots | HUD: empty inventory slots, red when nearly full |
+| Food Info | HUD: hunger and the saturation vanilla hides |
+| Xp Info | HUD: level, progress to the next level and total points |
 
 **Merged**
 
@@ -162,7 +172,7 @@ The rest:
 
 | | |
 |---|---|
-| **279 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
+| **283 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |

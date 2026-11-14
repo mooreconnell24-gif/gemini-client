@@ -61,6 +61,9 @@ import gemini.module.modules.hud.ArmorHud;
 import gemini.module.modules.hud.BiomeInfo;
 import gemini.module.modules.hud.ChunkInfo;
 import gemini.module.modules.hud.Clock;
+import gemini.module.modules.hud.FoodInfo;
+import gemini.module.modules.hud.FreeSlots;
+import gemini.module.modules.hud.XpInfo;
 import gemini.module.modules.hud.CombatItems;
 import gemini.module.modules.hud.CompassBar;
 import gemini.module.modules.hud.Cooldowns;
@@ -164,6 +167,7 @@ import gemini.module.modules.player.AutoWindCharge;
 import gemini.module.modules.player.Buffs;
 import gemini.module.modules.player.ChestStealerModule;
 import gemini.module.modules.player.ChestSwap;
+import gemini.module.modules.player.Cleanse;
 import gemini.module.modules.player.Derp;
 import gemini.module.modules.player.DurabilityAlert;
 import gemini.module.modules.player.Eagle;
@@ -671,6 +675,10 @@ public final class ModuleManager {
       this.register(new AutoSave());
       this.register(new Performance());
       this.register(new CinematicCamera());
+      this.register(new Cleanse());
+      this.register(new FreeSlots());
+      this.register(new FoodInfo());
+      this.register(new XpInfo());
    }
 
    public void bindConfig(ConfigManager configManager) {
