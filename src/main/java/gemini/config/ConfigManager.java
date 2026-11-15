@@ -13,6 +13,7 @@ import gemini.module.ModuleManager;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
+import gemini.module.setting.SettingCodec;
 import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -296,23 +297,7 @@ public final class ConfigManager {
          JsonElement value = settings.has(setting.name()) ? settings.get(setting.name()) : normalizedMap.get(normalizeId(setting.name()));
          if (value != null) {
             try {
-               if (setting instanceof BooleanSetting bool) {
-                  bool.set(value.getAsBoolean());
-               } else if (setting instanceof NumberSetting number) {
-                  number.set(value.getAsDouble());
-               } else if (setting instanceof ColorSetting color) {
-                  color.fromJson(value);
-               } else if (setting instanceof ModeSetting mode) {
-                  mode.set(value.getAsString());
-               } else if (setting instanceof ListSetting list) {
-                  List<String> entries = new ArrayList<>();
-
-                  for (JsonElement entry : value.getAsJsonArray()) {
-                     entries.add(entry.getAsString());
-                  }
-
-                  list.set(entries);
-               }
+               SettingCodec.read(setting, value);
             } catch (RuntimeException var141) {
                Gemini.LOGGER.warn("Ignoring bad value for {}.{}", module.getName(), setting.name());
             }
@@ -334,18 +319,9 @@ public final class ConfigManager {
          JsonObject settings = new JsonObject();
 
          for (Setting<?> setting : module.settings()) {
-            if (setting instanceof BooleanSetting bool) {
-               settings.addProperty(setting.name(), bool.get());
-            } else if (setting instanceof NumberSetting number) {
-               settings.addProperty(setting.name(), number.get());
-            } else if (setting instanceof ColorSetting color) {
-               settings.add(setting.name(), color.toJson());
-            } else if (setting instanceof ModeSetting mode) {
-               settings.addProperty(setting.name(), mode.get());
-            } else if (setting instanceof ListSetting list) {
-               JsonArray entries = new JsonArray();
-               list.get().forEach(entries::add);
-               settings.add(setting.name(), entries);
+            JsonElement saved = SettingCodec.write(setting);
+            if (saved != null) {
+               settings.add(setting.name(), saved);
             }
          }
 
