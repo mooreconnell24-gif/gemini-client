@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -33,7 +34,7 @@ public final class AutoMount extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (PlayerHelpers.ready(client) && !player.isPassenger() && client.gui.screen() == null) {
+      if (ClientState.ready(client) && !player.isPassenger() && client.gui.screen() == null) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else {

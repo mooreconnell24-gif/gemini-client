@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -18,7 +19,7 @@ public final class Extinguish extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          BlockPos c = client.player.blockPosition();
 
          for (BlockPos pos : BlockPos.betweenClosed(c.offset(-3, -1, -3), c.offset(3, 2, 3))) {

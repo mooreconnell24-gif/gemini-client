@@ -1,5 +1,8 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.Inventories;
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -21,10 +24,10 @@ public final class ShieldBreaker extends Module {
       Minecraft client = Minecraft.getInstance();
       if (this.cooldown > 0) {
          this.cooldown--;
-      } else if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      } else if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         if (CombatHelpers.nearestEnemy(client, player, 4.2, false) instanceof Player targetPlayer && targetPlayer.isBlocking()) {
-            CombatHelpers.withSlot(player, s -> s.is(ItemTags.AXES), () -> {
+         if (Targets.nearestEnemy(player, client.level.entitiesForRendering(), 4.2, false) instanceof Player targetPlayer && targetPlayer.isBlocking()) {
+            Inventories.withHotbarItem(player, s -> s.is(ItemTags.AXES), () -> {
                client.gameMode.attack(player, targetPlayer);
                Swing.attack(player, InteractionHand.MAIN_HAND);
                this.cooldown = 6;

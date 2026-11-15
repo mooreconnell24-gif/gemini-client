@@ -30,6 +30,7 @@ public final class Home extends Module {
       this.addSetting(new ActionSetting("Set Home", "Save where you are standing", this::setHere));
       this.addSetting(new ActionSetting("Go Home", "Teleport to the saved spot", this::go));
       this.addSetting(new ActionSetting("Back", "Return to where you were before the last teleport", this::back));
+      this.addSetting(new ActionSetting("Set Spawn Here", "Make where you stand your respawn point", this::setSpawn));
    }
 
    public static Home get() {
@@ -49,6 +50,15 @@ public final class Home extends Module {
          if (!this.isSavedEnabled()) {
             this.setEnabled(true, false);
          }
+      }
+   }
+
+   public void setSpawn() {
+      LocalPlayer player = player();
+      if (player != null && SpCommands.run("spawnpoint @s ~ ~ ~")) {
+         CommandManager.feedback(
+            String.format(Locale.ROOT, "§bHome §7spawn point set to §f%d %d %d", player.getBlockX(), player.getBlockY(), player.getBlockZ())
+         );
       }
    }
 

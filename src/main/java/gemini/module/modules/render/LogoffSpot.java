@@ -64,4 +64,11 @@ public final class LogoffSpot extends Module {
 
    private record Spot(String name, AABB box) {
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.activePlayers.clear();
+      this.loggedSpots.clear();
+   }
 }

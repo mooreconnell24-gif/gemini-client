@@ -5,15 +5,15 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  272 modules · window or panel ClickGUI · 33 HUD widgets · pathfinding bot (Baritone built in)
+  283 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
-  [![Version](https://img.shields.io/badge/Release-3.0.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
+  [![Version](https://img.shields.io/badge/Release-3.2.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
   [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-300) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
+  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-320) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
 </div>
 
 ---
@@ -22,7 +22,16 @@
 
 Gemini is a client-side Fabric mod for playing around in your own single-player worlds: flight, X-ray, ESP, auto-farming, building helpers, game-rule switches, a pathfinding bot and a fully draggable HUD.
 
-**Gemini is single-player only.** While it is installed, connections to servers and Realms are refused, and modules pause whenever a world is opened to LAN. Remove the jar to play online.
+**Gemini is single-player only.** Its modules, HUD, commands and bot run in your own private worlds and nowhere else; they pause whenever a world is opened to LAN, and they never run while you are connected to a server.
+
+That is controlled by one switch, **sandbox mode** (on by default):
+
+| Sandbox mode | Gemini | Servers and Realms |
+|---|---|---|
+| **On** | Active in single-player worlds | Refused, with a screen that says why and offers to switch Gemini off |
+| **Off** | Switched off completely: no modules, HUD, commands or bot | Allowed, like an unmodded client |
+
+Flip it with the button in the top-left corner of the title screen, with `.sandbox on` / `.sandbox off`, or from the screen shown when a connection is refused. There is no setting that runs modules on a server.
 
 Everything runs locally. There is no account system, API key, cloud service or telemetry.
 
@@ -33,7 +42,67 @@ Everything runs locally. There is no account system, API key, cloud service or t
   <br><sub>Window layout (rendered offline; in game the text uses the Minecraft font)</sub>
 </div>
 
-## What's new in 3.0.0
+## What's new in 3.2.0
+
+**Sandbox mode instead of "remove the jar".** The multiplayer lock is now a switch. With it on, Gemini works as before and a refused connection gets a screen that explains why. With it off, Gemini is completely dormant and you can play online without uninstalling it. Modules still never run on a server.
+
+**Safer saves.** The config is written on a background thread to a temporary file, forced to disk and renamed into place, so a crash or power cut can never leave half a file. The previous version is kept as `gemini_config.json.bak` and is restored automatically if the config cannot be read. A save that fails is retried and reported instead of being lost.
+
+**Shareable profiles.** `.config export <name>` writes your settings to `config/gemini_exports/` (or `.config export <name> clipboard` copies them). Exports leave out waypoints, your home, death coordinates and menu layout. `.config import <name> [clipboard]` stores one as a profile.
+
+**Faster built-in pathfinder.** The fallback A* was rebuilt around reused primitive arrays and a chunk cache: a search no longer allocates per node, reads blocks several times faster, and uses a tighter heuristic. Unloaded chunks are treated as walls and waited for instead of being bridged into, paths are kept while they are still walkable instead of being recomputed every 1.6 seconds, and a pause for combat or an open screen no longer looks like "stuck".
+
+**One bot at a time.** Baritone and the built-in engine can no longer steer you at once: a request to one stops the other.
+
+**Lighter rendering.** ESP boxes behind you are skipped before any work is done, an outlined and filled box is drawn as one shape instead of two, HoleESP and Trajectories do their world queries once a tick instead of once a frame, and a frame has a shape budget so a huge block list cannot freeze the game.
+
+**Fixes you might notice**
+
+- Modules that send packets from their tick could lose their place in the priority order for the rest of that tick, letting a lower-priority module take the hotbar slot or rotation from them.
+- Xray could keep showing ore positions from before it was switched off or reconfigured, and from the previous dimension after a portal.
+- Combat and render modules kept targets and markers from the previous dimension after going through a portal.
+- The ClickGUI **Blur** switch did nothing.
+- One damaged entry in a saved Marker list no longer discards the whole list.
+
+**New modules**
+
+| Module | What it does |
+|---|---|
+| Cleanse | Clears harmful (or all) potion effects with one click or key |
+| Free Slots | HUD: empty inventory slots, red when nearly full |
+| Food Info | HUD: hunger and the saturation vanilla hides |
+| Xp Info | HUD: level, progress to the next level and total points |
+
+**Merged**
+
+| Was | Now |
+|---|---|
+| ReverseStep | **Fast Fall** › *When*: `Ledges` (its Height and Speed are now *Ledge Height* and *Ledge Speed*; `Both` runs the two together). Your settings, switch and key bind are carried over, and `.reversestep` still finds it |
+
+<details>
+<summary>What was new in 3.1.0</summary>
+
+**New modules**
+
+| Module | What it does |
+|---|---|
+| Buffs | Permanent potion effects on switches: god mode, speed, haste, night vision and more |
+| Enchanter | Maxes out the held item or your armour with the best vanilla enchantments |
+| Give List | Gives you your own list of items in one click |
+| Platform | Puts a platform under your feet, or removes it |
+| Locate | Finds the nearest structure or biome, pins it and optionally teleports there |
+| Auto Save | Saves the world every few minutes |
+| Performance | FPS mode: low render distance, no clouds, shadows or particles, restored when switched off |
+| Cinematic Camera | Smooth camera movement for recording |
+
+**Menu.** Eight more themes, a *Surface* setting for the panel colour (Dark, OLED, Slate, Graphite, Plum), *Category Tint*, and **favourites**: star a module on its card and filter by ★.
+
+**Also.** Death Coords can pin a waypoint and teleport back, World Rules sets the difficulty, Home can set your spawn point, and `.version` reports any Minecraft hook that failed to apply.
+
+</details>
+
+<details>
+<summary>What was new in 3.0.0</summary>
 
 **Baritone built in.** The jar bundles a [Baritone](https://github.com/cabaletta/baritone) build for Minecraft 26.3, so every bot module and `#` command (`#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate`) runs on it with no extra download. If Baritone fails to load, Gemini falls back to its built-in pathfinder.
 
@@ -58,6 +127,8 @@ Everything runs locally. There is no account system, API key, cloud service or t
 | Aim | Spring smoothing and the silent-aim marker for every rotating module |
 
 Configs from 2.x are upgraded automatically.
+
+</details>
 
 <details>
 <summary>What was new in 2.2.0</summary>
@@ -101,12 +172,12 @@ The rest:
 
 | | |
 |---|---|
-| **272 modules** | Combat 40 · Movement 45 · Player 48 · World 38 · Render 50 · HUD 33 · Misc 18 |
+| **283 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
-| **33 HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
+| **HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
 | **Priority arbitration** | Modules claim hands and rotations in priority order, so survival modules always win |
-| **Profiles** | Autosave plus named profiles via `.config` |
+| **Profiles** | Crash-safe autosave with a backup, named profiles, and export/import for sharing |
 | **Crash isolation** | A failing module is switched off and reported instead of taking the game down |
 
 ## Module overview
@@ -150,7 +221,7 @@ Clutch (Player) watches for whatever is about to kill you and answers it with th
 
 1. Install **Fabric Loader** for Minecraft 26.3.
 2. Put the matching **Fabric API** jar into your `mods` folder.
-3. Download [`gemini-3.0.0.jar`](gemini-3.0.0.jar) from this repo (or build it, see below) and put it in `mods`.
+3. Download the `gemini-<version>.jar` in the root of this repo (or build it, see below) and put it in `mods`.
 4. Baritone is already bundled inside the jar. Do not add a separate Baritone jar to `mods`.
 5. Start the game with the Fabric profile and open a single-player world.
 6. Press **Right Shift** to open the menu.
@@ -191,7 +262,9 @@ Chat commands use a `.` prefix. Module names are case-insensitive.
 | `.set <module> <setting> <value>` / `.get <module> [setting]` | Change or inspect a setting (`_` for spaces) |
 | `.bind <module> <key>` / `.unbind <module>` / `.binds` | Key binds (`.binds` flags keys used twice) |
 | `.modules [category]` | List modules |
-| `.config save\|load\|list\|reset <name>` / `.reload` | Profiles and the config file |
+| `.config save\|load\|delete\|list\|reset <name>` / `.reload` | Profiles and the config file |
+| `.config export <name> [clipboard]` / `.config import <name> [clipboard]` | Share a profile as a file in `config/gemini_exports/` or as text |
+| `.sandbox [on\|off]` | Sandbox mode: on keeps Gemini active and offline, off switches Gemini off for online play |
 | `.waypoints add [name]\|remove <name>\|list\|tp <name>\|clear` | Waypoints in this world |
 | `.sethome` / `.home` / `.back` | A saved teleport in this world |
 | `.gm <mode>` / `.day` / `.night` / `.sun` / `.rain` / `.heal` / `.feed` | World and player shortcuts |
@@ -218,10 +291,12 @@ Any other Baritone command (`#set`, `#build`, `#schematica`, `#find`, ...) is pa
 
 | Path | Contents |
 |---|---|
-| `config/gemini_config.json` | Modules, settings, key binds, HUD layout, panels |
+| `config/gemini_config.json` | Modules, settings, key binds, HUD layout, panels and the `sandboxMode` switch |
+| `config/gemini_config.json.bak` | The previous good save |
 | `config/gemini_profiles/` | Named profiles from `.config save <name>` |
+| `config/gemini_exports/` | Portable profiles from `.config export <name>`; drop a received file here and run `.config import <name>` |
 
-Changes are saved a moment after you stop editing, and always on exit. If the config cannot be read, Gemini keeps it as `gemini_config.json.broken` and starts with defaults.
+Changes are saved a moment after you stop editing, and always on exit. Saves are atomic: the file on disk is always a complete one. If the config cannot be read, Gemini restores the backup and tells you; only if that is unreadable too does it start from defaults. Either way the unreadable file is kept as `gemini_config.json.broken`.
 
 ## Building from source
 
@@ -233,7 +308,7 @@ cd gemini-client
 ./gradlew build
 ```
 
-On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-3.0.0.jar`. Run a development client with `./gradlew runClient`.
+On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-<version>.jar`. `build` also runs the unit tests (`./gradlew test` runs just those). Run a development client with `./gradlew runClient`.
 
 ## Project layout
 
@@ -241,15 +316,18 @@ On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-3.0.0.ja
 src/main/java/gemini/
 ├── Gemini.java              Client entrypoint
 ├── command/                 Chat command system
-├── config/                  Config, migrations and profiles
+├── config/                  Config, atomic JSON files, migrations, profiles and profile bundles
+├── diags/                   Report of Minecraft hooks that failed to apply
 ├── event/                   Priority event bus, @EventHandler, ActionPriority
 ├── input/                   Key mappings and keybind conflict checks
-├── mixin/                   Fabric mixins; mixin/lock blocks server connections
-├── module/                  Module framework, settings, categories
+├── mixin/                   Fabric mixins; mixin/lock refuses server connections while sandbox mode is on
+├── module/                  Module framework, settings, categories, shared bases (placement, aura, linear flight)
 │   └── modules/<category>/  One file per module
 ├── render/                  3D rendering helpers
 ├── ui/                      Menus (window + classic panels), HUD overlay, fuzzy search
 ├── util/                    Baritone bridge + built-in pathfinder, rotations, hands arbiter, single-player gate
+│   └── pathing/             The A* search core and the chunk-cached block view
+src/test/java/gemini/        Unit tests for the search, the event bus and config handling
 └── xray/                    Xray data and compilation
 ```
 
@@ -258,15 +336,16 @@ src/main/java/gemini/
 | Problem | Fix |
 |---|---|
 | Crash on launch | Check Minecraft 26.3, a matching Fabric Loader and Fabric API, and Java 25; see `logs/latest.log` |
-| "Server connections are blocked" | Expected: Gemini is single-player only. Remove the jar to play online |
+| "Gemini sandbox mode is on" when joining a server | Expected: Gemini is single-player only. Choose **Switch Gemini off** on that screen (or `.sandbox off`) to play online; switch it back on from the title screen |
+| Nothing works in single-player | Sandbox mode is off, so Gemini is dormant: click the title screen button or type `.sandbox on` |
 | Modules will not turn on | Open a single-player world; modules pause while the world is open to LAN |
 | Menu will not open | Check Options › Controls › Gemini Client › Open Gemini |
 | A module switched itself off | It crashed and was isolated; the chat message and `logs/latest.log` have details |
-| Settings reset | Restore `config/gemini_config.json.broken` or `.config load <name>` |
+| Settings reset | Gemini restores `gemini_config.json.bak` by itself when the config is damaged; otherwise `.config load <name>`, or look at `gemini_config.json.broken` |
 
 ## Disclaimer
 
-Gemini Client is a client-side mod for single-player worlds; it refuses server and Realms connections. The authors are not responsible for lost items, worlds or other consequences.
+Gemini Client is a client-side mod for single-player worlds. With sandbox mode on it refuses server and Realms connections; with it off it does nothing at all. The authors are not responsible for lost items, worlds or other consequences.
 
 Gemini Client is not affiliated with Mojang, Microsoft, Fabric, LiquidBounce or Baritone.
 

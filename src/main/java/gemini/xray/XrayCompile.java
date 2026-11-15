@@ -19,7 +19,8 @@ public final class XrayCompile {
 
    public static void begin(SectionPos sectionPos) {
       XrayCompile.Collector collector = COLLECTOR.get();
-      collector.recording = XrayConfig.current() != null;
+      collector.config = XrayConfig.current();
+      collector.recording = collector.config != null;
       if (collector.recording) {
          collector.section = sectionPos.asLong();
          collector.positions.clear();
@@ -30,8 +31,9 @@ public final class XrayCompile {
       XrayCompile.Collector collector = COLLECTOR.get();
       if (collector.recording) {
          collector.recording = false;
-         XrayData.commit(collector.section, collector.positions);
+         XrayData.commit(collector.config, collector.section, collector.positions);
          collector.positions.clear();
+         collector.config = null;
       }
    }
 
@@ -70,5 +72,7 @@ public final class XrayCompile {
       private final MutableBlockPos cursor = new MutableBlockPos();
       private long section;
       private boolean recording;
+      /** The configuration this section is being compiled under; its positions are only kept if it is still current at the end. */
+      private XrayConfig config;
    }
 }

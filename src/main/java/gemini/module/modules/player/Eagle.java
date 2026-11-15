@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -41,7 +42,7 @@ public final class Eagle extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (player.onGround() && (!this.onlyBackwards.get() || client.options.keyDown.isDown())) {
             boolean edge = this.mode.is("Always") ? nothingBelow(client, player, 0.0) : nothingBelow(client, player, this.lookAhead.get());

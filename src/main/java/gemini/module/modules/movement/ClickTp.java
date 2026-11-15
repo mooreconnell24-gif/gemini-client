@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -36,7 +37,7 @@ public final class ClickTp extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (MovementHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          boolean pressed = this.trigger.is("Middle Click")
             ? client.mouseHandler.isMiddlePressed()
             : client.options.keyUse.isDown() && player.isShiftKeyDown();

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
+import gemini.diags.MixinReport;
 import gemini.event.EventBus;
 import gemini.module.modules.bot.AutoExcavate;
 import gemini.module.modules.bot.AutoExplore;
@@ -60,6 +61,9 @@ import gemini.module.modules.hud.ArmorHud;
 import gemini.module.modules.hud.BiomeInfo;
 import gemini.module.modules.hud.ChunkInfo;
 import gemini.module.modules.hud.Clock;
+import gemini.module.modules.hud.FoodInfo;
+import gemini.module.modules.hud.FreeSlots;
+import gemini.module.modules.hud.XpInfo;
 import gemini.module.modules.hud.CombatItems;
 import gemini.module.modules.hud.CompassBar;
 import gemini.module.modules.hud.Cooldowns;
@@ -90,6 +94,7 @@ import gemini.module.modules.hud.Tps;
 import gemini.module.modules.hud.Welcome;
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.modules.misc.AutoGG;
+import gemini.module.modules.misc.AutoSave;
 import gemini.module.modules.misc.BetterChat;
 import gemini.module.modules.misc.Aim;
 import gemini.module.modules.misc.ClickGuiModule;
@@ -100,6 +105,7 @@ import gemini.module.modules.misc.NameProtect;
 import gemini.module.modules.misc.Notifier;
 import gemini.module.modules.misc.PacketLogger;
 import gemini.module.modules.misc.Panic;
+import gemini.module.modules.misc.Performance;
 import gemini.module.modules.misc.Presets;
 import gemini.module.modules.misc.SoundBlocker;
 import gemini.module.modules.movement.AirJumpModule;
@@ -131,7 +137,6 @@ import gemini.module.modules.movement.NoJumpDelayModule;
 import gemini.module.modules.movement.NoSlowModule;
 import gemini.module.modules.movement.NoWeb;
 import gemini.module.modules.movement.ParkourModule;
-import gemini.module.modules.movement.ReverseStepModule;
 import gemini.module.modules.movement.SafeWalkModule;
 import gemini.module.modules.movement.Slippy;
 import gemini.module.modules.movement.Sneak;
@@ -159,11 +164,14 @@ import gemini.module.modules.player.AutoRespawnModule;
 import gemini.module.modules.player.AutoSleep;
 import gemini.module.modules.player.AutoToolModule;
 import gemini.module.modules.player.AutoWindCharge;
+import gemini.module.modules.player.Buffs;
 import gemini.module.modules.player.ChestStealerModule;
 import gemini.module.modules.player.ChestSwap;
+import gemini.module.modules.player.Cleanse;
 import gemini.module.modules.player.Derp;
 import gemini.module.modules.player.DurabilityAlert;
 import gemini.module.modules.player.Eagle;
+import gemini.module.modules.player.Enchanter;
 import gemini.module.modules.player.ExpThrower;
 import gemini.module.modules.player.FakePlayer;
 import gemini.module.modules.player.FastBreakModule;
@@ -173,6 +181,7 @@ import gemini.module.modules.player.Gamemode;
 import gemini.module.modules.player.AutoHeal;
 import gemini.module.modules.player.Kits;
 import gemini.module.modules.player.GhostHand;
+import gemini.module.modules.player.GiveList;
 import gemini.module.modules.player.HotbarSorter;
 import gemini.module.modules.player.InstantMineModule;
 import gemini.module.modules.player.InventoryCleaner;
@@ -204,6 +213,7 @@ import gemini.module.modules.render.BreakIndicators;
 import gemini.module.modules.render.CameraTweaks;
 import gemini.module.modules.render.ChinaHat;
 import gemini.module.modules.render.ChunkBorders;
+import gemini.module.modules.render.CinematicCamera;
 import gemini.module.modules.render.CoordinatesModule;
 import gemini.module.modules.render.CrosshairPlus;
 import gemini.module.modules.render.DamageParticles;
@@ -255,6 +265,7 @@ import gemini.module.modules.world.ChestAura;
 import gemini.module.modules.world.Collisions;
 import gemini.module.modules.world.EndermanLook;
 import gemini.module.modules.world.Extinguish;
+import gemini.module.modules.world.Locate;
 import gemini.module.modules.world.MobSweeper;
 import gemini.module.modules.world.Summoner;
 import gemini.module.modules.world.Flamethrower;
@@ -264,6 +275,7 @@ import gemini.module.modules.world.LawnMower;
 import gemini.module.modules.world.LiquidFiller;
 import gemini.module.modules.world.NukerModule;
 import gemini.module.modules.world.PacketMine;
+import gemini.module.modules.world.Platform;
 import gemini.module.modules.world.ScaffoldModule;
 import gemini.module.modules.world.SeedModule;
 import gemini.module.modules.world.SpawnProofer;
@@ -283,17 +295,19 @@ import gemini.util.BuiltInBaritone;
 import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
+import gemini.util.SingleplayerGate;
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
@@ -301,7 +315,12 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class ModuleManager {
    private final ArrayList<Module> modules = new ArrayList<>();
-   private final Map<Integer, Boolean> previousKeyState = new HashMap<>();
+   /** Bound keys that were down on the previous tick; swapped with {@link #keysDownNext} every poll so no boxing or map churn happens per tick. */
+   private BitSet keysDown = new BitSet();
+   private BitSet keysDownNext = new BitSet();
+   private static final WeakReference<ClientLevel> NO_LEVEL = new WeakReference<>(null);
+   /** The world of the previous tick, held weakly so the manager never keeps a closed world alive. */
+   private WeakReference<ClientLevel> lastLevel = NO_LEVEL;
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
@@ -317,11 +336,6 @@ public final class ModuleManager {
    });
    private ConfigManager configManager;
    private static final ArrayDeque<ModuleManager.Failure> FAILURES = new ArrayDeque<>();
-
-   /** A module turned on or off: the bus rebuilds its subscriber lists before the next event. */
-   public static void invalidateActive() {
-      EventBus.invalidate();
-   }
 
    private static String key(String name) {
       return name.toLowerCase(Locale.ROOT).replace(" ", "").replace("_", "").replace("-", "");
@@ -405,7 +419,6 @@ public final class ModuleManager {
       this.register(new InventoryMoveModule());
       this.register(new NoJumpDelayModule());
       this.register(new ElytraBoostModule());
-      this.register(new ReverseStepModule());
       this.register(new AutoWalkModule());
       this.register(new FastLadderModule());
       this.register(new InstantMineModule());
@@ -654,6 +667,18 @@ public final class ModuleManager {
       this.register(new AutoExcavate());
       this.register(new AutoHighway());
       this.register(new PathRenderer());
+      this.register(new Buffs());
+      this.register(new Enchanter());
+      this.register(new GiveList());
+      this.register(new Platform());
+      this.register(new Locate());
+      this.register(new AutoSave());
+      this.register(new Performance());
+      this.register(new CinematicCamera());
+      this.register(new Cleanse());
+      this.register(new FreeSlots());
+      this.register(new FoodInfo());
+      this.register(new XpInfo());
    }
 
    public void bindConfig(ConfigManager configManager) {
@@ -723,7 +748,32 @@ public final class ModuleManager {
       }
    }
 
+   /**
+    * Stops everything that could still be acting: every module's runtime state, the bot engines, queued tasks and
+    * held rotations. Saved on/off switches are untouched, so modules come back when Gemini may run again.
+    */
+   public void suspendAll() {
+      BaritoneBridge.stopAll();
+      BaritoneBridge.resumeAll();
+      for (Module module : this.modules) {
+         module.forceDisableRuntime();
+      }
+
+      this.keysDown.clear();
+      Scheduler.clear();
+      RotationManager.clear();
+   }
+
    public void onEndTick(Minecraft client) {
+      if (!SingleplayerGate.sandboxMode()) {
+         // Switched off: no hooks, no key binds, no bot. applyRuntimeState keeps every module's runtime flag down.
+         for (Module module : this.modules) {
+            module.applyRuntimeState();
+         }
+
+         return;
+      }
+
       BlockBreaking.tick();
 
       for (Module module : this.modules) {
@@ -731,13 +781,30 @@ public final class ModuleManager {
       }
 
       if (client.player == null) {
-         this.previousKeyState.clear();
+         this.keysDown.clear();
          Scheduler.clear();
          RotationManager.clear();
          BuiltInBaritone.stop();
          BaritoneBridge.resumeAll();
+         this.lastLevel = NO_LEVEL;
          SelfTest.abort("you left the world");
       } else {
+         if (MixinReport.shouldAnnounce()) {
+            List<String> missed = MixinReport.missed();
+            CommandManager.feedback("§eGemini §7could not hook " + missed.size() + " Minecraft method(s); the features behind them are inactive:");
+            for (String entry : missed) {
+               CommandManager.feedback("§8 - §7" + entry);
+            }
+         }
+
+         if (client.level != this.lastLevel.get()) {
+            boolean first = this.lastLevel.get() == null;
+            this.lastLevel = new WeakReference<>(client.level);
+            if (!first) {
+               this.worldChanged();
+            }
+         }
+
          Scheduler.tick();
          RotationManager.beginTick();
          Hands.beginTick();
@@ -747,6 +814,19 @@ public final class ModuleManager {
          BaritoneBridge.tick();
          RotationManager.endTick();
          SelfTest.tick(this);
+      }
+   }
+
+   /** Tells every running module that the world under the player was swapped; a failing hook disables only that module. */
+   private void worldChanged() {
+      for (Module module : this.modules) {
+         if (module.isEnabled()) {
+            try {
+               module.onWorldChange();
+            } catch (RuntimeException | LinkageError error) {
+               this.disableAfterFailure(module, "onWorldChange", error);
+            }
+         }
       }
    }
 
@@ -765,7 +845,7 @@ public final class ModuleManager {
          module.forceDisableRuntime();
       }
 
-      this.previousKeyState.clear();
+      this.keysDown.clear();
    }
 
    public void panic() {
@@ -784,7 +864,7 @@ public final class ModuleManager {
             }
          }
 
-         this.previousKeyState.clear();
+         this.keysDown.clear();
          Minecraft client = Minecraft.getInstance();
          if (Menus.isMenu(client.gui.screen())) {
             client.gui.setScreen(null);
@@ -800,15 +880,19 @@ public final class ModuleManager {
    }
 
    private void pollKeybinds(Minecraft client, boolean inGame) {
-      Set<Integer> seen = new HashSet<>();
+      BitSet down = this.keysDownNext;
+      down.clear();
 
       for (Module module : this.modules) {
          if (!(module instanceof ClickGuiModule)) {
             int key = module.getKeybind();
-            if (key != -1 && key != 0) {
+            if (key > 0) {
                boolean pressed = InputConstants.isKeyDown(key);
-               boolean wasPressed = this.previousKeyState.getOrDefault(key, false);
-               seen.add(key);
+               boolean wasPressed = this.keysDown.get(key);
+               if (pressed) {
+                  down.set(key);
+               }
+
                if (module.isHoldBind()) {
                   if (inGame && pressed && !wasPressed) {
                      module.setHeld(true);
@@ -822,11 +906,8 @@ public final class ModuleManager {
          }
       }
 
-      for (int key : seen) {
-         this.previousKeyState.put(key, InputConstants.isKeyDown(key));
-      }
-
-      this.previousKeyState.keySet().removeIf(keyx -> !seen.contains(keyx));
+      this.keysDownNext = this.keysDown;
+      this.keysDown = down;
    }
 
    public record Failure(String module, String hook, String error) {

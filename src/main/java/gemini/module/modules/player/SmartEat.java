@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -38,7 +39,7 @@ public final class SmartEat extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          boolean needGap = Damage.health(player) <= this.gappleHealth.floatValue();
          boolean needFood = player.getFoodData().getFoodLevel() <= this.hunger.intValue();

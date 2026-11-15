@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.util.Hands;
@@ -21,16 +22,13 @@ public final class AutoWindCharge extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (this.wasOnGround && !player.onGround() && player.getDeltaMovement().y > 0.25) {
             int slot = Inventories.findHotbar(player, s -> s.is(Items.WIND_CHARGE));
             if (slot >= 0 && Hands.claimMainHand()) {
                RotationManager.request(player, player.getYRot(), 90.0F, 180.0F, true, ActionPriority.CRITICAL_SURVIVAL, 3.0F);
-               int prev = player.getInventory().getSelectedSlot();
-               player.getInventory().setSelectedSlot(slot);
-               RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
-               player.getInventory().setSelectedSlot(prev);
+               Inventories.withHotbarSlot(player, slot, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)));
             }
          }
 

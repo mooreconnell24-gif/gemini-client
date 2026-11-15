@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -26,7 +27,7 @@ public final class MiddleClickExtra extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          boolean pressed = client.mouseHandler.isMiddlePressed();
          if (pressed && !this.previous) {
             this.act(client, player);

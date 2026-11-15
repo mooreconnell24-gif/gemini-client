@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -27,13 +29,13 @@ public final class ProjectileAimbot extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          boolean usingBow = player.isUsingItem() && player.getUseItem().getItem() instanceof BowItem;
          boolean usingTrident = player.isUsingItem() && player.getUseItem().is(Items.TRIDENT);
          boolean holdingCrossbow = player.getMainHandItem().getItem() instanceof CrossbowItem && CrossbowItem.isCharged(player.getMainHandItem());
          if (usingBow || usingTrident || holdingCrossbow) {
-            LivingEntity target = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
+            LivingEntity target = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
             if (target != null) {
                float velocity = usingBow
                   ? Math.max(0.6F, BowItem.getPowerForTime(player.getTicksUsingItem()) * 3.0F)

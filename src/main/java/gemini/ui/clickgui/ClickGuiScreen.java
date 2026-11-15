@@ -132,7 +132,7 @@ public final class ClickGuiScreen extends Screen {
       int y = 35;
 
       for (String label : new String[]{
-         "All", "Active Only", "Keybound", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
+         "All", "Active Only", "Keybound", "Favorites", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
       }) {
          int w = this.font.width(label) + 12;
          this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
@@ -144,6 +144,16 @@ public final class ClickGuiScreen extends Screen {
       return new MouseButtonEvent(event.x() / this.uiScale, event.y() / this.uiScale, event.buttonInfo());
    }
 
+   /** Vanilla blurs the world behind every menu; the ClickGUI "Blur" switch turns that off for this one. */
+   @Override
+   protected void extractBlurredBackground(GuiGraphicsExtractor graphics) {
+      ClickGuiModule style = this.style();
+      if (style == null || style.blur()) {
+         super.extractBlurredBackground(graphics);
+      }
+   }
+
+   @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int rawMouseX, int rawMouseY, float partialTick) {
       long now = Util.getMillis();
       float delta = Math.min(0.05F, (float)(now - this.lastFrame) / 1000.0F);
@@ -157,6 +167,8 @@ public final class ClickGuiScreen extends Screen {
       boolean glow = style == null || style.glow();
       boolean snapGrid = style == null || style.snapGrid();
       float pulse = animate ? 0.55F + 0.45F * (float)Math.sin(now / 380.0) : 1.0F;
+      int surface = style == null ? -15987178 : style.surface(0);
+      int header = style == null ? -15329501 : HudOverlay.lerp(style.surface(1), style.surface(2), 0.5F);
       if (style == null || style.dim()) {
          graphics.fill(0, 0, this.width, this.height, GeminiMark.withAlpha(-16447473, (int)(175.0F * open)));
       }
@@ -166,7 +178,7 @@ public final class ClickGuiScreen extends Screen {
       graphics.pose().pushMatrix();
       graphics.pose().scale(this.uiScale, this.uiScale);
       if (style == null || style.dim()) {
-         graphics.fill(0, 0, this.vw, 54, GeminiMark.withAlpha(-15987178, (int)(210.0F * open)));
+         graphics.fill(0, 0, this.vw, 54, GeminiMark.withAlpha(surface, (int)(210.0F * open)));
          drawHorizontalGradient(graphics, 0, 52, this.vw, 54, accent, accentB, (int)(180.0F * open));
       }
 
@@ -235,7 +247,7 @@ public final class ClickGuiScreen extends Screen {
          int slide = (int)((1.0F - open) * 34.0F);
          float opacity = style == null ? 0.88F : style.opacity();
          float scrollSpeed = style == null ? 2.0F : style.scrollSpeed();
-         CategoryPanel.Look look = new CategoryPanel.Look(accent, accentB, opacity, animate, open, scrollSpeed, glow, snapGrid);
+         CategoryPanel.Look look = new CategoryPanel.Look(accent, accentB, opacity, animate, open, scrollSpeed, glow, snapGrid, surface, header);
          CategoryPanel top = null;
 
          for (CategoryPanel panel : this.panels) {
@@ -527,6 +539,7 @@ public final class ClickGuiScreen extends Screen {
          case "All":
          case "Active Only":
          case "Keybound":
+         case "Favorites":
             this.filterMode = var2;
             this.flash("Filter: " + var2);
             return;

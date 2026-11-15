@@ -65,9 +65,17 @@ public final class WaypointsModule extends Module {
       Minecraft client = Minecraft.getInstance();
       if (client.player != null && client.level != null) {
          BlockPos pos = client.player.blockPosition();
+         this.pin(name, pos.getX(), pos.getY(), pos.getZ());
+      }
+   }
+
+   /** Adds a waypoint at explicit coordinates in the current dimension (used by Death Coords and Locate). */
+   public void pin(String name, int x, int y, int z) {
+      Minecraft client = Minecraft.getInstance();
+      if (client.player != null && client.level != null) {
          String dimension = client.level.dimension().identifier().toString();
          String label = name == null || name.isBlank() ? "Pin " + (this.inThisWorld().size() + 1) : name.trim();
-         WaypointsModule.Waypoint waypoint = new WaypointsModule.Waypoint(label, pos.getX(), pos.getY(), pos.getZ(), dimension, currentWorld());
+         WaypointsModule.Waypoint waypoint = new WaypointsModule.Waypoint(label, x, y, z, dimension, currentWorld());
          this.waypoints.add(waypoint);
          CommandManager.feedback("§bGemini §7pinned §f" + waypoint.name() + " §7at §f" + waypoint.x() + " " + waypoint.y() + " " + waypoint.z());
          if (!this.isSavedEnabled()) {

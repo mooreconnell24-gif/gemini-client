@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 
 import gemini.module.Category;
@@ -109,7 +110,7 @@ public final class AutoBlockModule extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client)) {
+      if (ClientState.ready(client)) {
          LocalPlayer player = client.player;
          if ((this.workInGui.get() || client.gui.screen() == null) && !player.isCreative() && !player.isSpectator()) {
             this.tickCooldowns();
@@ -330,5 +331,12 @@ public final class AutoBlockModule extends Module {
             return player.getOffhandItem().is(Items.SHIELD);
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.sinceAttack.clear();
+      this.faceTarget = null;
    }
 }

@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -23,7 +24,7 @@ public final class Glide extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (MovementHelpers.ready(client) && MovementHelpers.airborne(player)) {
+      if (ClientState.ready(client) && MovementHelpers.airborne(player)) {
          Vec3 motion = player.getDeltaMovement();
          if (motion.y < -this.fall.get()) {
             player.setDeltaMovement(motion.x, -this.fall.get(), motion.z);

@@ -1,5 +1,8 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.Inventories;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -32,10 +35,10 @@ public final class AnchorAura extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.NETHER && this.wait-- <= 0) {
+      if (ClientState.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.NETHER && this.wait-- <= 0) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
-         LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
+         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
          if (enemy != null) {
             BlockPos targetPos = enemy.blockPosition().above(2);
             if (!BlockPlacer.inReach(player, targetPos, this.range.get())) {
@@ -53,9 +56,9 @@ public final class AnchorAura extends Module {
                RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, ActionPriority.COMBAT);
                int charges = (Integer)state.getValue(RespawnAnchorBlock.CHARGE);
                if (charges == 0) {
-                  CombatHelpers.withSlot(player, s -> s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
+                  Inventories.withHotbarItem(player, s -> s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
                } else {
-                  CombatHelpers.withSlot(player, s -> !s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
+                  Inventories.withHotbarItem(player, s -> !s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
                }
             } else if (BlockPlacer.replaceable(client.level, finalPos)) {
                BlockPlacer.place(client, finalPos, s -> s.is(Items.RESPAWN_ANCHOR), true, true, true);

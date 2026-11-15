@@ -57,6 +57,11 @@ public final class ShapeSettings {
       Render3D.box(box, color, this.lines(), this.fill(), this.width(), this.fillAlpha(), this.throughWalls());
    }
 
+   /** A full block at integer coordinates; nothing is allocated for blocks that are off screen. */
+   public void block(int x, int y, int z, int color) {
+      Render3D.block(x, y, z, color, this.lines(), this.fill(), this.width(), this.fillAlpha(), this.throughWalls());
+   }
+
    public void block(BlockPos pos, int color) {
       Render3D.block(pos, color, this.lines(), this.fill(), this.width(), this.fillAlpha(), this.throughWalls());
    }

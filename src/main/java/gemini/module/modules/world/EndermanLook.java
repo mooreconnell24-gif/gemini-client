@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -37,7 +38,7 @@ public final class EndermanLook extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.readyNoScreen(client)) {
+      if (ClientState.readyNoScreen(client)) {
          LocalPlayer player = client.player;
          boolean away = this.mode.is("Look Away");
          if (!away || !player.getItemBySlot(EquipmentSlot.HEAD).is(Items.CARVED_PUMPKIN)) {

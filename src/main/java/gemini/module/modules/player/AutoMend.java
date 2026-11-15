@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -41,7 +42,7 @@ public final class AutoMend extends Module {
    @Override
    public void onDisable() {
       Minecraft client = Minecraft.getInstance();
-      if (this.restore.get() && this.swapped && PlayerHelpers.ready(client) && this.originalSlot >= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (this.restore.get() && this.swapped && ClientState.ready(client) && this.originalSlot >= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
          Inventories.swapToOffhand(client, client.player, this.originalSlot);
       }
 
@@ -51,7 +52,7 @@ public final class AutoMend extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player) && !OffhandClaim.totemOwns(client.player)) {
+      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player) && !OffhandClaim.totemOwns(client.player)) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          ItemStack offhand = player.getOffhandItem();

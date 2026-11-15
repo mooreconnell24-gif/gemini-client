@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -29,7 +30,7 @@ public final class HotbarSorter extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          if (this.swordSlot1.get() && this.ensureSlot(client, player, 0, s -> s.is(ItemTags.SWORDS))) {

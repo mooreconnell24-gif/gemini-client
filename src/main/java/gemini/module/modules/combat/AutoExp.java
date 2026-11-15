@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Inventories;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -26,13 +28,13 @@ public final class AutoExp extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (CombatHelpers.armorDamaged(player, this.threshold.intValue())) {
             boolean aimed = RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.WORLD_UTILITY, 2.0F);
             if (aimed && this.wait-- <= 0) {
                this.wait = this.delay.intValue();
-               CombatHelpers.withSlot(
+               Inventories.withHotbarItem(
                   player, stack -> stack.is(Items.EXPERIENCE_BOTTLE), () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))
                );
             }

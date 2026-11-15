@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -19,7 +20,7 @@ public final class TerrainSpeed extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && client.player.onGround() && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && client.player.onGround() && MoveUtil.hasInput(client.player)) {
          BlockState below = client.level.getBlockState(client.player.blockPosition().below());
          if (below.is(BlockTags.ICE) || below.is(Blocks.SOUL_SAND) || below.is(Blocks.SOUL_SOIL) || below.is(BlockTags.STAIRS)) {
             MoveUtil.setHorizontal(client.player, MoveUtil.baseSpeed(client.player) * this.boost.get());

@@ -100,4 +100,11 @@ public final class VoidEsp extends Module {
    public String info() {
       return this.holes.isEmpty() ? null : this.holes.size() + " holes";
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.holes.clear();
+      this.building.clear();
+   }
 }

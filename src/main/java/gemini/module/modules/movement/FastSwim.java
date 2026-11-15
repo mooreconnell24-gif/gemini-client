@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -25,7 +26,7 @@ public final class FastSwim extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && (client.player.isInWater() || client.player.isInLava()) && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && (client.player.isInWater() || client.player.isInLava()) && MoveUtil.hasInput(client.player)) {
          LocalPlayer player = client.player;
          this.tick++;
          double mult = this.mode.is("Pulse") && this.tick % 4 != 0 ? 1.05 : this.speed.get();

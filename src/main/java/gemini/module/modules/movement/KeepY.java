@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -29,7 +30,7 @@ public final class KeepY extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client) && MoveUtil.hasInput(client.player)) {
+      if (ClientState.ready(client) && MoveUtil.hasInput(client.player)) {
          LocalPlayer player = client.player;
          if (player.onGround()) {
             this.lockedY = player.getBlockY();

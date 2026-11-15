@@ -271,7 +271,7 @@ public abstract class HudWidget extends Module {
             hud.graphics.pose().scale(s, s);
             if (this.hasBackground()) {
                hud.graphics.fill(-1, -1, w + 1, h + 1, GeminiMark.withAlpha(hud.accent, 42));
-               hud.graphics.fill(0, 0, w, h, GeminiMark.withAlpha(-15987178, 198));
+               hud.graphics.fill(0, 0, w, h, GeminiMark.withAlpha(hud.surface, 198));
                hud.graphics.fill(0, 0, w, 4, GeminiMark.withAlpha(hud.accent, 14));
                int steps = Math.min(18, Math.max(1, w));
                for (int i = 0; i < steps; i++) {

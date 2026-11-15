@@ -97,4 +97,10 @@ public final class SoundLocator extends Module {
 
    private record SoundPing(String label, Vec3 pos, long createdAt) {
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.pings.clear();
+   }
 }

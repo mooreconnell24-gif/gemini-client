@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -26,7 +27,7 @@ public final class BowSpam extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (CombatHelpers.ready(client)
+      if (ClientState.ready(client)
          && client.gui.screen() == null
          && player.isUsingItem()
          && player.getUseItem().getItem() instanceof BowItem

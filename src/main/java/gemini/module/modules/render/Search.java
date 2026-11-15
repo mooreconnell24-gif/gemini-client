@@ -107,8 +107,7 @@ public final class Search extends Module {
                Block block = level.getBlockState(cursor).getBlock();
                if (wanted.contains(block)) {
                   int color = this.colorOf(block);
-                  this.shape
-                     .box(new AABB(cursor.getX(), cursor.getY(), cursor.getZ(), cursor.getX() + 1.0, cursor.getY() + 1.0, cursor.getZ() + 1.0), color);
+                  this.shape.block(cursor.getX(), cursor.getY(), cursor.getZ(), color);
                   if (this.tracers.get()) {
                      Render3D.line(origin, Vec3.atCenterOf(cursor), color, 1.0F, true);
                   }

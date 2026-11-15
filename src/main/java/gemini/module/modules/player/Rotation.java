@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -30,7 +31,7 @@ public final class Rotation extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          float yaw = player.getYRot();
          if (this.yawMode.is("Snap")) {
             yaw = Math.round(yaw / this.step.floatValue()) * this.step.floatValue();

@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -39,7 +40,7 @@ public final class ElytraFly extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (MovementHelpers.ready(client) && player.input != null) {
+      if (ClientState.ready(client) && player.input != null) {
          Input keys = player.input.keyPresses;
          if (!player.isFallFlying()) {
             ClientPacketListener connection = client.getConnection();

@@ -15,11 +15,6 @@ public final class PlayerHelpers {
    private PlayerHelpers() {
    }
 
-   static boolean ready(Minecraft client) {
-      LocalPlayer player = client.player;
-      return player != null && client.level != null && client.gameMode != null && !player.isSpectator() && !player.isDeadOrDying();
-   }
-
    static boolean mending(ItemStack stack) {
       return !stack.isEmpty() && stack.isDamageableItem() && EnchantmentHelper.has(stack, EnchantmentEffectComponents.REPAIR_WITH_XP);
    }
@@ -33,10 +28,7 @@ public final class PlayerHelpers {
          if (slot < 0 || !Hands.claimMainHand()) {
             return false;
          } else {
-            int previous = player.getInventory().getSelectedSlot();
-            player.getInventory().setSelectedSlot(slot);
-            client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
-            player.getInventory().setSelectedSlot(previous);
+            Inventories.withHotbarSlot(player, slot, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
             return true;
          }
       }

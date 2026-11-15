@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.Gemini;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -51,7 +52,7 @@ public final class Offhand extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (CombatHelpers.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
+      if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
          AutoTotemModule totem = Gemini.getInstance().modules().byClass(AutoTotemModule.class).orElse(null);
          if (totem == null || !totem.isEnabled() || !totem.wantsOffhand(player)) {
             if (this.cooldown > 0) {

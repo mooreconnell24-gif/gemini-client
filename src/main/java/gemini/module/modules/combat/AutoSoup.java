@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.util.Hands;
 import gemini.module.Module;
@@ -36,7 +37,7 @@ public final class AutoSoup extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (!CombatHelpers.ready(client) || client.gui.screen() != null) {
+      if (!ClientState.ready(client) || client.gui.screen() != null) {
          this.finish(client);
          return;
       }

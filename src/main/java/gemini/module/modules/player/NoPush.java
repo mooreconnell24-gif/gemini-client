@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -19,7 +20,7 @@ public final class NoPush extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client)) {
+      if (ClientState.ready(client)) {
          LocalPlayer player = client.player;
          if (!MoveUtil.hasInput(player) && player.hurtTime == 0) {
             if (this.water.get() && player.isInWater()) {

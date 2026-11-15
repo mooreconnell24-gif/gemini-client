@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -20,7 +21,7 @@ public final class FastUse extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null && client.options.keyUse.isDown() && this.wait-- <= 0) {
+      if (ClientState.ready(client) && client.gui.screen() == null && client.options.keyUse.isDown() && this.wait-- <= 0) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          ItemStack main = player.getMainHandItem();

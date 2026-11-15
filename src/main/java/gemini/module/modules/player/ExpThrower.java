@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -24,7 +25,7 @@ public final class ExpThrower extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null && (!this.onlyDamaged.get() || needsRepair(player))) {
+      if (ClientState.ready(client) && client.gui.screen() == null && (!this.onlyDamaged.get() || needsRepair(player))) {
          if (this.lookDown.get() && Math.abs(player.getXRot() - 90.0F) > 0.5F) {
             player.setXRot(90.0F);
          } else if (this.cooldown > 0) {

@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.Targets;
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
@@ -27,10 +29,10 @@ public final class BedAura extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (CombatHelpers.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.OVERWORLD && this.wait-- <= 0) {
+      if (ClientState.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.OVERWORLD && this.wait-- <= 0) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
-         LivingEntity enemy = CombatHelpers.nearestEnemy(client, player, this.range.get(), true);
+         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
          if (enemy != null) {
             BlockPos pos = enemy.blockPosition().above();
             if (client.level.getBlockState(pos).is(BlockTags.BEDS)) {

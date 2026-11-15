@@ -49,12 +49,18 @@ jobs:
           grep -q -- "- gemini " "$log" || { echo "::error::Gemini was not loaded"; exit 1; }
           grep -q -- "- baritone-fork" "$log" || { echo "::error::The bundled Baritone was not loaded"; exit 1; }
       - name: Commit the built jar to main
-        # Keeps gemini-3.0.0.jar in the repo root in step with main. Runs only after the launch test passed;
-        # [skip ci] stops this commit from starting another build.
+        # Keeps gemini-<version>.jar in the repo root in step with main. Runs only after the tests and the launch
+        # test passed; [skip ci] stops this commit from starting another build.
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          cp build/libs/gemini-3.0.0.jar gemini-3.0.0.jar
+          version=$(grep '^version=' gradle.properties | cut -d= -f2)
+          jar="gemini-${version}.jar"
+          # Jars of earlier versions are removed so the root only ever holds the current one.
+          for old in gemini-*.jar; do
+            [ "$old" = "$jar" ] || git rm -q --ignore-unmatch "$old"
+          done
+          cp "build/libs/${jar}" "${jar}"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add gemini-3.0.0.jar
-          git commit -m "Update gemini-3.0.0.jar from CI build [skip ci]" && git push || echo "jar unchanged"
+          git add "${jar}"
+          git commit -m "Update ${jar} from CI build [skip ci]" && git push || echo "jar unchanged"

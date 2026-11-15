@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
@@ -15,13 +16,25 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Dispatches game events to modules in priority order.
  *
- * <p>Each hook ({@link Module#onTick()}, {@link Module#onRender3D(float)}, ...) has its own subscriber array holding
- * only the enabled modules that override it, sorted by {@link ActionPriority} (highest first, registration order
- * within a priority). The arrays are rebuilt only when a module is registered, enabled or disabled, so every event
- * is a plain loop with no allocation, lookup or reflection. Per-hook priorities come from {@link EventHandler}.
+ * <p><b>Dispatch.</b> Each hook ({@link Module#onTick()}, {@link Module#onRender3D(float)}, ...) has its own
+ * immutable array of {@link Listener}s: the enabled modules that override the hook, sorted by
+ * {@link ActionPriority} (highest first, registration order within a priority), each paired with the priority it
+ * runs at. An event is one loop over that array calling the hook directly on the module. Nothing is looked up,
+ * allocated or reflected per event.
  *
- * <p>The module currently being dispatched on the client thread is available through {@link #current()}, which is
- * how the hand and rotation arbiters know whose request they are looking at.
+ * <p><b>Registration.</b> Which hooks a module class overrides, and any {@link EventHandler} priorities on them, is
+ * worked out once per class and cached in a {@link ClassValue}, so a second instance of a class costs nothing.
+ *
+ * <p><b>Toggles while an event is running.</b> The listener arrays are snapshots that are replaced, never edited.
+ * A module switched off part-way through an event is skipped by the {@code isEnabled()} check; one switched on
+ * joins from the next event. Toggling therefore can never corrupt a loop that is in flight, whether the toggle
+ * comes from another module, a key bind, the menu or a crash handler. Invalidation is a counter bump, so it is
+ * safe from any thread.
+ *
+ * <p><b>Who is running.</b> {@link #current()} and {@link #currentPriority()} name the module whose hook is running
+ * on the client thread, which is how the hand and rotation arbiters know whose request they are looking at. The
+ * context is saved and restored around every hook, so an event raised from inside a hook (a tick handler that
+ * sends a packet, an attack raised from a tick) hands the context back to the outer module when it returns.
  */
 public final class EventBus {
    public static final int TICK = 0;
@@ -33,48 +46,52 @@ public final class EventBus {
    public static final int BLOCK_UPDATE = 6;
    public static final int BARITONE_PAUSE = 7;
    static final int HOOKS = 8;
-   private static final String[] HOOK_NAMES = {"onTick", "onRender3D", "onRenderHud", "onSendPacket", "onReceivePacket", "onAttack", "onBlockUpdate", "wantsBaritonePause"};
+   private static final String[] HOOK_NAMES = {
+      "onTick", "onRender3D", "onRenderHud", "onSendPacket", "onReceivePacket", "onAttack", "onBlockUpdate", "wantsBaritonePause"
+   };
    private static final Class<?>[][] HOOK_PARAMS = {
       {}, {float.class}, {HudContext.class}, {Packet.class}, {Packet.class}, {Entity.class}, {BlockPos.class, BlockState.class, BlockState.class}, {}
    };
-   private static final Module[] NONE = new Module[0];
-   private static volatile boolean dirty = true;
+   private static final Listener[] NONE = new Listener[0];
+   /** Bumped whenever any module turns on or off; every bus compares it with the generation its tables were built at. */
+   private static final AtomicInteger GENERATION = new AtomicInteger();
+   private static final ClassValue<HookProfile> PROFILES = new ClassValue<>() {
+      @Override
+      protected HookProfile computeValue(Class<?> type) {
+         return HookProfile.scan(type);
+      }
+   };
    private static Module current;
    private static ActionPriority currentPriority;
-   private final List<EventBus.Subscription> subscriptions = new ArrayList<>();
+   private final Object registrationLock = new Object();
    private final Failure failure;
    private final Profiler profiler;
-   private volatile Module[][] subscribers = new Module[HOOKS][];
+   /** Every registered module, replaced (not edited) on registration so rebuilds can read it without locking. */
+   private volatile Subscription[] subscriptions = new Subscription[0];
+   private volatile Listener[][] listeners = new Listener[HOOKS][];
+   private volatile int builtGeneration = -1;
 
    public EventBus(Failure failure, Profiler profiler) {
       this.failure = failure;
       this.profiler = profiler;
-      Arrays.fill(this.subscribers, NONE);
+      Arrays.fill(this.listeners, NONE);
    }
 
-   /** Reads which hooks the module overrides and at what priority. Called once per module. */
+   /** Adds a module. Its hooks start receiving events once it is enabled. */
    public void register(Module module) {
-      int mask = 0;
-      ActionPriority[] levels = new ActionPriority[HOOKS];
-      for (int hook = 0; hook < HOOKS; hook++) {
-         try {
-            Method method = module.getClass().getMethod(HOOK_NAMES[hook], HOOK_PARAMS[hook]);
-            if (method.getDeclaringClass() != Module.class) {
-               mask |= 1 << hook;
-               EventHandler handler = method.getAnnotation(EventHandler.class);
-               levels[hook] = handler != null ? handler.value() : null;
-            }
-         } catch (NoSuchMethodException ignored) {
-         }
+      synchronized (this.registrationLock) {
+         Subscription[] old = this.subscriptions;
+         Subscription[] next = Arrays.copyOf(old, old.length + 1);
+         next[old.length] = new Subscription(module, PROFILES.get(module.getClass()), old.length);
+         this.subscriptions = next;
       }
 
-      this.subscriptions.add(new EventBus.Subscription(module, mask, levels, this.subscriptions.size()));
-      dirty = true;
+      invalidate();
    }
 
-   /** Marks the subscriber arrays stale; called whenever a module turns on or off. */
+   /** Marks the listener tables stale; called whenever a module turns on or off. Safe from any thread. */
    public static void invalidate() {
-      dirty = true;
+      GENERATION.incrementAndGet();
    }
 
    /** The module whose hook is running on the client thread right now, or null outside dispatch. */
@@ -87,86 +104,76 @@ public final class EventBus {
       return currentPriority;
    }
 
+   /** True when the module overrides the given hook, whether or not it is enabled. */
    public boolean subscribed(Module module, int hook) {
-      for (EventBus.Subscription subscription : this.subscriptions) {
+      for (Subscription subscription : this.subscriptions) {
          if (subscription.module == module) {
-            return (subscription.mask & 1 << hook) != 0;
+            return subscription.profile.overrides(hook);
          }
       }
 
       return false;
    }
 
-   private Module[] subscribers(int hook) {
-      if (dirty) {
+   /** How many enabled modules currently listen to the hook. */
+   public int listenerCount(int hook) {
+      return this.listeners(hook).length;
+   }
+
+   private Listener[] listeners(int hook) {
+      if (this.builtGeneration != GENERATION.get()) {
          this.rebuild();
       }
 
-      return this.subscribers[hook];
+      return this.listeners[hook];
    }
 
-   private synchronized void rebuild() {
-      if (!dirty) {
-         return;
-      }
+   private void rebuild() {
+      synchronized (this.registrationLock) {
+         int generation = GENERATION.get();
+         if (this.builtGeneration == generation) {
+            return;
+         }
 
-      dirty = false;
-      Module[][] next = new Module[HOOKS][];
-      List<EventBus.Subscription> enabled = new ArrayList<>();
-      for (int hook = 0; hook < HOOKS; hook++) {
-         enabled.clear();
-         for (EventBus.Subscription subscription : this.subscriptions) {
-            if ((subscription.mask & 1 << hook) != 0 && subscription.module.isEnabled()) {
-               enabled.add(subscription);
+         Subscription[] all = this.subscriptions;
+         Listener[][] next = new Listener[HOOKS][];
+         List<Listener> enabled = new ArrayList<>();
+         for (int hook = 0; hook < HOOKS; hook++) {
+            enabled.clear();
+            for (Subscription subscription : all) {
+               if (subscription.profile.overrides(hook) && subscription.module.isEnabled()) {
+                  enabled.add(new Listener(subscription.module, subscription.priority(hook), subscription.order));
+               }
             }
+
+            enabled.sort(Listener.ORDER);
+            next[hook] = enabled.isEmpty() ? NONE : enabled.toArray(new Listener[0]);
          }
 
-         int h = hook;
-         enabled.sort(Comparator.<EventBus.Subscription>comparingInt(s -> -s.priority(h).level()).thenComparingInt(s -> s.order));
-         Module[] array = new Module[enabled.size()];
-         for (int i = 0; i < array.length; i++) {
-            array[i] = enabled.get(i).module;
-         }
-
-         next[hook] = array;
+         this.listeners = next;
+         // Published last: a module toggled while this ran bumped the counter again and forces another rebuild.
+         this.builtGeneration = generation;
       }
-
-      this.subscribers = next;
-   }
-
-   private ActionPriority priorityOf(Module module, int hook) {
-      for (EventBus.Subscription subscription : this.subscriptions) {
-         if (subscription.module == module) {
-            return subscription.priority(hook);
-         }
-      }
-
-      return module.priority();
-   }
-
-   private void enter(Module module, int hook) {
-      current = module;
-      currentPriority = this.priorityOf(module, hook);
-   }
-
-   private static void leave() {
-      current = null;
-      currentPriority = null;
    }
 
    public void tick() {
       boolean timed = this.profiler != null && this.profiler.profiling();
-      for (Module module : this.subscribers(TICK)) {
+      for (Listener listener : this.listeners(TICK)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
             long start = timed ? System.nanoTime() : 0L;
-            this.enter(module, TICK);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                module.onTick();
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onTick", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
 
             if (timed) {
@@ -178,17 +185,22 @@ public final class EventBus {
 
    public void render3D(float partialTick) {
       boolean timed = this.profiler != null && this.profiler.profiling();
-      for (Module module : this.subscribers(RENDER_3D)) {
+      for (Listener listener : this.listeners(RENDER_3D)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
             long start = timed ? System.nanoTime() : 0L;
-            this.enter(module, RENDER_3D);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                module.onRender3D(partialTick);
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onRender3D", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
 
             if (timed) {
@@ -200,17 +212,22 @@ public final class EventBus {
 
    public void renderHud(HudContext hud) {
       boolean timed = this.profiler != null && this.profiler.profiling();
-      for (Module module : this.subscribers(RENDER_HUD)) {
+      for (Listener listener : this.listeners(RENDER_HUD)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
             long start = timed ? System.nanoTime() : 0L;
-            this.enter(module, RENDER_HUD);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                module.onRenderHud(hud);
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onRenderHud", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
 
             if (timed) {
@@ -220,19 +237,24 @@ public final class EventBus {
       }
    }
 
-   /** Returns true when a module cancelled the packet. */
+   /** Returns true when a module cancelled the packet. Every listener still sees it. */
    public boolean sendPacket(Packet<?> packet) {
       boolean cancelled = false;
-      for (Module module : this.subscribers(SEND_PACKET)) {
+      for (Listener listener : this.listeners(SEND_PACKET)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
-            this.enter(module, SEND_PACKET);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                cancelled |= module.onSendPacket(packet);
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onSendPacket", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
          }
       }
@@ -243,7 +265,8 @@ public final class EventBus {
    /** Packets may arrive off the client thread, so this one does not publish {@link #current()}. */
    public boolean receivePacket(Packet<?> packet) {
       boolean cancelled = false;
-      for (Module module : this.subscribers(RECEIVE_PACKET)) {
+      for (Listener listener : this.listeners(RECEIVE_PACKET)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
             try {
                cancelled |= module.onReceivePacket(packet);
@@ -257,39 +280,50 @@ public final class EventBus {
    }
 
    public void attack(Entity target) {
-      for (Module module : this.subscribers(ATTACK)) {
+      for (Listener listener : this.listeners(ATTACK)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
-            this.enter(module, ATTACK);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                module.onAttack(target);
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onAttack", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
          }
       }
    }
 
    public void blockUpdate(BlockPos pos, BlockState oldState, BlockState newState) {
-      for (Module module : this.subscribers(BLOCK_UPDATE)) {
+      for (Listener listener : this.listeners(BLOCK_UPDATE)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
-            this.enter(module, BLOCK_UPDATE);
+            Module outer = current;
+            ActionPriority outerPriority = currentPriority;
+            current = module;
+            currentPriority = listener.priority;
 
             try {
                module.onBlockUpdate(pos, oldState, newState);
             } catch (StackOverflowError | RuntimeException | LinkageError error) {
                this.failure.failed(module, "onBlockUpdate", error);
             } finally {
-               leave();
+               current = outer;
+               currentPriority = outerPriority;
             }
          }
       }
    }
 
    public boolean wantsBaritonePause() {
-      for (Module module : this.subscribers(BARITONE_PAUSE)) {
+      for (Listener listener : this.listeners(BARITONE_PAUSE)) {
+         Module module = listener.module;
          if (module.isEnabled()) {
             try {
                if (module.wantsBaritonePause()) {
@@ -317,22 +351,86 @@ public final class EventBus {
       void record(Module module, long nanos);
    }
 
-   private static final class Subscription {
+   /** One enabled module on one hook, with the priority resolved up front. */
+   private static final class Listener {
+      static final Comparator<Listener> ORDER = (a, b) -> {
+         int byPriority = Integer.compare(b.priority.level(), a.priority.level());
+         return byPriority != 0 ? byPriority : Integer.compare(a.order, b.order);
+      };
       final Module module;
-      final int mask;
-      final ActionPriority[] levels;
+      final ActionPriority priority;
       final int order;
 
-      Subscription(Module module, int mask, ActionPriority[] levels, int order) {
+      Listener(Module module, ActionPriority priority, int order) {
          this.module = module;
-         this.mask = mask;
-         this.levels = levels;
+         this.priority = priority;
+         this.order = order;
+      }
+   }
+
+   private static final class Subscription {
+      final Module module;
+      final HookProfile profile;
+      final int order;
+
+      Subscription(Module module, HookProfile profile, int order) {
+         this.module = module;
+         this.profile = profile;
          this.order = order;
       }
 
       ActionPriority priority(int hook) {
-         ActionPriority level = this.levels[hook];
+         ActionPriority level = this.profile.levels[hook];
          return level != null ? level : this.module.priority();
+      }
+   }
+
+   /** Which hooks a module class overrides and the {@link EventHandler} priority on each; computed once per class. */
+   private static final class HookProfile {
+      final int mask;
+      final ActionPriority[] levels;
+
+      private HookProfile(int mask, ActionPriority[] levels) {
+         this.mask = mask;
+         this.levels = levels;
+      }
+
+      boolean overrides(int hook) {
+         return (this.mask & 1 << hook) != 0;
+      }
+
+      static HookProfile scan(Class<?> type) {
+         int mask = 0;
+         ActionPriority[] levels = new ActionPriority[HOOKS];
+         // Walk from the concrete class up to (not including) Module: the first class that declares a hook is the
+         // override that will run, so its annotation is the one that counts.
+         for (Class<?> c = type; c != null && c != Module.class && c != Object.class; c = c.getSuperclass()) {
+            for (Method method : c.getDeclaredMethods()) {
+               if (method.isBridge() || method.isSynthetic()) {
+                  continue;
+               }
+
+               int hook = hookOf(method);
+               if (hook >= 0 && (mask & 1 << hook) == 0) {
+                  mask |= 1 << hook;
+                  EventHandler handler = method.getAnnotation(EventHandler.class);
+                  levels[hook] = handler != null ? handler.value() : null;
+               }
+            }
+         }
+
+         return new HookProfile(mask, levels);
+      }
+
+      private static int hookOf(Method method) {
+         String name = method.getName();
+         for (int hook = 0; hook < HOOKS; hook++) {
+            if (HOOK_NAMES[hook].equals(name) && Arrays.equals(HOOK_PARAMS[hook], method.getParameterTypes())) {
+               return hook;
+            }
+         }
+
+         return -1;
       }
    }
 }

@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -28,7 +29,7 @@ public final class GhostHand extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          boolean down = client.options.keyUse.isDown();
          if (down && !this.wasDown) {
             LocalPlayer player = client.player;

@@ -110,4 +110,10 @@ public final class HitEffect extends Module {
 
    private record HitBurst(Vec3 center, long timestamp) {
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.bursts.clear();
+   }
 }

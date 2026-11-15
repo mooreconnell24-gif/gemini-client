@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
@@ -102,7 +103,7 @@ public final class VeinMiner extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (!WorldHelpers.readyNoScreen(client)) {
+      if (!ClientState.readyNoScreen(client)) {
          this.queue.clear();
          this.current = null;
          this.watchedPos = null;
@@ -208,5 +209,11 @@ public final class VeinMiner extends Module {
             Swing.attack(player, InteractionHand.MAIN_HAND);
          }
       }
+   }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.queue.clear();
    }
 }

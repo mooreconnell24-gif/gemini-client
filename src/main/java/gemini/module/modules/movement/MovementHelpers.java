@@ -10,11 +10,6 @@ public final class MovementHelpers {
    private MovementHelpers() {
    }
 
-   static boolean ready(Minecraft client) {
-      LocalPlayer player = client.player;
-      return player != null && client.level != null && client.gameMode != null && !player.isSpectator() && !player.isDeadOrDying();
-   }
-
    static boolean airborne(LocalPlayer player) {
       return !player.onGround()
          && !player.getAbilities().flying

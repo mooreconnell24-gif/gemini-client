@@ -63,4 +63,10 @@ public final class JumpEffect extends Module {
 
    private record Ring(Vec3 center, long createdAt) {
    }
+
+   /** Everything remembered here belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
+      this.rings.clear();
+   }
 }

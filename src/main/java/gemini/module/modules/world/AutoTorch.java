@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -38,7 +39,7 @@ public final class AutoTorch extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.ready(client) && client.gui.screen() == null && this.wait-- <= 0) {
+      if (ClientState.ready(client) && client.gui.screen() == null && this.wait-- <= 0) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          Level level = client.level;

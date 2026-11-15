@@ -12,6 +12,7 @@ import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.world.WaypointsModule;
 import gemini.module.setting.ColorSetting;
 import gemini.util.BaritoneBridge;
+import gemini.util.SingleplayerGate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,6 +41,11 @@ public final class HudOverlay {
    private final ModuleManager modules;
    private final Map<Module, Float> arrayAnimations = new IdentityHashMap<>();
    private long lastFrameMs = Util.getMillis();
+   private int surface = -15987178;
+   /** The watermark's stats line only changes once a tick, so it is rebuilt per tick instead of per frame. */
+   private String metaLineCache;
+   private int metaLineTick = -1;
+   private String metaLineStyle;
 
    public HudOverlay(ModuleManager modules) {
       this.modules = modules;
@@ -71,12 +77,13 @@ public final class HudOverlay {
 
    public void onHudRender(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
       Minecraft client = Minecraft.getInstance();
-      if (client.player != null && !client.gui.hud.isHidden()) {
+      if (client.player != null && !client.gui.hud.isHidden() && SingleplayerGate.sandboxMode()) {
          HudModule hud = this.modules.byClass(HudModule.class).orElse(null);
          if (hud == null || hud.isEnabled()) {
             ClickGuiModule style = this.modules.byClass(ClickGuiModule.class).orElse(null);
             int accent = style == null ? -16748289 : style.accentColor();
             int accent2 = style == null ? -16722689 : style.secondaryColor();
+            this.surface = style == null ? -15987178 : style.surface(0);
             float scale = hud == null ? 1.0F : hud.scale();
             boolean shadow = hud == null || hud.shadow();
             graphics.pose().pushMatrix();
@@ -100,7 +107,7 @@ public final class HudOverlay {
             this.drawCoordinates(graphics, client, accent, width, height, shadow);
             this.drawEspTags(graphics, client, width, shadow);
             this.drawStorage(graphics, client, accent, width, height, shadow);
-            this.modules.renderHud(new HudContext(graphics, client, width, height, accent, accent2, shadow, deltaTracker.getGameTimeDeltaPartialTick(false)));
+            this.modules.renderHud(new HudContext(graphics, client, width, height, accent, accent2, this.surface, shadow, deltaTracker.getGameTimeDeltaPartialTick(false)));
             this.drawToasts(graphics, client.font, width, height, accent, accent2);
             graphics.pose().popMatrix();
          }
@@ -132,7 +139,7 @@ public final class HudOverlay {
                int alphaBg = Math.round(228.0F * slide);
                int alphaText = Math.round(255.0F * slide);
                graphics.fill(x - 1, y - 1, x + cardW + 1, y + cardH + 1, GeminiMark.withAlpha(accent, Math.round(62.0F * slide)));
-               graphics.fill(x, y, x + cardW, y + cardH, GeminiMark.withAlpha(-15987178, alphaBg));
+               graphics.fill(x, y, x + cardW, y + cardH, GeminiMark.withAlpha(this.surface, alphaBg));
                graphics.fill(x, y, x + 2, y + cardH, GeminiMark.withAlpha(statusColor, alphaText));
                int pillX = x + cardW - badgeW - 5;
                graphics.fill(pillX, y + 4, pillX + badgeW, y + 13, GeminiMark.withAlpha(statusColor, Math.round(45.0F * slide)));
@@ -151,32 +158,40 @@ public final class HudOverlay {
    private int drawWatermark(GuiGraphicsExtractor graphics, Minecraft client, HudModule hud, int accent, int accent2, boolean shadow) {
       Font font = client.font;
       String wmStyle = hud == null ? "Nextgen Card" : hud.watermarkStyle();
-      List<String> meta = new ArrayList<>();
-      meta.add("v" + Gemini.VERSION);
-      if (hud == null || hud.fps()) {
-         meta.add(client.getFps() + " FPS");
-      }
-
       LocalPlayer player = client.player;
-      if ((hud == null || hud.ping()) && client.getConnection() != null && player != null) {
-         PlayerInfo info = client.getConnection().getPlayerInfo(player.getUUID());
-         if (info != null) {
-            meta.add(info.getLatency() + "ms");
+      int tick = player == null ? -1 : player.tickCount;
+      String metaLine = this.metaLineCache;
+      if (metaLine == null || tick != this.metaLineTick || !wmStyle.equals(this.metaLineStyle)) {
+         List<String> meta = new ArrayList<>();
+         meta.add("v" + Gemini.VERSION);
+         if (hud == null || hud.fps()) {
+            meta.add(client.getFps() + " FPS");
          }
+
+         if ((hud == null || hud.ping()) && client.getConnection() != null && player != null) {
+            PlayerInfo info = client.getConnection().getPlayerInfo(player.getUUID());
+            if (info != null) {
+               meta.add(info.getLatency() + "ms");
+            }
+         }
+
+         if ((hud == null || hud.speed()) && player != null) {
+            double dx = player.getX() - player.xo;
+            double dz = player.getZ() - player.zo;
+            meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
+         }
+
+         String botTask = BaritoneBridge.taskLabel();
+         if (botTask != null) {
+            meta.add("Baritone: " + botTask);
+         }
+
+         metaLine = String.join("  ·  ", meta);
+         this.metaLineCache = metaLine;
+         this.metaLineTick = tick;
+         this.metaLineStyle = wmStyle;
       }
 
-      if ((hud == null || hud.speed()) && player != null) {
-         double dx = player.getX() - player.xo;
-         double dz = player.getZ() - player.zo;
-         meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
-      }
-
-      String botTask = BaritoneBridge.taskLabel();
-      if (botTask != null) {
-         meta.add("Baritone: " + botTask);
-      }
-
-      String metaLine = String.join("  ·  ", meta);
       if ("Minimal".equals(wmStyle)) {
          String line = "GEMINI NEXTGEN  ·  " + metaLine;
          graphics.text(font, line, 6, 6, accent, shadow);
@@ -187,7 +202,7 @@ public final class HudOverlay {
          int pillW = 14 + font.width(title) + font.width(sub);
          int pillH = 17;
          graphics.fill(3, 3, 5 + pillW, 5 + pillH, GeminiMark.withAlpha(accent, 42));
-         graphics.fill(4, 4, 4 + pillW, 4 + pillH, GeminiMark.withAlpha(-15987178, 225));
+         graphics.fill(4, 4, 4 + pillW, 4 + pillH, GeminiMark.withAlpha(this.surface, 225));
          graphics.fill(4, 4, 6, 4 + pillH, accent);
          drawHorizontalGradient(graphics, 4, 4, 4 + pillW, 5, accent, accent2);
          graphics.text(font, title, 10, 8, accent, shadow);
@@ -199,7 +214,7 @@ public final class HudOverlay {
          int boxW = textX + Math.max(font.width("GEMINI NEXTGEN"), font.width(metaLine)) + 10;
          int boxH = 25;
          graphics.fill(3, 3, 4 + boxW + 1, 4 + boxH + 1, GeminiMark.withAlpha(accent, 52));
-         graphics.fill(4, 4, 4 + boxW, 4 + boxH, GeminiMark.withAlpha(-15987178, 222));
+         graphics.fill(4, 4, 4 + boxW, 4 + boxH, GeminiMark.withAlpha(this.surface, 222));
          graphics.fill(4, 6, 4 + boxW, 14, GeminiMark.withAlpha(accent, 14));
          drawHorizontalGradient(graphics, 4, 4, 4 + boxW, 6, accent, accent2);
          if (hasLogo) {
@@ -295,7 +310,7 @@ public final class HudOverlay {
                   graphics.fill(boxLeft - 1, y - 1, boxRight + 1, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(36.0F * anim)));
                }
 
-               graphics.fill(boxLeft, y - 1, boxRight, rowBottom, GeminiMark.withAlpha(-15987178, (int)(255.0F * opacity * anim)));
+               graphics.fill(boxLeft, y - 1, boxRight, rowBottom, GeminiMark.withAlpha(this.surface, (int)(255.0F * opacity * anim)));
                graphics.fill(boxLeft, y - 1, boxRight, y + 3, GeminiMark.withAlpha(rowColor, (int)(16.0F * anim)));
             }
 

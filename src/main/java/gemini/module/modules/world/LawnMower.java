@@ -1,5 +1,6 @@
 package gemini.module.modules.world;
 
+import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -28,7 +29,7 @@ public final class LawnMower extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (WorldHelpers.ready(client) && client.gui.screen() == null) {
+      if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          int r = (int)Math.ceil(this.range.get());
          BlockPos c = player.blockPosition();

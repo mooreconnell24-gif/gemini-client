@@ -5,11 +5,13 @@ import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
 import gemini.event.ActionPriority;
+import gemini.event.EventBus;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.HudContext;
 import gemini.ui.HudOverlay;
+import gemini.util.ClientThread;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +34,8 @@ public abstract class Module {
    private List<Setting<?>> exposedSettings;
    private int keybind;
    private boolean savedEnabled;
-   private boolean enabled;
+   /** Read by chunk builders and packet handlers as well as the client thread, hence volatile. Written on the client thread only. */
+   private volatile boolean enabled;
    private ConfigManager configManager;
 
    protected Module(String name, String description, Category category) {
@@ -199,6 +202,12 @@ public abstract class Module {
    }
 
    private void applyEnabled(boolean enabled, boolean notify, boolean persist) {
+      if (!ClientThread.isCurrent()) {
+         // Enable and disable hooks touch the player and the world, so a toggle from any other thread is replayed here.
+         ClientThread.run(() -> this.applyEnabled(enabled, notify, persist));
+         return;
+      }
+
       if (enabled && !this.canActivate()) {
          if (notify) {
             CommandManager.feedback(this.blockedReason());
@@ -231,7 +240,7 @@ public abstract class Module {
       boolean shouldRun = this.savedEnabled && this.canActivate();
       if (this.enabled != shouldRun) {
          this.enabled = shouldRun;
-         ModuleManager.invalidateActive();
+         EventBus.invalidate();
 
          try {
             if (shouldRun) {
@@ -252,7 +261,7 @@ public abstract class Module {
    private void abandonStart() {
       this.enabled = false;
       this.savedEnabled = false;
-      ModuleManager.invalidateActive();
+      EventBus.invalidate();
 
       try {
          this.onDisable();
@@ -265,7 +274,7 @@ public abstract class Module {
    public final void forceDisableRuntime() {
       if (this.enabled) {
          this.enabled = false;
-         ModuleManager.invalidateActive();
+         EventBus.invalidate();
 
          try {
             this.onDisable();
@@ -285,6 +294,14 @@ public abstract class Module {
    }
 
    public void onDisable() {
+   }
+
+   /**
+    * The player moved to a different world while this module stayed on (a portal, a respawn in another dimension).
+    * Leaving a world altogether disables the module instead, so this is the only moment remembered positions and
+    * entities can outlive their world. Modules that remember either drop them here.
+    */
+   public void onWorldChange() {
    }
 
    public void onTick() {

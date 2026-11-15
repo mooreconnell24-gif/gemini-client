@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.ClientState;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -26,7 +27,7 @@ public final class AntiBreak extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (PlayerHelpers.ready(client) && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(client.player)) {
          LocalPlayer player = client.player;
          if (this.tools.get()) {
             ItemStack held = player.getMainHandItem();

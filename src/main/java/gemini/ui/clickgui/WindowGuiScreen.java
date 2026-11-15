@@ -52,10 +52,12 @@ public final class WindowGuiScreen extends Screen {
    private static final int TEXT = -1;
    private static final int TEXT_DIM = -5592406;
    private static final int TEXT_FAINT = -8355185;
-   private static final int SURFACE = -15723481;
-   private static final int SURFACE_2 = -15196629;
-   private static final int SURFACE_3 = -14604492;
-   private static final String[] FILTERS = new String[]{"All", "On", "Bound"};
+   private static final String FAVORITES = "★";
+   /** Panel shades for this frame, taken from the ClickGUI "Surface" setting. */
+   private int surface = -15723481;
+   private int surface2 = -15196629;
+   private int surface3 = -14604492;
+   private static final String[] FILTERS = new String[]{"All", "On", "Bound", FAVORITES};
    private static Category lastCategory = Category.COMBAT;
    private static String lastModule;
    private static String rememberedSearch = "";
@@ -127,6 +129,15 @@ public final class WindowGuiScreen extends Screen {
 
    // ------------------------------------------------------------------ rendering
 
+   /** Vanilla blurs the world behind every menu; the ClickGUI "Blur" switch turns that off for this one. */
+   @Override
+   protected void extractBlurredBackground(GuiGraphicsExtractor g) {
+      ClickGuiModule style = style();
+      if (style == null || style.blur()) {
+         super.extractBlurredBackground(g);
+      }
+   }
+
    @Override
    public void extractRenderState(GuiGraphicsExtractor g, int rawMouseX, int rawMouseY, float partialTick) {
       long now = Util.getMillis();
@@ -136,9 +147,16 @@ public final class WindowGuiScreen extends Screen {
       boolean animate = style == null || style.animations();
       this.open = animate ? ease(Math.min(1.0F, (now - this.openedAt) / 220.0F)) : 1.0F;
       this.slide = Math.round((1.0F - this.open) * 12.0F);
-      int accent = style == null ? -16748289 : style.accentColor();
-      int accent2 = style == null ? -16722689 : style.secondaryColor();
+      Category tint = this.search.isBlank() && !FAVORITES.equals(this.filter) ? this.category : null;
+      int accent = style == null ? -16748289 : style.accentFor(tint);
+      int accent2 = style == null ? -16722689 : style.secondaryFor(tint);
       float glass = style == null ? 0.9F : style.opacity();
+      if (style != null) {
+         this.surface = style.surface(1);
+         this.surface2 = style.surface(2);
+         this.surface3 = style.surface(3);
+      }
+
       this.hits.clear();
       this.tip = null;
       if (style == null || style.dim()) {
@@ -157,9 +175,9 @@ public final class WindowGuiScreen extends Screen {
       int wx = (this.vw - ww) / 2;
       int wy = (this.vh - wh) / 2;
       this.drawShadow(g, wx, wy, ww, wh, accent);
-      roundRect(g, wx, wy, wx + ww, wy + wh, 6, GeminiMark.withAlpha(SURFACE, this.a(Math.round(255.0F * glass))));
-      roundRect(g, wx, wy, wx + SIDEBAR, wy + wh, 6, GeminiMark.withAlpha(SURFACE_2, this.a(Math.round(255.0F * glass))));
-      g.fill(wx + SIDEBAR - 6, wy, wx + SIDEBAR, wy + wh, GeminiMark.withAlpha(SURFACE_2, this.a(Math.round(255.0F * glass))));
+      roundRect(g, wx, wy, wx + ww, wy + wh, 6, GeminiMark.withAlpha(this.surface, this.a(Math.round(255.0F * glass))));
+      roundRect(g, wx, wy, wx + SIDEBAR, wy + wh, 6, GeminiMark.withAlpha(this.surface2, this.a(Math.round(255.0F * glass))));
+      g.fill(wx + SIDEBAR - 6, wy, wx + SIDEBAR, wy + wh, GeminiMark.withAlpha(this.surface2, this.a(Math.round(255.0F * glass))));
       g.fill(wx + SIDEBAR, wy + 6, wx + SIDEBAR + 1, wy + wh - 6, GeminiMark.withAlpha(-1, this.a(14)));
       gradient(g, wx + 6, wy, wx + ww - 6, wy + 2, accent, accent2, this.a(255));
       this.drawSidebar(g, wx, wy, wh, mouseX, mouseY, accent, accent2, delta);
@@ -214,7 +232,7 @@ public final class WindowGuiScreen extends Screen {
       g.text(this.font, version, x + 37, y + 22, GeminiMark.withAlpha(accent2, this.a(255)), false);
       int iy = y + 42;
       for (Category cat : Category.values()) {
-         boolean active = this.search.isBlank() && cat == this.category;
+         boolean active = this.search.isBlank() && !FAVORITES.equals(this.filter) && cat == this.category;
          boolean over = inside(mouseX, mouseY, x + 6, iy, SIDEBAR - 12, 20);
          if (active) {
             roundRect(g, x + 6, iy, x + SIDEBAR - 6, iy + 20, 4, GeminiMark.withAlpha(accent, this.a(46)));
@@ -240,7 +258,7 @@ public final class WindowGuiScreen extends Screen {
             String count = Integer.toString(on);
             int bw = this.font.width(count) + 6;
             int bx = x + SIDEBAR - 12 - bw;
-            roundRect(g, bx, iy + 5, bx + bw, iy + 15, 3, GeminiMark.withAlpha(active ? accent : SURFACE_3, this.a(active ? 150 : 255)));
+            roundRect(g, bx, iy + 5, bx + bw, iy + 15, 3, GeminiMark.withAlpha(active ? accent : this.surface3, this.a(active ? 150 : 255)));
             g.text(this.font, count, bx + 3, iy + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
          }
 
@@ -263,7 +281,7 @@ public final class WindowGuiScreen extends Screen {
    private void sidebarButton(GuiGraphicsExtractor g, int x, int y, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
       boolean over = inside(mouseX, mouseY, x + 6, y, SIDEBAR - 12, 17);
       roundRect(
-         g, x + 6, y, x + SIDEBAR - 6, y + 17, 4, GeminiMark.withAlpha(active ? accent : (over ? SURFACE_3 : SURFACE), this.a(active ? 140 : 255))
+         g, x + 6, y, x + SIDEBAR - 6, y + 17, 4, GeminiMark.withAlpha(active ? accent : (over ? this.surface3 : this.surface), this.a(active ? 140 : 255))
       );
       String text = fit(this.font, label, SIDEBAR - 22);
       g.text(this.font, text, x + (SIDEBAR - this.font.width(text)) / 2, y + 5, GeminiMark.withAlpha(over || active ? TEXT : TEXT_DIM, this.a(255)), false);
@@ -287,7 +305,7 @@ public final class WindowGuiScreen extends Screen {
       int sw = w - 16 - filtersW - 6;
       int sy = y + 9;
       boolean overSearch = inside(mouseX, mouseY, sx, sy, sw, 16);
-      roundRect(g, sx, sy, sx + sw, sy + 16, 4, GeminiMark.withAlpha(this.searchFocused ? SURFACE_3 : SURFACE_2, this.a(255)));
+      roundRect(g, sx, sy, sx + sw, sy + 16, 4, GeminiMark.withAlpha(this.searchFocused ? this.surface3 : this.surface2, this.a(255)));
       if (this.searchFocused) {
          gradient(g, sx + 4, sy + 15, sx + sw - 4, sy + 16, accent, accent2, this.a(255));
       }
@@ -316,13 +334,14 @@ public final class WindowGuiScreen extends Screen {
          int fw = this.font.width(f) + 12;
          boolean active = f.equals(this.filter);
          boolean over = inside(mouseX, mouseY, fx, sy, fw, 16);
-         roundRect(g, fx, sy, fx + fw, sy + 16, 4, GeminiMark.withAlpha(active ? accent : (over ? SURFACE_3 : SURFACE_2), this.a(active ? 170 : 255)));
+         roundRect(g, fx, sy, fx + fw, sy + 16, 4, GeminiMark.withAlpha(active ? accent : (over ? this.surface3 : this.surface2), this.a(active ? 170 : 255)));
          g.text(this.font, f, fx + 6, sy + 4, GeminiMark.withAlpha(active || over ? TEXT : TEXT_DIM, this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.FILTER, fx, sy, fw, 16, f);
          if (over) {
             this.tip = switch (f) {
                case "On" -> "Only show modules that are switched on";
                case "Bound" -> "Only show modules with a key bind";
+               case FAVORITES -> "Your starred modules from every category";
                default -> "Show every module";
             };
          }
@@ -334,7 +353,9 @@ public final class WindowGuiScreen extends Screen {
    private void drawModuleList(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
       int x = this.listX;
       int w = this.listW;
-      String heading = this.search.isBlank() ? this.category.displayName() : "Results for \"" + this.search.trim() + "\"";
+      String heading = !this.search.isBlank()
+         ? "Results for \"" + this.search.trim() + "\""
+         : (FAVORITES.equals(this.filter) ? "Favorites" : this.category.displayName());
       g.text(this.font, fit(this.font, heading, w - 40), x + 2, top, GeminiMark.withAlpha(TEXT, this.a(255)), false);
       String count = this.shown.size() + (this.shown.size() == 1 ? " module" : " modules");
       g.text(this.font, count, x + w - this.font.width(count), top, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
@@ -380,7 +401,7 @@ public final class WindowGuiScreen extends Screen {
       float hover = this.anim(this.hoverAnim, module, over ? 1.0F : 0.0F, delta, 16.0F);
       float on = this.anim(this.enableAnim, module, module.isEnabled() ? 1.0F : 0.0F, delta, 12.0F);
       boolean blocked = !module.canActivate() && !(module instanceof ClickGuiModule);
-      roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(selected ? SURFACE_3 : SURFACE_2, this.a(255)));
+      roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(selected ? this.surface3 : this.surface2, this.a(255)));
       if (on > 0.01F) {
          roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(accent, this.a(Math.round(34.0F * on))));
          g.fill(x, y + 5, x + 2, y + CARD_H - 5, GeminiMark.withAlpha(accent2, this.a(Math.round(255.0F * on))));
@@ -405,11 +426,21 @@ public final class WindowGuiScreen extends Screen {
          right = sx - 6;
       }
 
+      ClickGuiModule style = style();
+      boolean starred = style != null && style.isFavorite(module);
+      if (starred || hover > 0.3F) {
+         int starW = this.font.width(FAVORITES);
+         int starAlpha = starred ? 255 : Math.round(140.0F * hover);
+         g.text(this.font, FAVORITES, right - starW, y + 6, GeminiMark.withAlpha(starred ? accent2 : TEXT_FAINT, this.a(starAlpha)), false);
+         this.hit(WindowGuiScreen.Kind.STAR, right - starW - 3, y, starW + 6, CARD_H, module, this.listViewTop, this.listViewBottom);
+         right -= starW + 6;
+      }
+
       String key = this.binding == module ? "..." : (module.getKeybind() == -1 ? null : GeminiKeys.displayName(module.getKeybind()));
       if (key != null && !"NONE".equals(key)) {
          String label = module.isHoldBind() ? key + " hold" : key;
          int kw = this.font.width(label) + 6;
-         roundRect(g, right - kw, y + 6, right, y + 17, 3, GeminiMark.withAlpha(SURFACE, this.a(255)));
+         roundRect(g, right - kw, y + 6, right, y + 17, 3, GeminiMark.withAlpha(this.surface, this.a(255)));
          g.text(this.font, label, right - kw + 3, y + 8, GeminiMark.withAlpha(this.binding == module ? accent2 : TEXT_DIM, this.a(255)), false);
          right -= kw + 6;
       }
@@ -424,7 +455,7 @@ public final class WindowGuiScreen extends Screen {
    private void drawSettings(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
       int x = this.settingsX;
       int w = this.settingsW;
-      roundRect(g, x, top - 2, x + w, bottom - 4, 5, GeminiMark.withAlpha(SURFACE_2, this.a(255)));
+      roundRect(g, x, top - 2, x + w, bottom - 4, 5, GeminiMark.withAlpha(this.surface2, this.a(255)));
       Module module = this.selected;
       if (module == null) {
          String text = "Select a module to see its settings";
@@ -515,7 +546,7 @@ public final class WindowGuiScreen extends Screen {
       }
 
       int kw = this.font.width(key) + 10;
-      roundRect(g, x + w - 8 - kw, y + 4, x + w - 8, y + 16, 3, GeminiMark.withAlpha(this.binding == module ? accent2 : SURFACE_3, this.a(this.binding == module ? 120 : 255)));
+      roundRect(g, x + w - 8 - kw, y + 4, x + w - 8, y + 16, 3, GeminiMark.withAlpha(this.binding == module ? accent2 : this.surface3, this.a(this.binding == module ? 120 : 255)));
       g.text(this.font, key, x + w - 8 - kw + 5, y + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
       this.hit(WindowGuiScreen.Kind.BIND, x, y, w, 20, module, this.settingsViewTop, this.settingsViewBottom);
    }
@@ -629,7 +660,7 @@ public final class WindowGuiScreen extends Screen {
 
    private void drawFooter(GuiGraphicsExtractor g, int x, int y, int w, int accent2, long now) {
       boolean flashing = this.flash != null && now < this.flashUntil;
-      String hint = "Esc close  ·  RMB toggle  ·  MMB bind";
+      String hint = "Esc close  ·  RMB toggle  ·  MMB bind  ·  ★ star";
       int hintW = this.font.width(hint);
       String text;
       if (this.bindingMenu) {
@@ -702,6 +733,14 @@ public final class WindowGuiScreen extends Screen {
             }
          }
          case SWITCH -> this.toggle((Module)hit.target);
+         case STAR -> {
+            ClickGuiModule style = style();
+            if (style != null) {
+               Module module = (Module)hit.target;
+               boolean starred = style.toggleFavorite(module);
+               this.showNotice(starred ? module.getName() + " starred" : module.getName() + " unstarred");
+            }
+         }
          case BIND -> {
             Module module = (Module)hit.target;
             if (button == 1) {
@@ -994,9 +1033,15 @@ public final class WindowGuiScreen extends Screen {
       }
 
       String query = this.search.trim().toLowerCase(Locale.ROOT);
+      boolean favoritesOnly = FAVORITES.equals(this.filter);
+      ClickGuiModule style = style();
       List<Module> list = new ArrayList<>();
       Map<Module, Integer> scores = new HashMap<>();
-      for (Module module : query.isEmpty() ? modules(this.category) : Gemini.getInstance().modules().getModules()) {
+      for (Module module : query.isEmpty() && !favoritesOnly ? modules(this.category) : Gemini.getInstance().modules().getModules()) {
+         if (favoritesOnly && (style == null || !style.isFavorite(module))) {
+            continue;
+         }
+
          if (!query.isEmpty()) {
             int score = Fuzzy.moduleScore(query, module);
             if (score == 0) {
@@ -1211,6 +1256,7 @@ public final class WindowGuiScreen extends Screen {
       CATEGORY,
       CARD,
       SWITCH,
+      STAR,
       FILTER,
       SEARCH,
       CLEAR,

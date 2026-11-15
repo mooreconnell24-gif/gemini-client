@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -38,7 +39,7 @@ public final class NoWeb extends Module {
    public void onTick() {
       // Fallback in case the entity hook is not available: push back toward walking speed.
       Minecraft client = Minecraft.getInstance();
-      if (MovementHelpers.ready(client)) {
+      if (ClientState.ready(client)) {
          LocalPlayer player = client.player;
          BlockState feet = client.level.getBlockState(player.blockPosition());
          BlockState head = client.level.getBlockState(player.blockPosition().above());

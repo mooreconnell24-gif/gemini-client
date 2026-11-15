@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.util.Hands;
 import gemini.module.Module;
@@ -27,7 +28,7 @@ public final class AutoFirework extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (MovementHelpers.ready(client) && player.isFallFlying()) {
+      if (ClientState.ready(client) && player.isFallFlying()) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else if (!this.onlySlow.get() || !(player.getDeltaMovement().length() >= this.minSpeed.get())) {
@@ -39,10 +40,7 @@ public final class AutoFirework extends Module {
                   return;
                }
 
-               int previous = player.getInventory().getSelectedSlot();
-               player.getInventory().setSelectedSlot(slot);
-               client.gameMode.useItem(player, InteractionHand.MAIN_HAND);
-               player.getInventory().setSelectedSlot(previous);
+               Inventories.withHotbarSlot(player, slot, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND));
             }
 
             this.cooldown = this.delay.intValue();
