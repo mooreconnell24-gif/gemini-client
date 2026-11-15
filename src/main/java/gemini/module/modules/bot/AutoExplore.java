@@ -27,11 +27,20 @@ public final class AutoExplore extends Module {
       LocalPlayer player = Minecraft.getInstance().player;
       if (player != null) {
          BaritoneBridge.startExplore(player.blockPosition());
+         BaritoneBridge.claimTask(this);
       }
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 }

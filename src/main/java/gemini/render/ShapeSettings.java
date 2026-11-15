@@ -66,6 +66,15 @@ public final class ShapeSettings {
       Render3D.block(pos, color, this.lines(), this.fill(), this.width(), this.fillAlpha(), this.throughWalls());
    }
 
+   /** A box from its corners; nothing is allocated when it is off screen. */
+   public void box(double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int color) {
+      Render3D.box(minX, minY, minZ, maxX, maxY, maxZ, color, this.lines(), this.fill(), this.width(), this.fillAlpha(), this.throughWalls());
+   }
+
+   public void line(double x1, double y1, double z1, double x2, double y2, double z2, int color) {
+      Render3D.line(x1, y1, z1, x2, y2, z2, color, Math.max(1.0F, this.width()), this.throughWalls());
+   }
+
    public void line(Vec3 from, Vec3 to, int color) {
       Render3D.line(from, to, color, Math.max(1.0F, this.width()), this.throughWalls());
    }

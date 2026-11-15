@@ -31,11 +31,20 @@ public final class AutoTunnel extends Module {
       LocalPlayer player = Minecraft.getInstance().player;
       Direction dir = player == null ? Direction.NORTH : player.getDirection();
       BaritoneBridge.startTunnel(dir, this.length.intValue());
+      BaritoneBridge.claimTask(this);
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 
    @Override

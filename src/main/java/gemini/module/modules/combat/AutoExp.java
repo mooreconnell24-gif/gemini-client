@@ -30,9 +30,14 @@ public final class AutoExp extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         if (CombatHelpers.armorDamaged(player, this.threshold.intValue())) {
+         if (this.wait > 0) {
+            this.wait--;
+         }
+
+         // Only aim down while there is a bottle to throw; otherwise the aim would be held for nothing.
+         if (CombatHelpers.armorDamaged(player, this.threshold.intValue()) && Inventories.findHotbar(player, stack -> stack.is(Items.EXPERIENCE_BOTTLE)) >= 0) {
             boolean aimed = RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.WORLD_UTILITY, 2.0F);
-            if (aimed && this.wait-- <= 0) {
+            if (aimed && this.wait <= 0) {
                this.wait = this.delay.intValue();
                Inventories.withHotbarItem(
                   player, stack -> stack.is(Items.EXPERIENCE_BOTTLE), () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND))

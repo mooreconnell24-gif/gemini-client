@@ -9,7 +9,9 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.render.Render3D;
+import gemini.render.PlacementFade;
+import gemini.util.BlockPlacer;
+import gemini.util.InfoText;
 import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import java.util.ArrayList;
@@ -46,10 +48,24 @@ public final class ScaffoldModule extends Module {
       new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
    );
    private final ModeSetting towerMode = this.addSetting(
-      new ModeSetting("Tower", "Vertical tower motion while holding Jump", "Motion", "Motion", "Constant", "Jump", "Off")
+      new ModeSetting(
+         "Tower",
+         "Holding Jump: Motion/Constant push you up, Jump hops in place, Sprint Jump keeps running and jumping while it builds a block under you at the top of each jump",
+         "Motion",
+         "Motion",
+         "Constant",
+         "Jump",
+         "Sprint Jump",
+         "Off"
+      )
    );
    private final NumberSetting towerSpeed = this.addSetting(
-      new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02).showIf(() -> !this.towerMode.is("Off"))
+      new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02)
+         .showIf(() -> this.towerMode.is("Motion") || this.towerMode.is("Constant"))
+   );
+   private boolean steerExact;
+   private final BooleanSetting raycast = this.addSetting(
+      new BooleanSetting("Raycast Check", "Only place when the aimed look ray really hits the face being clicked", true).showIf(() -> !this.rotate.is("None"))
    );
    private final BooleanSetting keepY = this.addSetting(new BooleanSetting("Keep Y", "Lock placement height to starting Y level", false));
    private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Search up to 3 blocks away for diagonal/air support", true));
@@ -59,13 +75,16 @@ public final class ScaffoldModule extends Module {
    private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Restore original hotbar slot after placing", false));
    private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause Sneak", "Pause placement while manually sneaking", false));
    private final BooleanSetting downwards = this.addSetting(new BooleanSetting("Downwards", "Place blocks 1 level lower when sneaking", false));
-   private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight", "Render 3D box on active scaffold block", true));
+   private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight", "Show the blocks Scaffold places as fading boxes", true));
+   private final PlacementFade fade = new PlacementFade(this, true, 286, this.renderBlock::get);
+   private final InfoText infoText = new InfoText();
+   private static final Direction[] FACE_ORDER = {Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
    private int cooldown;
    private int startY;
    private int towerTicks;
    private int breezeTick;
    private boolean sneaking;
-   private BlockPos lastPlacedPos;
+   private int blockCount;
 
    public ScaffoldModule() {
       super("Scaffold", "Fast block bridging with clutch search.", Category.WORLD);
@@ -78,21 +97,41 @@ public final class ScaffoldModule extends Module {
       this.sneaking = false;
       this.towerTicks = 0;
       this.breezeTick = 0;
-      this.lastPlacedPos = null;
+      this.cooldown = 0;
+      this.fade.clear();
    }
 
    @Override
    public void onDisable() {
       this.releaseSneak();
-      this.lastPlacedPos = null;
+      this.fade.clear();
+      this.steerExact = false;
    }
 
    @Override
+   public void onWorldChange() {
+      this.fade.clear();
+      this.steerExact = false;
+      LocalPlayer player = Minecraft.getInstance().player;
+      this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);
+   }
+
+   /** The block count is taken once per tick in {@link #onTick}; the text is only rebuilt when it changes. */
+   @Override
    public String info() {
       Minecraft client = Minecraft.getInstance();
-      int blocks = client.player == null ? 0 : countBlocks(client.player);
-      boolean towering = !this.towerMode.is("Off") && client.options.keyJump.isDown() && !MoveUtil.hasInput(client.player);
-      return (towering ? "Tower" : this.sprintMode.get()) + " · " + blocks;
+      LocalPlayer player = client.player;
+      boolean towering = player != null && this.towering(client, player);
+      return this.infoText.whole(this.blockCount, towering ? " · Tower" : "");
+   }
+
+   private boolean towering(Minecraft client, LocalPlayer player) {
+      if (this.towerMode.is("Off") || !client.options.keyJump.isDown()) {
+         return false;
+      }
+
+      // Sprint Jump is the one tower mode meant for running; the others only tower in place unless bridging upward.
+      return this.towerMode.is("Sprint Jump") || !MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly");
    }
 
    @Override
@@ -100,6 +139,7 @@ public final class ScaffoldModule extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && client.level != null && client.gameMode != null && client.gui.screen() == null && !player.isSpectator()) {
+         this.blockCount = countBlocks(player);
          if (this.autoRefill.get() && findBlockSlot(player) == -1) {
             refillHotbarBlocks(client, player);
          }
@@ -116,14 +156,16 @@ public final class ScaffoldModule extends Module {
             this.startY = Mth.floor(player.getY() - 0.01);
          }
 
-         boolean towering = !this.towerMode.is("Off")
-            && client.options.keyJump.isDown()
-            && (!MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly"));
+         boolean towering = this.towering(client, player);
+         boolean sprintTower = towering && this.towerMode.is("Sprint Jump");
          if (!towering) {
             this.towerTicks = 0;
          }
 
-         this.applySprintControl(client, player, towering);
+         this.applySprintControl(client, player, towering && !sprintTower);
+         if (sprintTower) {
+            this.sprintJump(player);
+         }
          if ((this.safeWalk.get() || this.sprintMode.is("Eagle")) && !towering) {
             this.holdEdge(client, player);
          } else {
@@ -144,7 +186,10 @@ public final class ScaffoldModule extends Module {
          }
 
          int targetY;
-         if (towering) {
+         if (sprintTower) {
+            // The block under the feet is placed once the feet have risen clear of it, so it never overlaps the player.
+            targetY = Mth.floor(player.getY()) - 1;
+         } else if (towering) {
             targetY = Mth.floor(player.getY() - 0.05);
          } else if (this.downwards.get() && MoveUtil.physicalKeyDown(client.options.keyShift)) {
             targetY = Mth.floor(player.getY() - 0.01) - 1;
@@ -161,7 +206,7 @@ public final class ScaffoldModule extends Module {
          List<BlockPos> targets = new ArrayList<>();
          targets.add(feet);
          Vec3 moveDir = MoveUtil.direction(player);
-         if (moveDir != null && !towering) {
+         if (moveDir != null && (!towering || sprintTower)) {
             BlockPos aheadHalf = new BlockPos(Mth.floor(player.getX() + moveDir.x * 0.45), targetY, Mth.floor(player.getZ() + moveDir.z * 0.45));
             if (!targets.contains(aheadHalf)) {
                targets.add(aheadHalf);
@@ -194,12 +239,29 @@ public final class ScaffoldModule extends Module {
          }
 
          if (plan != null) {
+            BlockHitResult hit = plan.hit;
             if (!this.rotate.is("None")) {
                boolean quiet = !this.rotate.is("Snap");
-               float[] placeRot = this.computeBridgeRotation(player, plan.hit);
+               // After a raycast miss the styled angle is dropped for one placement and the face itself is aimed at,
+               // so each tick makes exactly one rotation request.
+               float[] placeRot = this.steerExact ? RotationManager.toward(player, plan.hit.getLocation()) : this.computeBridgeRotation(player, plan.hit);
+               // The turn goes through RotationManager's spring (Aim settings) at Turn Speed instead of jumping there.
                boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 16.0F);
                if (!ready && this.rotate.is("Strict")) {
                   return;
+               }
+
+               if (this.raycast.get()) {
+                  // The look the placement goes out with must really hit the face we are about to click.
+                  BlockHitResult seen = BlockPlacer.verifyLook(client.level, player, RotationManager.aimYaw(), RotationManager.aimPitch(), 5.0, plan.hit);
+                  if (seen == null) {
+                     // The aimed angle misses this face: aim at the face itself next tick instead of placing blind.
+                     this.steerExact = true;
+                     return;
+                  }
+
+                  this.steerExact = false;
+                  hit = seen;
                }
             }
 
@@ -219,7 +281,7 @@ public final class ScaffoldModule extends Module {
                player.getInventory().setSelectedSlot(slot);
             }
 
-            client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, plan.hit);
+            boolean placed = client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit).consumesAction();
             if (this.swing.get()) {
                Swing.interact(player, InteractionHand.MAIN_HAND);
             }
@@ -228,8 +290,11 @@ public final class ScaffoldModule extends Module {
                player.getInventory().setSelectedSlot(previous);
             }
 
-            this.lastPlacedPos = plan.placePos.immutable();
-            if (towering) {
+            if (placed) {
+               this.fade.record(plan.placePos);
+            }
+
+            if (towering && !sprintTower) {
                this.applyTowerMotion(player, plan.placePos);
             }
 
@@ -293,6 +358,23 @@ public final class ScaffoldModule extends Module {
       return dir != null ? (float)(Mth.atan2(dir.z, dir.x) * (180.0 / Math.PI)) - 90.0F : player.getYRot();
    }
 
+   /**
+    * Sprint-jump towering: keep sprinting while a direction is held and jump the moment the feet touch down. The
+    * block under the feet is then placed by the normal tick once the jump has carried the feet above it, and the
+    * landing on that block starts the next jump. Plain vanilla jumps; no motion is added.
+    */
+   private void sprintJump(LocalPlayer player) {
+      if (MoveUtil.hasInput(player) && player.input != null && player.input.hasForwardImpulse() && !player.isCrouching()
+         && player.getFoodData().getFoodLevel() > 6) {
+         player.setSprinting(true);
+      }
+
+      if (player.onGround() && !player.isInWater() && !player.isInLava()) {
+         player.jumpFromGround();
+         this.towerTicks++;
+      }
+   }
+
    private void applyTowerMotion(LocalPlayer player, BlockPos target) {
       this.towerTicks++;
       Vec3 motion = player.getDeltaMovement();
@@ -334,8 +416,8 @@ public final class ScaffoldModule extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
-      if (this.renderBlock.get() && this.lastPlacedPos != null) {
-         Render3D.block(this.lastPlacedPos, -6467875, true, true, 1.6F, 45, false);
+      if (this.renderBlock.get()) {
+         this.fade.render();
       }
    }
 
@@ -345,8 +427,7 @@ public final class ScaffoldModule extends Module {
    }
 
    private static boolean solidSupport(Level level, BlockPos pos) {
-      BlockState state = level.getBlockState(pos);
-      return !state.isAir() && !state.canBeReplaced() && !state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
+      return BlockPlacer.solidSupport(level, pos);
    }
 
    private static ScaffoldModule.PlacementPlan findPlacementWithClutch(Level level, LocalPlayer player, BlockPos goal, int maxRadius) {
@@ -385,18 +466,19 @@ public final class ScaffoldModule extends Module {
    }
 
    private static BlockHitResult findDirectHit(Level level, LocalPlayer player, BlockPos target) {
-      Direction[] order = new Direction[]{Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
       Vec3 eye = player.getEyePosition();
       BlockHitResult best = null;
       double bestDist = Double.MAX_VALUE;
 
-      for (Direction direction : order) {
+      for (Direction direction : FACE_ORDER) {
          BlockPos neighbour = target.relative(direction);
          if (solidSupport(level, neighbour)) {
             Direction face = direction.getOpposite();
             Vec3 hitVec = Vec3.atCenterOf(neighbour).add(face.getStepX() * 0.5, face.getStepY() * 0.5, face.getStepZ() * 0.5);
             double dist = eye.distanceToSqr(hitVec);
-            if (dist <= 22.5 && dist < bestDist) {
+            // Only faces the eye is in front of: a face pointing away can never be hit by a look ray.
+            double facing = (eye.x - hitVec.x) * face.getStepX() + (eye.y - hitVec.y) * face.getStepY() + (eye.z - hitVec.z) * face.getStepZ();
+            if (facing > 1.0E-3 && dist <= 22.5 && dist < bestDist) {
                bestDist = dist;
                best = new BlockHitResult(hitVec, face, neighbour, false);
             }

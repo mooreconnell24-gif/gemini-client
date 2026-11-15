@@ -39,13 +39,24 @@ public final class AutoPot extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
+         if (this.wait > 0) {
+            this.wait--;
+         }
+
+         // No potion left: do not hold the aim (and every lower-priority rotation) down for nothing.
          if (!(player.getHealth() > this.health.get())
-            && this.wait-- <= 0
+            && this.wait <= 0
+            && Inventories.findHotbar(player, this::usable) >= 0
             && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.CRITICAL_SURVIVAL, 2.0F)
             && Inventories.withHotbarItem(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
             this.wait = this.delay.intValue();
          }
       }
+   }
+
+   @Override
+   public void onEnable() {
+      this.wait = 0;
    }
 
    private boolean usable(ItemStack stack) {

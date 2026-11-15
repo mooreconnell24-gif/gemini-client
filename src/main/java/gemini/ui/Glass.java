@@ -274,6 +274,22 @@ public final class Glass {
       roundRect(g, knob, y + 1, knob + height - 2, y + height - 1, (height - 2) / 2, lerp(0xFF8A93A6, 0xFFFFFFFF, p));
    }
 
+   /** A one-pixel straight line between two points at any angle (a rotated fill, so it costs one quad). */
+   public static void line(GuiGraphicsExtractor g, float x1, float y1, float x2, float y2, int color) {
+      float dx = x2 - x1;
+      float dy = y2 - y1;
+      float length = (float)Math.sqrt(dx * dx + dy * dy);
+      if (length < 0.5F || color >>> 24 == 0) {
+         return;
+      }
+
+      g.pose().pushMatrix();
+      g.pose().translate(x1, y1);
+      g.pose().rotate((float)Math.atan2(dy, dx));
+      g.fill(0, 0, Math.round(length), 1, color);
+      g.pose().popMatrix();
+   }
+
    public static boolean inside(double mx, double my, int x1, int y1, int x2, int y2) {
       return mx >= x1 && mx < x2 && my >= y1 && my < y2;
    }

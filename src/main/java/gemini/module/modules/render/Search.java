@@ -109,7 +109,7 @@ public final class Search extends Module {
                   int color = this.colorOf(block);
                   this.shape.block(cursor.getX(), cursor.getY(), cursor.getZ(), color);
                   if (this.tracers.get()) {
-                     Render3D.line(origin, Vec3.atCenterOf(cursor), color, 1.0F, true);
+                     Render3D.line(origin.x, origin.y, origin.z, cursor.getX() + 0.5, cursor.getY() + 0.5, cursor.getZ() + 0.5, color, 1.0F, true);
                   }
                }
             });

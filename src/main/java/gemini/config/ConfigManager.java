@@ -13,6 +13,7 @@ import gemini.module.ModuleManager;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
+import gemini.module.setting.SettingCodec;
 import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -58,6 +59,8 @@ public final class ConfigManager {
    private static final long RETRY_MS = 5000L;
    private static final long SHUTDOWN_WAIT_MS = 5000L;
    private static final String SANDBOX_KEY = "sandboxMode";
+   private static final String TITLE_SCREEN_KEY = "geminiTitleScreen";
+   private static final String ACTIVE_PROFILE_KEY = "activeProfile";
    private final ModuleManager moduleManager;
    private final Path configPath;
    private final Path profileDir;
@@ -75,6 +78,10 @@ public final class ConfigManager {
    private volatile boolean writeProblemShown;
    /** Something the player should hear about the last load (restored from backup, reset to defaults). */
    private String loadNotice;
+   /** Whether the Gemini home screen replaces the vanilla title screen. */
+   private boolean geminiTitleScreen = true;
+   /** The profile that was last saved or loaded, or null while the settings never came from or went to one. */
+   private String activeProfile;
 
    public ConfigManager(ModuleManager moduleManager) {
       this(moduleManager, FabricLoader.getInstance().getConfigDir());
@@ -85,6 +92,36 @@ public final class ConfigManager {
       this.configPath = dir.resolve("gemini_config.json");
       this.profileDir = dir.resolve("gemini_profiles");
       this.exportDir = dir.resolve("gemini_exports");
+   }
+
+   public boolean geminiTitleScreen() {
+      return this.geminiTitleScreen;
+   }
+
+   public void setGeminiTitleScreen(boolean on) {
+      if (this.geminiTitleScreen != on) {
+         this.geminiTitleScreen = on;
+         this.save();
+      }
+   }
+
+   /** Name of the profile the current settings were last saved to or loaded from; null when there is none. */
+   public String activeProfile() {
+      return this.activeProfile;
+   }
+
+   private void readHomeScreen(JsonObject root) {
+      try {
+         if (root.has(TITLE_SCREEN_KEY) && root.get(TITLE_SCREEN_KEY).isJsonPrimitive()) {
+            this.geminiTitleScreen = root.get(TITLE_SCREEN_KEY).getAsBoolean();
+         }
+
+         if (root.has(ACTIVE_PROFILE_KEY) && root.get(ACTIVE_PROFILE_KEY).isJsonPrimitive()) {
+            this.activeProfile = sanitize(root.get(ACTIVE_PROFILE_KEY).getAsString());
+         }
+      } catch (RuntimeException e) {
+         Gemini.LOGGER.warn("Ignoring invalid home screen entries in config");
+      }
    }
 
    public Path exportDir() {
@@ -141,6 +178,7 @@ public final class ConfigManager {
 
          upgrades = ConfigMigrations.migrate(root);
          this.readSandbox(root);
+         this.readHomeScreen(root);
          this.readMenuKey(root);
          this.readPanels(root);
          this.applyModules(root, true);
@@ -296,23 +334,7 @@ public final class ConfigManager {
          JsonElement value = settings.has(setting.name()) ? settings.get(setting.name()) : normalizedMap.get(normalizeId(setting.name()));
          if (value != null) {
             try {
-               if (setting instanceof BooleanSetting bool) {
-                  bool.set(value.getAsBoolean());
-               } else if (setting instanceof NumberSetting number) {
-                  number.set(value.getAsDouble());
-               } else if (setting instanceof ColorSetting color) {
-                  color.fromJson(value);
-               } else if (setting instanceof ModeSetting mode) {
-                  mode.set(value.getAsString());
-               } else if (setting instanceof ListSetting list) {
-                  List<String> entries = new ArrayList<>();
-
-                  for (JsonElement entry : value.getAsJsonArray()) {
-                     entries.add(entry.getAsString());
-                  }
-
-                  list.set(entries);
-               }
+               SettingCodec.read(setting, value);
             } catch (RuntimeException var141) {
                Gemini.LOGGER.warn("Ignoring bad value for {}.{}", module.getName(), setting.name());
             }
@@ -334,18 +356,9 @@ public final class ConfigManager {
          JsonObject settings = new JsonObject();
 
          for (Setting<?> setting : module.settings()) {
-            if (setting instanceof BooleanSetting bool) {
-               settings.addProperty(setting.name(), bool.get());
-            } else if (setting instanceof NumberSetting number) {
-               settings.addProperty(setting.name(), number.get());
-            } else if (setting instanceof ColorSetting color) {
-               settings.add(setting.name(), color.toJson());
-            } else if (setting instanceof ModeSetting mode) {
-               settings.addProperty(setting.name(), mode.get());
-            } else if (setting instanceof ListSetting list) {
-               JsonArray entries = new JsonArray();
-               list.get().forEach(entries::add);
-               settings.add(setting.name(), entries);
+            JsonElement saved = SettingCodec.write(setting);
+            if (saved != null) {
+               settings.add(setting.name(), saved);
             }
          }
 
@@ -452,6 +465,11 @@ public final class ConfigManager {
       JsonObject root = new JsonObject();
       root.addProperty("version", ConfigMigrations.CURRENT_VERSION);
       root.addProperty(SANDBOX_KEY, SingleplayerGate.sandboxMode());
+      root.addProperty(TITLE_SCREEN_KEY, this.geminiTitleScreen);
+      if (this.activeProfile != null) {
+         root.addProperty(ACTIVE_PROFILE_KEY, this.activeProfile);
+      }
+
       root.addProperty("menuKey", GeminiKeys.OPEN_GUI.saveString());
       root.add("modules", this.buildModules(true));
       root.add("panels", this.buildPanels());
@@ -503,6 +521,8 @@ public final class ConfigManager {
       root.add("modules", this.buildModules(true));
       root.add("panels", this.buildPanels());
       this.writer.submit(this.profilePath(clean), JsonFiles.GSON.toJson(root), false);
+      this.activeProfile = clean;
+      this.save();
       return true;
    }
 
@@ -536,6 +556,7 @@ public final class ConfigManager {
             this.suppressAutosave = false;
          }
 
+         this.activeProfile = clean;
          this.save();
          return true;
       } catch (IOException | RuntimeException e) {
@@ -551,6 +572,11 @@ public final class ConfigManager {
       }
 
       this.writer.awaitIdle(2000L);
+      if (clean.equals(this.activeProfile)) {
+         this.activeProfile = null;
+         this.save();
+      }
+
       try {
          return Files.deleteIfExists(this.profilePath(clean));
       } catch (IOException e) {

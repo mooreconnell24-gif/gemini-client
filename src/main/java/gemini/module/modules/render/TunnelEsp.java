@@ -102,9 +102,7 @@ public final class TunnelEsp extends Module {
 
       for (BlockPos pos : this.found) {
          if (Render3D.visibleBlock(pos.getX(), pos.getY(), pos.getZ())) {
-            Render3D.box(
-               new AABB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1, pos.getY() + 2, pos.getZ() + 1), argb, true, this.fill.get(), 1.0F, 30, true
-            );
+            Render3D.box(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 2.0, pos.getZ() + 1.0, argb, true, this.fill.get(), 1.0F, 30, true);
          }
       }
    }

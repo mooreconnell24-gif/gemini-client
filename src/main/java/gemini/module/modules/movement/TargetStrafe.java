@@ -83,21 +83,16 @@ public final class TargetStrafe extends Module {
    @Override
    public void onRender3D(float partialTick) {
       if (this.renderRing.get() && this.activeTarget != null && this.activeTarget.isAlive()) {
-         Vec3 c = this.activeTarget.getPosition(partialTick);
-         double r = this.radius.get();
-         int segs = 24;
-
-         for (int i = 0; i < segs; i++) {
-            double a1 = i * Math.PI * 2.0 / segs;
-            double a2 = (i + 1) * Math.PI * 2.0 / segs;
-            Render3D.line(
-               new Vec3(c.x + Math.cos(a1) * r, c.y + 0.05, c.z + Math.sin(a1) * r),
-               new Vec3(c.x + Math.cos(a2) * r, c.y + 0.05, c.z + Math.sin(a2) * r),
-               -16722689,
-               2.0F,
-               false
-            );
-         }
+         Render3D.ring(
+            Render3D.entityX(this.activeTarget, partialTick),
+            Render3D.entityY(this.activeTarget, partialTick) + 0.05,
+            Render3D.entityZ(this.activeTarget, partialTick),
+            this.radius.get(),
+            24,
+            -16722689,
+            2.0F,
+            false
+         );
       }
    }
 

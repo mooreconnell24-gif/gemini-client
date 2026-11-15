@@ -41,18 +41,20 @@ public final class Tracers extends Module {
       if (self != null && level != null) {
          Vec3 origin = Render3D.crosshair();
          double limit = this.range.get() * this.range.get();
+         String aim = this.target.get();
 
          for (Entity entity : level.entitiesForRendering()) {
             if (entity != self && !(entity.distanceToSqr(self) > limit) && this.accepts(entity)) {
-               Vec3 at = entity.getPosition(partialTick);
-               String var13 = this.target.get();
-
-               double y = switch (var13) {
-                  case "Feet" -> at.y;
-                  case "Eyes" -> at.y + entity.getEyeHeight();
-                  default -> at.y + entity.getBbHeight() / 2.0;
+               double feet = Render3D.entityY(entity, partialTick);
+               double y = switch (aim) {
+                  case "Feet" -> feet;
+                  case "Eyes" -> feet + entity.getEyeHeight();
+                  default -> feet + entity.getBbHeight() / 2.0;
                };
-               Render3D.line(origin, new Vec3(at.x, y, at.z), this.color(self, entity), this.width.floatValue(), true);
+               Render3D.line(
+                  origin.x, origin.y, origin.z, Render3D.entityX(entity, partialTick), y, Render3D.entityZ(entity, partialTick),
+                  this.color(self, entity), this.width.floatValue(), true
+               );
             }
          }
       }

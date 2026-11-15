@@ -1,9 +1,11 @@
 package gemini.module;
 
+import gemini.render.PlacementFade;
 import gemini.util.ClientState;
 import gemini.util.PlaceSettings;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -21,11 +23,33 @@ import net.minecraft.world.item.ItemStack;
  */
 public abstract class PlacementModuleBase extends Module {
    protected final PlaceSettings placer;
+   protected final PlacementFade fade;
    private final List<BlockPos> targets = new ArrayList<>();
+   private final Consumer<BlockPos> recordPlaced;
 
    protected PlacementModuleBase(String name, String description, Category category, int defaultDelay, int defaultPerTick, double defaultRange) {
       super(name, description, category);
       this.placer = new PlaceSettings(this, defaultDelay, defaultPerTick, defaultRange);
+      this.fade = new PlacementFade(this, true, 190, () -> true);
+      this.recordPlaced = this.fade::record;
+   }
+
+   /** Subclasses that override this call super so the fade and the placement cooldown are reset. */
+   @Override
+   public void onDisable() {
+      this.fade.clear();
+      this.placer.reset();
+      this.targets.clear();
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.fade.clear();
+   }
+
+   @Override
+   public void onRender3D(float partialTick) {
+      this.fade.render();
    }
 
    @Override
@@ -43,7 +67,7 @@ public abstract class PlacementModuleBase extends Module {
       this.targets.clear();
       this.collectTargets(client, player, this.targets);
       if (!this.targets.isEmpty()) {
-         this.placer.place(client, this.targets, this.blocks(), this.avoidEntities());
+         this.placer.place(client, this.targets, this.blocks(), this.avoidEntities(), this.recordPlaced);
       }
    }
 

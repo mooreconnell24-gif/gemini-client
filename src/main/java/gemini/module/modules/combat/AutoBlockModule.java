@@ -137,6 +137,7 @@ public final class AutoBlockModule extends Module {
                this.lower(client);
             }
          } else {
+            managing = false;
             this.lower(client);
             this.holdLeft = 0;
             this.faceTarget = null;
@@ -304,7 +305,8 @@ public final class AutoBlockModule extends Module {
                client.gameMode.releaseUsingItem(player);
             }
 
-            client.options.keyUse.setDown(false);
+            // Back to what the player is really holding, so a held right click survives the shield going down.
+            client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
          }
 
          this.raisedByUs = false;

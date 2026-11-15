@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -17,6 +18,13 @@ public final class StepModule extends Module {
    @Override
    public void onDisable() {
       AttributeBoost.clear(Attributes.STEP_HEIGHT, "step");
+   }
+
+   private final InfoText infoText = new InfoText();
+
+   @Override
+   public String info() {
+      return this.infoText.fixed(this.height.get(), 1);
    }
 
    @Override

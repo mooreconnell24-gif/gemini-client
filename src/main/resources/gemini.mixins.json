@@ -26,7 +26,8 @@
 		"PlayerMixin",
 		"ScreenEffectRendererMixin",
 		"SectionCompilerMixin",
-		"SoundEngineMixin"
+		"SoundEngineMixin",
+		"TitleScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0
