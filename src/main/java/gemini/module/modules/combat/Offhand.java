@@ -44,8 +44,21 @@ public final class Offhand extends Module {
       return this.item.get();
    }
 
+   /**
+    * Whether the offhand is reserved for a totem right now: health is at or below "Totem Health" and a totem is
+    * there or can be moved there. With no totem left the reservation is dropped, so the preferred item is used
+    * and other modules may have the offhand.
+    */
    public boolean wantsTotem(LocalPlayer player) {
-      return this.totemHealth.get() > 0.0 && Damage.health(player) <= this.totemHealth.get();
+      return player != null
+         && this.totemHealth.get() > 0.0
+         && Damage.health(player) <= this.totemHealth.get()
+         && (player.getOffhandItem().is(Items.TOTEM_OF_UNDYING) || Inventories.find(player, stack -> stack.is(Items.TOTEM_OF_UNDYING), this.hotbarOnly.get()) >= 0);
+   }
+
+   @Override
+   public void onEnable() {
+      this.cooldown = 0;
    }
 
    @Override
@@ -79,7 +92,7 @@ public final class Offhand extends Module {
    }
 
    private Item wantedItem(Minecraft client, LocalPlayer player) {
-      if (this.totemHealth.get() > 0.0 && Damage.health(player) <= this.totemHealth.get()) {
+      if (this.wantsTotem(player)) {
          return Items.TOTEM_OF_UNDYING;
       } else if (this.swordGapple.get() && client.options.keyUse.isDown() && player.getMainHandItem().is(ItemTags.SWORDS)) {
          return Items.ENCHANTED_GOLDEN_APPLE;

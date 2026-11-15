@@ -35,11 +35,20 @@ public final class AutoExcavate extends Module {
          int r = this.radius.intValue();
          int d = this.depth.intValue();
          BaritoneBridge.startExcavate(p.offset(-r, -d, -r), p.offset(r, 2, r));
+         BaritoneBridge.claimTask(this);
       }
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 }

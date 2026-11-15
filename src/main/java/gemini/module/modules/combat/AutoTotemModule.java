@@ -28,8 +28,27 @@ public final class AutoTotemModule extends Module {
       return ActionPriority.CRITICAL_SURVIVAL;
    }
 
+   /**
+    * Whether this module has a use for the offhand right now: health is at or below the threshold and there is a
+    * totem to hold there (already in the offhand, or one this module is able to move in). Without a totem the claim
+    * is dropped, so Offhand, Auto Mend and the rest are not locked out by a module that has nothing to put there.
+    */
    public boolean wantsOffhand(LocalPlayer player) {
-      return player != null && Damage.health(player) <= this.health.floatValue();
+      if (player == null || Damage.health(player) > this.health.floatValue()) {
+         return false;
+      }
+
+      ItemStack offhand = player.getOffhandItem();
+      if (offhand.is(Items.TOTEM_OF_UNDYING)) {
+         return true;
+      }
+
+      return (this.replace.get() || offhand.isEmpty()) && this.findTotem(player) >= 0;
+   }
+
+   @Override
+   public void onEnable() {
+      this.cooldown = 0;
    }
 
    @Override
@@ -41,7 +60,7 @@ public final class AutoTotemModule extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && client.gameMode != null && Inventories.inventoryOpenOrClosed(player)) {
+      if (player != null && client.gameMode != null && !player.isSpectator() && !player.isDeadOrDying() && Inventories.inventoryOpenOrClosed(player)) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else {

@@ -4,7 +4,6 @@ import gemini.Gemini;
 import gemini.module.modules.combat.AutoTotemModule;
 import gemini.module.modules.combat.Offhand;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.item.Items;
 
 public final class OffhandClaim {
    private OffhandClaim() {
@@ -36,7 +35,8 @@ public final class OffhandClaim {
          Gemini gemini = Gemini.getInstance();
          if (gemini != null && player != null) {
             Offhand offhand = gemini.modules().byClass(Offhand.class).orElse(null);
-            return offhand != null && offhand.isEnabled() && !player.getOffhandItem().is(Items.AIR);
+            // Offhand only holds the slot while it has put something there; an empty offhand is free for others.
+            return offhand != null && offhand.isEnabled() && !player.getOffhandItem().isEmpty();
          } else {
             return false;
          }

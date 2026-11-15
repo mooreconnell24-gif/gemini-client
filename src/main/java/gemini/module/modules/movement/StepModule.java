@@ -20,6 +20,11 @@ public final class StepModule extends Module {
    }
 
    @Override
+   public String info() {
+      return this.height.get().toString();
+   }
+
+   @Override
    public void onTick() {
       AttributeBoost.apply(Attributes.STEP_HEIGHT, "step", Math.max(0.0, this.height.get() - 0.6), Operation.ADD_VALUE);
    }

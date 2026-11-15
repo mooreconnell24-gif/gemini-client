@@ -27,8 +27,9 @@ public final class FlightModule extends LinearFlightModuleBase {
    );
    private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Damp", "Smooth velocity on server position setback", true));
    private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying", true));
-   private boolean previousMayFly;
    private boolean previousFlying;
+   /** True while the creative-style abilities written by this module are in place and have to be taken back. */
+   private boolean abilitiesWritten;
 
    public FlightModule() {
       super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, Keys.fromGlfw('G'));
@@ -41,10 +42,8 @@ public final class FlightModule extends LinearFlightModuleBase {
    @Override
    public void onEnable() {
       LocalPlayer player = Minecraft.getInstance().player;
-      if (player != null) {
-         this.previousMayFly = player.getAbilities().mayfly;
-         this.previousFlying = player.getAbilities().flying;
-      }
+      this.abilitiesWritten = false;
+      this.previousFlying = player != null && player.getAbilities().flying;
    }
 
    @Override
@@ -52,15 +51,26 @@ public final class FlightModule extends LinearFlightModuleBase {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null) {
-         boolean mayFly = this.previousMayFly || player.isCreative() || player.isSpectator();
-         boolean flying = this.previousFlying && mayFly;
-         write(player.getAbilities(), false, mayFly, flying, 1.0F);
-         player.onUpdateAbilities();
-         AttributeBoost.onServer(serverPlayer -> {
-            write(serverPlayer.getAbilities(), false, mayFly, flying, 1.0F);
-            serverPlayer.onUpdateAbilities();
-         });
+         this.restoreAbilities(player, this.previousFlying);
       }
+
+      this.abilitiesWritten = false;
+   }
+
+   /**
+    * Hands flight back to the game mode. Whether the player may fly is taken from the game mode as it is now, not
+    * from what it was when the module was switched on, so a switch from creative to survival while flying does
+    * not leave survival with creative flight.
+    */
+   private void restoreAbilities(LocalPlayer player, boolean keepFlying) {
+      boolean mayFly = player.isCreative() || player.isSpectator();
+      boolean flying = player.isSpectator() || keepFlying && mayFly;
+      write(player.getAbilities(), false, mayFly, flying, 1.0F);
+      player.onUpdateAbilities();
+      AttributeBoost.onServer(serverPlayer -> {
+         write(serverPlayer.getAbilities(), false, mayFly, flying, 1.0F);
+         serverPlayer.onUpdateAbilities();
+      });
    }
 
    @Override
@@ -75,6 +85,7 @@ public final class FlightModule extends LinearFlightModuleBase {
 
          if (this.creativeMode()) {
             float flySpeed = this.speed.floatValue();
+            this.abilitiesWritten = true;
             write(player.getAbilities(), true, true, true, flySpeed);
             player.onUpdateAbilities();
             AttributeBoost.onServer(serverPlayer -> {
@@ -82,6 +93,12 @@ public final class FlightModule extends LinearFlightModuleBase {
                serverPlayer.onUpdateAbilities();
             });
          } else {
+            if (this.abilitiesWritten) {
+               // The mode was changed away from creative-style flight while the module stayed on.
+               this.abilitiesWritten = false;
+               this.restoreAbilities(player, false);
+            }
+
             Abilities abilities = player.getAbilities();
             if (abilities.flying && !player.isCreative() && !player.isSpectator()) {
                abilities.flying = false;

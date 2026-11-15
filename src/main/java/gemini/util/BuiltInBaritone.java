@@ -147,6 +147,8 @@ public final class BuiltInBaritone {
    private BuiltInBaritone() {
    }
 
+   private static int generation;
+
    public static boolean isActive() {
       return activeTask != BuiltInBaritone.TaskKind.NONE;
    }
@@ -167,6 +169,7 @@ public final class BuiltInBaritone {
       if (goalPos == null) {
          return false;
       } else {
+         generation++;
          activeTask = BuiltInBaritone.TaskKind.GOTO;
          repathTimer = 0;
          currentPath.clear();
@@ -237,7 +240,16 @@ public final class BuiltInBaritone {
       }
    }
 
+   /**
+    * Counts every task boundary: each start goes through {@link #stop()} first and each task ends with it, so two
+    * equal readings mean the same task has been running the whole time in between.
+    */
+   public static int generation() {
+      return generation;
+   }
+
    public static void stop() {
+      generation++;
       activeTask = BuiltInBaritone.TaskKind.NONE;
       goalPos = null;
       currentPath.clear();

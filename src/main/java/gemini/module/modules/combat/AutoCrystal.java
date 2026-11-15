@@ -115,7 +115,7 @@ public final class AutoCrystal extends Module {
                BlockPos bestBase = this.findBestBase(level, player, target, false);
                if (bestBase == null && this.supportPlace.get()) {
                   BlockPos support = this.findBestBase(level, player, target, true);
-                  if (support != null && BlockPlacer.place(client, support, stack -> stack.is(Items.OBSIDIAN), true, this.silentRotate.get(), true)) {
+                  if (support != null && BlockPlacer.place(client, support, stack -> stack.is(Items.OBSIDIAN), true, !this.autoSwitch.is("Normal"), true)) {
                      bestBase = support;
                   }
                }
