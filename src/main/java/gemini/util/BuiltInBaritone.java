@@ -1,6 +1,7 @@
 package gemini.util;
 
 import gemini.command.CommandManager;
+import gemini.ui.HudOverlay;
 import gemini.event.ActionPriority;
 import gemini.render.Render3D;
 import gemini.util.pathing.BlockView;
@@ -469,9 +470,11 @@ public final class BuiltInBaritone {
          stop();
       } else if (player.blockPosition().distManhattan(goalPos) <= 1) {
          CommandManager.feedback("§bBaritone §7arrived at §f" + goalPos.getX() + " " + goalPos.getY() + " " + goalPos.getZ() + "§7.");
+         HudOverlay.toast("Baritone", "Arrived at " + goalPos.toShortString(), HudOverlay.Severity.SUCCESS);
          stop();
       } else if (failedPaths >= 12) {
          CommandManager.feedback("§bBaritone §7can't find a way to §f" + goalPos.toShortString() + "§7; stopping.");
+         HudOverlay.toast("Baritone", "No path to " + goalPos.toShortString(), HudOverlay.Severity.ERROR);
          stop();
       } else {
          followPathToGoal(client, player, level, goalPos, allowBreak);
@@ -580,6 +583,7 @@ public final class BuiltInBaritone {
    private static void tickTunnel(Minecraft client, LocalPlayer player, Level level) {
       if (tunnelRemaining <= 0) {
          CommandManager.feedback("§bBaritone §7tunnel completed.");
+         HudOverlay.toast("Baritone", "Tunnel completed", HudOverlay.Severity.SUCCESS);
          stop();
       } else {
          BlockPos feet = player.blockPosition();
@@ -589,6 +593,7 @@ public final class BuiltInBaritone {
             || touchesLava(level, aheadFeet.getX(), aheadFeet.getY(), aheadFeet.getZ())
             || touchesLava(level, aheadHead.getX(), aheadHead.getY(), aheadHead.getZ())) {
             CommandManager.feedback("§bBaritone §7tunnel stopped: lava ahead at §f" + aheadFeet.toShortString() + "§7.");
+            HudOverlay.toast("Baritone", "Tunnel stopped: lava ahead", HudOverlay.Severity.ERROR);
             stop();
          } else if (!passable(level, aheadHead)) {
             releaseControls();
@@ -670,6 +675,10 @@ public final class BuiltInBaritone {
                      excavateSkippedInPass > 0
                         ? "§bBaritone §7excavation stopped: the remaining blocks sit on lava or over a drop."
                         : "§bBaritone §7excavation finished."
+                  );
+                  HudOverlay.toast(
+                     "Baritone", excavateSkippedInPass > 0 ? "Excavation stopped: unsafe blocks left" : "Excavation finished",
+                     excavateSkippedInPass > 0 ? HudOverlay.Severity.ERROR : HudOverlay.Severity.SUCCESS
                   );
                   stop();
                   return;

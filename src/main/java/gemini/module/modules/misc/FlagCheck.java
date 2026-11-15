@@ -27,7 +27,7 @@ public final class FlagCheck extends Module {
    public boolean onReceivePacket(Packet<?> packet) {
       if (packet instanceof ClientboundPlayerPositionPacket) {
          this.flags++;
-         HudOverlay.pushNotification("FlagCheck", "Setback #" + this.flags + " detected", false);
+         HudOverlay.toast("FlagCheck", "Setback #" + this.flags + " detected", HudOverlay.Severity.WARNING);
       }
 
       return false;

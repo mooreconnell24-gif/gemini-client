@@ -61,6 +61,7 @@ import gemini.module.modules.combat.HitCrystal;
 import gemini.module.modules.combat.HolePush;
 import gemini.module.modules.combat.AutoWebFill;
 import gemini.module.modules.hud.AntiLagHud;
+import gemini.module.modules.hud.ArrayListHud;
 import gemini.module.modules.hud.ArmorHud;
 import gemini.module.modules.hud.BiomeInfo;
 import gemini.module.modules.hud.ChunkInfo;
@@ -260,6 +261,8 @@ import gemini.module.modules.render.UnfocusedCpu;
 import gemini.module.modules.render.VoidEsp;
 import gemini.module.modules.render.XrayModule;
 import gemini.module.modules.render.ZoomModule;
+import gemini.module.modules.render.PopChams;
+import gemini.module.modules.render.TotemPopCounter;
 import gemini.module.modules.world.AirPlace;
 import gemini.module.modules.world.AutoBreed;
 import gemini.module.modules.world.AutoFarm;
@@ -304,6 +307,7 @@ import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
 import gemini.util.SingleplayerGate;
+import gemini.util.TotemPops;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -334,12 +338,16 @@ public final class ModuleManager {
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
       @Override
       public boolean profiling() {
-         return SelfTest.profiling();
+         return SelfTest.profiling() || LiveProfiler.active();
       }
 
       @Override
-      public void record(Module module, long nanos) {
-         SelfTest.record(module, nanos);
+      public void record(Module module, int hook, long nanos) {
+         if (SelfTest.profiling()) {
+            SelfTest.record(module, nanos);
+         }
+
+         LiveProfiler.record(module, hook, nanos);
       }
    });
    private ConfigManager configManager;
@@ -392,6 +400,11 @@ public final class ModuleManager {
    }
 
    public boolean receivePacket(Packet<?> packet) {
+      if (SingleplayerGate.sandboxMode()) {
+         // Counted here rather than in a module so every display of totem pops reads the same numbers.
+         TotemPops.onPacket(packet);
+      }
+
       return this.bus.receivePacket(packet);
    }
 
@@ -688,6 +701,8 @@ public final class ModuleManager {
       this.register(new AutoSave());
       this.register(new Performance());
       this.register(new CinematicCamera());
+      this.register(new TotemPopCounter());
+      this.register(new PopChams());
       this.register(new Cleanse());
       this.register(new SilentPearl());
       this.register(new AutoRegear());
@@ -695,6 +710,7 @@ public final class ModuleManager {
       this.register(new FreeSlots());
       this.register(new FoodInfo());
       this.register(new XpInfo());
+      this.register(new ArrayListHud());
    }
 
    public void bindConfig(ConfigManager configManager) {
@@ -787,6 +803,8 @@ public final class ModuleManager {
             module.applyRuntimeState();
          }
 
+         LiveProfiler.stop();
+         TotemPops.reset();
          return;
       }
 
@@ -803,6 +821,8 @@ public final class ModuleManager {
          BuiltInBaritone.stop();
          BaritoneBridge.resumeAll();
          this.lastLevel = NO_LEVEL;
+         LiveProfiler.stop();
+         TotemPops.reset();
          SelfTest.abort("you left the world");
       } else {
          if (MixinReport.shouldAnnounce()) {
@@ -816,11 +836,14 @@ public final class ModuleManager {
          if (client.level != this.lastLevel.get()) {
             boolean first = this.lastLevel.get() == null;
             this.lastLevel = new WeakReference<>(client.level);
+            TotemPops.reset();
             if (!first) {
                this.worldChanged();
             }
          }
 
+         TotemPops.tick(client.level);
+         LiveProfiler.update(this);
          Scheduler.tick();
          RotationManager.beginTick();
          Hands.beginTick();

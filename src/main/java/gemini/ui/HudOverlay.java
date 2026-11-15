@@ -1,8 +1,6 @@
 package gemini.ui;
 
 import gemini.Gemini;
-import gemini.input.GeminiKeys;
-import gemini.module.Module;
 import gemini.module.ModuleManager;
 import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.render.CoordinatesModule;
@@ -10,17 +8,15 @@ import gemini.module.modules.render.EspModule;
 import gemini.module.modules.render.HudModule;
 import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.world.WaypointsModule;
-import gemini.module.setting.ColorSetting;
 import gemini.util.BaritoneBridge;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -35,37 +31,67 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
+/**
+ * Gemini's in-game overlay: the watermark, the small built-in text panels (waypoints, coordinates, ESP tags,
+ * storage), the module HUD widgets and the toast notifications.
+ *
+ * <p>Everything that only changes per tick (the watermark's stats, the panel texts) is rebuilt once a tick into
+ * reused lists; a frame only draws. The {@link HudContext} handed to the widgets is one instance refilled per frame.
+ * The module list is the {@code ArrayList} HUD widget.
+ */
 public final class HudOverlay {
    private static final int LINE = 11;
+   private static final int TOAST_H = 27;
+   private static final int TOAST_GAP = 5;
+   private static final long TOAST_IN_MS = 360L;
+   private static final long TOAST_OUT_MS = 260L;
+   private static final int MAX_TOASTS = 5;
    private static final ArrayDeque<HudOverlay.Toast> TOASTS = new ArrayDeque<>();
    private final ModuleManager modules;
-   private final Map<Module, Float> arrayAnimations = new IdentityHashMap<>();
    private long lastFrameMs = Util.getMillis();
    private int surface = -15987178;
-   /** The watermark's stats line only changes once a tick, so it is rebuilt per tick instead of per frame. */
+   /** One context, refilled every frame instead of allocated. */
+   private HudContext context;
+   /** The watermark's texts only change once a tick, so they are rebuilt per tick instead of per frame. */
    private String metaLineCache;
+   private String minimalLine;
+   private String pillLine;
    private int metaLineTick = -1;
    private String metaLineStyle;
+   private final List<String> metaParts = new ArrayList<>();
+   /** Per-tick caches of the text panels so a frame only draws. */
+   private int panelTick = Integer.MIN_VALUE;
+   private final List<String> waypointLines = new ArrayList<>();
+   private final List<String> coordLines = new ArrayList<>();
+   private final IntList coordColors = new IntList();
+   private boolean coordsRight;
+   private boolean coordsBottom;
+   private final List<Entity> espShown = new ArrayList<>();
+   private final List<String> espLines = new ArrayList<>();
+   private final IntList espColors = new IntList();
+   private final List<String> storageLines = new ArrayList<>();
 
    public HudOverlay(ModuleManager modules) {
       this.modules = modules;
    }
 
-   /** What a toast is about; picks its colour and badge. */
+   /** What a toast is about; picks its colour, badge and icon glyph. */
    public enum Severity {
-      INFO("INFO", Glass.INFO),
-      SUCCESS("OK", Glass.OK),
-      WARNING("WARN", Glass.WARN),
-      ERROR("ALERT", Glass.ERROR),
-      ENABLED("ON", Glass.OK),
-      DISABLED("OFF", Glass.ERROR);
+      INFO("INFO", Glass.INFO, "i"),
+      SUCCESS("OK", Glass.OK, "✔"),
+      WARNING("WARN", Glass.WARN, "!"),
+      ERROR("ALERT", Glass.ERROR, "✖"),
+      ENABLED("ON", Glass.OK, "+"),
+      DISABLED("OFF", Glass.ERROR, "-");
 
       public final String badge;
       public final int color;
+      public final String glyph;
 
-      Severity(String badge, int color) {
+      Severity(String badge, int color, String glyph) {
          this.badge = badge;
          this.color = color;
+         this.glyph = glyph;
       }
    }
 
@@ -85,30 +111,57 @@ public final class HudOverlay {
       }
 
       synchronized (TOASTS) {
+         HudOverlay.Toast replaced = null;
          Iterator<HudOverlay.Toast> it = TOASTS.iterator();
          while (it.hasNext()) {
-            if (it.next().title.equals(title)) {
+            HudOverlay.Toast old = it.next();
+            if (old.title.equals(title)) {
+               replaced = old;
                it.remove();
                break;
             }
          }
 
-         if (TOASTS.size() >= 5) {
+         if (TOASTS.size() >= MAX_TOASTS) {
             TOASTS.removeFirst();
          }
 
-         TOASTS.addLast(new HudOverlay.Toast(title, body == null ? "" : body, severity, Util.getMillis(), Math.max(600L, durationMs)));
+         HudOverlay.Toast toast = new HudOverlay.Toast(title, body == null ? "" : body, severity, Util.getMillis(), Math.max(600L, durationMs));
+         if (replaced != null && Util.getMillis() - replaced.createdAt < replaced.durationMs - TOAST_OUT_MS) {
+            // The replacement takes the old card's place instead of sliding in from the edge again.
+            toast.stackY = replaced.stackY;
+            toast.createdAt -= TOAST_IN_MS;
+            toast.durationMs += TOAST_IN_MS;
+         }
+
+         TOASTS.addLast(toast);
       }
    }
 
-   private static float easeOutCubic(float t) {
-      float clamped = Mth.clamp(t, 0.0F, 1.0F);
-      float inv = 1.0F - clamped;
-      return 1.0F - inv * inv * inv;
+   /** How far a toast is slid onto the screen: ease-out-back on the way in (overshoots past 1), ease-in on the way out. */
+   static float toastSlide(long age, long duration) {
+      if (age < 0L) {
+         return 0.0F;
+      }
+
+      if (age < TOAST_IN_MS) {
+         return Glass.easeOutBack((float)age / TOAST_IN_MS);
+      }
+
+      long left = duration - age;
+      if (left < TOAST_OUT_MS) {
+         float t = 1.0F - Math.max(0.0F, (float)left / TOAST_OUT_MS);
+         return 1.0F - t * t * t;
+      }
+
+      return 1.0F;
    }
 
    public void onHudRender(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
       Minecraft client = Minecraft.getInstance();
+      long now = Util.getMillis();
+      float delta = Mth.clamp((now - this.lastFrameMs) / 1000.0F, 0.0F, 0.1F);
+      this.lastFrameMs = now;
       if (client.player != null && !client.gui.hud.isHidden() && SingleplayerGate.sandboxMode()) {
          HudModule hud = this.modules.byClass(HudModule.class).orElse(null);
          if (hud == null || hud.isEnabled()) {
@@ -131,59 +184,83 @@ public final class HudOverlay {
                graphics.pose().popMatrix();
             }
 
-            if (hud == null || hud.arraylist()) {
-               this.drawArrayList(graphics, client, hud, style, accent, accent2, width, height, shadow);
-            }
-
-            topLeftY = this.drawWaypoints(graphics, client, accent, topLeftY, shadow);
-            this.drawCoordinates(graphics, client, accent, width, height, shadow);
+            this.refreshPanels(client);
+            this.drawWaypoints(graphics, client, accent, topLeftY, shadow);
+            this.drawCoordinates(graphics, client, width, height, shadow);
             this.drawEspTags(graphics, client, width, shadow);
             this.drawStorage(graphics, client, accent, width, height, shadow);
-            this.modules.renderHud(new HudContext(graphics, client, width, height, accent, accent2, this.surface, shadow, deltaTracker.getGameTimeDeltaPartialTick(false)));
-            this.drawToasts(graphics, client.font, width, height, accent, accent2);
+            float partial = deltaTracker.getGameTimeDeltaPartialTick(false);
+            HudContext ctx = this.context;
+            if (ctx == null) {
+               ctx = new HudContext(graphics, client, width, height, accent, accent2, this.surface, shadow, partial);
+               this.context = ctx;
+            }
+
+            this.modules.renderHud(ctx.update(graphics, client, width, height, accent, accent2, this.surface, shadow, partial, delta));
+            if (hud == null || hud.toasts()) {
+               this.drawToasts(graphics, client.font, width, height, accent2, delta, hud == null || hud.toastsRight(), hud == null || hud.toastsBottom());
+            }
+
             graphics.pose().popMatrix();
          }
       }
    }
 
-   private void drawToasts(GuiGraphicsExtractor graphics, Font font, int width, int height, int accent, int accent2) {
+   private void drawToasts(GuiGraphicsExtractor graphics, Font font, int width, int height, int accent2, float delta, boolean right, boolean bottom) {
       long now = Util.getMillis();
-      float cursorY = height - 34.0F;
+      // Slots are laid out from the anchored edge, newest nearest it. Each card glides toward its slot, so the stack
+      // closes up smoothly when a card above or below leaves.
+      float slot = bottom ? height - 6 - TOAST_H : 6.0F;
       synchronized (TOASTS) {
-         Iterator<HudOverlay.Toast> it = TOASTS.iterator();
-
+         Iterator<HudOverlay.Toast> it = TOASTS.descendingIterator();
          while (it.hasNext()) {
             HudOverlay.Toast toast = it.next();
             long age = now - toast.createdAt;
             if (age >= toast.durationMs) {
                it.remove();
-            } else {
-               float in = easeOutCubic((float)age / 210.0F);
-               float out = easeOutCubic((float)(toast.durationMs - age) / 240.0F);
-               float slide = Math.min(in, out);
-               String badge = toast.severity.badge;
-               int badgeW = font.width(badge) + 8;
-               int cardW = Math.max(132, Math.max(font.width(toast.title) + badgeW + 14, font.width(toast.body) + 18));
-               int cardH = 25;
-               int x = width - 6 - Math.round((cardW + 4) * slide) + 4;
-               int y = Math.round(cursorY);
-               int statusColor = toast.severity.color;
-               int alphaBg = Math.round(228.0F * slide);
-               int alphaText = Math.round(255.0F * slide);
-               graphics.fill(x - 1, y - 1, x + cardW + 1, y + cardH + 1, GeminiMark.withAlpha(accent, Math.round(62.0F * slide)));
-               graphics.fill(x, y, x + cardW, y + cardH, GeminiMark.withAlpha(this.surface, alphaBg));
-               graphics.fill(x, y, x + 2, y + cardH, GeminiMark.withAlpha(statusColor, alphaText));
-               int pillX = x + cardW - badgeW - 5;
-               graphics.fill(pillX, y + 4, pillX + badgeW, y + 13, GeminiMark.withAlpha(statusColor, Math.round(45.0F * slide)));
-               graphics.text(font, badge, pillX + 4, y + 5, GeminiMark.withAlpha(statusColor, alphaText), false);
-               float progress = 1.0F - (float)age / (float)toast.durationMs;
-               int barW = Math.round(cardW * progress);
-               graphics.fill(x, y + cardH - 2, x + barW, y + cardH, GeminiMark.withAlpha(lerp(accent, accent2, 1.0F - progress), alphaText));
-               graphics.text(font, toast.title, x + 7, y + 4, GeminiMark.withAlpha(-1, alphaText), false);
-               graphics.text(font, toast.body, x + 7, y + 14, GeminiMark.withAlpha(-4733999, alphaText), false);
-               cursorY -= (cardH + 5) * slide;
+               continue;
             }
+
+            if (toast.cardW == 0) {
+               toast.cardW = Math.max(140, Math.max(font.width(toast.title) + font.width(toast.severity.badge) + 44, font.width(toast.body) + 34));
+            }
+
+            float slide = toastSlide(age, toast.durationMs);
+            float visible = Mth.clamp(slide, 0.0F, 1.0F);
+            toast.stackY = Float.isNaN(toast.stackY) ? slot : Glass.approach(toast.stackY, slot, 14.0F, delta);
+            int cardW = toast.cardW;
+            int travel = cardW + 6;
+            int x = right ? width - Math.round(travel * slide) : Math.round(travel * slide) - cardW;
+            this.drawToast(graphics, font, toast, x, Math.round(toast.stackY), cardW, visible, age, accent2);
+            // A leaving card hands its slot over as it slides out, so the next one starts moving at once.
+            float share = toast.durationMs - age < TOAST_OUT_MS ? visible : 1.0F;
+            slot += (bottom ? -1.0F : 1.0F) * (TOAST_H + TOAST_GAP) * share;
          }
+      }
+   }
+
+   private void drawToast(GuiGraphicsExtractor g, Font font, HudOverlay.Toast toast, int x, int y, int cardW, float visible, long age, int accent2) {
+      int status = toast.severity.color;
+      boolean urgent = toast.severity == Severity.ERROR || toast.severity == Severity.WARNING;
+      float glow = urgent ? 0.3F + 0.4F * Glass.pulse(900L) : 0.0F;
+      Glass.panel(g, x, y, x + cardW, y + TOAST_H, Glass.RADIUS, this.surface, status, visible, glow);
+      int textAlpha = Math.round(255.0F * visible);
+      Glass.roundRect(g, x + 5, y + 5, x + 21, y + 21, 3, Glass.withAlpha(status, Math.round(60.0F * visible)));
+      Glass.roundOutline(g, x + 5, y + 5, x + 21, y + 21, 3, Glass.withAlpha(status, Math.round(170.0F * visible)));
+      g.centeredText(font, toast.severity.glyph, x + 13, y + 9, Glass.withAlpha(status, textAlpha));
+      int badgeW = font.width(toast.severity.badge) + 8;
+      int pillX = x + cardW - badgeW - 5;
+      Glass.roundRect(g, pillX, y + 4, pillX + badgeW, y + 13, 3, Glass.withAlpha(status, Math.round(48.0F * visible)));
+      g.text(font, toast.severity.badge, pillX + 4, y + 5, Glass.withAlpha(status, textAlpha), false);
+      g.text(font, toast.title, x + 26, y + 5, Glass.withAlpha(Glass.TEXT, textAlpha), false);
+      g.text(font, toast.body, x + 26, y + 15, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
+      float progress = 1.0F - Mth.clamp((float)age / toast.durationMs, 0.0F, 1.0F);
+      int barW = Math.round((cardW - 2 * Glass.RADIUS) * progress);
+      if (barW > 0) {
+         int alpha = Math.round(220.0F * visible);
+         Glass.gradientBar(
+            g, x + Glass.RADIUS, y + TOAST_H - 2, x + Glass.RADIUS + barW, y + TOAST_H - 1, Glass.withAlpha(status, alpha), Glass.withAlpha(Glass.lerp(status, accent2, 0.5F), alpha)
+         );
       }
    }
 
@@ -194,7 +271,8 @@ public final class HudOverlay {
       int tick = player == null ? -1 : player.tickCount;
       String metaLine = this.metaLineCache;
       if (metaLine == null || tick != this.metaLineTick || !wmStyle.equals(this.metaLineStyle)) {
-         List<String> meta = new ArrayList<>();
+         List<String> meta = this.metaParts;
+         meta.clear();
          meta.add("v" + Gemini.VERSION);
          if (hud == null || hud.fps()) {
             meta.add(client.getFps() + " FPS");
@@ -220,35 +298,31 @@ public final class HudOverlay {
 
          metaLine = String.join("  ·  ", meta);
          this.metaLineCache = metaLine;
+         this.minimalLine = "GEMINI NEXTGEN  ·  " + metaLine;
+         this.pillLine = "NEXTGEN  |  " + metaLine;
          this.metaLineTick = tick;
          this.metaLineStyle = wmStyle;
       }
 
       if ("Minimal".equals(wmStyle)) {
-         String line = "GEMINI NEXTGEN  ·  " + metaLine;
-         graphics.text(font, line, 6, 6, accent, shadow);
+         graphics.text(font, this.minimalLine, 6, 6, accent, shadow);
          return 18;
       } else if ("LiquidBounce Pill".equals(wmStyle)) {
          String title = "GEMINI ";
-         String sub = "NEXTGEN  |  " + metaLine;
-         int pillW = 14 + font.width(title) + font.width(sub);
+         int pillW = 14 + font.width(title) + font.width(this.pillLine);
          int pillH = 17;
-         graphics.fill(3, 3, 5 + pillW, 5 + pillH, GeminiMark.withAlpha(accent, 42));
-         graphics.fill(4, 4, 4 + pillW, 4 + pillH, GeminiMark.withAlpha(this.surface, 225));
-         graphics.fill(4, 4, 6, 4 + pillH, accent);
-         drawHorizontalGradient(graphics, 4, 4, 4 + pillW, 5, accent, accent2);
+         Glass.panel(graphics, 4, 4, 4 + pillW, 4 + pillH, 6, this.surface, accent, 1.0F, 0.0F);
+         Glass.gradientBar(graphics, 10, 4, 4 + pillW - 6, 5, accent, accent2);
          graphics.text(font, title, 10, 8, accent, shadow);
-         graphics.text(font, sub, 10 + font.width(title), 8, -1511689, shadow);
+         graphics.text(font, this.pillLine, 10 + font.width(title), 8, -1511689, shadow);
          return 25;
       } else {
          boolean hasLogo = hud == null || hud.logo();
          int textX = hasLogo ? 28 : 8;
          int boxW = textX + Math.max(font.width("GEMINI NEXTGEN"), font.width(metaLine)) + 10;
          int boxH = 25;
-         graphics.fill(3, 3, 4 + boxW + 1, 4 + boxH + 1, GeminiMark.withAlpha(accent, 52));
-         graphics.fill(4, 4, 4 + boxW, 4 + boxH, GeminiMark.withAlpha(this.surface, 222));
-         graphics.fill(4, 6, 4 + boxW, 14, GeminiMark.withAlpha(accent, 14));
-         drawHorizontalGradient(graphics, 4, 4, 4 + boxW, 6, accent, accent2);
+         Glass.panel(graphics, 4, 4, 4 + boxW, 4 + boxH, Glass.RADIUS, this.surface, accent, 1.0F, 0.15F);
+         Glass.gradientBar(graphics, 4 + Glass.RADIUS, 4, 4 + boxW - Glass.RADIUS, 6, accent, accent2);
          if (hasLogo) {
             GeminiMark.draw(graphics, 6, 7, 18, accent, 1.0F);
          }
@@ -260,188 +334,7 @@ public final class HudOverlay {
       }
    }
 
-   private void drawArrayList(
-      GuiGraphicsExtractor graphics, Minecraft client, HudModule hud, ClickGuiModule style, int accent, int accent2, int width, int height, boolean shadow
-   ) {
-      Font font = client.font;
-      long now = Util.getMillis();
-      float delta = Math.min(0.05F, Math.max(0.001F, (float)(now - this.lastFrameMs) / 1000.0F));
-      this.lastFrameMs = now;
-      boolean animateSlide = hud == null || hud.slideAnimations();
-      boolean showKeys = hud != null && hud.keys();
-      boolean showInfo = hud == null || hud.showInfo();
-      String tagStyle = hud == null ? "Plain" : hud.tagStyle();
-      boolean lower = hud != null && hud.lowercase();
-      List<Module> candidates = new ArrayList<>();
-      float stepFactor = 1.0F - (float)Math.exp(-delta * 16.0F);
-
-      for (Module module : this.modules.getModules()) {
-         boolean active = module.isEnabled() && module.isListed();
-         float current = this.arrayAnimations.getOrDefault(module, active ? 1.0F : 0.0F);
-         float target = active ? 1.0F : 0.0F;
-         float next = animateSlide ? Mth.lerp(stepFactor, current, target) : target;
-         if (Math.abs(next - target) < 0.008F) {
-            next = target;
-         }
-
-         if (next > 0.008F) {
-            this.arrayAnimations.put(module, next);
-            candidates.add(module);
-         } else {
-            this.arrayAnimations.remove(module);
-         }
-      }
-
-      if (!candidates.isEmpty()) {
-         String sort = hud == null ? "Length" : hud.sort();
-         Comparator<Module> byLength = Comparator.<Module>comparingInt(modulex -> totalWidth(font, modulex, showKeys, showInfo, tagStyle, lower)).reversed();
-         switch (sort) {
-            case "Alphabetical":
-               candidates.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
-               break;
-            case "Category":
-               candidates.sort(Comparator.<Module>comparingInt(modulex -> modulex.getCategory().ordinal()).thenComparing(byLength));
-               break;
-            default:
-               candidates.sort(byLength);
-         }
-
-         boolean right = hud == null || hud.listRight();
-         boolean bottom = hud != null && hud.listBottom();
-         boolean background = hud == null || hud.background();
-         boolean bar = hud == null || hud.sideBar();
-         boolean glowOutline = hud == null || hud.glowOutline();
-         float opacity = hud == null ? 0.68F : hud.opacity();
-         String colors = hud == null ? "Pulsing Rainbow" : hud.colors();
-         float totalHeight = 0.0F;
-
-         for (Module module : candidates) {
-            totalHeight += 11.0F * easeOutCubic(this.arrayAnimations.getOrDefault(module, 1.0F));
-         }
-
-         float cursorY = bottom ? height - 4.0F - totalHeight : 4.0F;
-         int prevBoxLeft = -1;
-         int prevBoxRight = -1;
-
-         for (int i = 0; i < candidates.size(); i++) {
-            Module module = candidates.get(i);
-            float rawAnim = this.arrayAnimations.getOrDefault(module, 1.0F);
-            float anim = easeOutCubic(rawAnim);
-            String label = label(module, showKeys, lower);
-            String info = showInfo ? formatInfo(module.info(), tagStyle, lower) : null;
-            int labelWidth = totalWidth(font, module, showKeys, showInfo, tagStyle, lower);
-            int rowColor = computeRowColor(colors, accent, accent2, module, i, candidates.size(), now);
-            int nextColor = computeRowColor(colors, accent, accent2, module, Math.min(candidates.size() - 1, i + 1), candidates.size(), now);
-            int slideOffset = Math.round((1.0F - anim) * (labelWidth + 12));
-            int boxLeft = right ? width - labelWidth - 10 + slideOffset : -slideOffset;
-            int boxRight = right ? width + slideOffset : labelWidth + 10 - slideOffset;
-            int y = Math.round(cursorY);
-            int rowBottom = y + 10;
-            if (background) {
-               if (glowOutline) {
-                  graphics.fill(boxLeft - 1, y - 1, boxRight + 1, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(36.0F * anim)));
-               }
-
-               graphics.fill(boxLeft, y - 1, boxRight, rowBottom, GeminiMark.withAlpha(this.surface, (int)(255.0F * opacity * anim)));
-               graphics.fill(boxLeft, y - 1, boxRight, y + 3, GeminiMark.withAlpha(rowColor, (int)(16.0F * anim)));
-            }
-
-            if (glowOutline) {
-               int innerEdgeX = right ? boxLeft - 1 : boxRight;
-               graphics.fill(innerEdgeX, y - 1, innerEdgeX + 1, rowBottom, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
-               if (i == 0) {
-                  graphics.fill(boxLeft - 1, y - 2, boxRight, y - 1, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
-               } else if (right && prevBoxLeft != -1 && boxLeft != prevBoxLeft) {
-                  int stepL = Math.min(prevBoxLeft, boxLeft) - 1;
-                  int stepR = Math.max(prevBoxLeft, boxLeft);
-                  graphics.fill(stepL, y - 1, stepR, y, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
-               } else if (!right && prevBoxRight != -1 && boxRight != prevBoxRight) {
-                  int stepL = Math.min(prevBoxRight, boxRight);
-                  int stepR = Math.max(prevBoxRight, boxRight) + 1;
-                  graphics.fill(stepL, y - 1, stepR, y, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
-               }
-
-               if (i == candidates.size() - 1) {
-                  graphics.fill(boxLeft - 1, rowBottom, boxRight, rowBottom + 1, GeminiMark.withAlpha(rowColor, (int)(205.0F * anim)));
-               }
-            }
-
-            if (bar) {
-               int barLeft = right ? width - 2 : 0;
-               int barRight = right ? width : 2;
-               graphics.fill(barLeft, y - 1, barRight, y + 5, GeminiMark.withAlpha(rowColor, (int)(255.0F * anim)));
-               graphics.fill(barLeft, y + 5, barRight, rowBottom, GeminiMark.withAlpha(nextColor, (int)(255.0F * anim)));
-            }
-
-            int textX = right ? boxLeft + 4 : boxLeft + 6;
-            int textAlpha = Math.max(8, (int)(255.0F * anim));
-            graphics.text(font, label, textX, y, GeminiMark.withAlpha(rowColor, textAlpha), shadow);
-            if (info != null) {
-               graphics.text(font, info, textX + font.width(label) + 4, y, GeminiMark.withAlpha(-4733999, textAlpha), shadow);
-            }
-
-            prevBoxLeft = boxLeft;
-            prevBoxRight = boxRight;
-            cursorY += 11.0F * anim;
-         }
-      }
-   }
-
-   private static int computeRowColor(String mode, int accent, int accent2, Module module, int index, int total, long now) {
-      return switch (mode) {
-         case "Accent" -> accent;
-         case "Category" -> module.getCategory().accent();
-         case "Rainbow" -> ColorSetting.hueColor((float)((now / 22L + index * 16L) % 360L) / 360.0F, 0.65F, 1.0F);
-         case "Pulsing Rainbow" -> {
-            float hue = (float)((now / 20L + index * 18L) % 360L) / 360.0F;
-            float pulse = 0.78F + 0.22F * Mth.sin((float)(now / 220.0 + index * 0.45));
-            yield ColorSetting.hueColor(hue, 0.72F, Mth.clamp(pulse, 0.55F, 1.0F));
-         }
-         case "Neon Wave" -> {
-            float wave = 0.5F + 0.5F * Mth.sin((float)(now / 260.0 - index * 0.38));
-            yield lerp(accent, accent2, wave);
-         }
-         default -> lerp(accent, accent2, total <= 1 ? 0.0F : (float)index / (total - 1));
-      };
-   }
-
-   private static void drawHorizontalGradient(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int colorLeft, int colorRight) {
-      int width = Math.max(1, right - left);
-      int steps = Math.min(24, width);
-
-      for (int i = 0; i < steps; i++) {
-         int sx = left + width * i / steps;
-         int ex = left + width * (i + 1) / steps;
-         float t = steps <= 1 ? 0.0F : (float)i / (steps - 1);
-         graphics.fill(sx, top, ex, bottom, lerp(colorLeft, colorRight, t));
-      }
-   }
-
-   private static int totalWidth(Font font, Module module, boolean keys, boolean info, String tagStyle, boolean lower) {
-      String extra = info ? formatInfo(module.info(), tagStyle, lower) : null;
-      return font.width(label(module, keys, lower)) + (extra == null ? 0 : 4 + font.width(extra));
-   }
-
-   private static String label(Module module, boolean keys, boolean lower) {
-      String base = keys && module.getKeybind() != -1 ? module.getName() + " [" + GeminiKeys.displayName(module.getKeybind()) + "]" : module.getName();
-      return lower ? base.toLowerCase(Locale.ROOT) : base;
-   }
-
-   private static String formatInfo(String raw, String tagStyle, boolean lower) {
-      if (raw != null && !raw.isEmpty()) {
-         String text = lower ? raw.toLowerCase(Locale.ROOT) : raw;
-
-         return switch (tagStyle) {
-            case "Brackets [Info]" -> "[" + text + "]";
-            case "Dot · Info" -> "· " + text;
-            case "Angle <Info>" -> "<" + text + ">";
-            default -> text;
-         };
-      } else {
-         return null;
-      }
-   }
-
+   /** Linear blend of two opaque colours (alpha forced to 255). Kept for the callers outside the HUD. */
    public static int lerp(int from, int to, float t) {
       int r = Math.round(Mth.lerp(t, from >> 16 & 0xFF, to >> 16 & 0xFF));
       int g = Math.round(Mth.lerp(t, from >> 8 & 0xFF, to >> 8 & 0xFF));
@@ -449,124 +342,165 @@ public final class HudOverlay {
       return 0xFF000000 | r << 16 | g << 8 | b;
    }
 
-   private int drawWaypoints(GuiGraphicsExtractor graphics, Minecraft client, int accent, int startY, boolean shadow) {
+   /** Rebuilds the waypoint, coordinate, ESP and storage texts once per tick into reused lists. */
+   private void refreshPanels(Minecraft client) {
+      LocalPlayer player = client.player;
+      int tick = player == null ? -1 : player.tickCount;
+      if (tick == this.panelTick) {
+         return;
+      }
+
+      this.panelTick = tick;
+      this.waypointLines.clear();
+      this.coordLines.clear();
+      this.coordColors.clear();
+      this.espLines.clear();
+      this.espColors.clear();
+      this.storageLines.clear();
+      if (player == null) {
+         return;
+      }
+
       WaypointsModule waypoints = this.modules.byClass(WaypointsModule.class).orElse(null);
       if (waypoints != null && waypoints.isEnabled() && client.level != null) {
-         int y = startY + 2;
-
          for (WaypointsModule.Waypoint waypoint : waypoints.waypoints()) {
             if (waypoints.visible(waypoint)) {
-               double dx = waypoint.x() + 0.5 - client.player.getX();
-               double dz = waypoint.z() + 0.5 - client.player.getZ();
-               int distance = (int)Math.sqrt(dx * dx + dz * dz);
-               graphics.text(client.font, "o " + waypoint.name() + "  " + distance + "m", 4, y, accent, shadow);
-               y += 11;
+               double dx = waypoint.x() + 0.5 - player.getX();
+               double dz = waypoint.z() + 0.5 - player.getZ();
+               this.waypointLines.add("o " + waypoint.name() + "  " + (int)Math.sqrt(dx * dx + dz * dz) + "m");
             }
          }
-
-         return y;
-      } else {
-         return startY;
       }
-   }
 
-   private void drawCoordinates(GuiGraphicsExtractor graphics, Minecraft client, int accent, int width, int height, boolean shadow) {
       CoordinatesModule coords = this.modules.byClass(CoordinatesModule.class).orElse(null);
       if (coords != null && coords.isEnabled()) {
-         Font font = client.font;
-         BlockPos pos = client.player.blockPosition();
-         List<String> lines = new ArrayList<>();
-         List<Integer> colors = new ArrayList<>();
-         lines.add(pos.getX() + "  " + pos.getY() + "  " + pos.getZ());
-         colors.add(-1511689);
-         if (coords.showNether() && client.level != null) {
-            boolean nether = client.level.dimension() == Level.NETHER;
-            boolean overworld = client.level.dimension() == Level.OVERWORLD;
-            if (nether || overworld) {
-               double factor = nether ? 8.0 : 0.125;
-               lines.add((nether ? "Overworld " : "Nether ") + Math.round(client.player.getX() * factor) + "  " + Math.round(client.player.getZ() * factor));
-               colors.add(-6641995);
-            }
-         }
-
-         if (coords.showDirection()) {
-            String facing = facing(client.player.getYRot());
-            String biome = "";
-            if (coords.showBiome() && client.level != null) {
-               biome = "  ·  " + client.level.getBiome(pos).unwrapKey().map(key -> key.identifier().getPath().replace('_', ' ')).orElse("");
-            }
-
-            lines.add(facing + biome);
-            colors.add(accent);
-         } else if (coords.showBiome() && client.level != null) {
-            lines.add(client.level.getBiome(pos).unwrapKey().map(key -> key.identifier().getPath().replace('_', ' ')).orElse(""));
-            colors.add(accent);
-         }
-
-         String position = coords.position();
-         boolean right = position.endsWith("Right");
-         boolean bottom = position.startsWith("Bottom");
-         int y = bottom ? height - 6 - lines.size() * 11 - 10 : 38;
-
-         for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            int x = right ? width - 4 - font.width(line) : 4;
-            if (!right && !bottom) {
-               y = Math.max(y, 38);
-            }
-
-            graphics.text(font, line, x, y + i * 11, colors.get(i), shadow);
-         }
+         this.buildCoordinates(client, player, coords);
       }
-   }
 
-   private void drawEspTags(GuiGraphicsExtractor graphics, Minecraft client, int width, boolean shadow) {
       EspModule esp = this.modules.byClass(EspModule.class).orElse(null);
       if (esp != null && esp.isEnabled() && esp.tags() && client.level != null) {
-         List<Entity> shown = new ArrayList<>();
-
+         List<Entity> shown = this.espShown;
          for (Entity entity : client.level.entitiesForRendering()) {
             if (esp.shouldGlow(entity) && !(entity instanceof ItemEntity)) {
                shown.add(entity);
             }
          }
 
-         shown.sort(Comparator.comparingDouble(entityxx -> entityxx.distanceToSqr(client.player)));
-         int y = 34;
-         int x = width / 2 + 90;
-
+         shown.sort(Comparator.comparingDouble(entity -> entity.distanceToSqr(player)));
          for (int i = 0; i < Math.min(shown.size(), esp.maxTags()); i++) {
-            Entity entityx = shown.get(i);
-            String label = entityx.getName().getString() + "  " + (int)entityx.distanceTo(client.player) + "m";
-            int color = 0xFF000000 | esp.color(entityx);
-            graphics.text(client.font, label, x, y, color, shadow);
-            y += 11;
+            Entity entity = shown.get(i);
+            this.espLines.add(entity.getName().getString() + "  " + (int)entity.distanceTo(player) + "m");
+            this.espColors.add(0xFF000000 | esp.color(entity));
          }
 
-         if (!shown.isEmpty()) {
-            graphics.text(client.font, "ESP", x, 24, -6641995, false);
+         // Entities are not kept past the tick.
+         shown.clear();
+      }
+
+      StorageEspModule storage = this.modules.byClass(StorageEspModule.class).orElse(null);
+      if (storage != null && storage.isEnabled()) {
+         for (StorageEspModule.Hit hit : storage.hits()) {
+            double dx = hit.pos().getX() + 0.5 - player.getX();
+            double dy = hit.pos().getY() + 0.5 - player.getY();
+            double dz = hit.pos().getZ() + 0.5 - player.getZ();
+            this.storageLines.add(hit.label() + "  " + (int)Math.sqrt(dx * dx + dy * dy + dz * dz) + "m");
+            if (this.storageLines.size() >= 48) {
+               break;
+            }
          }
       }
    }
 
-   private void drawStorage(GuiGraphicsExtractor graphics, Minecraft client, int accent, int width, int height, boolean shadow) {
-      StorageEspModule storage = this.modules.byClass(StorageEspModule.class).orElse(null);
-      if (storage != null && storage.isEnabled() && !storage.hits().isEmpty()) {
-         int y = height / 2 - 40;
-         String title = "Storage";
-         graphics.text(client.font, title, width - 6 - client.font.width(title), y, accent, shadow);
-         y += 11;
+   private void buildCoordinates(Minecraft client, LocalPlayer player, CoordinatesModule coords) {
+      BlockPos pos = player.blockPosition();
+      this.coordLines.add(pos.getX() + "  " + pos.getY() + "  " + pos.getZ());
+      this.coordColors.add(-1511689);
+      if (coords.showNether() && client.level != null) {
+         boolean nether = client.level.dimension() == Level.NETHER;
+         boolean overworld = client.level.dimension() == Level.OVERWORLD;
+         if (nether || overworld) {
+            double factor = nether ? 8.0 : 0.125;
+            this.coordLines.add((nether ? "Overworld " : "Nether ") + Math.round(player.getX() * factor) + "  " + Math.round(player.getZ() * factor));
+            this.coordColors.add(-6641995);
+         }
+      }
 
-         for (StorageEspModule.Hit hit : storage.hits()) {
-            double dx = hit.pos().getX() + 0.5 - client.player.getX();
-            double dy = hit.pos().getY() + 0.5 - client.player.getY();
-            double dz = hit.pos().getZ() + 0.5 - client.player.getZ();
-            String label = hit.label() + "  " + (int)Math.sqrt(dx * dx + dy * dy + dz * dz) + "m";
-            graphics.text(client.font, label, width - 6 - client.font.width(label), y, -2761496, shadow);
-            y += 11;
-            if (y > height - 40) {
-               break;
-            }
+      if (coords.showDirection()) {
+         String biome = "";
+         if (coords.showBiome() && client.level != null) {
+            biome = "  ·  " + biomeName(client, pos);
+         }
+
+         this.coordLines.add(facing(player.getYRot()) + biome);
+         this.coordColors.add(0);
+      } else if (coords.showBiome() && client.level != null) {
+         this.coordLines.add(biomeName(client, pos));
+         this.coordColors.add(0);
+      }
+
+      String position = coords.position();
+      this.coordsRight = position.endsWith("Right");
+      this.coordsBottom = position.startsWith("Bottom");
+   }
+
+   private static String biomeName(Minecraft client, BlockPos pos) {
+      return client.level.getBiome(pos).unwrapKey().map(key -> key.identifier().getPath().replace('_', ' ')).orElse("");
+   }
+
+   private void drawWaypoints(GuiGraphicsExtractor graphics, Minecraft client, int accent, int startY, boolean shadow) {
+      int y = startY + 2;
+      for (int i = 0; i < this.waypointLines.size(); i++) {
+         graphics.text(client.font, this.waypointLines.get(i), 4, y, accent, shadow);
+         y += LINE;
+      }
+   }
+
+   private void drawCoordinates(GuiGraphicsExtractor graphics, Minecraft client, int width, int height, boolean shadow) {
+      List<String> lines = this.coordLines;
+      if (lines.isEmpty()) {
+         return;
+      }
+
+      Font font = client.font;
+      int accent = Glass.accent();
+      int y = this.coordsBottom ? height - 6 - lines.size() * LINE - 10 : 38;
+      for (int i = 0; i < lines.size(); i++) {
+         String line = lines.get(i);
+         int x = this.coordsRight ? width - 4 - font.width(line) : 4;
+         int color = this.coordColors.get(i);
+         graphics.text(font, line, x, y + i * LINE, color == 0 ? accent : color, shadow);
+      }
+   }
+
+   private void drawEspTags(GuiGraphicsExtractor graphics, Minecraft client, int width, boolean shadow) {
+      if (this.espLines.isEmpty()) {
+         return;
+      }
+
+      int x = width / 2 + 90;
+      graphics.text(client.font, "ESP", x, 24, -6641995, false);
+      int y = 34;
+      for (int i = 0; i < this.espLines.size(); i++) {
+         graphics.text(client.font, this.espLines.get(i), x, y, this.espColors.get(i), shadow);
+         y += LINE;
+      }
+   }
+
+   private void drawStorage(GuiGraphicsExtractor graphics, Minecraft client, int accent, int width, int height, boolean shadow) {
+      if (this.storageLines.isEmpty()) {
+         return;
+      }
+
+      int y = height / 2 - 40;
+      String title = "Storage";
+      graphics.text(client.font, title, width - 6 - client.font.width(title), y, accent, shadow);
+      y += LINE;
+      for (int i = 0; i < this.storageLines.size(); i++) {
+         String label = this.storageLines.get(i);
+         graphics.text(client.font, label, width - 6 - client.font.width(label), y, -2761496, shadow);
+         y += LINE;
+         if (y > height - 40) {
+            break;
          }
       }
    }
@@ -586,6 +520,45 @@ public final class HudOverlay {
       return entity instanceof Player;
    }
 
-   private record Toast(String title, String body, Severity severity, long createdAt, long durationMs) {
+   /** A growable int list, so the per-tick colour caches do not box. */
+   private static final class IntList {
+      private int[] values = new int[8];
+      private int size;
+
+      void clear() {
+         this.size = 0;
+      }
+
+      void add(int value) {
+         if (this.size == this.values.length) {
+            this.values = Arrays.copyOf(this.values, this.size * 2);
+         }
+
+         this.values[this.size++] = value;
+      }
+
+      int get(int index) {
+         return this.values[index];
+      }
+   }
+
+   /** One notification card. Mutable animation state is only touched under the toast lock. */
+   private static final class Toast {
+      final String title;
+      final String body;
+      final Severity severity;
+      long createdAt;
+      long durationMs;
+      /** Animated vertical position; NaN until first drawn. */
+      float stackY = Float.NaN;
+      int cardW;
+
+      Toast(String title, String body, Severity severity, long createdAt, long durationMs) {
+         this.title = title;
+         this.body = body;
+         this.severity = severity;
+         this.createdAt = createdAt;
+         this.durationMs = durationMs;
+      }
    }
 }

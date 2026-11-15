@@ -7,6 +7,7 @@ public abstract class TextHudWidget extends HudWidget {
    private static final int PAD = 4;
    private static final int LINE = 10;
    private List<TextHudWidget.Line> cached;
+   private int measured = -1;
 
    protected TextHudWidget(String name, String description, String defaultCorner, int defaultX, int defaultY) {
       super(name, description, defaultCorner, defaultX, defaultY);
@@ -16,15 +17,22 @@ public abstract class TextHudWidget extends HudWidget {
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      this.cached = this.lines(hud);
-      if (this.cached != null && !this.cached.isEmpty()) {
+      List<TextHudWidget.Line> lines = this.lines(hud);
+      if (lines != this.cached || this.measured < 0) {
+         // Widgets that cache their lines hand back the same list until it changes, so it is measured once.
+         this.cached = lines;
          int widest = 0;
-
-         for (TextHudWidget.Line line : this.cached) {
-            widest = Math.max(widest, hud.font.width(line.text()));
+         if (lines != null) {
+            for (TextHudWidget.Line line : lines) {
+               widest = Math.max(widest, hud.font.width(line.text()));
+            }
          }
 
-         return widest + 8 + (this.hasBackground() ? 2 : 0);
+         this.measured = widest;
+      }
+
+      if (this.cached != null && !this.cached.isEmpty()) {
+         return this.measured + 8 + (this.hasBackground() ? 2 : 0);
       } else {
          return 0;
       }

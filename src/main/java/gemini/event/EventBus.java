@@ -177,7 +177,7 @@ public final class EventBus {
             }
 
             if (timed) {
-               this.profiler.record(module, System.nanoTime() - start);
+               this.profiler.record(module, TICK, System.nanoTime() - start);
             }
          }
       }
@@ -204,7 +204,7 @@ public final class EventBus {
             }
 
             if (timed) {
-               this.profiler.record(module, System.nanoTime() - start);
+               this.profiler.record(module, RENDER_3D, System.nanoTime() - start);
             }
          }
       }
@@ -231,7 +231,7 @@ public final class EventBus {
             }
 
             if (timed) {
-               this.profiler.record(module, System.nanoTime() - start);
+               this.profiler.record(module, RENDER_HUD, System.nanoTime() - start);
             }
          }
       }
@@ -344,11 +344,15 @@ public final class EventBus {
       void failed(Module module, String hook, Throwable error);
    }
 
-   /** Optional per-module timing, used by the self test. */
+   /**
+    * Optional per-module timing, used by the self test and the live profiler HUD. The bus asks {@link #profiling()}
+    * once per event and only reads the clock when it says yes, so timing costs nothing while nobody is watching.
+    */
    public interface Profiler {
       boolean profiling();
 
-      void record(Module module, long nanos);
+      /** One finished hook call: {@code hook} is {@link #TICK}, {@link #RENDER_3D} or {@link #RENDER_HUD}. */
+      void record(Module module, int hook, long nanos);
    }
 
    /** One enabled module on one hook, with the priority resolved up front. */

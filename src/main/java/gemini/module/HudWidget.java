@@ -3,9 +3,8 @@ package gemini.module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.ui.GeminiMark;
+import gemini.ui.Glass;
 import gemini.ui.HudContext;
-import gemini.ui.HudOverlay;
 import gemini.ui.UiMath;
 import java.util.List;
 import net.minecraft.util.Mth;
@@ -76,6 +75,11 @@ public abstract class HudWidget extends Module {
 
    protected boolean hasBackground() {
       return this.background.get();
+   }
+
+   /** The "Corner" setting: which screen edge or corner the widget is anchored to. */
+   protected final String anchor() {
+      return this.corner.get();
    }
 
    protected boolean shouldRenderContent(HudContext hud) {
@@ -252,17 +256,12 @@ public abstract class HudWidget extends Module {
             hud.graphics.pose().translate(x, y);
             hud.graphics.pose().scale(s, s);
             if (this.hasBackground()) {
-               hud.graphics.fill(-1, -1, w + 1, h + 1, GeminiMark.withAlpha(hud.accent, 42));
-               hud.graphics.fill(0, 0, w, h, GeminiMark.withAlpha(hud.surface, 198));
-               hud.graphics.fill(0, 0, w, 4, GeminiMark.withAlpha(hud.accent, 14));
-               int steps = Math.min(18, Math.max(1, w));
-               for (int i = 0; i < steps; i++) {
-                  int sx = w * i / steps;
-                  int ex = w * (i + 1) / steps;
-                  float t = steps <= 1 ? 0.0F : (float)i / (steps - 1);
-                  hud.graphics.fill(sx, 0, ex, 1, GeminiMark.withAlpha(HudOverlay.lerp(hud.accent, hud.accent2, t), 160));
+               // The shared card: dark glass, rounded corners, a thin accent border and an accent-to-secondary top line.
+               Glass.panel(hud.graphics, 0, 0, w, h, Glass.RADIUS, hud.surface, hud.accent, 0.94F, 0.0F);
+               Glass.roundOutline(hud.graphics, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(hud.accent, 96));
+               if (w > 2 * Glass.RADIUS + 2) {
+                  Glass.gradientBar(hud.graphics, Glass.RADIUS, 0, w - Glass.RADIUS, 1, Glass.withAlpha(hud.accent, 200), Glass.withAlpha(hud.accent2, 200));
                }
-               hud.graphics.fill(0, 0, 2, h, hud.accent);
             }
 
             this.paint(hud, w, h);

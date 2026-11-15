@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
  * {@code modules} object and must tolerate anything in it: configs are hand-edited.
  */
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 8;
+   public static final int CURRENT_VERSION = 9;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -29,7 +29,13 @@ public final class ConfigMigrations {
       new Step(5, ConfigMigrations::toV5),
       new Step(6, ConfigMigrations::toV6),
       new Step(7, ConfigMigrations::toV7),
-      new Step(8, ConfigMigrations::toV8)
+      new Step(8, ConfigMigrations::toV8),
+      new Step(9, ConfigMigrations::toV9)
+   );
+   /** The HUD module's module-list settings that moved to the ArrayList widget in version 9. */
+   static final List<String> OLD_LIST_SETTINGS = List.of(
+      "ArrayList", "List Side", "List Anchor", "Sort", "Colors", "Background", "Side Bar", "Glow Outline", "Slide Animations", "Show Keys",
+      "Module Info", "Tag Style", "Lowercase", "Opacity"
    );
 
    private ConfigMigrations() {
@@ -70,6 +76,99 @@ public final class ConfigMigrations {
 
       root.addProperty("version", CURRENT_VERSION);
       return notes;
+   }
+
+   /**
+    * The module list drawn by the HUD module became the "ArrayList" HUD widget. Its on/off switch, corner and
+    * options move over (renamed where the widget names them differently), and the old settings leave the HUD module.
+    * A config that already has an ArrayList widget keeps it as it is, so nobody ends up with two lists.
+    */
+   private static void toV9(JsonObject modules, List<String> notes) {
+      JsonObject hudSettings = settingsOf(modules, "HUD");
+      if (hudSettings == null) {
+         return;
+      }
+
+      boolean any = false;
+      for (String name : OLD_LIST_SETTINGS) {
+         any |= findKey(hudSettings, name) != null;
+      }
+
+      if (!any) {
+         return;
+      }
+
+      if (findKey(modules, "ArrayList") == null) {
+         JsonObject widget = new JsonObject();
+         JsonObject settings = new JsonObject();
+         widget.add("settings", settings);
+         Boolean on = booleanSetting(hudSettings, "ArrayList");
+         boolean enabled = on == null || on;
+         widget.addProperty("enabled", enabled);
+         widget.addProperty("keybind", -1);
+         boolean left = "Left".equals(stringSetting(hudSettings, "List Side"));
+         boolean bottom = "Bottom".equals(stringSetting(hudSettings, "List Anchor"));
+         settings.addProperty("Corner", (bottom ? "Bottom " : "Top ") + (left ? "Left" : "Right"));
+         settings.addProperty("Offset X", 0.0);
+         settings.addProperty("Offset Y", 3.0);
+         String sort = stringSetting(hudSettings, "Sort");
+         if (sort != null) {
+            settings.addProperty("Sort", "Length".equals(sort) ? "Width" : sort);
+         }
+
+         String colors = stringSetting(hudSettings, "Colors");
+         if (colors != null) {
+            String renamed = colors;
+            if ("Pulsing Rainbow".equals(colors)) {
+               renamed = "Rainbow";
+            } else if ("Neon Wave".equals(colors)) {
+               renamed = "Wave";
+            } else if ("Gradient".equals(colors)) {
+               renamed = "Theme Gradient";
+            }
+
+            settings.addProperty("Colors", renamed);
+         }
+
+         Boolean bar = booleanSetting(hudSettings, "Side Bar");
+         if (bar != null) {
+            settings.addProperty("Side Bar", bar ? "Auto" : "None");
+         }
+
+         copySetting(hudSettings, "Background", settings, "Background");
+         copySetting(hudSettings, "Glow Outline", settings, "Outline");
+         copySetting(hudSettings, "Slide Animations", settings, "Animations");
+         copySetting(hudSettings, "Show Keys", settings, "Show Keys");
+         copySetting(hudSettings, "Module Info", settings, "Show Info");
+         copySetting(hudSettings, "Tag Style", settings, "Tag Style");
+         copySetting(hudSettings, "Lowercase", settings, "Lowercase");
+         copySetting(hudSettings, "Opacity", settings, "Opacity");
+         copySetting(hudSettings, "Text Shadow", settings, "Text Shadow");
+         modules.add("ArrayList", widget);
+         notes.add("The HUD module list became the ArrayList widget (" + (enabled ? "on" : "off") + ", " + settings.get("Corner").getAsString() + ")");
+      } else {
+         notes.add("Dropped the HUD module's old module-list settings; the existing ArrayList widget is kept");
+      }
+
+      for (String name : OLD_LIST_SETTINGS) {
+         String key = findKey(hudSettings, name);
+         if (key != null) {
+            hudSettings.remove(key);
+         }
+      }
+   }
+
+   private static Boolean booleanSetting(JsonObject settings, String name) {
+      String key = findKey(settings, name);
+      if (key == null || !settings.get(key).isJsonPrimitive()) {
+         return null;
+      }
+
+      try {
+         return settings.get(key).getAsBoolean();
+      } catch (RuntimeException e) {
+         return null;
+      }
    }
 
    /**

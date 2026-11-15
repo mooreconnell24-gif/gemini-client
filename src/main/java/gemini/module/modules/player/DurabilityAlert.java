@@ -22,7 +22,11 @@ public final class DurabilityAlert extends Module {
    };
    private final NumberSetting percent = this.addSetting(new NumberSetting("Warn Below %", "Warn when durability drops below this", 10.0, 1.0, 50.0, 1.0));
    private final BooleanSetting chat = this.addSetting(new BooleanSetting("Chat", "Also write the warning in chat", true));
+   private final NumberSetting critical = this.addSetting(
+      new NumberSetting("Critical Uses", "Raise a second, red alert when this many uses or fewer are left", 5.0, 1.0, 50.0, 1.0)
+   );
    private final Set<String> warned = new HashSet<>();
+   private final Set<String> criticalSlots = new HashSet<>();
 
    public DurabilityAlert() {
       super("Durability Alert", "Warn you before your armour or tools break.", Category.PLAYER);
@@ -31,6 +35,7 @@ public final class DurabilityAlert extends Module {
    @Override
    public void onDisable() {
       this.warned.clear();
+      this.criticalSlots.clear();
    }
 
    @Override
@@ -45,6 +50,7 @@ public final class DurabilityAlert extends Module {
          String key = "slot" + i;
          if (stack.isEmpty() || !stack.isDamageableItem() || stack.getMaxDamage() <= 0) {
             this.warned.removeIf(entry -> entry.startsWith(key + ":"));
+            this.criticalSlots.removeIf(entry -> entry.startsWith(key + ":"));
             continue;
          }
 
@@ -52,18 +58,34 @@ public final class DurabilityAlert extends Module {
          double pct = 100.0 * left / stack.getMaxDamage();
          String id = key + ":" + BuiltInRegistries.ITEM.getKey(stack.getItem());
          if (pct < this.percent.get()) {
+            boolean critical = left <= this.critical.intValue();
             if (!this.warned.contains(id)) {
                this.warned.removeIf(entry -> entry.startsWith(key + ":"));
                this.warned.add(id);
-               String name = stack.getHoverName().getString();
-               HudOverlay.pushNotification("Durability", name + " has " + left + " uses left", false);
-               if (this.chat.get()) {
-                  CommandManager.feedback(String.format(Locale.ROOT, "§bDurability §e%s §7is at §c%.0f%%§7 (%d uses left).", name, pct, left));
+               this.alert(stack, left, pct, critical);
+               if (critical) {
+                  this.criticalSlots.add(id);
                }
+            } else if (critical && this.criticalSlots.add(id)) {
+               // Already warned once; it is now about to break, which deserves a louder second alert.
+               this.alert(stack, left, pct, true);
             }
          } else {
             this.warned.remove(id);
+            this.criticalSlots.remove(id);
          }
+      }
+   }
+
+   private void alert(ItemStack stack, int left, double pct, boolean critical) {
+      String name = stack.getHoverName().getString();
+      HudOverlay.toast(
+         critical ? "About to break" : "Durability",
+         name + " has " + left + (left == 1 ? " use" : " uses") + " left",
+         critical ? HudOverlay.Severity.ERROR : HudOverlay.Severity.WARNING
+      );
+      if (this.chat.get()) {
+         CommandManager.feedback(String.format(Locale.ROOT, "§bDurability §e%s §7is at %s%.0f%%§7 (%d uses left).", name, critical ? "§4" : "§c", pct, left));
       }
    }
 }
