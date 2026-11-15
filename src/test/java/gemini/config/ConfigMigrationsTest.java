@@ -134,6 +134,67 @@ class ConfigMigrationsTest {
    }
 
    @Test
+   void theHudModuleListBecomesTheArrayListWidgetInTheSameCorner() {
+      JsonObject root = config(
+         8,
+         "HUD",
+         module(
+            true, -1, "Watermark", "true", "ArrayList", "true", "List Side", "\"Left\"", "List Anchor", "\"Bottom\"", "Sort", "\"Length\"", "Colors",
+            "\"Pulsing Rainbow\"", "Side Bar", "false", "Glow Outline", "false", "Module Info", "false", "Opacity", "0.4", "Text Shadow", "false"
+         )
+      );
+      List<String> notes = ConfigMigrations.migrate(root);
+      JsonObject modules = root.getAsJsonObject("modules");
+      JsonObject widget = modules.getAsJsonObject("ArrayList");
+      assertTrue(widget.get("enabled").getAsBoolean(), "a list that was on stays on");
+      JsonObject settings = settings(root, "ArrayList");
+      assertEquals("Bottom Left", settings.get("Corner").getAsString());
+      assertEquals("Width", settings.get("Sort").getAsString());
+      assertEquals("Rainbow", settings.get("Colors").getAsString());
+      assertEquals("None", settings.get("Side Bar").getAsString());
+      assertFalse(settings.get("Outline").getAsBoolean());
+      assertFalse(settings.get("Show Info").getAsBoolean());
+      assertEquals(0.4, settings.get("Opacity").getAsDouble());
+      assertFalse(settings.get("Text Shadow").getAsBoolean());
+      JsonObject hud = settings(root, "HUD");
+      for (String old : ConfigMigrations.OLD_LIST_SETTINGS) {
+         assertFalse(hud.has(old), "the HUD module no longer carries " + old);
+      }
+
+      assertTrue(hud.get("Watermark").getAsBoolean(), "unrelated HUD settings stay");
+      assertTrue(hud.has("Text Shadow"), "the HUD keeps its own text shadow switch");
+      assertEquals(1, notes.size());
+   }
+
+   @Test
+   void aListThatWasOffStaysOffAndDefaultsToTheTopRight() {
+      JsonObject root = config(8, "HUD", module(true, -1, "ArrayList", "false", "Colors", "\"Neon Wave\""));
+      ConfigMigrations.migrate(root);
+      JsonObject widget = root.getAsJsonObject("modules").getAsJsonObject("ArrayList");
+      assertFalse(widget.get("enabled").getAsBoolean());
+      assertEquals("Top Right", settings(root, "ArrayList").get("Corner").getAsString());
+      assertEquals("Wave", settings(root, "ArrayList").get("Colors").getAsString());
+   }
+
+   @Test
+   void anExistingArrayListWidgetIsNotDuplicatedOrOverwritten() {
+      JsonObject root = config(8, "HUD", module(true, -1, "ArrayList", "true", "List Side", "\"Left\""), "ArrayList", module(false, 12, "Corner", "\"Top Right\""));
+      ConfigMigrations.migrate(root);
+      JsonObject modules = root.getAsJsonObject("modules");
+      assertEquals(2, modules.size());
+      assertFalse(modules.getAsJsonObject("ArrayList").get("enabled").getAsBoolean());
+      assertEquals("Top Right", settings(root, "ArrayList").get("Corner").getAsString());
+      assertFalse(settings(root, "HUD").has("ArrayList"));
+   }
+
+   @Test
+   void configsWithoutTheOldListAreUntouchedByTheListStep() {
+      JsonObject root = config(8, "HUD", module(true, -1, "Watermark", "false"));
+      ConfigMigrations.migrate(root);
+      assertFalse(root.getAsJsonObject("modules").has("ArrayList"), "the widget's own default applies");
+   }
+
+   @Test
    void aConfigWithoutVersionIsTreatedAsTheOldest() {
       JsonObject root = new JsonObject();
       root.add("modules", new JsonObject());

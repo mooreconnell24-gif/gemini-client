@@ -6,7 +6,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
-import java.util.Locale;
+import gemini.util.TotemPops;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -30,6 +30,7 @@ public final class Nametags extends Module {
    private final BooleanSetting health = this.addSetting(new BooleanSetting("Health", "Show hit points", true));
    private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show latency from the tab list", true));
    private final BooleanSetting gamemode = this.addSetting(new BooleanSetting("Gamemode", "Show the game mode letter", false));
+   private final BooleanSetting pops = this.addSetting(new BooleanSetting("Totem Pops", "Add \"-N\" after the name of anything that has popped totems", true));
    private final BooleanSetting distance = this.addSetting(new BooleanSetting("Distance", "Show distance in blocks", false));
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Label size", 1.25, 0.4, 3.0, 0.05));
    private final BooleanSetting constantSize = this.addSetting(new BooleanSetting("Constant Size", "Grow labels with distance so they stay readable", true));
@@ -121,7 +122,14 @@ public final class Nametags extends Module {
 
       if (this.health.get() && entity instanceof LivingEntity living) {
          float hp = living.getHealth() + living.getAbsorptionAmount();
-         text.append(' ').append(String.format(Locale.ROOT, "%.1f", hp));
+         text.append(' ').append(Math.round(hp * 10.0F) / 10.0F);
+      }
+
+      if (this.pops.get()) {
+         int popped = TotemPops.count(entity);
+         if (popped > 0) {
+            text.append(" -").append(popped);
+         }
       }
 
       if (this.distance.get()) {

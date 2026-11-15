@@ -263,6 +263,16 @@ public final class Render3D {
       }
    }
 
+   /** A filled quad through four corners in order (any orientation), counted against the frame budget. */
+   public static void quad(Vec3 a, Vec3 b, Vec3 c, Vec3 d, int argb, boolean throughWalls) {
+      if (a != null && b != null && c != null && d != null && argb >>> 24 != 0 && !(segmentBehind(a, c) && segmentBehind(b, d)) && take()) {
+         GizmoProperties properties = Gizmos.rect(a, b, c, d, style(0, 0.0F, argb));
+         if (throughWalls) {
+            properties.setAlwaysOnTop();
+         }
+      }
+   }
+
    public static void text(String text, Vec3 position, int color, float scale, boolean throughWalls) {
       if (text != null && position != null && !behindCamera(position.x, position.y, position.z, 0.0) && take()) {
          GizmoProperties properties = Gizmos.billboardText(text, position, Style.forColorAndCentered(alpha(color, 255)).withScale(scale));
