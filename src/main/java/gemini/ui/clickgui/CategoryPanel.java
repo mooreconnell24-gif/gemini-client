@@ -682,7 +682,7 @@ public final class CategoryPanel {
 
       // from the right: the switch, then the key (or what the search matched), then the name
       int switchX = x + w - 8 - 18;
-      Glass.toggle(graphics, switchX, y + 4, row.enableAnim, this.faded(blocked ? Glass.TEXT_FAINT : accent));
+      Glass.toggle(graphics, switchX, y + 4, row.enableAnim, blocked ? Glass.TEXT_FAINT : accent, this.alpha);
       int right = switchX - 5;
       String hint = null;
       int hintColor = Glass.TEXT_FAINT;
@@ -772,7 +772,7 @@ public final class CategoryPanel {
          float target = bool.get() ? 1.0F : 0.0F;
          float anim = Glass.approach(this.switchAnims.getOrDefault(setting, target), target, 18.0F, this.dt);
          this.switchAnims.put(setting, anim);
-         Glass.toggle(graphics, right - 18, y + 4, anim, this.faded(accent));
+         Glass.toggle(graphics, right - 18, y + 4, anim, accent, this.alpha);
       } else if (setting instanceof ModeSetting mode) {
          String value = mode.get();
          int valueW = font.width(value);

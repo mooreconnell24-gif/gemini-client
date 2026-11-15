@@ -219,7 +219,7 @@ public final class BaritonePage extends DashboardPage {
       }
 
       BlockPos target = BlockPos.containing(x.getAsDouble(), y.getAsDouble(), z.getAsDouble());
-      // The module's own settings keep the destination for its info text and the next start (they step by 10 on X/Z).
+      // The module's own settings hold the destination; starting the module paths there and claims the task for it.
       if (setting(module, "Target X") instanceof NumberSetting sx) {
          sx.set((double)target.getX());
       }
@@ -232,17 +232,17 @@ public final class BaritonePage extends DashboardPage {
          sz.set((double)target.getZ());
       }
 
-      if (!module.isEnabled()) {
-         module.setEnabled(true, false);
+      if (module.isEnabled()) {
+         // Restart so the running task is replaced by one owned by the module (a bare path request would make it let go).
+         module.setEnabled(false, false);
       }
 
+      module.setEnabled(true, false);
       if (!module.isEnabled()) {
          this.host.notice(plain(module.blockedReason()));
          return;
       }
 
-      // the exact block typed, which the stepped settings may not hold
-      BaritoneBridge.gotoBlock(target);
       this.host.notice("Auto Goto heading to " + target.getX() + " " + target.getY() + " " + target.getZ());
       save();
    }

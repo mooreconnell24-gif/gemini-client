@@ -48,6 +48,7 @@ Everything runs locally. There is no account system, API key, cloud service or t
 
 - **Home screen.** Gemini replaces the title screen with its own: a drifting particle background with mouse parallax, the logo with a version badge, glass buttons (Singleplayer, Multiplayer, Realms, ClickGUI, WindowGUI, Presets & Configs, Options, Quit), the sandbox switch, and a status bar with FPS, the active profile, key-bind conflicts and mixin health. "Vanilla menu" in the footer switches back to the normal title screen, and the vanilla screen has a "Gemini menu" button to return.
 - **Pause dock.** The Esc menu gets one-click buttons for ClickGUI, WindowGUI, the HUD editor, the config manager, a key-bind report and Panic.
+- **Window menu dashboard.** The sidebar has the categories (with active-module counts) plus three pages: **Presets & Configs** (load, save, overwrite, delete, export and import profiles, and the built-in presets), **Keybinds** (every bound key, conflicts in red, clashes with vanilla controls in amber, and one-click Rebind / Clear / Toggle-Hold), and **Baritone** (live engine, task, owner, goal, progress and ETA, Pause/Resume/Cancel, and quick starts for Auto Goto, Auto Mine Bot, Follow Bot, Auto Tunnel, Auto Highway and Auto Explore). It can be opened from the title screen to configure Gemini before loading a world.
 - **Panel menu.** Opens and closes with a fade, scrolls with inertia, and panels snap to the grid and to each other. Module rows have animated switches and description tooltips; right-click opens settings, middle-click binds a key. Search covers setting names (and says which one matched); arrow keys and Enter work through the results.
 - **Setting controls.** A full colour picker (saturation/brightness square, hue and alpha sliders, hex input, copy/paste, Static/Rainbow/Pulse), number sliders with Shift for fine control and double-click to type a value, and a list editor with icons, fuzzy search and category filters.
 - **HUD editor.** Centre guides, snapping to other widgets' edges, centres and equal gaps, and arrow-key nudging (Shift for 10px).
@@ -291,8 +292,8 @@ Clutch (Player) watches for whatever is about to kill you and answers it with th
 | **Click a module** | Show its settings |
 | **Click the switch** / **right-click** a module | Toggle it |
 | **Middle-click a module** | Bind a key (`Delete` clears, `Esc` cancels) |
-| **Type anything** | Search every module; `Esc` clears and keeps your selection |
-| **↑ ↓**, **Enter**, **Tab** | Move the selection, toggle it, switch category |
+| **Type anything** | Search every module and setting name; `Esc` clears and keeps your selection |
+| **↑ ↓**, **Enter**, **Tab** | Move the selection, toggle it, switch category or page |
 | **Right-click a setting** | Reset it to the default |
 
 **Classic panels**
