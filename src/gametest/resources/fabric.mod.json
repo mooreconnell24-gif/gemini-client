@@ -1,0 +1,17 @@
+{
+	"schemaVersion": 1,
+	"id": "gemini-gametest",
+	"version": "1.0.0",
+	"name": "Gemini Client Game Tests",
+	"description": "In-game tests for Gemini Client. Not part of the released jar.",
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"gemini.gametest.GeminiClientGameTest"
+		]
+	},
+	"depends": {
+		"gemini": "*"
+	}
+}

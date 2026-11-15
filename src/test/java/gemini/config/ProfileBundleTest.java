@@ -99,4 +99,64 @@ class ProfileBundleTest {
       assertThrows(ProfileBundle.FormatException.class, () -> ProfileBundle.unwrap(new JsonObject()));
       assertThrows(ProfileBundle.FormatException.class, () -> ProfileBundle.unwrap(null));
    }
+
+   /** A bundle as large as a real one: a few hundred modules, each with a page of settings. */
+   private static JsonObject fullSizeBundle() {
+      JsonObject all = new JsonObject();
+      for (int m = 0; m < 300; m++) {
+         JsonObject module = new JsonObject();
+         module.addProperty("id", "module" + m);
+         module.addProperty("enabled", m % 3 == 0);
+         module.addProperty("keybind", -1);
+         JsonObject settings = new JsonObject();
+         for (int s = 0; s < 12; s++) {
+            settings.addProperty("Setting Number " + s, s % 2 == 0 ? "Mode " + (m * s % 7) : String.valueOf(m * 0.25 + s));
+         }
+
+         module.add("settings", settings);
+         all.add("Module " + m, module);
+      }
+
+      return ProfileBundle.wrap("big", "3.3.0", "now", all);
+   }
+
+   @Test
+   void clipboardTextIsSmallEnoughForTheGameAndRoundTrips() throws ProfileBundle.FormatException {
+      JsonObject bundle = fullSizeBundle();
+      assertTrue(JsonFiles.GSON.toJson(bundle).length() > 100_000, "the raw JSON is the size that used to crash the clipboard call");
+      String text = ProfileBundle.toClipboardText(bundle);
+      assertTrue(text.startsWith(ProfileBundle.CLIPBOARD_MARK));
+      assertTrue(text.length() <= ProfileBundle.MAX_CLIPBOARD_CHARS, "packed size " + text.length());
+      assertFalse(text.contains("\n"), "one line, so chat and messengers do not mangle it");
+      assertEquals(bundle, ProfileBundle.fromClipboardText("  " + text + "\n"));
+   }
+
+   @Test
+   void clipboardImportAlsoTakesPlainJson() throws ProfileBundle.FormatException {
+      JsonObject bundle = ProfileBundle.wrap("pvp", "3.3.0", "now", modules());
+      assertEquals(bundle, ProfileBundle.fromClipboardText(JsonFiles.GSON.toJson(bundle)));
+   }
+
+   @Test
+   void clipboardImportRejectsGarbageWithAMessage() {
+      for (String text : new String[]{null, "", "   ", "hello", ProfileBundle.CLIPBOARD_MARK + "not base64!!", ProfileBundle.CLIPBOARD_MARK + "aGVsbG8=", "[1,2,3]"}) {
+         assertThrows(ProfileBundle.FormatException.class, () -> ProfileBundle.fromClipboardText(text), "should reject: " + text);
+      }
+   }
+
+   @Test
+   void aBundleTooLargeForTheClipboardIsRefusedInsteadOfCrashing() {
+      JsonObject all = new JsonObject();
+      java.util.Random random = new java.util.Random(1);
+      for (int m = 0; m < 400; m++) {
+         JsonObject module = new JsonObject();
+         JsonObject settings = new JsonObject();
+         // Random text does not compress, so this stays far above the limit even packed.
+         settings.addProperty("Text", new java.math.BigInteger(1200, random).toString(36));
+         module.add("settings", settings);
+         all.add("Module " + m, module);
+      }
+
+      assertThrows(ProfileBundle.FormatException.class, () -> ProfileBundle.toClipboardText(ProfileBundle.wrap("huge", "3.3.0", "now", all)));
+   }
 }

@@ -23,6 +23,18 @@ loom {
 	}
 }
 
+// In-game tests: a real client creates a world and runs every module, the pathfinder, the commands and the menus.
+// Run with: xvfb-run -a ./gradlew runClientGameTest   (the report lands in build/run/clientGameTest/gemini-gametest-report.txt)
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "gemini-gametest"
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"

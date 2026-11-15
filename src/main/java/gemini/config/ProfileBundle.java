@@ -2,7 +2,14 @@ package gemini.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * The portable form of a profile: what {@code .config export} writes and {@code .config import} reads.
@@ -18,6 +25,11 @@ public final class ProfileBundle {
    /** Marks a profile whose modules carry no extras, so loading it must leave the current extras alone. */
    static final String PORTABLE = "portable";
    private static final String[] MODULE_KEYS = {"id", "enabled", "keybind", "settings"};
+   /** Starts every clipboard export, so an import can tell packed text from JSON typed or pasted by hand. */
+   public static final String CLIPBOARD_MARK = "GEMINI1:";
+   /** Well under the 64 KB native stack the game's clipboard call copies its text onto. */
+   static final int MAX_CLIPBOARD_CHARS = 40000;
+   private static final int MAX_UNPACKED_BYTES = 8 * 1024 * 1024;
 
    private ProfileBundle() {
    }
@@ -71,6 +83,57 @@ public final class ProfileBundle {
       ConfigMigrations.migrate(profile);
       profile.addProperty(PORTABLE, true);
       return profile;
+   }
+
+   /**
+    * A bundle as one line of text for the clipboard: the marker, then the gzipped JSON in base64. A full bundle is
+    * a few hundred kilobytes of JSON, and the game's clipboard call copies its text onto a small fixed-size native
+    * stack, so pasting the raw JSON there crashes the game; packed, the same bundle is around ten kilobytes.
+    *
+    * @throws FormatException when even the packed form is too long to hand to the clipboard safely
+    */
+   public static String toClipboardText(JsonObject bundle) throws FormatException {
+      byte[] json = JsonFiles.COMPACT.toJson(bundle).getBytes(StandardCharsets.UTF_8);
+      ByteArrayOutputStream packed = new ByteArrayOutputStream(json.length / 4 + 64);
+      try (GZIPOutputStream gzip = new GZIPOutputStream(packed)) {
+         gzip.write(json);
+      } catch (IOException e) {
+         throw new FormatException("the profile could not be packed");
+      }
+
+      String text = CLIPBOARD_MARK + Base64.getEncoder().encodeToString(packed.toByteArray());
+      if (text.length() > MAX_CLIPBOARD_CHARS) {
+         throw new FormatException("the profile is too large for the clipboard; export it to a file instead");
+      }
+
+      return text;
+   }
+
+   /** Reads what {@link #toClipboardText} wrote, or plain JSON pasted by hand. */
+   public static JsonObject fromClipboardText(String text) throws FormatException {
+      String clean = text == null ? "" : text.trim();
+      if (clean.isEmpty()) {
+         throw new FormatException("the clipboard is empty");
+      }
+
+      try {
+         if (!clean.startsWith(CLIPBOARD_MARK)) {
+            return JsonFiles.parse(clean);
+         }
+
+         byte[] packed = Base64.getDecoder().decode(clean.substring(CLIPBOARD_MARK.length()).trim());
+         try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(packed))) {
+            // A bundle is a few hundred kilobytes; anything far beyond that is not one, and is not unpacked further.
+            byte[] json = gzip.readNBytes(MAX_UNPACKED_BYTES + 1);
+            if (json.length > MAX_UNPACKED_BYTES) {
+               throw new FormatException("the clipboard does not hold a Gemini profile");
+            }
+
+            return JsonFiles.parse(new String(json, StandardCharsets.UTF_8));
+         }
+      } catch (IOException | RuntimeException e) {
+         throw new FormatException("the clipboard does not hold a Gemini profile");
+      }
    }
 
    static boolean isPortable(JsonObject profile) {

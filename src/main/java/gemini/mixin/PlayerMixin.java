@@ -1,5 +1,8 @@
 package gemini.mixin;
 
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.world.entity.Entity;
+import gemini.util.AttackAssist;
 import gemini.Gemini;
 import gemini.module.modules.movement.SafeWalkModule;
 import net.minecraft.client.Minecraft;
@@ -25,5 +28,16 @@ public abstract class PlayerMixin {
             cir.setReturnValue(true);
          }
       }
+   }
+
+   /** Runs for every player on either side; {@link AttackAssist} only acts for the world owner's server-side player. */
+   @Inject(method = "attack", at = @At("HEAD"), require = 0)
+   private void gemini$attackAssistBefore(Entity target, CallbackInfo ci) {
+      AttackAssist.before((Player)(Object)this);
+   }
+
+   @Inject(method = "attack", at = @At("RETURN"), require = 0)
+   private void gemini$attackAssistAfter(Entity target, CallbackInfo ci) {
+      AttackAssist.after((Player)(Object)this);
    }
 }

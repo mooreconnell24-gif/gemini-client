@@ -26,10 +26,29 @@ jobs:
         with:
           name: gemini-jar
           path: build/libs/*.jar
-      - name: Launch smoke test (built jar to title screen)
+      - name: Install a virtual display
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl1 libegl-mesa0 libgles2 > /dev/null
+      - name: In-game test (every module, pathfinder, commands and menus in a real world)
+        run: |
+          export LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEO_X11_FORCE_EGL=1 SDL_VIDEO_FORCE_EGL=1
+          set +e
+          timeout 1500 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache > gametest.log 2>&1
+          code=$?
+          set -e
+          cat build/run/clientGameTest/gemini-gametest-report.txt 2> /dev/null || tail -80 gametest.log
+          [ "$code" -eq 0 ] || { echo "::error::The in-game test failed (exit $code)"; exit 1; }
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: gametest-report
+          path: |
+            build/run/clientGameTest/gemini-gametest-report.txt
+            build/run/clientGameTest/screenshots/*.png
+          if-no-files-found: ignore
+      - name: Launch smoke test (built jar to title screen)
+        run: |
           export LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEO_X11_FORCE_EGL=1 SDL_VIDEO_FORCE_EGL=1
           set +e
           timeout 300 ./gradlew prodClient --no-configuration-cache > client.log 2>&1

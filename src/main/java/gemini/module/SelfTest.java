@@ -22,6 +22,7 @@ public final class SelfTest {
    private static final int MAX_CHAT_LINES = 8;
    private static final int HEAVIEST = 5;
    private static SelfTest current;
+   private static List<String> lastProblems = List.of();
    private final Map<Module, Boolean> before = new LinkedHashMap<>();
    private final List<Module> started = new ArrayList<>();
    private final List<String> refused = new ArrayList<>();
@@ -32,6 +33,11 @@ public final class SelfTest {
    private long measureStart;
 
    private SelfTest() {
+   }
+
+   /** What the most recent finished run found wrong, one line per problem; empty when it was clean or none has run. */
+   public static List<String> lastProblems() {
+      return lastProblems;
    }
 
    public static boolean running() {
@@ -159,6 +165,7 @@ public final class SelfTest {
       }
 
       Gemini.getInstance().config().setSavingPaused(false);
+      lastProblems = List.copyOf(this.problems);
       List<String> lines = new ArrayList<>();
       String summary = "§bSelf-test §7"
          + (abortReason == null ? "finished" : "stopped early (" + abortReason + ")")

@@ -9,9 +9,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.util.AttributeBoost;
 import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.phys.Vec3;
 
@@ -135,11 +133,9 @@ public final class FlightModule extends LinearFlightModuleBase {
       double dz = dir == null ? 0.0 : dir.z * step;
       player.setDeltaMovement(0.0, 0.0, 0.0);
       Vec3 next = player.position().add(dx, dy, dz);
+      // The game reports this move in its own position packet. Sending a second one, as this mode used to, makes
+      // Minecraft 26.3 disconnect the player.
       player.setPos(next);
-      ClientPacketListener conn = client.getConnection();
-      if (conn != null) {
-         conn.send(new Pos(next.x, next.y, next.z, false, false));
-      }
 
       if (this.noFall.get()) {
          AttributeBoost.resetFall(player);

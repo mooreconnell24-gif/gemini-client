@@ -4,9 +4,7 @@ import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Key;
 import gemini.Gemini;
-import com.google.gson.JsonObject;
 import gemini.config.ConfigManager;
-import gemini.config.JsonFiles;
 import gemini.config.ProfileBundle;
 import gemini.diags.MixinReport;
 import gemini.input.GeminiKeys;
@@ -1038,8 +1036,12 @@ public final class CommandManager {
 
       boolean toClipboard = parts.length >= 4 && "clipboard".equalsIgnoreCase(parts[3]);
       if (toClipboard) {
-         Minecraft.getInstance().keyboardHandler.setClipboard(JsonFiles.GSON.toJson(this.configManager.exportBundle(parts[2])));
-         feedback("§aCopied profile §f" + parts[2] + " §ato the clipboard. §7Paste it anywhere; the other side runs §f.config import <name> clipboard");
+         try {
+            Minecraft.getInstance().keyboardHandler.setClipboard(ProfileBundle.toClipboardText(this.configManager.exportBundle(parts[2])));
+            feedback("§aCopied profile §f" + parts[2] + " §ato the clipboard. §7Paste it anywhere; the other side runs §f.config import <name> clipboard");
+         } catch (ProfileBundle.FormatException e) {
+            feedback("§cExport failed: §7" + e.getMessage() + ".");
+         }
       } else {
          Path file = this.configManager.exportProfile(parts[2]);
          if (file == null) {
@@ -1065,21 +1067,7 @@ public final class CommandManager {
       try {
          int modules;
          if (parts.length >= 4 && "clipboard".equalsIgnoreCase(parts[3])) {
-            String text = Minecraft.getInstance().keyboardHandler.getClipboard();
-            if (text == null || text.isBlank()) {
-               feedback("§cThe clipboard is empty.");
-               return;
-            }
-
-            JsonObject document;
-            try {
-               document = JsonFiles.parse(text);
-            } catch (RuntimeException e) {
-               feedback("§cThe clipboard does not hold a Gemini profile.");
-               return;
-            }
-
-            modules = this.configManager.importProfile(parts[2], document);
+            modules = this.configManager.importProfile(parts[2], ProfileBundle.fromClipboardText(Minecraft.getInstance().keyboardHandler.getClipboard()));
          } else {
             modules = this.configManager.importProfileFile(parts[2]);
          }

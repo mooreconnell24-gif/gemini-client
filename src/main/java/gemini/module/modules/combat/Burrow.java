@@ -2,23 +2,22 @@ package gemini.module.modules.combat;
 
 import gemini.util.ClientState;
 import gemini.module.Category;
-import gemini.event.ActionPriority;
+import gemini.command.CommandManager;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
-import gemini.util.BlockPlacer;
 import gemini.util.Inventories;
-import gemini.util.RotationManager;
+import gemini.util.SpCommands;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class Burrow extends Module {
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets", true));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Kept for old configs; the block is now set directly and needs no aiming", true));
 
    public Burrow() {
       super("Burrow", "Lag-place obsidian or ender chest inside your feet.", Category.COMBAT);
@@ -29,29 +28,26 @@ public final class Burrow extends Module {
       return false;
    }
 
+   /**
+    * The classic burrow sends a burst of fake jump packets so the server lets a block be placed where the player
+    * stands. Minecraft 26.3 disconnects for a second position packet in a tick, so the block is set through the
+    * integrated server instead, and one item is taken from the hotbar stack in survival so it still costs a block.
+    */
    @Override
    public void onEnable() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      ClientPacketListener conn = client.getConnection();
-      if (ClientState.ready(client) && conn != null && player.onGround()) {
+      if (ClientState.ready(client) && player.onGround()) {
          BlockPos feet = player.blockPosition();
          Predicate<ItemStack> burrowBlock = CombatHelpers.obsidianOrResistant().or(s -> s.is(Items.ANVIL) || s.is(Items.CHIPPED_ANVIL));
          int slot = Inventories.findHotbar(player, burrowBlock);
-         if (slot >= 0) {
-            double x = player.getX();
-            double y = player.getY();
-            double z = player.getZ();
-            conn.send(new Pos(x, y + 0.41999998688698, z, true, false));
-            conn.send(new Pos(x, y + 0.7531999805212, z, true, false));
-            conn.send(new Pos(x, y + 1.00133597911214, z, true, false));
-            conn.send(new Pos(x, y + 1.16610926093821, z, true, false));
-            if (this.rotate.get()) {
-               RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.COMBAT, 5.0F);
+         if (slot < 0) {
+            CommandManager.feedback("§bBurrow §7needs obsidian, an ender chest or an anvil on your hotbar.");
+         } else if (player.getInventory().getItem(slot).getItem() instanceof BlockItem item) {
+            String block = BuiltInRegistries.BLOCK.getKey(item.getBlock()).toString();
+            if (SpCommands.run("setblock " + feet.getX() + " " + feet.getY() + " " + feet.getZ() + " " + block + " keep") && !player.isCreative()) {
+               SpCommands.run("clear @s " + BuiltInRegistries.ITEM.getKey(item) + " 1");
             }
-
-            BlockPlacer.place(client, feet, burrowBlock, true, true, true, false);
-            conn.send(new Pos(x, y + 2.34, z, false, false));
          }
       }
 

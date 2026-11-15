@@ -5,15 +5,15 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  283 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
+  293 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
-  [![Version](https://img.shields.io/badge/Release-3.2.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
+  [![Version](https://img.shields.io/badge/Release-3.3.0-6d55c8?style=flat-square)](https://github.com/mooreconnell24-gif/gemini-client/releases)
   [![Java](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](https://adoptium.net/)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-320) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
+  [Install](#installation) · [Controls](#controls) · [Commands](#commands) · [What's new](#whats-new-in-330) · [Build](#building-from-source) · [Issues](https://github.com/mooreconnell24-gif/gemini-client/issues)
 </div>
 
 ---
@@ -42,7 +42,33 @@ Everything runs locally. There is no account system, API key, cloud service or t
   <br><sub>Window layout (rendered offline; in game the text uses the Minecraft font)</sub>
 </div>
 
-## What's new in 3.2.0
+## What's new in 3.3.0
+
+**Tested in the game, not just compiled.** Gemini now has an in-game test: a real client creates a world, runs every module by itself, runs them all at once, walks and mines with the pathfinder, lands a critical hit, runs the chat commands, opens the menus and flips the sandbox switch. It found the bugs below, which no amount of reading the code had.
+
+**Fixes**
+
+- **Getting kicked out of your own world.** Minecraft 26.3 disconnects a client that sends two position packets in one tick. Criticals (Packet mode), MaceKill, Burrow, Flight (Packet mode), Click TP and `.vclip` / `.hclip` all did exactly that, so using them threw you back to the title screen with "Invalid move player packet received". They now work without extra packets: critical hits and mace smashes are applied where the hit is calculated, Burrow sets its block directly, and teleports go through the game's own teleport. As a safety net, a second position packet in a tick is now held back instead of sent.
+- **`.config export <name> clipboard` crashed the game.** A full profile is too large for the game's clipboard call. The clipboard form is now packed to about a twentieth of the size, and a profile that is still too large is refused with a message.
+- **`.reversestep` was an unknown command.** A module's other names (the old name of a merged module, the name without spaces) now work in commands, not only in the menu search.
+
+**New modules**
+
+| Module | What it does |
+|---|---|
+| Gravity | Scales gravity: moon jumps at 35%, floating at 0% |
+| Size | Shrinks you to fit one-block gaps or grows you into a giant |
+| Extra Hearts | Raises your maximum health |
+| Aquatic | Longer breath, full-speed swimming and normal mining speed under water |
+| Lucky | Raises the luck attribute for better fishing and chest loot |
+| Fireproof | Stops you burning sooner after leaving fire or lava |
+| Repair | Keeps what you hold and wear from wearing out |
+| Refill | Tops the stack in your hand back up when it runs low |
+| Chunk Loader | Keeps the chunk you stand in loaded while you are away |
+| Surface | Teleports you straight up to the surface, or to the next open level under a roof |
+
+<details>
+<summary>What was new in 3.2.0</summary>
 
 **Sandbox mode instead of "remove the jar".** The multiplayer lock is now a switch. With it on, Gemini works as before and a refused connection gets a screen that explains why. With it off, Gemini is completely dormant and you can play online without uninstalling it. Modules still never run on a server.
 
@@ -78,6 +104,8 @@ Everything runs locally. There is no account system, API key, cloud service or t
 | Was | Now |
 |---|---|
 | ReverseStep | **Fast Fall** › *When*: `Ledges` (its Height and Speed are now *Ledge Height* and *Ledge Speed*; `Both` runs the two together). Your settings, switch and key bind are carried over, and `.reversestep` still finds it |
+
+</details>
 
 <details>
 <summary>What was new in 3.1.0</summary>
@@ -172,7 +200,7 @@ The rest:
 
 | | |
 |---|---|
-| **283 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
+| **293 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
@@ -310,6 +338,14 @@ cd gemini-client
 
 On Windows use `gradlew.bat build`. The jar lands in `build/libs/gemini-<version>.jar`. `build` also runs the unit tests (`./gradlew test` runs just those). Run a development client with `./gradlew runClient`.
 
+The in-game test needs a display; on a machine without one use a virtual display:
+
+```bash
+xvfb-run -a ./gradlew runClientGameTest
+```
+
+It fails when a module crashes, the server rejects a command Gemini sent, or an error is logged, and writes what it found to `build/run/clientGameTest/gemini-gametest-report.txt` with screenshots next to it.
+
 ## Project layout
 
 ```text
@@ -328,6 +364,7 @@ src/main/java/gemini/
 ├── util/                    Baritone bridge + built-in pathfinder, rotations, hands arbiter, single-player gate
 │   └── pathing/             The A* search core and the chunk-cached block view
 src/test/java/gemini/        Unit tests for the search, the event bus and config handling
+src/gametest/java/gemini/    In-game test: every module, the pathfinder, commands, menus and the sandbox switch in a real world
 └── xray/                    Xray data and compilation
 ```
 
