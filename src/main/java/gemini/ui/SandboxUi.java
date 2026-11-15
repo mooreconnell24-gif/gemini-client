@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.Gemini;
 import gemini.util.SingleplayerGate;
 import java.util.function.Supplier;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
@@ -16,7 +18,9 @@ import net.minecraft.network.chat.Component;
 
 /**
  * Everything the player sees about the sandbox switch: the screen shown instead of a refused connection, the
- * notice that replaces the server list while the sandbox is on, and the on/off button on the title screen.
+ * notice that replaces the server list while the sandbox is on, and the on/off switch on the title screens (the
+ * Gemini home screen draws its own; the vanilla title screen gets a button). It is also where Fabric's
+ * screen-init hook fans out to the home screen swap and the pause-menu dock.
  */
 public final class SandboxUi {
    private static final int BUTTON_WIDTH = 150;
@@ -58,7 +62,20 @@ public final class SandboxUi {
    /** Fabric's after-init screen hook. */
    public static void onScreenInit(Minecraft client, Screen screen) {
       if (screen instanceof TitleScreen) {
-         addTitleButton(client, screen);
+         if (GeminiTitleScreen.replaces(screen)) {
+            // Normally TitleScreenMixin has swapped the screen before it ever got this far. Should that injection
+            // miss, swap here once the current screen change has finished.
+            client.execute(() -> {
+               if (client.gui.screen() == screen && GeminiTitleScreen.replaces(screen)) {
+                  client.gui.setScreen(new GeminiTitleScreen());
+               }
+            });
+         } else {
+            addTitleButton(client, screen);
+            addHomeButton(client, screen);
+         }
+      } else if (screen instanceof PauseScreen pause) {
+         PauseDock.attach(client, pause);
       } else if (screen instanceof JoinMultiplayerScreen && SingleplayerGate.connectionsBlocked()) {
          // Showing a server list in which nothing can be pinged or joined would look like a network fault.
          // Replace it with the explanation once the current screen change has finished.
@@ -73,10 +90,9 @@ public final class SandboxUi {
 
    private static void addTitleButton(Minecraft client, Screen screen) {
       Button button = Button.builder(label(), pressed -> {
-            SingleplayerGate.Change change = SingleplayerGate.setSandboxMode(!SingleplayerGate.sandboxMode());
+            toggleSandbox(client);
             pressed.setMessage(label());
             pressed.setTooltip(Tooltip.create(tooltip()));
-            toast(client, SingleplayerGate.sandboxMode() ? "Gemini sandbox mode on" : "Gemini switched off", strip(change.message()));
          })
          .bounds(4, 4, BUTTON_WIDTH, 20)
          .tooltip(Tooltip.create(tooltip()))
@@ -84,11 +100,47 @@ public final class SandboxUi {
       Screens.getWidgets(screen).add(button);
    }
 
-   private static Component label() {
+   /** The way back from the vanilla title screen to the Gemini home screen; pressing it also switches the option back on. */
+   private static void addHomeButton(Minecraft client, Screen screen) {
+      Gemini gemini = Gemini.getInstance();
+      if (gemini == null || gemini.config() == null) {
+         return;
+      }
+
+      Button button = Button.builder(Component.translatable("gemini.title.home"), pressed -> {
+            gemini.config().setGeminiTitleScreen(true);
+            client.gui.setScreen(new GeminiTitleScreen());
+         })
+         .bounds(4, 28, BUTTON_WIDTH, 20)
+         .tooltip(Tooltip.create(Component.translatable("gemini.title.home.tooltip")))
+         .build();
+      Screens.getWidgets(screen).add(button);
+   }
+
+   /** Flips the sandbox switch on the player's request and says what happened in a toast. */
+   public static SingleplayerGate.Change toggleSandbox(Minecraft client) {
+      SingleplayerGate.Change change = SingleplayerGate.setSandboxMode(!SingleplayerGate.sandboxMode());
+      toast(client, SingleplayerGate.sandboxMode() ? "Gemini sandbox mode on" : "Gemini switched off", strip(change.message()));
+      return change;
+   }
+
+   /**
+    * A short notice from a Gemini screen. Gemini's own HUD toasts are only drawn in a world and sit behind (and
+    * are blurred by) an open screen, so while a screen is up or no world is loaded this uses the vanilla toast.
+    */
+   public static void notify(Minecraft client, String title, String body, HudOverlay.Severity severity) {
+      if (client.player != null && client.gui.screen() == null) {
+         HudOverlay.toast(title, body, severity);
+      } else {
+         toast(client, title, body);
+      }
+   }
+
+   public static Component label() {
       return Component.literal(SingleplayerGate.sandboxMode() ? "Gemini: Sandbox (offline)" : "Gemini: Off (online play)");
    }
 
-   private static Component tooltip() {
+   public static Component tooltip() {
       return Component.literal(
          SingleplayerGate.sandboxMode()
             ? "Gemini is active in single-player worlds and server connections are refused. Click to switch Gemini off and play online."
@@ -96,7 +148,7 @@ public final class SandboxUi {
       );
    }
 
-   private static void toast(Minecraft client, String title, String body) {
+   public static void toast(Minecraft client, String title, String body) {
       SystemToast.addOrUpdate(client.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(title), Component.literal(body));
    }
 
