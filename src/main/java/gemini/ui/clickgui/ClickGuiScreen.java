@@ -1,12 +1,11 @@
 package gemini.ui.clickgui;
 
-import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 import gemini.Gemini;
 import gemini.config.ConfigManager;
 import gemini.input.GeminiKeys;
 import gemini.input.KeybindReport;
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.HudWidget;
 import gemini.module.Module;
@@ -14,8 +13,12 @@ import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.render.HudModule;
 import gemini.module.setting.ListSetting;
 import gemini.ui.GeminiMark;
-import gemini.ui.HudOverlay;
+import gemini.ui.Glass;
+import gemini.ui.UiMath;
+import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.clickgui.controls.SettingControl;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.client.KeyMapping;
@@ -29,29 +32,41 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 
+/**
+ * The panel menu: one draggable glass column per category, a fuzzy search that filters every column at once and
+ * can be driven from the keyboard, and the HUD editor (drag, snap and nudge the HUD widgets).
+ */
 public final class ClickGuiScreen extends Screen {
    private static final int GAP = 8;
    private static final int TOP_BAR = 54;
    private static final int FOOTER = 30;
-   private static final String DEFAULT_TIP = "LMB toggle   RMB settings   MMB bind   Shift+drag HUD widgets";
+   private static final String DEFAULT_TIP = "LMB toggle   RMB settings   MMB bind   Shift+RMB favourite   Shift+drag HUD widgets";
+   private static final String[] CHIPS = {
+      "All", "Active Only", "Keybound", "Favorites", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
+   };
    private static String rememberedSearch = "";
+   /** 0 while the menu is closed, 1 once it is fully open; it eases both ways. */
    public float animationProgress = 0.0F;
    private final List<CategoryPanel> panels = new ArrayList<>();
    private final List<ClickGuiScreen.Particle> particles = new ArrayList<>();
    private final List<ClickGuiScreen.Chip> chips = new ArrayList<>();
-   private final long openedAt = Util.getMillis();
-   private long lastFrame = this.openedAt;
+   private long lastFrame = Util.getMillis();
+   private boolean closing;
    private String search = "";
    private boolean searchFocused;
+   private float searchGlow;
    private String filterMode = "All";
+   private Module highlighted;
    private Module bindingModule;
    private boolean bindingMenu;
    private boolean hudEditMode;
    private HudWidget draggingWidget;
+   private HudWidget selectedWidget;
+   private long nudgedAt;
    private final HudWidget.Guides guides = new HudWidget.Guides();
    private float widgetGrabX;
    private float widgetGrabY;
-   private String hoveredDescription = "LMB toggle   RMB settings   MMB bind   Shift+drag HUD widgets";
+   private String hoveredDescription = DEFAULT_TIP;
    private String tooltipTitle;
    private String tooltipKeyBadge;
    private String tooltipBody;
@@ -62,6 +77,7 @@ public final class ClickGuiScreen extends Screen {
    private String flashText;
    private long flashUntil;
    private float uiScale = 1.0F;
+   private float fade = 1.0F;
    private int vw;
    private int vh;
 
@@ -80,18 +96,13 @@ public final class ClickGuiScreen extends Screen {
       }
    }
 
-   public void updateAnimations() {
-      boolean open = true;
-      float elapsed = Math.min(1.0F, (float)(Util.getMillis() - this.openedAt) / 260.0F);
-      this.animationProgress = ease(elapsed);
-   }
-
    protected void init() {
       // Minecraft 26.3 reads keys through SDL, which only sends typed characters to a screen that asks for them.
       this.minecraft.textInputManager().startTextInput(this);
       ClickGuiModule style = this.style();
       int count = Category.values().length;
-      int needed = count * 128 + (count + 1) * 8;
+      int column = CategoryPanel.DEFAULT_WIDTH + GAP;
+      int needed = count * CategoryPanel.DEFAULT_WIDTH + (count + 1) * GAP;
       float base = style == null ? 1.0F : style.scale();
       float scale = base;
       if (style == null || style.autoFit()) {
@@ -103,18 +114,18 @@ public final class ClickGuiScreen extends Screen {
       this.vh = Math.round(this.height / this.uiScale);
       this.particles.clear();
       ConfigManager config = Gemini.getInstance().config();
-      int totalWidth = count * 128 + (count - 1) * 8;
-      int startX = Math.max(8, (this.vw - totalWidth) / 2);
+      int totalWidth = count * CategoryPanel.DEFAULT_WIDTH + (count - 1) * GAP;
+      int startX = Math.max(GAP, (this.vw - totalWidth) / 2);
       if (this.panels.size() == count) {
          for (CategoryPanel panel : this.panels) {
-            panel.setDefaultPosition(startX + panel.category().ordinal() * 136, 62);
+            panel.setDefaultPosition(startX + panel.category().ordinal() * column, TOP_BAR + GAP);
          }
       } else {
          this.panels.clear();
 
          for (Category category : Category.values()) {
             CategoryPanel panel = new CategoryPanel(category, Gemini.getInstance().modules().of(category), config.panel(category.name()));
-            panel.setDefaultPosition(startX + category.ordinal() * 136, 62);
+            panel.setDefaultPosition(startX + category.ordinal() * column, TOP_BAR + GAP);
             this.panels.add(panel);
          }
       }
@@ -124,6 +135,9 @@ public final class ClickGuiScreen extends Screen {
       }
 
       this.buildChips();
+      if (!this.search.isEmpty() && this.highlighted == null) {
+         this.searchChanged();
+      }
    }
 
    private void buildChips() {
@@ -131,9 +145,7 @@ public final class ClickGuiScreen extends Screen {
       int x = 56;
       int y = 35;
 
-      for (String label : new String[]{
-         "All", "Active Only", "Keybound", "Favorites", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
-      }) {
+      for (String label : CHIPS) {
          int w = this.font.width(label) + 12;
          this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
          x += w + 4;
@@ -153,33 +165,54 @@ public final class ClickGuiScreen extends Screen {
       }
    }
 
+   private void text(GuiGraphicsExtractor graphics, String text, int x, int y, int color) {
+      Controls.text(graphics, this.font, text, x, y, color, this.fade);
+   }
+
+   private int faded(int color, int alpha) {
+      return Glass.withAlpha(color, Math.round(alpha * this.fade));
+   }
+
    @Override
    public void extractRenderState(GuiGraphicsExtractor graphics, int rawMouseX, int rawMouseY, float partialTick) {
       long now = Util.getMillis();
       float delta = Math.min(0.05F, (float)(now - this.lastFrame) / 1000.0F);
       this.lastFrame = now;
-      this.updateAnimations();
       ClickGuiModule style = this.style();
       boolean animate = style == null || style.animations();
-      float open = animate ? Math.max(this.animationProgress, ease(Math.min(1.0F, (float)(now - this.openedAt) / 320.0F))) : 1.0F;
+      // Glass.approach jumps straight to the target when animations are off
+      this.animationProgress = Glass.approach(this.animationProgress, this.closing ? 0.0F : 1.0F, this.closing ? 22.0F : 13.0F, delta);
+      float open = this.animationProgress;
+      this.fade = open;
+      if (this.closing && open <= 0.02F) {
+         // fully faded out; tick() closes the screen
+         super.extractRenderState(graphics, rawMouseX, rawMouseY, partialTick);
+         return;
+      }
+
       int accent = style == null ? -6467875 : style.accentColor();
       int accentB = style == null ? -16718337 : style.secondaryColor();
       boolean glow = style == null || style.glow();
       boolean snapGrid = style == null || style.snapGrid();
       float pulse = animate ? 0.55F + 0.45F * (float)Math.sin(now / 380.0) : 1.0F;
       int surface = style == null ? -15987178 : style.surface(0);
-      int header = style == null ? -15329501 : HudOverlay.lerp(style.surface(1), style.surface(2), 0.5F);
-      if (style == null || style.dim()) {
-         graphics.fill(0, 0, this.width, this.height, GeminiMark.withAlpha(-16447473, (int)(175.0F * open)));
+      int header = style == null ? -15329501 : Glass.lerp(style.surface(1), style.surface(2), 0.5F);
+      boolean dim = style == null || style.dim();
+      if (dim) {
+         graphics.fill(0, 0, this.width, this.height, this.faded(0x050810, 175));
       }
 
       int mouseX = Math.round(rawMouseX / this.uiScale);
       int mouseY = Math.round(rawMouseY / this.uiScale);
+      // the whole menu grows from 94% to full size around the screen centre while it fades in
+      float zoom = 0.94F + 0.06F * open;
       graphics.pose().pushMatrix();
       graphics.pose().scale(this.uiScale, this.uiScale);
-      if (style == null || style.dim()) {
-         graphics.fill(0, 0, this.vw, 54, GeminiMark.withAlpha(surface, (int)(210.0F * open)));
-         drawHorizontalGradient(graphics, 0, 52, this.vw, 54, accent, accentB, (int)(180.0F * open));
+      graphics.pose().translate(this.vw / 2.0F * (1.0F - zoom), this.vh / 2.0F * (1.0F - zoom));
+      graphics.pose().scale(zoom, zoom);
+      if (dim) {
+         graphics.fill(0, 0, this.vw, TOP_BAR, this.faded(surface, 205));
+         Glass.gradientBar(graphics, 0, TOP_BAR - 1, this.vw, TOP_BAR, this.faded(accent, 190), this.faded(accentB, 190));
       }
 
       if (style == null || style.particles()) {
@@ -188,63 +221,38 @@ public final class ClickGuiScreen extends Screen {
             int px = (int)particle.x;
             int py = (int)particle.y;
             int color = (particle.size + px) % 2 == 0 ? accent : accentB;
-            graphics.fill(px, py, px + particle.size, py + particle.size, GeminiMark.withAlpha(color, particle.alpha));
+            graphics.fill(px, py, px + particle.size, py + particle.size, this.faded(color, particle.alpha));
          }
       }
 
-      GeminiMark.draw(graphics, 14, 9, 34, accent, pulse);
-      graphics.text(this.font, "GEMINI", 56, 11, -1, true);
-      graphics.text(this.font, "NEXTGEN", 56 + this.font.width("GEMINI ") + 2, 11, accent, false);
+      if (open > 0.5F) {
+         GeminiMark.draw(graphics, 14, 9, 34, accent, pulse);
+      }
+
+      this.text(graphics, "GEMINI", 56, 11, Glass.TEXT);
+      this.text(graphics, "NEXTGEN", 56 + this.font.width("GEMINI ") + 2, 11, accent);
       int enabled = Gemini.getInstance().modules().getEnabledModules().size();
       int total = Gemini.getInstance().modules().getModules().size();
-      int fps = Minecraft.getInstance().getFps();
       String meta = this.hudEditMode
-         ? "v" + Gemini.VERSION + "  ·  HUD EDIT MODE (drag widgets or click Edit HUD to exit)"
-         : "v" + Gemini.VERSION + "  ·  " + fps + " FPS  ·  " + enabled + "/" + total + " modules active";
-      graphics.text(this.font, meta, 56, 22, this.hudEditMode ? accentB : -8351581, false);
-      String stats = "Ctrl+F search  ·  " + enabled + "/" + total + " active";
-      int searchW = Math.min(180, Math.max(110, this.vw / 4));
-      int searchX = this.vw - 16 - searchW;
-      graphics.text(this.font, stats, this.vw - 16 - this.font.width(stats), 12, -4733999, false);
-      graphics.fill(searchX - 1, 27, searchX + searchW + 1, 45, GeminiMark.withAlpha(this.searchFocused ? accentB : accent, 45));
-      graphics.fill(searchX, 28, searchX + searchW, 44, -586147808);
-      drawHorizontalGradient(
-         graphics, searchX, 43, searchX + searchW, 44, this.searchFocused ? accent : -14405567, this.searchFocused ? accentB : -14405567, 255
-      );
-      boolean blink = this.searchFocused && now / 420L % 2L == 0L;
-      String query = this.search.isEmpty() && !this.searchFocused ? "Search modules..." : this.search + (blink ? "|" : "");
+         ? "v" + Gemini.VERSION + "  ·  HUD EDIT MODE  ·  drag to move, arrows nudge 1px (Shift 10px), Edit HUD to exit"
+         : "v" + Gemini.VERSION + "  ·  " + Minecraft.getInstance().getFps() + " FPS  ·  " + enabled + "/" + total + " modules active";
+      this.text(graphics, meta, 56, 22, this.hudEditMode ? accentB : Glass.TEXT_FAINT);
+      this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);
+      this.drawChips(graphics, mouseX, mouseY, accent, accentB);
 
-      while (this.font.width(query) > searchW - 26 && query.length() > 1) {
-         query = query.substring(1);
-      }
-
-      graphics.text(this.font, query, searchX + 8, 32, this.search.isEmpty() ? -9800056 : -1577226, false);
-      if (!this.search.isEmpty()) {
-         graphics.text(this.font, "x", searchX + searchW - 12, 32, inside(mouseX, mouseY, searchX + searchW - 16, 28, 16, 16) ? -1 : -8351581, false);
-      }
-
-      for (ClickGuiScreen.Chip chip : this.chips) {
-         boolean activeChip = "Edit HUD".equals(chip.label) && this.hudEditMode || chip.label.equals(this.filterMode);
-         boolean over = chip.contains((double)mouseX, (double)mouseY);
-         int bg = activeChip ? GeminiMark.withAlpha(accentB, 130) : (over ? GeminiMark.withAlpha(accent, 95) : -1441785824);
-         graphics.fill(chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, bg);
-         graphics.fill(chip.x, chip.y + chip.h - 1, chip.x + chip.w, chip.y + chip.h, activeChip ? accentB : (over ? accent : -14405567));
-         graphics.text(this.font, chip.label, chip.x + 6, chip.y + 3, !over && !activeChip ? -4733999 : -1, false);
-      }
-
-      this.hoveredDescription = "LMB toggle   RMB settings   MMB bind   Shift+drag HUD widgets";
+      this.hoveredDescription = DEFAULT_TIP;
       String frameTooltipTitle = null;
       String frameTooltipKey = null;
       String frameTooltipBody = null;
       int frameAnchorX = 0;
       int frameAnchorY = 0;
       int frameAnchorW = 0;
-      if (this.hudEditMode || isShiftDown()) {
-         this.renderHudEditOverlay(graphics, rawMouseX, rawMouseY, accent, accentB);
+      if (this.hudEditMode || Controls.shiftDown() || this.selectedWidget != null) {
+         this.renderHudEditOverlay(graphics, rawMouseX, rawMouseY, accent, accentB, now);
       }
 
       if (!this.hudEditMode) {
-         int slide = (int)((1.0F - open) * 34.0F);
+         int slide = Math.round((1.0F - open) * 14.0F);
          float opacity = style == null ? 0.88F : style.opacity();
          float scrollSpeed = style == null ? 2.0F : style.scrollSpeed();
          CategoryPanel.Look look = new CategoryPanel.Look(accent, accentB, opacity, animate, open, scrollSpeed, glow, snapGrid, surface, header);
@@ -257,7 +265,7 @@ public final class ClickGuiScreen extends Screen {
             }
          }
 
-         if (top == null) {
+         if (top == null && !this.closing) {
             for (int i = this.panels.size() - 1; i >= 0; i--) {
                if (this.panels.get(i).contains(mouseX, mouseY)) {
                   top = this.panels.get(i);
@@ -266,22 +274,33 @@ public final class ClickGuiScreen extends Screen {
             }
          }
 
-         for (CategoryPanel panelx : this.panels) {
-            panelx.setFilterMode(this.filterMode);
-            panelx.tick(delta, animate);
-            String description = panelx.render(
-               graphics, this.font, mouseX, mouseY, panelx == top, look, slide, this.search, this.vw, this.vh, this.bindingModule
-            );
-            if (description != null && panelx == top) {
+         for (CategoryPanel panel : this.panels) {
+            panel.setFilterMode(this.filterMode);
+            panel.tick(delta, animate);
+            String description = panel.render(graphics, this.font, mouseX, mouseY, panel == top, look, slide, this.search, this.vw, this.vh, this.bindingModule);
+            if (description != null && panel == top) {
                this.hoveredDescription = description;
-               if (panelx.hoveredTitle() != null) {
-                  frameTooltipTitle = panelx.hoveredTitle();
-                  frameTooltipKey = panelx.hoveredKeyBadge();
+               if (panel.hoveredTitle() != null) {
+                  frameTooltipTitle = panel.hoveredTitle();
+                  frameTooltipKey = panel.hoveredKeyBadge();
                   frameTooltipBody = description;
-                  frameAnchorX = panelx.hoveredAnchorX();
-                  frameAnchorY = panelx.hoveredAnchorY();
-                  frameAnchorW = panelx.hoveredAnchorW();
+                  frameAnchorX = panel.hoveredAnchorX();
+                  frameAnchorY = panel.hoveredAnchorY();
+                  frameAnchorW = panel.hoveredAnchorW();
                }
+            }
+         }
+
+         // the lines a dragged panel is snapped to
+         for (CategoryPanel panel : this.panels) {
+            if (!Float.isNaN(panel.guideX())) {
+               int gx = Math.round(panel.guideX());
+               graphics.fill(gx, TOP_BAR, gx + 1, this.vh - FOOTER, this.faded(accentB, 200));
+            }
+
+            if (!Float.isNaN(panel.guideY())) {
+               int gy = Math.round(panel.guideY());
+               graphics.fill(0, gy, this.vw, gy + 1, this.faded(accentB, 200));
             }
          }
       }
@@ -296,24 +315,73 @@ public final class ClickGuiScreen extends Screen {
          this.tooltipAnchorW = frameAnchorW;
       }
 
-      this.tooltipProgress = animate
-         ? Mth.lerp(Math.min(1.0F, delta * 18.0F), this.tooltipProgress, hasSlideTooltip ? 1.0F : 0.0F)
-         : (hasSlideTooltip ? 1.0F : 0.0F);
+      this.tooltipProgress = Glass.approach(this.tooltipProgress, hasSlideTooltip ? 1.0F : 0.0F, 18.0F, delta);
       if (this.tooltipProgress > 0.02F && this.tooltipTitle != null && this.tooltipBody != null) {
          this.drawSlideTooltip(graphics, accent, accentB);
       }
 
       if (this.bindingModule != null) {
-         this.hoveredDescription = "Binding §f" + this.bindingModule.getName() + "§7  ·  press a key  ·  Esc cancel  ·  Del clear";
+         this.hoveredDescription = "Binding " + this.bindingModule.getName() + "  ·  press a key  ·  Esc cancel  ·  Del clear";
+      } else if (this.highlighted != null && !this.hudEditMode) {
+         if (DEFAULT_TIP.equals(this.hoveredDescription)) {
+            this.hoveredDescription = "↑↓ move  ·  Enter toggle " + this.highlighted.getName() + "  ·  Shift+Enter or → settings  ·  Esc clear search";
+         }
       }
 
       if (this.flashText != null && now < this.flashUntil) {
          this.hoveredDescription = this.flashText;
       }
 
-      this.drawFooter(graphics, accent, accentB, style == null || style.tooltips(), now);
+      this.drawFooter(graphics, mouseX, mouseY, accent, accentB, style == null || style.tooltips(), now);
       graphics.pose().popMatrix();
       super.extractRenderState(graphics, rawMouseX, rawMouseY, partialTick);
+   }
+
+   private int searchWidth() {
+      return Math.min(180, Math.max(110, this.vw / 4));
+   }
+
+   private void drawSearch(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent, int accentB, long now, float delta) {
+      int searchW = this.searchWidth();
+      int searchX = this.vw - 16 - searchW;
+      boolean over = inside(mouseX, mouseY, searchX, 28, searchW, 16);
+      this.searchGlow = Glass.approach(this.searchGlow, this.searchFocused ? 1.0F : (over ? 0.5F : 0.0F), 14.0F, delta);
+      String stats = "Ctrl+F search  ·  ↑↓ Enter";
+      this.text(graphics, stats, this.vw - 16 - this.font.width(stats), 12, Glass.TEXT_FAINT);
+      Glass.panel(graphics, searchX, 27, searchX + searchW, 45, Glass.RADIUS, Glass.surface(1), this.searchFocused ? accentB : accent, this.fade, this.searchGlow);
+      int textRight = searchX + searchW - 8;
+      if (!this.search.isEmpty()) {
+         boolean overClear = inside(mouseX, mouseY, searchX + searchW - 16, 28, 16, 16);
+         this.text(graphics, "x", searchX + searchW - 12, 32, overClear ? Glass.TEXT : Glass.TEXT_FAINT);
+         int results = 0;
+         for (CategoryPanel panel : this.panels) {
+            results += panel.visibleModules(this.search).size();
+         }
+
+         String count = Integer.toString(results);
+         textRight = searchX + searchW - 20 - this.font.width(count);
+         this.text(graphics, count, textRight, 32, results == 0 ? Glass.ERROR : accentB);
+         textRight -= 4;
+      }
+
+      boolean blink = this.searchFocused && now / 420L % 2L == 0L;
+      String query = this.search.isEmpty() && !this.searchFocused ? "Search modules & settings..." : this.search + (blink ? "|" : "");
+      while (this.font.width(query) > textRight - searchX - 8 && query.length() > 1) {
+         query = this.search.isEmpty() && !this.searchFocused ? query.substring(0, query.length() - 1) : query.substring(1);
+      }
+
+      this.text(graphics, query, searchX + 8, 32, this.search.isEmpty() ? Glass.TEXT_FAINT : Glass.TEXT);
+   }
+
+   private void drawChips(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent, int accentB) {
+      for (ClickGuiScreen.Chip chip : this.chips) {
+         boolean activeChip = "Edit HUD".equals(chip.label) && this.hudEditMode || chip.label.equals(this.filterMode);
+         boolean over = chip.contains(mouseX, mouseY);
+         int fill = activeChip ? this.faded(accentB, 130) : (over ? this.faded(accent, 95) : this.faded(Glass.surface(2), 200));
+         Glass.roundRect(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, fill);
+         Glass.roundOutline(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, this.faded(activeChip ? accentB : (over ? accent : 0xFFFFFF), activeChip || over ? 220 : 36));
+         this.text(graphics, chip.label, chip.x + 6, chip.y + 3, over || activeChip ? Glass.TEXT : Glass.TEXT_DIM);
+      }
    }
 
    private List<String> wrapLines(String text, int maxWidth) {
@@ -345,7 +413,8 @@ public final class ClickGuiScreen extends Screen {
 
    private void drawSlideTooltip(GuiGraphicsExtractor graphics, int accent, int accentB) {
       String cleanBody = this.tooltipBody.replaceAll("§.", "");
-      int titleW = this.font.width(this.tooltipTitle) + (this.tooltipKeyBadge != null ? this.font.width(" [" + this.tooltipKeyBadge + "]") + 8 : 0);
+      boolean badge = this.tooltipKeyBadge != null && !"NONE".equals(this.tooltipKeyBadge);
+      int titleW = this.font.width(this.tooltipTitle) + (badge ? this.font.width(" [" + this.tooltipKeyBadge + "]") + 8 : 0);
       int maxTextW = Math.max(175, Math.min(245, titleW + 16));
       List<String> wrapped = this.wrapLines(cleanBody, maxTextW);
       int widestLine = titleW;
@@ -361,187 +430,300 @@ public final class ClickGuiScreen extends Screen {
          tx = Math.max(6, this.tooltipAnchorX - cardW - 8 + slideOffset);
       }
 
-      int ty = Mth.clamp(this.tooltipAnchorY - 2, 58, Math.max(58, this.vh - 30 - cardH - 4));
-      int alpha = Math.round(238.0F * this.tooltipProgress);
-      graphics.fill(tx - 1, ty - 1, tx + cardW + 1, ty + cardH + 1, GeminiMark.withAlpha(accent, Math.round(78.0F * this.tooltipProgress)));
-      graphics.fill(tx, ty, tx + cardW, ty + cardH, GeminiMark.withAlpha(-15987178, alpha));
-      graphics.fill(tx, ty, tx + 2, ty + cardH, GeminiMark.withAlpha(accentB, Math.round(255.0F * this.tooltipProgress)));
-      graphics.text(this.font, this.tooltipTitle, tx + 7, ty + 5, GeminiMark.withAlpha(-1, Math.round(255.0F * this.tooltipProgress)), false);
-      if (this.tooltipKeyBadge != null && !"NONE".equals(this.tooltipKeyBadge)) {
-         String badge = "[" + this.tooltipKeyBadge + "]";
-         graphics.text(
-            this.font, badge, tx + cardW - 6 - this.font.width(badge), ty + 5, GeminiMark.withAlpha(accentB, Math.round(255.0F * this.tooltipProgress)), false
-         );
+      int ty = Mth.clamp(this.tooltipAnchorY - 2, TOP_BAR + 4, Math.max(TOP_BAR + 4, this.vh - FOOTER - cardH - 4));
+      float show = this.tooltipProgress * this.fade;
+      Glass.panel(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.surface(1), accent, show, 0.45F);
+      Glass.roundRect(graphics, tx + 2, ty + 3, tx + 4, ty + cardH - 3, 1, Glass.fade(accentB, show));
+      Controls.text(graphics, this.font, this.tooltipTitle, tx + 8, ty + 5, Glass.TEXT, show);
+      if (badge) {
+         String label = "[" + this.tooltipKeyBadge + "]";
+         Controls.text(graphics, this.font, label, tx + cardW - 6 - this.font.width(label), ty + 5, accentB, show);
       }
 
       int lineY = ty + 16;
       for (String line : wrapped) {
-         graphics.text(this.font, line, tx + 7, lineY, GeminiMark.withAlpha(-3617580, Math.round(255.0F * this.tooltipProgress)), false);
+         Controls.text(graphics, this.font, line, tx + 8, lineY, Glass.TEXT_DIM, show);
          lineY += 10;
       }
    }
 
-   private void renderHudEditOverlay(GuiGraphicsExtractor graphics, int rawMouseX, int rawMouseY, int accent, int accentB) {
+   // ---- HUD editor -----------------------------------------------------------------------------------------
+
+   private float hudScale() {
       HudModule hud = Gemini.getInstance().modules().byClass(HudModule.class).orElse(null);
-      float hudScale = hud == null ? 1.0F : hud.scale();
+      return hud == null ? 1.0F : hud.scale();
+   }
+
+   /** HUD coordinate to this screen's (scaled) coordinate. */
+   private int fromHud(float value) {
+      return Math.round(value * this.hudScale() / this.uiScale);
+   }
+
+   private void renderHudEditOverlay(GuiGraphicsExtractor graphics, int rawMouseX, int rawMouseY, int accent, int accentB, long now) {
+      float hudScale = this.hudScale();
       double hudMx = rawMouseX / hudScale;
       double hudMy = rawMouseY / hudScale;
-      int hudW = Math.round(this.width / hudScale);
-      int hudH = Math.round(this.height / hudScale);
-      graphics.fill(this.vw / 2, 54, this.vw / 2 + 1, this.vh - 30, GeminiMark.withAlpha(accentB, 40));
-      graphics.fill(0, this.vh / 2, this.vw, this.vh / 2 + 1, GeminiMark.withAlpha(accentB, 40));
-      if (this.draggingWidget != null) {
-         // the lines the dragged widget is snapped to right now
-         if (!Float.isNaN(this.guides.lineX)) {
-            int gx = Math.round(this.guides.lineX * hudScale / this.uiScale);
-            graphics.fill(gx, 54, gx + 1, this.vh - 30, GeminiMark.withAlpha(accentB, 170));
+      boolean editing = this.hudEditMode || Controls.shiftDown();
+      boolean dragging = this.draggingWidget != null;
+      if (editing) {
+         // centre crosshair: faint while idle, clear while dragging, bright when the widget is centred on it
+         boolean centredX = dragging && this.guides.kindX == UiMath.SNAP_CENTER;
+         boolean centredY = dragging && this.guides.kindY == UiMath.SNAP_CENTER;
+         int cx = this.vw / 2;
+         int cy = this.vh / 2;
+         graphics.fill(cx, TOP_BAR, cx + 1, this.vh - FOOTER, this.faded(centredX ? Glass.OK : accentB, centredX ? 255 : (dragging ? 110 : 40)));
+         graphics.fill(0, cy, this.vw, cy + 1, this.faded(centredY ? Glass.OK : accentB, centredY ? 255 : (dragging ? 110 : 40)));
+         if (centredX) {
+            graphics.fill(cx - 1, TOP_BAR, cx + 2, this.vh - FOOTER, this.faded(Glass.OK, 70));
          }
 
-         if (!Float.isNaN(this.guides.lineY)) {
-            int gy = Math.round(this.guides.lineY * hudScale / this.uiScale);
-            graphics.fill(0, gy, this.vw, gy + 1, GeminiMark.withAlpha(accentB, 170));
+         if (centredY) {
+            graphics.fill(0, cy - 1, this.vw, cy + 2, this.faded(Glass.OK, 70));
+         }
+
+         if (dragging) {
+            // the edge, alignment and spacing lines the dragged widget is snapped to right now
+            if (!Float.isNaN(this.guides.lineX) && !centredX) {
+               int gx = this.fromHud(this.guides.lineX);
+               graphics.fill(gx, TOP_BAR, gx + 1, this.vh - FOOTER, this.faded(this.guides.kindX == UiMath.SNAP_EQUAL ? Glass.WARN : accentB, 210));
+            }
+
+            if (!Float.isNaN(this.guides.lineY) && !centredY) {
+               int gy = this.fromHud(this.guides.lineY);
+               graphics.fill(0, gy, this.vw, gy + 1, this.faded(this.guides.kindY == UiMath.SNAP_EQUAL ? Glass.WARN : accentB, 210));
+            }
          }
       }
 
       for (Module module : Gemini.getInstance().modules().of(Category.HUD)) {
          if (module instanceof HudWidget widget && widget.isEnabled() && widget.lastScreenW() > 0.0F) {
-            int wx = Math.round(widget.lastScreenX() * hudScale / this.uiScale);
-            int wy = Math.round(widget.lastScreenY() * hudScale / this.uiScale);
-            int ww = Math.round(widget.lastScreenW() * hudScale / this.uiScale);
-            int wh = Math.round(widget.lastScreenH() * hudScale / this.uiScale);
-            boolean over = widget == this.draggingWidget || widget.containsScreenPoint(hudMx, hudMy);
-            int border = over ? accentB : accent;
-            graphics.fill(wx - 1, wy - 1, wx + ww + 1, wy + wh + 1, GeminiMark.withAlpha(border, over ? 90 : 45));
-            graphics.text(this.font, widget.getName(), wx + 2, Math.max(56, wy - 10), over ? -1 : accentB, false);
+            boolean selected = widget == this.selectedWidget;
+            if (!editing && !selected) {
+               continue;
+            }
+
+            int wx = this.fromHud(widget.lastScreenX());
+            int wy = this.fromHud(widget.lastScreenY());
+            int ww = this.fromHud(widget.lastScreenW());
+            int wh = this.fromHud(widget.lastScreenH());
+            boolean over = widget == this.draggingWidget || editing && widget.containsScreenPoint(hudMx, hudMy);
+            if (selected) {
+               Glass.glow(graphics, wx - 1, wy - 1, wx + ww + 1, wy + wh + 1, 2, accentB, 0.7F * this.fade);
+               Glass.roundOutline(graphics, wx - 2, wy - 2, wx + ww + 2, wy + wh + 2, 2, this.faded(accentB, 255));
+            } else {
+               Glass.roundOutline(graphics, wx - 1, wy - 1, wx + ww + 1, wy + wh + 1, 2, this.faded(over ? accentB : accent, over ? 220 : 110));
+            }
+
+            if (over && !selected) {
+               graphics.fill(wx, wy, wx + ww, wy + wh, this.faded(accentB, 26));
+            }
+
+            String label = widget.getName();
+            if (selected) {
+               label = label + "  x " + Math.round(widget.lastScreenX()) + "  y " + Math.round(widget.lastScreenY());
+            }
+
+            int labelW = this.font.width(label) + 6;
+            int ly = wy - 13 < TOP_BAR + 2 ? wy + wh + 3 : wy - 13;
+            int lx = Mth.clamp(wx, 2, Math.max(2, this.vw - labelW - 2));
+            if (selected || over) {
+               Glass.roundRect(graphics, lx, ly, lx + labelW, ly + 11, 3, this.faded(Glass.surface(0), 225));
+               Glass.roundOutline(graphics, lx, ly, lx + labelW, ly + 11, 3, this.faded(accentB, selected ? 220 : 110));
+            }
+
+            this.text(graphics, label, lx + 3, ly + 2, selected || over ? Glass.TEXT : accentB);
          }
       }
 
-      if (this.draggingWidget != null) {
-         this.hoveredDescription = "Dragging HUD widget §f" + this.draggingWidget.getName() + "§7  ·  release mouse to snap & save";
-      } else if (hudW > 0 && hudH > 0) {
-         this.hoveredDescription = "HUD Edit Mode  ·  drag any enabled HUD widget  ·  click Edit HUD to return to modules";
+      if (dragging) {
+         this.hoveredDescription = "Dragging " + this.draggingWidget.getName() + "  ·  snaps to edges, centres and other widgets  ·  release to save";
+      } else if (this.selectedWidget != null && (editing || now - this.nudgedAt < 4000L)) {
+         this.hoveredDescription = this.selectedWidget.getName()
+            + " selected  ·  arrows nudge 1px, Shift+arrows 10px  ·  x "
+            + Math.round(this.selectedWidget.lastScreenX())
+            + "  y "
+            + Math.round(this.selectedWidget.lastScreenY());
+      } else if (this.hudEditMode) {
+         this.hoveredDescription = "HUD Edit Mode  ·  drag any enabled HUD widget, click one to select it  ·  click Edit HUD to return to modules";
       }
    }
 
-   private static void drawHorizontalGradient(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int c1, int c2, int alpha) {
-      int width = Math.max(1, right - left);
-      int steps = Math.min(28, width);
-
-      for (int i = 0; i < steps; i++) {
-         int sx = left + width * i / steps;
-         int ex = left + width * (i + 1) / steps;
-         float t = steps <= 1 ? 0.0F : (float)i / (steps - 1);
-         graphics.fill(sx, top, ex, bottom, GeminiMark.withAlpha(HudOverlay.lerp(c1, c2, t), alpha));
+   /** Moves the selected HUD widget by whole pixels. Returns false when there is nothing to move. */
+   private boolean nudgeSelected(int dx, int dy) {
+      HudWidget widget = this.selectedWidget;
+      if (widget == null || !widget.isEnabled() || widget.lastScreenW() <= 0.0F) {
+         return false;
       }
+
+      float hudScale = this.hudScale();
+      widget.nudge(Math.round(this.width / hudScale), Math.round(this.height / hudScale), dx, dy);
+      this.nudgedAt = Util.getMillis();
+      return true;
    }
+
+   // ---- footer ---------------------------------------------------------------------------------------------
 
    private String menuKeyLabel() {
       return this.bindingMenu ? "Press any key..." : "Menu key  " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString();
    }
 
-   private void drawFooter(GuiGraphicsExtractor graphics, int accent, int accentB, boolean tooltips, long now) {
+   private void drawFooter(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent, int accentB, boolean tooltips, long now) {
       String bindLabel = this.menuKeyLabel();
       int bindWidth = this.font.width(bindLabel) + 18;
       int bindX = 14;
-      int bindY = this.vh - 30 + 4;
-      graphics.fill(bindX, bindY, bindX + bindWidth, bindY + 18, this.bindingMenu ? GeminiMark.withAlpha(accent, 90) : -586147808);
-      graphics.fill(bindX, bindY, bindX + 2, bindY + 18, accent);
-      graphics.text(this.font, bindLabel, bindX + 8, bindY + 5, this.bindingMenu ? -1 : accent, false);
+      int bindY = this.vh - FOOTER + 4;
+      boolean overBind = inside(mouseX, mouseY, bindX, bindY, bindWidth, 18);
+      Glass.panel(graphics, bindX, bindY, bindX + bindWidth, bindY + 18, Glass.RADIUS, Glass.surface(1), accent, this.fade, this.bindingMenu ? 1.0F : (overBind ? 0.5F : 0.0F));
+      this.text(graphics, bindLabel, bindX + 9, bindY + 5, this.bindingMenu ? Glass.TEXT : accent);
       String hint = "Wheel scroll · Shift+drag HUD";
       int hintW = this.font.width(hint);
       boolean flashing = this.flashText != null && now < this.flashUntil;
       if (tooltips || flashing) {
-         String tip = this.hoveredDescription.replace("§f", "").replace("§7", "").replace("§b", "").replace("§a", "").replace("§c", "");
+         String tip = this.hoveredDescription.replaceAll("§.", "");
          int maxWidth = Math.max(120, this.vw - (bindX + bindWidth + 12) - hintW - 22);
          if (this.font.width(tip) <= maxWidth) {
-            graphics.text(this.font, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : -5920072, false);
+            this.text(graphics, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : Glass.TEXT_DIM);
          } else {
             List<String> lines = this.wrapLines(tip, maxWidth);
             int topY = lines.size() > 1 ? bindY + 1 : bindY + 5;
             for (int i = 0; i < Math.min(2, lines.size()); i++) {
-               graphics.text(this.font, lines.get(i), bindX + bindWidth + 12, topY + i * 9, flashing ? accentB : -5920072, false);
+               this.text(graphics, lines.get(i), bindX + bindWidth + 12, topY + i * 9, flashing ? accentB : Glass.TEXT_DIM);
             }
          }
       }
 
-      graphics.text(this.font, hint, this.vw - 14 - hintW, bindY + 5, -10523522, false);
+      this.text(graphics, hint, this.vw - 14 - hintW, bindY + 5, Glass.TEXT_FAINT);
+   }
+
+   // ---- mouse ----------------------------------------------------------------------------------------------
+
+   private SettingControl focusedControl() {
+      for (CategoryPanel panel : this.panels) {
+         SettingControl control = panel.focusedControl();
+         if (control != null) {
+            return control;
+         }
+      }
+
+      return null;
    }
 
    public boolean mouseClicked(MouseButtonEvent rawEvent, boolean doubled) {
+      if (this.closing) {
+         return true;
+      }
+
+      // a number or hex being typed is finished by a press anywhere but on its own control
+      SettingControl editing = this.focusedControl();
+      for (CategoryPanel panel : this.panels) {
+         // forget the last press's control so only the panel that takes this press reports one
+         panel.forgetClick();
+      }
+
+      boolean handled = this.handleClick(rawEvent, doubled);
+      if (editing != null) {
+         boolean sameControl = false;
+         for (CategoryPanel panel : this.panels) {
+            sameControl |= panel.clickedControl() == editing;
+         }
+
+         if (!sameControl) {
+            editing.blur();
+         }
+      }
+
+      return handled || super.mouseClicked(rawEvent, doubled);
+   }
+
+   private boolean handleClick(MouseButtonEvent rawEvent, boolean doubled) {
       MouseButtonEvent event = this.scaled(rawEvent);
       double mx = event.x();
       double my = event.y();
-      int searchW = Math.min(180, Math.max(110, this.vw / 4));
+      int button = Keys.glfwButton(event.button());
+      int searchW = this.searchWidth();
       int searchX = this.vw - 16 - searchW;
       if (mx >= searchX && mx <= searchX + searchW && my >= 28.0 && my <= 44.0) {
          if (!this.search.isEmpty() && mx >= searchX + searchW - 16) {
             this.search = "";
+            this.searchChanged();
          }
 
          this.searchFocused = true;
          return true;
-      } else {
-         this.searchFocused = false;
+      }
 
-         for (ClickGuiScreen.Chip chip : this.chips) {
-            if (Keys.glfwButton(event.button()) == 0 && chip.contains(mx, my)) {
-               this.runChip(chip);
+      this.searchFocused = false;
+      for (ClickGuiScreen.Chip chip : this.chips) {
+         if (button == 0 && chip.contains(mx, my)) {
+            this.runChip(chip);
+            return true;
+         }
+      }
+
+      String bindLabel = this.menuKeyLabel();
+      int bindWidth = this.font.width(bindLabel) + 18;
+      int bindY = this.vh - FOOTER + 4;
+      if (button == 0 && mx >= 14.0 && mx <= 14 + bindWidth && my >= bindY && my <= bindY + 18) {
+         this.bindingMenu = true;
+         this.bindingModule = null;
+         return true;
+      }
+
+      if (button == 0 && (this.hudEditMode || Controls.shiftDown())) {
+         float hudScale = this.hudScale();
+         double hudMx = rawEvent.x() / hudScale;
+         double hudMy = rawEvent.y() / hudScale;
+         List<Module> hudModules = Gemini.getInstance().modules().of(Category.HUD);
+
+         for (int i = hudModules.size() - 1; i >= 0; i--) {
+            if (hudModules.get(i) instanceof HudWidget widget && widget.containsScreenPoint(hudMx, hudMy)) {
+               this.draggingWidget = widget;
+               this.selectedWidget = widget;
+               this.guides.clear();
+               this.widgetGrabX = (float)(hudMx - widget.lastScreenX());
+               this.widgetGrabY = (float)(hudMy - widget.lastScreenY());
                return true;
             }
          }
 
-         String bindLabel = this.menuKeyLabel();
-         int bindWidth = this.font.width(bindLabel) + 18;
-         int bindY = this.vh - 30 + 4;
-         if (Keys.glfwButton(event.button()) == 0 && mx >= 14.0 && mx <= 14 + bindWidth && my >= bindY && my <= bindY + 18) {
-            this.bindingMenu = true;
-            this.bindingModule = null;
+         if (this.hudEditMode) {
+            this.selectedWidget = null;
             return true;
-         } else {
-            if (Keys.glfwButton(event.button()) == 0 && (this.hudEditMode || isShiftDown())) {
-               HudModule hud = Gemini.getInstance().modules().byClass(HudModule.class).orElse(null);
-               float hudScale = hud == null ? 1.0F : hud.scale();
-               double hudMx = rawEvent.x() / hudScale;
-               double hudMy = rawEvent.y() / hudScale;
-               List<Module> hudModules = Gemini.getInstance().modules().of(Category.HUD);
-
-               for (int i = hudModules.size() - 1; i >= 0; i--) {
-                  if (hudModules.get(i) instanceof HudWidget widget && widget.containsScreenPoint(hudMx, hudMy)) {
-                     this.draggingWidget = widget;
-                     this.widgetGrabX = (float)(hudMx - widget.lastScreenX());
-                     this.widgetGrabY = (float)(hudMy - widget.lastScreenY());
-                     return true;
-                  }
-               }
-
-               if (this.hudEditMode) {
-                  return true;
-               }
-            }
-
-            for (int ix = this.panels.size() - 1; ix >= 0; ix--) {
-               CategoryPanel panel = this.panels.get(ix);
-               if (panel.mouseClicked(event, this.search, this)) {
-                  this.panels.remove(ix);
-                  this.panels.add(panel);
-                  return true;
-               }
-            }
-
-            return super.mouseClicked(rawEvent, doubled);
          }
       }
+
+      if (this.hudEditMode) {
+         return true;
+      }
+
+      for (int i = this.panels.size() - 1; i >= 0; i--) {
+         CategoryPanel panel = this.panels.get(i);
+         if (panel.mouseClicked(event, doubled, this)) {
+            this.panels.remove(i);
+            this.panels.add(panel);
+            this.selectedWidget = null;
+            return true;
+         }
+      }
+
+      this.selectedWidget = null;
+      return false;
    }
 
    private void runChip(ClickGuiScreen.Chip chip) {
-      String var2 = chip.label;
-      switch (var2) {
+      String label = chip.label;
+      switch (label) {
          case "All":
          case "Active Only":
          case "Keybound":
          case "Favorites":
-            this.filterMode = var2;
-            this.flash("Filter: " + var2);
+            this.filterMode = label;
+            for (CategoryPanel panel : this.panels) {
+               panel.setFilterMode(label);
+            }
+
+            this.searchChanged();
+            this.flash("Filter: " + label);
             return;
          case "Collapse all":
             for (CategoryPanel panel : this.panels) {
@@ -556,7 +738,8 @@ public final class ClickGuiScreen extends Screen {
          case "Edit HUD":
             this.hudEditMode = !this.hudEditMode;
             this.draggingWidget = null;
-            this.flash(this.hudEditMode ? "HUD Edit Mode enabled · drag any HUD widget" : "Returned to module panels");
+            this.selectedWidget = null;
+            this.flash(this.hudEditMode ? "HUD Edit Mode enabled · drag any HUD widget, arrows nudge the selected one" : "Returned to module panels");
             return;
          case "Window layout":
             ClickGuiModule layoutStyle = this.style();
@@ -606,10 +789,13 @@ public final class ClickGuiScreen extends Screen {
    }
 
    public boolean mouseDragged(MouseButtonEvent rawEvent, double deltaX, double deltaY) {
+      if (this.closing) {
+         return true;
+      }
+
       if (this.draggingWidget != null && Keys.glfwButton(rawEvent.button()) == 0) {
-         HudModule hud = Gemini.getInstance().modules().byClass(HudModule.class).orElse(null);
          ClickGuiModule style = this.style();
-         float hudScale = hud == null ? 1.0F : hud.scale();
+         float hudScale = this.hudScale();
          int hudW = Math.round(this.width / hudScale);
          int hudH = Math.round(this.height / hudScale);
          float newX = (float)(rawEvent.x() / hudScale) - this.widgetGrabX;
@@ -621,43 +807,122 @@ public final class ClickGuiScreen extends Screen {
             }
          }
 
-         this.draggingWidget.applyScreenPosition(hudW, hudH, newX, newY, style == null || style.snapGrid(), others, this.guides);
+         // Alt drags freely, as it does for the panels
+         boolean free = Controls.altDown();
+         this.draggingWidget.applyScreenPosition(hudW, hudH, newX, newY, !free && (style == null || style.snapGrid()), !free, others, this.guides);
          return true;
-      } else {
-         MouseButtonEvent event = this.scaled(rawEvent);
-
-         for (CategoryPanel panel : this.panels) {
-            if (panel.mouseDragged(event)) {
-               return true;
-            }
-         }
-
-         return super.mouseDragged(rawEvent, deltaX, deltaY);
       }
+
+      MouseButtonEvent event = this.scaled(rawEvent);
+      for (CategoryPanel panel : this.panels) {
+         if (panel.mouseDragged(event, this.panels)) {
+            return true;
+         }
+      }
+
+      return super.mouseDragged(rawEvent, deltaX, deltaY);
    }
 
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
-      if (this.hudEditMode) {
+      if (this.hudEditMode || this.closing) {
          return super.mouseScrolled(x, y, scrollX, scrollY);
-      } else {
-         ClickGuiModule style = this.style();
-         float speed = style == null ? 2.0F : style.scrollSpeed();
-         double mx = x / this.uiScale;
-         double my = y / this.uiScale;
+      }
 
-         for (int i = this.panels.size() - 1; i >= 0; i--) {
-            if (this.panels.get(i).mouseScrolled(mx, my, scrollY, speed)) {
-               return true;
+      ClickGuiModule style = this.style();
+      float speed = style == null ? 2.0F : style.scrollSpeed();
+      double mx = x / this.uiScale;
+      double my = y / this.uiScale;
+
+      for (int i = this.panels.size() - 1; i >= 0; i--) {
+         if (this.panels.get(i).mouseScrolled(mx, my, scrollY, speed)) {
+            return true;
+         }
+      }
+
+      return super.mouseScrolled(x, y, scrollX, scrollY);
+   }
+
+   // ---- search and keyboard navigation ---------------------------------------------------------------------
+
+   /** The panels left to right, then top to bottom: the order Up/Down walks through them. */
+   private List<CategoryPanel> readingOrder() {
+      List<CategoryPanel> ordered = new ArrayList<>(this.panels);
+      ordered.sort(Comparator.comparingInt(CategoryPanel::x).thenComparingInt(CategoryPanel::y));
+      return ordered;
+   }
+
+   private void highlight(Module module) {
+      this.highlighted = module;
+      for (CategoryPanel panel : this.panels) {
+         panel.setHighlighted(module != null && panel.category() == module.getCategory() ? module : null);
+      }
+   }
+
+   /** After the search text or filter changed: put the highlight on the best match, or drop it. */
+   private void searchChanged() {
+      if (this.search.isBlank()) {
+         this.highlight(null);
+         return;
+      }
+
+      Module best = null;
+      int bestScore = 0;
+      for (CategoryPanel panel : this.readingOrder()) {
+         for (Module module : panel.visibleModules(this.search)) {
+            int score = panel.score(this.search, module);
+            if (score > bestScore) {
+               bestScore = score;
+               best = module;
             }
          }
+      }
 
-         return super.mouseScrolled(x, y, scrollX, scrollY);
+      this.highlight(best);
+   }
+
+   private void moveHighlight(int direction) {
+      List<Module> results = new ArrayList<>();
+      for (CategoryPanel panel : this.readingOrder()) {
+         results.addAll(panel.visibleModules(this.search));
+      }
+
+      if (results.isEmpty()) {
+         this.highlight(null);
+         return;
+      }
+
+      int index = results.indexOf(this.highlighted);
+      int next = index < 0 ? (direction > 0 ? 0 : results.size() - 1) : Math.floorMod(index + direction, results.size());
+      this.highlight(results.get(next));
+   }
+
+   private CategoryPanel panelOf(Module module) {
+      for (CategoryPanel panel : this.panels) {
+         if (panel.category() == module.getCategory()) {
+            return panel;
+         }
+      }
+
+      return null;
+   }
+
+   private void toggleHighlighted() {
+      Module module = this.highlighted;
+      if (!module.isSavedEnabled() && !module.canActivate()) {
+         this.flash(module.blockedReason());
+      } else {
+         module.toggle();
       }
    }
 
    public boolean keyPressed(KeyEvent event) {
+      if (this.closing) {
+         return true;
+      }
+
+      int key = event.key();
       if (this.bindingMenu) {
-         if (event.key() != Keys.ESCAPE) {
+         if (key != Keys.ESCAPE) {
             GeminiKeys.OPEN_GUI.setKey(InputConstants.getKey(event));
             KeyMapping.resetMapping();
             this.minecraft.options.save();
@@ -667,59 +932,113 @@ public final class ClickGuiScreen extends Screen {
          this.bindingMenu = false;
          return true;
       } else if (this.bindingModule != null) {
-         if (event.key() == Keys.ESCAPE) {
-            this.bindingModule = null;
-            return true;
-         } else {
-            if (event.key() != Keys.DELETE && event.key() != Keys.BACKSPACE) {
-               this.bindingModule.setKeybind(event.key());
-               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.bindingModule, event.key());
+         if (key != Keys.ESCAPE) {
+            if (key != Keys.DELETE && key != Keys.BACKSPACE) {
+               this.bindingModule.setKeybind(key);
+               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.bindingModule, key);
                if (clash != null) {
-                  this.flash("§e" + clash);
+                  this.flash(clash);
                }
             } else {
                this.bindingModule.setKeybind(-1);
             }
 
-            this.bindingModule = null;
-            return true;
+            Gemini.getInstance().config().save();
          }
-      } else if (event.key() != Keys.ESCAPE || !this.searchFocused && this.search.isEmpty()) {
-         if (GeminiKeys.OPEN_GUI.matches(event) || event.key() == Keys.ESCAPE) {
-            this.onClose();
-            return true;
-         } else if (event.key() == Keys.F && isCtrlDown()) {
-            this.searchFocused = true;
-            return true;
-         } else if (Keys.isEnter(event.key())) {
-            this.searchFocused = false;
-            return true;
-         } else if (event.key() == Keys.BACKSPACE && !this.search.isEmpty()) {
-            this.searchFocused = true;
-            this.search = this.search.substring(0, this.search.length() - 1);
-            return true;
-         } else {
-            return super.keyPressed(event);
-         }
-      } else {
-         this.search = "";
-         this.searchFocused = false;
+
+         this.bindingModule = null;
          return true;
       }
+
+      SettingControl editing = this.focusedControl();
+      if (editing != null) {
+         editing.keyPressed(event);
+         return true;
+      }
+
+      if (key == Keys.ESCAPE) {
+         // Esc clears the search first and closes the menu second
+         if (this.searchFocused || !this.search.isEmpty()) {
+            this.search = "";
+            this.searchFocused = false;
+            this.searchChanged();
+         } else {
+            this.onClose();
+         }
+
+         return true;
+      } else if (GeminiKeys.OPEN_GUI.matches(event)) {
+         this.onClose();
+         return true;
+      } else if (key == Keys.F && event.hasControlDown()) {
+         this.searchFocused = true;
+         return true;
+      }
+
+      boolean arrow = key == Keys.UP || key == Keys.DOWN || key == Keys.LEFT || key == Keys.RIGHT;
+      if (arrow) {
+         // arrows belong to the selected HUD widget in the HUD editor, and outside it while nothing is searched
+         boolean widgetKeys = this.selectedWidget != null && (this.hudEditMode || this.search.isEmpty() && this.highlighted == null);
+         if (widgetKeys) {
+            int step = event.hasShiftDown() ? 10 : 1;
+            this.nudgeSelected(key == Keys.LEFT ? -step : (key == Keys.RIGHT ? step : 0), key == Keys.UP ? -step : (key == Keys.DOWN ? step : 0));
+            return true;
+         } else if (this.hudEditMode) {
+            return true;
+         } else if (key == Keys.UP || key == Keys.DOWN) {
+            this.moveHighlight(key == Keys.DOWN ? 1 : -1);
+            return true;
+         } else if (this.highlighted != null) {
+            CategoryPanel panel = this.panelOf(this.highlighted);
+            if (panel != null) {
+               panel.setExpanded(this.highlighted, key == Keys.RIGHT);
+            }
+
+            return true;
+         }
+
+         return super.keyPressed(event);
+      } else if (Keys.isEnter(key)) {
+         if (this.highlighted != null && !this.hudEditMode) {
+            CategoryPanel panel = this.panelOf(this.highlighted);
+            if (event.hasShiftDown() && panel != null) {
+               panel.setExpanded(this.highlighted, !panel.isExpanded(this.highlighted));
+            } else {
+               this.toggleHighlighted();
+            }
+         }
+
+         this.searchFocused = false;
+         return true;
+      } else if (key == Keys.BACKSPACE && !this.search.isEmpty()) {
+         this.searchFocused = true;
+         this.search = event.hasControlDown() ? "" : this.search.substring(0, this.search.offsetByCodePoints(this.search.length(), -1));
+         this.searchChanged();
+         return true;
+      }
+
+      return super.keyPressed(event);
    }
 
    public boolean charTyped(CharacterEvent event) {
-      if (!this.bindingMenu && this.bindingModule == null) {
-         if (event.isAllowedChatCharacter() && this.search.length() < 32) {
-            this.searchFocused = true;
-            this.search = this.search + event.codepointAsString();
-            return true;
-         } else {
-            return super.charTyped(event);
-         }
-      } else {
+      if (this.closing || this.bindingMenu || this.bindingModule != null) {
          return true;
       }
+
+      SettingControl editing = this.focusedControl();
+      if (editing != null) {
+         editing.charTyped(event);
+         return true;
+      }
+
+      if (!this.hudEditMode && event.isAllowedChatCharacter() && this.search.length() < 32) {
+         this.searchFocused = true;
+         this.search = this.search + event.codepointAsString();
+         this.searchChanged();
+         return true;
+      }
+
+      return super.charTyped(event);
    }
 
    public void openListEditor(Module module, ListSetting setting) {
@@ -742,6 +1061,47 @@ public final class ClickGuiScreen extends Screen {
       }
    }
 
+   // ---- lifecycle ------------------------------------------------------------------------------------------
+
+   /** Starts the close animation; the screen really closes from {@link #tick()} once it has faded out. */
+   @Override
+   public void onClose() {
+      if (this.closing) {
+         return;
+      }
+
+      SettingControl editing = this.focusedControl();
+      if (editing != null) {
+         editing.blur();
+      }
+
+      if (Glass.animations() && this.animationProgress > 0.05F) {
+         this.closing = true;
+         this.bindingMenu = false;
+         this.bindingModule = null;
+         this.draggingWidget = null;
+      } else {
+         super.onClose();
+      }
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      if (this.closing && (this.animationProgress <= 0.03F || Util.getMillis() - this.lastFrame > 500L)) {
+         this.closing = false;
+         super.onClose();
+      }
+   }
+
+   @Override
+   public void added() {
+      super.added();
+      // coming back from the list editor or reopening: never stay stuck in a half-finished close
+      this.closing = false;
+      this.lastFrame = Util.getMillis();
+   }
+
    public void removed() {
       this.minecraft.textInputManager().stopTextInput(this);
       rememberedSearch = this.search;
@@ -758,22 +1118,8 @@ public final class ClickGuiScreen extends Screen {
       return Gemini.getInstance() == null ? null : Gemini.getInstance().modules().byClass(ClickGuiModule.class).orElse(null);
    }
 
-   private static boolean isShiftDown() {
-      Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(Keys.LEFT_SHIFT) || InputConstants.isKeyDown(Keys.RIGHT_SHIFT);
-   }
-
-   private static boolean isCtrlDown() {
-      Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(Keys.LEFT_CONTROL) || InputConstants.isKeyDown(Keys.RIGHT_CONTROL);
-   }
-
    private static boolean inside(double mx, double my, int x, int y, int w, int h) {
       return mx >= x && mx < x + w && my >= y && my < y + h;
-   }
-
-   private static float ease(float t) {
-      return 1.0F - (float)Math.pow(1.0F - t, 3.0);
    }
 
    private record Chip(String label, int x, int y, int w, int h) {

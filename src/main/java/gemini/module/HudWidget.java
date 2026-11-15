@@ -6,6 +6,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
 import gemini.ui.HudOverlay;
+import gemini.ui.UiMath;
 import java.util.List;
 import net.minecraft.util.Mth;
 
@@ -21,15 +22,23 @@ public abstract class HudWidget extends Module {
    private float lastH;
    private static final float MAGNET = 6.0F;
    private static final float GAP = 4.0F;
+   private static final float GRID = 4.0F;
 
-   /** The guide lines a drag snapped to, in HUD coordinates (NaN when not snapped on that axis). */
+   /**
+    * The guide lines a drag snapped to, in HUD coordinates (NaN when not snapped on that axis), and what kind of
+    * target each one is ({@code UiMath.SNAP_*}: edge, centre, alignment with another widget, gap, equal spacing).
+    */
    public static final class Guides {
       public float lineX = Float.NaN;
       public float lineY = Float.NaN;
+      public int kindX = UiMath.SNAP_NONE;
+      public int kindY = UiMath.SNAP_NONE;
 
       public void clear() {
          this.lineX = Float.NaN;
          this.lineY = Float.NaN;
+         this.kindX = UiMath.SNAP_NONE;
+         this.kindY = UiMath.SNAP_NONE;
       }
    }
 
@@ -100,97 +109,70 @@ public abstract class HudWidget extends Module {
    }
 
    public void applyScreenPosition(int screenWidth, int screenHeight, float newX, float newY, boolean snapGrid) {
-      this.applyScreenPosition(screenWidth, screenHeight, newX, newY, snapGrid, List.of(), null);
+      this.applyScreenPosition(screenWidth, screenHeight, newX, newY, snapGrid, true, List.of(), null);
+   }
+
+   public void applyScreenPosition(int screenWidth, int screenHeight, float newX, float newY, boolean snapGrid, List<HudWidget> others, HudWidget.Guides guides) {
+      this.applyScreenPosition(screenWidth, screenHeight, newX, newY, snapGrid, true, others, guides);
    }
 
    /**
-    * Moves the widget while dragging. Edges pull toward the screen edges, the screen centre and the edges of the
-    * other widgets (aligned, or butted up against them with a small gap); the grid only applies on an axis where
-    * nothing magnetic is close. {@code guides}, when given, receives the lines the widget snapped to so the editor
-    * can draw them.
+    * Moves the widget while dragging. With {@code magnetic}, its edges and centre pull toward the screen edges
+    * and centre, toward the edges and centres of the other widgets (aligned, or butted up against them with a
+    * small gap), and toward positions that repeat the spacing between two other widgets; the grid only applies
+    * on an axis where nothing magnetic is close. {@code guides}, when given, receives the lines the widget
+    * snapped to so the editor can draw them.
     */
-   public void applyScreenPosition(int screenWidth, int screenHeight, float newX, float newY, boolean snapGrid, List<HudWidget> others, HudWidget.Guides guides) {
+   public void applyScreenPosition(
+      int screenWidth, int screenHeight, float newX, float newY, boolean snapGrid, boolean magnetic, List<HudWidget> others, HudWidget.Guides guides
+   ) {
       float w = Math.max(8.0F, this.lastW);
       float h = Math.max(8.0F, this.lastH);
       float clampedX = Mth.clamp(newX, 2.0F, Math.max(2.0F, screenWidth - w - 2.0F));
       float clampedY = Mth.clamp(newY, 2.0F, Math.max(2.0F, screenHeight - h - 2.0F));
-      float magnetX = Float.NaN;
-      float magnetY = Float.NaN;
-      float lineX = Float.NaN;
-      float lineY = Float.NaN;
-      float bestX = MAGNET;
-      float bestY = MAGNET;
-      float[] xTargets = {2.0F, screenWidth - 2.0F - w, (screenWidth - w) / 2.0F};
-      float[] xLines = {2.0F, screenWidth - 2.0F, screenWidth / 2.0F};
-      for (int i = 0; i < xTargets.length; i++) {
-         float d = Math.abs(clampedX - xTargets[i]);
-         if (d < bestX) {
-            bestX = d;
-            magnetX = xTargets[i];
-            lineX = xLines[i];
-         }
-      }
-
-      float[] yTargets = {2.0F, screenHeight - 2.0F - h, (screenHeight - h) / 2.0F};
-      float[] yLines = {2.0F, screenHeight - 2.0F, screenHeight / 2.0F};
-      for (int i = 0; i < yTargets.length; i++) {
-         float d = Math.abs(clampedY - yTargets[i]);
-         if (d < bestY) {
-            bestY = d;
-            magnetY = yTargets[i];
-            lineY = yLines[i];
-         }
-      }
-
+      int n = 0;
+      float[] xs = new float[others.size()];
+      float[] ws = new float[others.size()];
+      float[] ys = new float[others.size()];
+      float[] hs = new float[others.size()];
       for (HudWidget other : others) {
-         if (other == this || !other.isEnabled() || other.lastW <= 0.0F) {
-            continue;
-         }
-
-         float ol = other.lastX;
-         float or = other.lastX + other.lastW;
-         float ot = other.lastY;
-         float ob = other.lastY + other.lastH;
-         float[][] xs = {{ol, ol}, {or - w, or}, {or + GAP, or + GAP}, {ol - GAP - w, ol - GAP}};
-         for (float[] candidate : xs) {
-            float d = Math.abs(clampedX - candidate[0]);
-            if (d < bestX) {
-               bestX = d;
-               magnetX = candidate[0];
-               lineX = candidate[1];
-            }
-         }
-
-         float[][] ys = {{ot, ot}, {ob - h, ob}, {ob + GAP, ob + GAP}, {ot - GAP - h, ot - GAP}};
-         for (float[] candidate : ys) {
-            float d = Math.abs(clampedY - candidate[0]);
-            if (d < bestY) {
-               bestY = d;
-               magnetY = candidate[0];
-               lineY = candidate[1];
-            }
+         if (other != this && other.isEnabled() && other.lastW > 0.0F) {
+            xs[n] = other.lastX;
+            ws[n] = other.lastW;
+            ys[n] = other.lastY;
+            hs[n] = other.lastH;
+            n++;
          }
       }
 
-      boolean snappedX = !Float.isNaN(magnetX);
-      boolean snappedY = !Float.isNaN(magnetY);
-      if (snappedX) {
-         clampedX = magnetX;
-      } else if (snapGrid) {
-         clampedX = Math.round(clampedX / 4.0F) * 4.0F;
-      }
-
-      if (snappedY) {
-         clampedY = magnetY;
-      } else if (snapGrid) {
-         clampedY = Math.round(clampedY / 4.0F) * 4.0F;
-      }
-
+      float grid = snapGrid ? GRID : 0.0F;
+      UiMath.AxisSnap snapX = magnetic
+         ? UiMath.snapAxis(clampedX, w, screenWidth, 2.0F, true, xs, ws, n, MAGNET, GAP, grid, true)
+         : UiMath.snapAxis(clampedX, w, screenWidth, 2.0F, false, xs, ws, 0, 0.0F, GAP, grid, false);
+      UiMath.AxisSnap snapY = magnetic
+         ? UiMath.snapAxis(clampedY, h, screenHeight, 2.0F, true, ys, hs, n, MAGNET, GAP, grid, true)
+         : UiMath.snapAxis(clampedY, h, screenHeight, 2.0F, false, ys, hs, 0, 0.0F, GAP, grid, false);
       if (guides != null) {
-         guides.lineX = lineX;
-         guides.lineY = lineY;
+         guides.lineX = snapX.magnetic() ? snapX.line : Float.NaN;
+         guides.lineY = snapY.magnetic() ? snapY.line : Float.NaN;
+         guides.kindX = snapX.magnetic() ? snapX.kind : UiMath.SNAP_NONE;
+         guides.kindY = snapY.magnetic() ? snapY.kind : UiMath.SNAP_NONE;
       }
 
+      this.placeAt(screenWidth, screenHeight, Mth.clamp(snapX.pos, 0.0F, Math.max(0.0F, screenWidth - w)), Mth.clamp(snapY.pos, 0.0F, Math.max(0.0F, screenHeight - h)), w, h);
+   }
+
+   /** Moves the widget by whole pixels from where it was last drawn (arrow-key nudging in the HUD editor). */
+   public void nudge(int screenWidth, int screenHeight, int dx, int dy) {
+      float w = Math.max(8.0F, this.lastW);
+      float h = Math.max(8.0F, this.lastH);
+      float x = Mth.clamp(Math.round(this.lastX) + dx, 0.0F, Math.max(0.0F, screenWidth - w));
+      float y = Mth.clamp(Math.round(this.lastY) + dy, 0.0F, Math.max(0.0F, screenHeight - h));
+      this.placeAt(screenWidth, screenHeight, x, y, w, h);
+   }
+
+   /** Stores a screen position as the nearest anchor plus offsets (the saved Corner / Offset X / Offset Y). */
+   private void placeAt(int screenWidth, int screenHeight, float clampedX, float clampedY, float w, float h) {
       float cx = clampedX + w / 2.0F;
       float cy = clampedY + h / 2.0F;
       int horiz = Math.abs(cx - screenWidth / 2.0F) < screenWidth * 0.16F ? 1 : (cx > screenWidth / 2.0F ? 2 : 0);
