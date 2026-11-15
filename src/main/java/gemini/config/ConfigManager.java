@@ -673,6 +673,26 @@ public final class ConfigManager {
       return listJson(this.profileDir);
    }
 
+   /** The id a profile name is stored under (lower case, letters, digits, - and _), or null when nothing is left. */
+   public static String profileId(String name) {
+      return sanitize(name);
+   }
+
+   /** When the profile file was last written, in epoch milliseconds, or -1 when it is missing or unreadable. */
+   public long profileModified(String name) {
+      String clean = sanitize(name);
+      if (clean == null) {
+         return -1L;
+      }
+
+      try {
+         Path path = this.profilePath(clean);
+         return Files.isRegularFile(path) ? Files.getLastModifiedTime(path).toMillis() : -1L;
+      } catch (IOException | RuntimeException e) {
+         return -1L;
+      }
+   }
+
    private static List<String> listJson(Path dir) {
       List<String> names = new ArrayList<>();
       if (!Files.isDirectory(dir)) {

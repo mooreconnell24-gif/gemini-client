@@ -195,6 +195,11 @@ public final class BuiltInBaritone {
       return Collections.unmodifiableList(currentPath);
    }
 
+   /** How many nodes of {@link #path()} have been walked. */
+   public static int pathIndex() {
+      return pathIndex;
+   }
+
    public static void configureRender(boolean enabled, int lineColor, int boxColor) {
       renderPath = enabled;
       pathColor = lineColor;

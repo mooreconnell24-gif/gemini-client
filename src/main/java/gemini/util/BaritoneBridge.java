@@ -248,6 +248,12 @@ public final class BaritoneBridge {
       return pathingNow || BuiltInBaritone.isActive();
    }
 
+   /** Baritone's current goal as it describes itself (e.g. "GoalBlock{x=1,y=64,z=2}"), or null without one. */
+   public static String externalGoal() {
+      Object goal = goalNow;
+      return goal == null ? null : String.valueOf(goal);
+   }
+
    /** Whether the real Baritone was following a path at the last tick. */
    public static boolean externalPathing() {
       return pathingNow;
