@@ -54,7 +54,7 @@ public final class ChunkBorders extends Module {
             for (int z = cz - extra; z <= cz + extra + 1; z++) {
                double wz = z * 16.0;
                boolean corner = own && (z == cz || z == cz + 1);
-               Render3D.line(new Vec3(wx, bottom, wz), new Vec3(wx, top, wz), corner ? edgeColor : innerColor, corner ? stroke : stroke * 0.6F, false);
+               Render3D.line(wx, bottom, wz, wx, top, wz, corner ? edgeColor : innerColor, corner ? stroke : stroke * 0.6F, false);
             }
          }
 

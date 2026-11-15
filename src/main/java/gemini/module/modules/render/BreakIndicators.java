@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -58,17 +59,20 @@ public final class BreakIndicators extends Module {
       }
    }
 
+   private final InfoText percentText = new InfoText();
+
    @Override
    public void onRender3D(float partialTick) {
       if (this.miningPos != null && this.progress > 0.01F) {
          float p = Mth.clamp(this.progress, 0.05F, 1.0F);
          int color = ColorSetting.hueColor(p * 0.33F, 0.85F, 1.0F);
          double half = 0.5 * p;
-         Vec3 c = Vec3.atCenterOf(this.miningPos);
-         AABB box = new AABB(c.x - half, c.y - half, c.z - half, c.x + half, c.y + half, c.z + half);
-         Render3D.boxGlow(box, color, 1.8F, 55, true);
+         double cx = this.miningPos.getX() + 0.5;
+         double cy = this.miningPos.getY() + 0.5;
+         double cz = this.miningPos.getZ() + 0.5;
+         Render3D.boxGlow(cx - half, cy - half, cz - half, cx + half, cy + half, cz + half, color, 1.8F, 55, true);
          if (this.percentage.get()) {
-            Render3D.text(Math.round(p * 100.0F) + "%", c.add(0.0, 0.65, 0.0), color, 0.85F, true);
+            Render3D.text(this.percentText.whole(Math.round(p * 100.0F), "%"), cx, cy + 0.65, cz, color, 0.85F, true);
          }
       }
    }

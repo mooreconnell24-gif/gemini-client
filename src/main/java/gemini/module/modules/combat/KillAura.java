@@ -230,8 +230,7 @@ public final class KillAura extends Module {
    @Override
    public void onRender3D(float partialTick) {
       if (this.renderTarget.get() && this.currentTarget != null && this.currentTarget.isAlive()) {
-         AABB box = Render3D.interpolatedBox(this.currentTarget, partialTick);
-         Render3D.box(box, -6467875, true, true, 1.8F, 45, true);
+         Render3D.entityBox(this.currentTarget, partialTick, 0.0, -6467875, true, true, 1.8F, 45, true);
       }
    }
 

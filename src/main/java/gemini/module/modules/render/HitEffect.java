@@ -68,23 +68,13 @@ public final class HitEffect extends Module {
                Render3D.lineArgb(mid2, burst.center, c, 2.4F, true);
             } else if (mode.equals("Shockwave")) {
                double r = 0.25 + t * 1.45;
-               int segs = 18;
-
-               for (int i = 0; i < segs; i++) {
-                  double a1 = i * Math.PI * 2.0 / segs;
-                  double a2 = (i + 1) * Math.PI * 2.0 / segs;
-                  Render3D.lineArgb(
-                     new Vec3(burst.center.x + Math.cos(a1) * r, burst.center.y, burst.center.z + Math.sin(a1) * r),
-                     new Vec3(burst.center.x + Math.cos(a2) * r, burst.center.y, burst.center.z + Math.sin(a2) * r),
-                     c,
-                     2.0F,
-                     true
-                  );
-               }
+               Render3D.ring(burst.center.x, burst.center.y, burst.center.z, r, 18, c, 2.0F, true);
             } else {
                double s = 0.2 + t * 0.75;
-               AABB box = new AABB(burst.center.x - s, burst.center.y - s, burst.center.z - s, burst.center.x + s, burst.center.y + s, burst.center.z + s);
-               Render3D.box(box, baseColor, true, false, 1.8F, alpha / 3, true);
+               // The outline fades with the burst (it used to stay fully opaque until it vanished).
+               Render3D.boxArgb(
+                  burst.center.x - s, burst.center.y - s, burst.center.z - s, burst.center.x + s, burst.center.y + s, burst.center.z + s, c, 0, 1.8F, true
+               );
             }
          }
       }

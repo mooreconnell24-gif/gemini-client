@@ -117,19 +117,19 @@ public final class StorageEspModule extends Module {
                if (this.boxes3D.get()) {
                   // Both calls cull off-screen blocks themselves.
                   if (glow) {
-                     Render3D.boxGlow(new AABB(pos), color, 2.0F, 65, true);
+                     Render3D.boxGlow(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 1.0, pos.getZ() + 1.0, color, 2.0F, 65, true);
                   } else {
                      Render3D.block(pos.getX(), pos.getY(), pos.getZ(), color, outline, fill, 1.6F, 50, true);
                   }
                }
 
                if (this.tracers.get()) {
-                  Render3D.line(crosshair, Vec3.atCenterOf(pos), color, 1.2F, true);
+                  Render3D.line(crosshair.x, crosshair.y, crosshair.z, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, color, 1.2F, true);
                }
 
                if (this.labels3D.get() && !Render3D.behindCamera(pos.getX() + 0.5, pos.getY() + 1.25, pos.getZ() + 0.5, 0.0)) {
                   int dist = (int)Math.sqrt(pos.distSqr(client.player.blockPosition()));
-                  Render3D.text(hit.label() + " " + dist + "m", Vec3.atCenterOf(pos).add(0.0, 0.75, 0.0), color, 0.75F, true);
+                  Render3D.text(hit.label() + " " + dist + "m", pos.getX() + 0.5, pos.getY() + 1.25, pos.getZ() + 0.5, color, 0.75F, true);
                }
             }
          }

@@ -22,19 +22,18 @@ public final class ChinaHat extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && !client.options.getCameraType().isFirstPerson()) {
-         Vec3 base = player.getPosition(partialTick).add(0.0, player.getBbHeight() + 0.12, 0.0);
-         Vec3 tip = base.add(0.0, 0.32, 0.0);
+         double x = Render3D.entityX(player, partialTick);
+         double y = Render3D.entityY(player, partialTick) + player.getBbHeight() + 0.12;
+         double z = Render3D.entityZ(player, partialTick);
          int argb = this.color.argb();
+         int spoke = Render3D.alpha(argb, 150);
          double r = this.radius.get();
          int segments = 16;
+         Render3D.ring(x, y, z, r, segments, Render3D.alpha(argb, 255), 1.8F, false);
 
          for (int i = 0; i < segments; i++) {
-            double a1 = i * Math.PI * 2.0 / segments;
-            double a2 = (i + 1) * Math.PI * 2.0 / segments;
-            Vec3 p1 = base.add(Math.cos(a1) * r, 0.0, Math.sin(a1) * r);
-            Vec3 p2 = base.add(Math.cos(a2) * r, 0.0, Math.sin(a2) * r);
-            Render3D.line(p1, p2, argb, 1.8F, false);
-            Render3D.line(tip, p1, Render3D.alpha(argb, 150), 1.2F, false);
+            double angle = i * Math.PI * 2.0 / segments;
+            Render3D.lineArgb(x, y + 0.32, z, x + Math.cos(angle) * r, y, z + Math.sin(angle) * r, spoke, 1.2F, false);
          }
       }
    }

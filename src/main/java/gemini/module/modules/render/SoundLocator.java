@@ -87,9 +87,9 @@ public final class SoundLocator extends Module {
                it.remove();
             } else {
                int color = !ping.label.equals("Explosion") && !ping.label.equals("Totem Pop") ? -16718337 : -48043;
-               AABB box = new AABB(ping.pos.x - 0.25, ping.pos.y - 0.25, ping.pos.z - 0.25, ping.pos.x + 0.25, ping.pos.y + 0.25, ping.pos.z + 0.25);
-               Render3D.box(box, color, true, true, 1.5F, Math.round(65.0F * (1.0F - t)), true);
-               Render3D.text(ping.label, ping.pos.add(0.0, 0.55, 0.0), color, 0.78F, true);
+               Vec3 at = ping.pos;
+               Render3D.box(at.x - 0.25, at.y - 0.25, at.z - 0.25, at.x + 0.25, at.y + 0.25, at.z + 0.25, color, true, true, 1.5F, Math.round(65.0F * (1.0F - t)), true);
+               Render3D.text(ping.label, at.x, at.y + 0.55, at.z, color, 0.78F, true);
             }
          }
       }
