@@ -274,6 +274,23 @@ public final class Glass {
       roundRect(g, knob, y + 1, knob + height - 2, y + height - 1, (height - 2) / 2, lerp(0xFF8A93A6, 0xFFFFFFFF, p));
    }
 
+   /**
+    * As {@link #toggle(GuiGraphicsExtractor, int, int, float, int)}, faded by {@code opacity} (0..1) so the switch
+    * follows a menu's open/close fade and opacity setting instead of always drawing at full alpha.
+    */
+   public static void toggle(GuiGraphicsExtractor g, int x, int y, float position, int accent, float opacity) {
+      if (opacity <= 0.0F) {
+         return;
+      }
+
+      float p = Mth.clamp(position, 0.0F, 1.0F);
+      int width = 18;
+      int height = 10;
+      roundRect(g, x, y, x + width, y + height, height / 2, fade(lerp(0xFF2A3040, withAlpha(accent, 255), p), opacity));
+      int knob = x + 1 + Math.round((width - height) * p);
+      roundRect(g, knob, y + 1, knob + height - 2, y + height - 1, (height - 2) / 2, fade(lerp(0xFF8A93A6, 0xFFFFFFFF, p), opacity));
+   }
+
    /** A one-pixel straight line between two points at any angle (a rotated fill, so it costs one quad). */
    public static void line(GuiGraphicsExtractor g, float x1, float y1, float x2, float y2, int color) {
       float dx = x2 - x1;

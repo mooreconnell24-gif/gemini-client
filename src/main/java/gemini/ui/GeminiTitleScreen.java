@@ -110,11 +110,11 @@ public final class GeminiTitleScreen extends Screen {
 
    /**
     * Opens the presets and config manager. This is the single place that decides which screen that is (the pause
-    * dock uses it too); for now it is the window menu. {@code parent} is the screen the player came from: the
-    * window menu returns to the game or the title screen by itself, a dedicated page can use it for "Back".
+    * dock uses it too): the dashboard on its "Presets &amp; Configs" page. {@code parent} is the screen the player
+    * came from; closing the dashboard returns there.
     */
    public static void openConfigs(Screen parent) {
-      Minecraft.getInstance().gui.setScreen(new WindowGuiScreen());
+      Minecraft.getInstance().gui.setScreen(new WindowGuiScreen(WindowGuiScreen.Page.PROFILES, parent));
    }
 
    // ---- widgets ---------------------------------------------------------------------------------------------
