@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -43,8 +44,10 @@ public final class ArrowDamageModule extends Module {
          && shooter.getUUID().equals(client.player.getUUID());
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return String.format("%.0f", this.damage.get());
+      return this.infoText.fixed(this.damage.get(), 0);
    }
 }

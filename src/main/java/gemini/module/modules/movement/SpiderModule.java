@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -30,8 +31,10 @@ public final class SpiderModule extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return String.format("%.2f", this.speed.get());
+      return this.infoText.fixed(this.speed.get(), 2);
    }
 }

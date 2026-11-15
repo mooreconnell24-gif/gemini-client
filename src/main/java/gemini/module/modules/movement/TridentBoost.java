@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -14,9 +15,11 @@ public final class TridentBoost extends Module {
       super("Trident Boost", "Launch much farther with a riptide trident.", Category.MOVEMENT);
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return String.format("%.2fx", this.boost.get());
+      return this.infoText.fixed(this.boost.get(), 2, "x");
    }
 
    @Override

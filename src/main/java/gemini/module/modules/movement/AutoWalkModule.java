@@ -21,9 +21,7 @@ public final class AutoWalkModule extends Module {
       if (client.options != null) {
          // Hand control back to the real keys so holding W while switching AutoWalk off keeps walking.
          client.options.keyUp.setDown(MoveUtil.physicalKeyDown(client.options.keyUp));
-         if (this.sprint.get()) {
-            client.options.keySprint.setDown(MoveUtil.physicalKeyDown(client.options.keySprint));
-         }
+         client.options.keySprint.setDown(MoveUtil.physicalKeyDown(client.options.keySprint));
       }
    }
 

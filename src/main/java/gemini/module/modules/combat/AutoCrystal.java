@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
 import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.util.Swing;
@@ -80,9 +81,11 @@ public final class AutoCrystal extends Module {
       this.renderDamage = 0.0F;
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return this.renderPos != null ? String.format(Locale.ROOT, "%.1f", this.renderDamage) : null;
+      return this.renderPos != null ? this.infoText.fixed(this.renderDamage, 1) : null;
    }
 
    @Override
@@ -259,7 +262,9 @@ public final class AutoCrystal extends Module {
       if (this.render.get() && this.renderPos != null) {
          int argb = this.color.argb();
          Render3D.block(this.renderPos, argb, true, true, 1.8F, 65, true);
-         Render3D.text(String.format(Locale.ROOT, "%.1f", this.renderDamage), Vec3.atCenterOf(this.renderPos).add(0.0, 0.65, 0.0), -1, 0.85F, true);
+         Render3D.text(
+            this.infoText.fixed(this.renderDamage, 1), this.renderPos.getX() + 0.5, this.renderPos.getY() + 1.15, this.renderPos.getZ() + 0.5, -1, 0.85F, true
+         );
       }
    }
 }

@@ -105,9 +105,25 @@ public final class Home extends Module {
       }
    }
 
+   private String infoLabel;
+   private double infoX;
+   private double infoY;
+   private double infoZ;
+
    @Override
    public String info() {
-      return this.saved ? String.format(Locale.ROOT, "%.0f %.0f %.0f", this.x, this.y, this.z) : "unset";
+      if (!this.saved) {
+         return "unset";
+      }
+
+      if (this.infoLabel == null || this.x != this.infoX || this.y != this.infoY || this.z != this.infoZ) {
+         this.infoX = this.x;
+         this.infoY = this.y;
+         this.infoZ = this.z;
+         this.infoLabel = Math.round(this.x) + " " + Math.round(this.y) + " " + Math.round(this.z);
+      }
+
+      return this.infoLabel;
    }
 
    @Override
