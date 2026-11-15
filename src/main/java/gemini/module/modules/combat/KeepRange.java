@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
 import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.module.Category;
@@ -60,8 +61,10 @@ public final class KeepRange extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return String.format(Locale.ROOT, "%.1fm", this.minDistance.get());
+      return this.infoText.fixed(this.minDistance.get(), 1, "m");
    }
 }

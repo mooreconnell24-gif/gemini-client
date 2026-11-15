@@ -379,7 +379,8 @@ public final class XrayModule extends Module {
             int limit = Math.min(this.nearCount, this.maxOutlines.intValue());
 
             for (int i = 0; i < limit; i++) {
-               this.shape.block(BlockPos.of(this.nearPositions[i]), this.nearColors[i]);
+               long packed = this.nearPositions[i];
+               this.shape.block(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed), this.nearColors[i]);
             }
          }
 
@@ -388,7 +389,10 @@ public final class XrayModule extends Module {
             int limit = Math.min(this.nearCount, this.tracerCount.intValue());
 
             for (int i = 0; i < limit; i++) {
-               this.shape.line(from, Vec3.atCenterOf(BlockPos.of(this.nearPositions[i])), this.nearColors[i]);
+               long packed = this.nearPositions[i];
+               this.shape.line(
+                  from.x, from.y, from.z, BlockPos.getX(packed) + 0.5, BlockPos.getY(packed) + 0.5, BlockPos.getZ(packed) + 0.5, this.nearColors[i]
+               );
             }
          }
       }

@@ -1,5 +1,6 @@
 package gemini.module.modules.misc;
 
+import gemini.util.InfoText;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -57,9 +58,11 @@ public final class AutoSave extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
       int seconds = Math.max(0, this.ticks) / 20;
-      return String.format(Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
+      return this.infoText.clock(seconds);
    }
 }

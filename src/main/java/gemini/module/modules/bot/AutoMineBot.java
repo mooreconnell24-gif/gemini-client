@@ -1,5 +1,6 @@
 package gemini.module.modules.bot;
 
+import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ListSetting;
@@ -39,16 +40,28 @@ public final class AutoMineBot extends Module {
    @Override
    public void onEnable() {
       Set<Block> selected = this.blocks.blocks();
-      BaritoneBridge.mineBlocks(selected);
+      if (BaritoneBridge.mineBlocks(selected)) {
+         BaritoneBridge.claimTask(this);
+      } else {
+         CommandManager.feedback("§bAuto Mine Bot §7has no target blocks; add some to its list first.");
+      }
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 
    @Override
    public String info() {
-      return BaritoneBridge.isActive() ? BaritoneBridge.statusSummary() : this.blocks.size() + " ores";
+      return BaritoneBridge.holdsTask(this) && BaritoneBridge.isActive() ? BaritoneBridge.statusSummary() : this.blocks.size() + " ores";
    }
 }

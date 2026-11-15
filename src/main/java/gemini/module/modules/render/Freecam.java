@@ -73,6 +73,12 @@ public final class Freecam extends Module {
       this.saved = null;
    }
 
+   /** The camera's coordinates belong to the world that was left; start again from the player's eyes. */
+   @Override
+   public void onWorldChange() {
+      this.onEnable();
+   }
+
    public boolean active() {
       return this.isEnabled() && this.ready;
    }

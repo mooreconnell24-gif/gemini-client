@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.render.Render3D;
@@ -21,7 +22,15 @@ public final class TntTimer extends Module {
             if (entity instanceof PrimedTnt tnt && entity.distanceToSqr(client.player) <= 2304.0) {
                float seconds = Math.max(0.0F, (tnt.getFuse() - partialTick) / 20.0F);
                int color = seconds <= 1.2F ? -1548963 : -14249;
-               Render3D.text(String.format(Locale.ROOT, "%.2fs", seconds), tnt.getPosition(partialTick).add(0.0, 1.25, 0.0), color, 0.9F, true);
+               Render3D.text(
+                  InfoText.format(seconds, 2) + "s",
+                  Render3D.entityX(tnt, partialTick),
+                  Render3D.entityY(tnt, partialTick) + 1.25,
+                  Render3D.entityZ(tnt, partialTick),
+                  color,
+                  0.9F,
+                  true
+               );
             }
          }
       }

@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.InfoText;
 import com.mojang.authlib.GameProfile;
 import gemini.command.CommandManager;
 import gemini.module.Category;
@@ -112,8 +113,10 @@ public final class FakePlayer extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return this.dummy == null ? null : String.format("%.0f", this.dummy.getHealth());
+      return this.dummy == null ? null : this.infoText.fixed(Math.ceil(this.dummy.getHealth()), 0);
    }
 }

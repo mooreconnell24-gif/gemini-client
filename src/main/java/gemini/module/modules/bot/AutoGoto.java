@@ -28,12 +28,22 @@ public final class AutoGoto extends Module {
 
    @Override
    public void onEnable() {
-      BaritoneBridge.gotoBlock(new BlockPos(this.targetX.intValue(), this.targetY.intValue(), this.targetZ.intValue()));
+      if (BaritoneBridge.gotoBlock(new BlockPos(this.targetX.intValue(), this.targetY.intValue(), this.targetZ.intValue()))) {
+         BaritoneBridge.claimTask(this);
+      }
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 
    @Override

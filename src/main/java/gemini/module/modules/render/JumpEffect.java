@@ -48,15 +48,7 @@ public final class JumpEffect extends Module {
          } else {
             double r = 0.2 + t * 1.4;
             int alpha = Math.round(220.0F * (1.0F - t));
-            int segments = 20;
-
-            for (int i = 0; i < segments; i++) {
-               double a1 = i * Math.PI * 2.0 / segments;
-               double a2 = (i + 1) * Math.PI * 2.0 / segments;
-               Vec3 p1 = new Vec3(ring.center.x + Math.cos(a1) * r, ring.center.y + 0.04, ring.center.z + Math.sin(a1) * r);
-               Vec3 p2 = new Vec3(ring.center.x + Math.cos(a2) * r, ring.center.y + 0.04, ring.center.z + Math.sin(a2) * r);
-               Render3D.lineArgb(p1, p2, Render3D.alpha(baseColor, alpha), 2.0F, false);
-            }
+            Render3D.ring(ring.center.x, ring.center.y + 0.04, ring.center.z, r, 20, Render3D.alpha(baseColor, alpha), 2.0F, false);
          }
       }
    }

@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import gemini.util.MoveUtil;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
@@ -138,7 +139,7 @@ public final class BlockHitModule extends Module {
                client.gameMode.releaseUsingItem(player);
             }
 
-            client.options.keyUse.setDown(false);
+            client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
          }
       }
    }

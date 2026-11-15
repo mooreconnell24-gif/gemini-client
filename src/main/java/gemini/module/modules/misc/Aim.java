@@ -83,8 +83,15 @@ public final class Aim extends Module {
       float yawRad = -aim[0] * (float)(Math.PI / 180.0);
       float pitchRad = aim[1] * (float)(Math.PI / 180.0);
       float cosPitch = Mth.cos(pitchRad);
-      Vec3 look = new Vec3(Mth.sin(yawRad) * cosPitch, -Mth.sin(pitchRad), Mth.cos(yawRad) * cosPitch);
-      Vec3 at = player.getEyePosition(partialTick).add(look.scale(this.distance.get()));
-      Render3D.point(at, this.color.argb(), 5.0F, true);
+      double reach = this.distance.get();
+      double eyeY = Render3D.entityY(player, partialTick) + player.getEyeHeight();
+      Render3D.point(
+         Render3D.entityX(player, partialTick) + Mth.sin(yawRad) * cosPitch * reach,
+         eyeY - Mth.sin(pitchRad) * reach,
+         Render3D.entityZ(player, partialTick) + Mth.cos(yawRad) * cosPitch * reach,
+         this.color.argb(),
+         5.0F,
+         true
+      );
    }
 }

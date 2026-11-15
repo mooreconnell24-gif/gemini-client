@@ -70,7 +70,7 @@ public final class DamageParticles extends Module {
          if (age >= 1.0F) {
             it.remove();
          } else {
-            Render3D.text(p.text, p.pos.add(0.0, age * 0.65, 0.0), p.color, 0.9F, true);
+            Render3D.text(p.text, p.pos.x, p.pos.y + age * 0.65, p.pos.z, p.color, 0.9F, true);
          }
       }
    }

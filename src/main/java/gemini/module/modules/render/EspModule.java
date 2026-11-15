@@ -85,25 +85,27 @@ public final class EspModule extends Module {
 
             for (Entity entity : client.level.entitiesForRendering()) {
                if (this.matchesTarget(entity)) {
-                  AABB box = Render3D.interpolatedBox(entity, partialTick);
-                  if (Render3D.visible(box)) {
+                  // Culled without building the interpolated box; nothing is allocated for off-screen entities.
+                  if (Render3D.entityVisible(entity, partialTick, 0.0)) {
                      int argb = 0xFF000000 | this.color(entity);
                      if (drawBox) {
                         if (glowBox) {
-                           Render3D.boxGlow(box, argb, 1.6F, 42, true);
+                           Render3D.entityBoxGlow(entity, partialTick, 0.0, argb, 1.6F, 42, true);
                         } else {
-                           Render3D.box(box, argb, true, true, 1.5F, 35, true);
+                           Render3D.entityBox(entity, partialTick, 0.0, argb, true, true, 1.5F, 35, true);
                         }
                      }
 
                      if (this.healthBar.get() && entity instanceof LivingEntity living) {
                         float ratio = Mth.clamp(living.getHealth() / Math.max(1.0F, living.getMaxHealth()), 0.0F, 1.0F);
                         int hpColor = ColorSetting.hueColor(ratio * 0.33F, 0.85F, 1.0F);
-                        Vec3 bottom = new Vec3(box.minX - 0.12, box.minY, box.minZ);
-                        Vec3 top = new Vec3(box.minX - 0.12, box.minY + (box.maxY - box.minY) * ratio, box.minZ);
-                        Vec3 fullTop = new Vec3(box.minX - 0.12, box.maxY, box.minZ);
-                        Render3D.line(bottom, fullTop, -2012212194, 2.5F, true);
-                        Render3D.line(bottom, top, hpColor, 2.5F, true);
+                        AABB bounds = entity.getBoundingBox();
+                        double x = Render3D.entityX(entity, partialTick) - entity.getX() + bounds.minX - 0.12;
+                        double y = Render3D.entityY(entity, partialTick) - entity.getY() + bounds.minY;
+                        double z = Render3D.entityZ(entity, partialTick) - entity.getZ() + bounds.minZ;
+                        double height = bounds.maxY - bounds.minY;
+                        Render3D.line(x, y, z, x, y + height, z, -2012212194, 2.5F, true);
+                        Render3D.line(x, y, z, x, y + height * ratio, z, hpColor, 2.5F, true);
                      }
                   }
                }

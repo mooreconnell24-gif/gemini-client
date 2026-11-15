@@ -29,7 +29,7 @@ public final class CombatHelpers {
    }
 
    static boolean armorDamaged(LocalPlayer player, int percent) {
-      for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+      for (EquipmentSlot slot : ARMOR) {
          ItemStack stack = player.getItemBySlot(slot);
          if (!stack.isEmpty() && stack.getMaxDamage() > 0) {
             double left = 100.0 * (stack.getMaxDamage() - stack.getDamageValue()) / stack.getMaxDamage();
@@ -42,8 +42,12 @@ public final class CombatHelpers {
       return false;
    }
 
+   private static final Predicate<ItemStack> BLAST_PROOF = stack -> stack.getItem() instanceof BlockItem bi
+      && (bi.getBlock() == Blocks.OBSIDIAN || bi.getBlock() == Blocks.CRYING_OBSIDIAN || bi.getBlock() == Blocks.ENDER_CHEST);
+   private static final EquipmentSlot[] ARMOR = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+
+   /** Hotbar stacks that survive a crystal: obsidian, crying obsidian, ender chests. One shared predicate. */
    static Predicate<ItemStack> obsidianOrResistant() {
-      return stack -> stack.getItem() instanceof BlockItem bi
-         && (bi.getBlock() == Blocks.OBSIDIAN || bi.getBlock() == Blocks.CRYING_OBSIDIAN || bi.getBlock() == Blocks.ENDER_CHEST);
+      return BLAST_PROOF;
    }
 }

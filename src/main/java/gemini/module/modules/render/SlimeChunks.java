@@ -55,7 +55,7 @@ public final class SlimeChunks extends Module {
                   int top = 40;
                   int bottom = Math.max(VersionBridge.minWorldY(client.level), Math.min(floor - 2, top - 1));
                   Render3D.box(
-                     new AABB(x * 16, bottom, z * 16, x * 16 + 16, top, z * 16 + 16),
+                     x * 16.0, bottom, z * 16.0, x * 16.0 + 16.0, top, z * 16.0 + 16.0,
                      argb,
                      true,
                      false,
