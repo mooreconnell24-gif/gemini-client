@@ -9,7 +9,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.ClientState;
 import gemini.util.Holes;
-import gemini.util.SpCommands;
+import gemini.util.TickControl;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -208,7 +208,7 @@ public final class FastFall extends Module {
          return;
       }
 
-      if (ClientState.ready(client) && SpCommands.run("tick rate " + this.timerRate.intValue())) {
+      if (ClientState.ready(client) && TickControl.setRate(this, this.timerRate.floatValue())) {
          this.timerApplied = true;
       }
    }
@@ -219,7 +219,8 @@ public final class FastFall extends Module {
       this.pullTicks = 0;
       if (this.timerApplied) {
          this.timerApplied = false;
-         SpCommands.run("tick rate 20");
+         // TickControl restores the clock even when the world is being left and Gemini is no longer allowed to act.
+         TickControl.releaseRate(this);
       }
    }
 
