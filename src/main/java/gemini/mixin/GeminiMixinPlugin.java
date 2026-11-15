@@ -103,6 +103,7 @@ public final class GeminiMixinPlugin implements IMixinConfigPlugin {
 
    @Override
    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+      MixinReport.applied(mixinClassName);
       try {
          Set<String> handlers = new HashSet<>();
          for (MethodNode method : targetClass.methods) {
