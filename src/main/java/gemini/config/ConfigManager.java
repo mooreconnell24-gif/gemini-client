@@ -301,7 +301,7 @@ public final class ConfigManager {
                } else if (setting instanceof NumberSetting number) {
                   number.set(value.getAsDouble());
                } else if (setting instanceof ColorSetting color) {
-                  color.set(value.getAsInt());
+                  color.fromJson(value);
                } else if (setting instanceof ModeSetting mode) {
                   mode.set(value.getAsString());
                } else if (setting instanceof ListSetting list) {
@@ -339,7 +339,7 @@ public final class ConfigManager {
             } else if (setting instanceof NumberSetting number) {
                settings.addProperty(setting.name(), number.get());
             } else if (setting instanceof ColorSetting color) {
-               settings.addProperty(setting.name(), color.get());
+               settings.add(setting.name(), color.toJson());
             } else if (setting instanceof ModeSetting mode) {
                settings.addProperty(setting.name(), mode.get());
             } else if (setting instanceof ListSetting list) {

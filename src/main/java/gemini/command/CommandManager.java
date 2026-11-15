@@ -804,9 +804,15 @@ public final class CommandManager {
             }
          } else if (setting instanceof ColorSetting color) {
             try {
-               color.set(Integer.parseInt(raw));
+               if (raw.startsWith("#")) {
+                  if (!color.setHex(raw)) {
+                     throw new NumberFormatException(raw);
+                  }
+               } else {
+                  color.set(Integer.parseInt(raw));
+               }
             } catch (NumberFormatException var12) {
-               feedback("§f" + raw + " §cis not a hue between 0 and 360.");
+               feedback("§f" + raw + " §cis not a hue between 0 and 360 or a #RRGGBB colour.");
                return;
             }
          } else if (setting instanceof ModeSetting mode) {

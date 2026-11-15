@@ -1174,25 +1174,8 @@ public final class WindowGuiScreen extends Screen {
       return lines;
    }
 
-   /** Filled rectangle with rounded corners, built from non-overlapping fills so translucent colours stay even. */
    static void roundRect(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int radius, int color) {
-      int r = Math.max(0, Math.min(radius, Math.min((x2 - x1) / 2, (y2 - y1) / 2)));
-      if (r <= 0) {
-         g.fill(x1, y1, x2, y2, color);
-         return;
-      }
-
-      g.fill(x1 + r, y1, x2 - r, y2, color);
-      g.fill(x1, y1 + r, x1 + r, y2 - r, color);
-      g.fill(x2 - r, y1 + r, x2, y2 - r, color);
-      for (int i = 0; i < r; i++) {
-         double dy = r - i - 0.5;
-         int inset = (int)Math.round(r - Math.sqrt(Math.max(0.0, r * r - dy * dy)));
-         g.fill(x1 + inset, y1 + i, x1 + r, y1 + i + 1, color);
-         g.fill(x2 - r, y1 + i, x2 - inset, y1 + i + 1, color);
-         g.fill(x1 + inset, y2 - i - 1, x1 + r, y2 - i, color);
-         g.fill(x2 - r, y2 - i - 1, x2 - inset, y2 - i, color);
-      }
+      gemini.ui.Glass.roundRect(g, x1, y1, x2, y2, radius, color);
    }
 
    private static void outline(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int color) {

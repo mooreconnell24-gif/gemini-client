@@ -51,7 +51,39 @@ public final class HudOverlay {
       this.modules = modules;
    }
 
+   /** What a toast is about; picks its colour and badge. */
+   public enum Severity {
+      INFO("INFO", Glass.INFO),
+      SUCCESS("OK", Glass.OK),
+      WARNING("WARN", Glass.WARN),
+      ERROR("ALERT", Glass.ERROR),
+      ENABLED("ON", Glass.OK),
+      DISABLED("OFF", Glass.ERROR);
+
+      public final String badge;
+      public final int color;
+
+      Severity(String badge, int color) {
+         this.badge = badge;
+         this.color = color;
+      }
+   }
+
+   /** Module on/off toast. */
    public static void pushNotification(String title, String body, boolean enabled) {
+      toast(title, body, enabled ? Severity.ENABLED : Severity.DISABLED, 2100L);
+   }
+
+   /** Shows a toast for the default time; a toast with the same title replaces the one already showing. */
+   public static void toast(String title, String body, Severity severity) {
+      toast(title, body, severity, severity == Severity.WARNING || severity == Severity.ERROR ? 4200L : 2800L);
+   }
+
+   public static void toast(String title, String body, Severity severity, long durationMs) {
+      if (title == null || severity == null) {
+         return;
+      }
+
       synchronized (TOASTS) {
          Iterator<HudOverlay.Toast> it = TOASTS.iterator();
          while (it.hasNext()) {
@@ -65,7 +97,7 @@ public final class HudOverlay {
             TOASTS.removeFirst();
          }
 
-         TOASTS.addLast(new HudOverlay.Toast(title, body, enabled, Util.getMillis(), 2100L));
+         TOASTS.addLast(new HudOverlay.Toast(title, body == null ? "" : body, severity, Util.getMillis(), Math.max(600L, durationMs)));
       }
    }
 
@@ -129,13 +161,13 @@ public final class HudOverlay {
                float in = easeOutCubic((float)age / 210.0F);
                float out = easeOutCubic((float)(toast.durationMs - age) / 240.0F);
                float slide = Math.min(in, out);
-               String badge = toast.enabled ? "ON" : "OFF";
+               String badge = toast.severity.badge;
                int badgeW = font.width(badge) + 8;
                int cardW = Math.max(132, Math.max(font.width(toast.title) + badgeW + 14, font.width(toast.body) + 18));
                int cardH = 25;
                int x = width - 6 - Math.round((cardW + 4) * slide) + 4;
                int y = Math.round(cursorY);
-               int statusColor = toast.enabled ? -11086174 : -1548963;
+               int statusColor = toast.severity.color;
                int alphaBg = Math.round(228.0F * slide);
                int alphaText = Math.round(255.0F * slide);
                graphics.fill(x - 1, y - 1, x + cardW + 1, y + cardH + 1, GeminiMark.withAlpha(accent, Math.round(62.0F * slide)));
@@ -554,6 +586,6 @@ public final class HudOverlay {
       return entity instanceof Player;
    }
 
-   private record Toast(String title, String body, boolean enabled, long createdAt, long durationMs) {
+   private record Toast(String title, String body, Severity severity, long createdAt, long durationMs) {
    }
 }
