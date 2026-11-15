@@ -63,6 +63,7 @@ public final class ScaffoldModule extends Module {
       new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02)
          .showIf(() -> this.towerMode.is("Motion") || this.towerMode.is("Constant"))
    );
+   private boolean steerExact;
    private final BooleanSetting raycast = this.addSetting(
       new BooleanSetting("Raycast Check", "Only place when the aimed look ray really hits the face being clicked", true).showIf(() -> !this.rotate.is("None"))
    );
@@ -104,11 +105,13 @@ public final class ScaffoldModule extends Module {
    public void onDisable() {
       this.releaseSneak();
       this.fade.clear();
+      this.steerExact = false;
    }
 
    @Override
    public void onWorldChange() {
       this.fade.clear();
+      this.steerExact = false;
       LocalPlayer player = Minecraft.getInstance().player;
       this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);
    }
@@ -239,7 +242,9 @@ public final class ScaffoldModule extends Module {
             BlockHitResult hit = plan.hit;
             if (!this.rotate.is("None")) {
                boolean quiet = !this.rotate.is("Snap");
-               float[] placeRot = this.computeBridgeRotation(player, plan.hit);
+               // After a raycast miss the styled angle is dropped for one placement and the face itself is aimed at,
+               // so each tick makes exactly one rotation request.
+               float[] placeRot = this.steerExact ? RotationManager.toward(player, plan.hit.getLocation()) : this.computeBridgeRotation(player, plan.hit);
                // The turn goes through RotationManager's spring (Aim settings) at Turn Speed instead of jumping there.
                boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 16.0F);
                if (!ready && this.rotate.is("Strict")) {
@@ -249,17 +254,13 @@ public final class ScaffoldModule extends Module {
                if (this.raycast.get()) {
                   // The look the placement goes out with must really hit the face we are about to click.
                   BlockHitResult seen = BlockPlacer.verifyLook(client.level, player, RotationManager.aimYaw(), RotationManager.aimPitch(), 5.0, plan.hit);
-                  if (seen == null && !this.rotate.is("Strict")) {
-                     // The styled angle (Godbridge, blended yaw) misses this face: steer toward the face itself and try next tick.
-                     float[] exact = RotationManager.toward(player, plan.hit.getLocation());
-                     RotationManager.request(player, exact[0], exact[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 2.0F);
-                     seen = BlockPlacer.verifyLook(client.level, player, RotationManager.aimYaw(), RotationManager.aimPitch(), 5.0, plan.hit);
-                  }
-
                   if (seen == null) {
+                     // The aimed angle misses this face: aim at the face itself next tick instead of placing blind.
+                     this.steerExact = true;
                      return;
                   }
 
+                  this.steerExact = false;
                   hit = seen;
                }
             }
