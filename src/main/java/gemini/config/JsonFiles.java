@@ -27,6 +27,8 @@ import java.nio.file.StandardOpenOption;
  */
 public final class JsonFiles {
    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+   /** Single-line output, for text that is packed or sent rather than read. */
+   public static final Gson COMPACT = new GsonBuilder().disableHtmlEscaping().create();
    private static final String BACKUP_SUFFIX = ".bak";
 
    private JsonFiles() {

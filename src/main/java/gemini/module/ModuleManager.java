@@ -126,6 +126,7 @@ import gemini.module.modules.movement.FastSwim;
 import gemini.module.modules.movement.FlightModule;
 import gemini.module.modules.movement.Freeze;
 import gemini.module.modules.movement.Glide;
+import gemini.module.modules.movement.Gravity;
 import gemini.module.modules.movement.HighJumpModule;
 import gemini.module.modules.movement.HoleSnap;
 import gemini.module.modules.movement.InventoryMoveModule;
@@ -144,6 +145,7 @@ import gemini.module.modules.movement.SpeedModule;
 import gemini.module.modules.movement.SpiderModule;
 import gemini.module.modules.movement.SprintAssist;
 import gemini.module.modules.movement.StepModule;
+import gemini.module.modules.movement.Surface;
 import gemini.module.modules.movement.Strafe;
 import gemini.module.modules.movement.TargetStrafe;
 import gemini.module.modules.movement.TerrainSpeed;
@@ -167,7 +169,14 @@ import gemini.module.modules.player.AutoWindCharge;
 import gemini.module.modules.player.Buffs;
 import gemini.module.modules.player.ChestStealerModule;
 import gemini.module.modules.player.ChestSwap;
+import gemini.module.modules.player.Aquatic;
 import gemini.module.modules.player.Cleanse;
+import gemini.module.modules.player.ExtraHearts;
+import gemini.module.modules.player.Fireproof;
+import gemini.module.modules.player.Lucky;
+import gemini.module.modules.player.Refill;
+import gemini.module.modules.player.Repair;
+import gemini.module.modules.player.Size;
 import gemini.module.modules.player.Derp;
 import gemini.module.modules.player.DurabilityAlert;
 import gemini.module.modules.player.Eagle;
@@ -262,6 +271,7 @@ import gemini.module.modules.world.AutoTorch;
 import gemini.module.modules.world.BedDefender;
 import gemini.module.modules.world.BlockIn;
 import gemini.module.modules.world.ChestAura;
+import gemini.module.modules.world.ChunkLoader;
 import gemini.module.modules.world.Collisions;
 import gemini.module.modules.world.EndermanLook;
 import gemini.module.modules.world.Extinguish;
@@ -310,6 +320,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundClientTickEndPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -335,6 +347,8 @@ public final class ModuleManager {
       }
    });
    private ConfigManager configManager;
+   private boolean positionSentThisTick;
+   private static volatile int heldBackPositionPackets;
    private static final ArrayDeque<ModuleManager.Failure> FAILURES = new ArrayDeque<>();
 
    private static String key(String name) {
@@ -380,7 +394,33 @@ public final class ModuleManager {
    }
 
    public boolean sendPacket(Packet<?> packet) {
-      return RotationManager.onSendPacket(packet) || this.bus.sendPacket(packet);
+      if (packet instanceof ServerboundClientTickEndPacket) {
+         this.positionSentThisTick = false;
+      }
+
+      boolean cancelled = RotationManager.onSendPacket(packet) || this.bus.sendPacket(packet);
+      if (!cancelled && packet instanceof ServerboundMovePlayerPacket move && move.hasPosition()) {
+         if (this.positionSentThisTick) {
+            // Minecraft 26.3 disconnects a client that sends two position packets between tick ends. Whatever
+            // tried, losing one position update is far better than being thrown out of the world.
+            Module sender = EventBus.current();
+            heldBackPositionPackets++;
+            if (heldBackPositionPackets <= 5) {
+               Gemini.LOGGER.warn("Held back a second position packet in one tick (from {})", sender == null ? "the game or an unknown caller" : sender.getName());
+            }
+
+            return true;
+         }
+
+         this.positionSentThisTick = true;
+      }
+
+      return cancelled;
+   }
+
+   /** How many extra position packets were held back this session; any at all means a module needs fixing. */
+   public static int heldBackPositionPackets() {
+      return heldBackPositionPackets;
    }
 
    public boolean receivePacket(Packet<?> packet) {
@@ -676,9 +716,33 @@ public final class ModuleManager {
       this.register(new Performance());
       this.register(new CinematicCamera());
       this.register(new Cleanse());
+      this.register(new Gravity());
+      this.register(new Size());
+      this.register(new ExtraHearts());
+      this.register(new Aquatic());
+      this.register(new Lucky());
+      this.register(new Fireproof());
+      this.register(new Repair());
+      this.register(new Refill());
+      this.register(new ChunkLoader());
+      this.register(new Surface());
+      this.registerAliases();
       this.register(new FreeSlots());
       this.register(new FoodInfo());
       this.register(new XpInfo());
+   }
+
+   /**
+    * Lets every alias (a merged module's old name, the name without spaces, the class name) find its module in
+    * commands, not only in the menu search. Done after all modules are registered so an alias can never take a
+    * name that belongs to a real module.
+    */
+   private void registerAliases() {
+      for (Module module : this.modules) {
+         for (String alias : module.aliases()) {
+            this.byKey.putIfAbsent(key(alias), module);
+         }
+      }
    }
 
    public void bindConfig(ConfigManager configManager) {

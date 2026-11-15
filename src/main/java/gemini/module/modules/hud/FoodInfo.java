@@ -9,7 +9,7 @@ import net.minecraft.client.player.LocalPlayer;
 /** Hunger and saturation as numbers; saturation is what actually decides how long food lasts, and vanilla hides it. */
 public final class FoodInfo extends Ticked {
    public FoodInfo() {
-      super("Food Info", "Hunger and hidden saturation as numbers.", "Top Left", 6, 160, 250);
+      super("Food Info", "Hunger and hidden saturation as numbers.", "Top Left", 6, 166, 250);
    }
 
    @Override

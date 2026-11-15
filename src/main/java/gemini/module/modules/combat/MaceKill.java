@@ -4,28 +4,28 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Items;
+import gemini.util.AttackAssist;
 
 public final class MaceKill extends Module {
-   private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Simulated fall height in blocks", 6.0, 2.0, 22.0, 1.0));
+   private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Fall height in blocks credited to each mace hit", 6.0, 2.0, 22.0, 1.0));
 
    public MaceKill() {
-      super("MaceKill", "Spoof a vertical drop packet for Mace smash damage.", Category.COMBAT);
+      super("MaceKill", "Give every mace hit the smash damage of a long fall.", Category.COMBAT);
+   }
+
+   // The fall used to be faked with two position packets per hit; Minecraft 26.3 disconnects for that, so the
+   // height is now credited by AttackAssist at the moment the hit is calculated.
+   @Override
+   public void onTick() {
+      LocalPlayer player = Minecraft.getInstance().player;
+      if (player != null) {
+         AttackAssist.maceFall(player.getUUID(), this.height.get());
+      }
    }
 
    @Override
-   public void onAttack(Entity target) {
-      Minecraft client = Minecraft.getInstance();
-      LocalPlayer player = client.player;
-      ClientPacketListener conn = client.getConnection();
-      if (player != null && conn != null && player.getMainHandItem().is(Items.MACE)) {
-         double h = this.height.get();
-         conn.send(new Pos(player.getX(), player.getY() + h, player.getZ(), false, false));
-         conn.send(new Pos(player.getX(), player.getY(), player.getZ(), false, false));
-      }
+   public void onDisable() {
+      AttackAssist.maceFall(null, 0.0);
    }
 }

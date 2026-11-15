@@ -8,7 +8,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -116,20 +115,16 @@ public final class MoveUtil {
       }
    }
 
-   public static void teleport(Minecraft client, LocalPlayer player, Vec3 destination, boolean hops) {
-      ClientPacketListener connection = client.getConnection();
-      if (connection != null && hops) {
-         Vec3 position = player.position();
-         int count = (int)Math.ceil(position.distanceTo(destination) / 8.0);
-
-         // Hops are marked on-ground: the server adds up every downward hop as fall distance otherwise,
-         // so teleporting to somewhere lower would hurt (or kill) on the next step.
-         for (int i = 1; i < count; i++) {
-            Vec3 point = position.lerp(destination, (double)i / count);
-            connection.send(new Pos(point.x, point.y, point.z, true, false));
-         }
-
-         connection.send(new Pos(destination.x, destination.y, destination.z, true, false));
+   /**
+    * Moves the player to {@code destination}. With {@code throughServer} the integrated server teleports the
+    * player, which works through walls and over any distance. (This used to be a chain of position packets, which
+    * Minecraft 26.3 answers by disconnecting the player.) Without it only the client is moved and the game reports
+    * the new position itself.
+    */
+   public static void teleport(Minecraft client, LocalPlayer player, Vec3 destination, boolean throughServer) {
+      if (throughServer && client.level != null) {
+         SpCommands.teleport(client.level.dimension().identifier().toString(), destination.x, destination.y, destination.z);
+         AttributeBoost.resetFall(player);
       }
 
       player.setPos(destination);
