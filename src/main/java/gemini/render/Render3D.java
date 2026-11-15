@@ -300,4 +300,45 @@ public final class Render3D {
    public static float partialTick() {
       return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
    }
+   /**
+    * A box like {@link #box(double, double, double, double, double, double, int, boolean, boolean, float, int, boolean)}, except
+    * that the outline keeps the colour's own alpha instead of being drawn opaque, so a shape can fade out.
+    */
+   public static void boxArgb(
+      double minX, double minY, double minZ, double maxX, double maxY, double maxZ, int argb, boolean lines, boolean fill, float width, int fillAlpha, boolean throughWalls
+   ) {
+      boolean filled = fill && fillAlpha > 0;
+      boolean stroked = lines && (argb >>> 24) > 0;
+      if (!stroked && !filled) {
+         return;
+      }
+
+      double halfSpan = (maxX - minX + maxY - minY + maxZ - minZ) * 0.5;
+      if (behindCamera((minX + maxX) * 0.5, (minY + maxY) * 0.5, (minZ + maxZ) * 0.5, halfSpan + CULL_MARGIN)) {
+         return;
+      }
+
+      AABB biased = new AABB(minX - DEPTH_BIAS, minY - DEPTH_BIAS, minZ - DEPTH_BIAS, maxX + DEPTH_BIAS, maxY + DEPTH_BIAS, maxZ + DEPTH_BIAS);
+      Frustum view = frustum;
+      if (view != null && !view.isVisible(biased) || !take()) {
+         return;
+      }
+
+      GizmoProperties properties = Gizmos.cuboid(
+         biased, style(stroked ? argb : 0, stroked ? Math.max(1.0F, width) : 0.0F, filled ? alpha(argb, fillAlpha) : 0)
+      );
+      if (throughWalls) {
+         properties.setAlwaysOnTop();
+      }
+   }
+
+   /** Billboard text whose colour keeps its own alpha, for labels that fade. */
+   public static void textArgb(String text, Vec3 position, int argb, float scale, boolean throughWalls) {
+      if (text != null && position != null && (argb >>> 24) > 0 && !behindCamera(position.x, position.y, position.z, 0.0) && take()) {
+         GizmoProperties properties = Gizmos.billboardText(text, position, Style.forColorAndCentered(argb).withScale(scale));
+         if (throughWalls) {
+            properties.setAlwaysOnTop();
+         }
+      }
+   }
 }
