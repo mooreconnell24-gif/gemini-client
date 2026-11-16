@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -15,11 +16,13 @@ public final class EntityCulling extends Module {
       new BooleanSetting("Cull Behind Walls", "Hide vanilla nametags for entities behind walls", true)
    );
    private final NumberSetting maxDistance = this.addSetting(
-      new NumberSetting("Nametag Distance", "Maximum distance in blocks to render vanilla", 28.0, 6.0, 64.0, 2.0)
+      new NumberSetting("Nametag Distance", "Vanilla nametags farther than this many blocks are hidden", 28.0, 6.0, 64.0, 2.0)
    );
    private final BooleanSetting hideArmorStands = this.addSetting(
       new BooleanSetting("Hide Armor Stand Tags", "Suppress hologram and armor stand nametag clutter", true)
    );
+
+   private final InfoText infoText = new InfoText();
 
    public EntityCulling() {
       super("EntityCulling", "Cull occluded and distant nametags for higher FPS.", Category.RENDER);
@@ -28,7 +31,7 @@ public final class EntityCulling extends Module {
 
    @Override
    public String info() {
-      return this.maxDistance.intValue() + "m";
+      return this.infoText.whole(this.maxDistance.intValue(), "m");
    }
 
    public boolean shouldCullNametag(Entity entity, double distSq) {

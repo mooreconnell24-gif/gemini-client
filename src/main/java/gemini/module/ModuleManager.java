@@ -907,7 +907,8 @@ public final class ModuleManager {
 
       try {
          for (Module module : this.modules) {
-            if (!(module instanceof ClickGuiModule) && !(module instanceof HudModule) && (module.isSavedEnabled() || module.isEnabled())) {
+            // Settings pages (ClickGUI, HUD, Aim) are always "on" and have no switch to turn them back on with.
+            if (!module.settingsOnly() && !(module instanceof ClickGuiModule) && !(module instanceof HudModule) && (module.isSavedEnabled() || module.isEnabled())) {
                module.setEnabled(false, false);
                shut++;
             }

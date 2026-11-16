@@ -8,6 +8,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.VersionBridge;
 import gemini.util.AreaScan;
+import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -31,9 +32,14 @@ public final class VoidEsp extends Module {
       super("Void ESP", "Highlight open holes in bedrock leading into the void.", Category.RENDER);
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public void onDisable() {
       this.holes.clear();
+      this.building.clear();
+      this.scan.stop();
+      this.wait = 0;
    }
 
    @Override
@@ -98,7 +104,7 @@ public final class VoidEsp extends Module {
 
    @Override
    public String info() {
-      return this.holes.isEmpty() ? null : this.holes.size() + " holes";
+      return this.holes.isEmpty() ? null : this.infoText.whole(this.holes.size(), " holes");
    }
 
    /** Everything remembered here belongs to the world that was just left. */
@@ -106,5 +112,8 @@ public final class VoidEsp extends Module {
    public void onWorldChange() {
       this.holes.clear();
       this.building.clear();
+      // A walk still running covers the old world's coordinates; start over in the new one.
+      this.scan.stop();
+      this.wait = 0;
    }
 }

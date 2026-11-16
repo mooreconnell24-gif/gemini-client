@@ -15,18 +15,20 @@ public final class SoundLocator extends Module {
    public static SoundLocator instance;
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum distance to locate sounds", 48.0, 12.0, 96.0, 4.0));
    private final BooleanSetting onlyImportant = this.addSetting(
-      new BooleanSetting("Important Only", "Only show chests, explosions, teleports, totems", true)
+      new BooleanSetting("Important Only", "Only show containers, explosions, teleports and totem pops; off also shows drinking, eating, footsteps and swimming", true)
    );
    private final ArrayDeque<SoundLocator.SoundPing> pings = new ArrayDeque<>();
 
    public SoundLocator() {
-      super("SoundLocator", "Visualize nearby explosions.", Category.RENDER);
+      super("SoundLocator", "Mark where nearby sounds come from: containers, explosions, teleports and totem pops, or everything with Important Only off.", Category.RENDER);
       instance = this;
    }
 
    @Override
    public void onDisable() {
-      this.pings.clear();
+      synchronized (this.pings) {
+         this.pings.clear();
+      }
    }
 
    public void recordSound(String path, double x, double y, double z) {
@@ -58,7 +60,8 @@ public final class SoundLocator extends Module {
       }
    }
 
-   private static String classifySound(String path, boolean importantOnly) {
+   /** The label for a sound id path, or null when it is not shown; "Important Only" keeps the first four kinds. */
+   static String classifySound(String path, boolean importantOnly) {
       if (path.contains("chest") || path.contains("shulker") || path.contains("barrel")) {
          return "Container";
       } else if (path.contains("explode") || path.contains("tnt")) {
@@ -67,10 +70,12 @@ public final class SoundLocator extends Module {
          return "Teleport";
       } else if (path.contains("totem")) {
          return "Totem Pop";
-      } else if (!path.contains("Drink") && !path.contains("drink") && !path.contains("burp")) {
-         return importantOnly || !path.contains("step") && !path.contains("swim") ? null : "Movement";
-      } else {
+      } else if (importantOnly) {
+         return null;
+      } else if (path.contains("drink") || path.contains("burp")) {
          return "Consumable";
+      } else {
+         return path.contains("step") || path.contains("swim") ? "Movement" : null;
       }
    }
 
@@ -101,6 +106,8 @@ public final class SoundLocator extends Module {
    /** Everything remembered here belongs to the world that was just left. */
    @Override
    public void onWorldChange() {
-      this.pings.clear();
+      synchronized (this.pings) {
+         this.pings.clear();
+      }
    }
 }

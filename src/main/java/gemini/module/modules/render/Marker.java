@@ -24,6 +24,7 @@ public final class Marker extends Module {
    private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Number each marker", true));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true);
    private final List<AABB> boxes = new ArrayList<>();
+   private final List<String> numbers = new ArrayList<>();
 
    public Marker() {
       super("Marker", "Draw boxes you place yourself. Use .marker add / box.", Category.RENDER);
@@ -89,7 +90,12 @@ public final class Marker extends Module {
                   }
                }
 
-               this.boxes.add(new AABB(v[0], v[1], v[2], v[3] + 1.0, v[4] + 1.0, v[5] + 1.0));
+               // Both corners are inclusive blocks, given in either order.
+               this.boxes.add(
+                  new AABB(
+                     Math.min(v[0], v[3]), Math.min(v[1], v[4]), Math.min(v[2], v[5]), Math.max(v[0], v[3]) + 1.0, Math.max(v[1], v[4]) + 1.0, Math.max(v[2], v[5]) + 1.0
+                  )
+               );
                CommandManager.feedback("§bMarker §7added #" + this.boxes.size());
                this.save();
                break;
@@ -152,13 +158,23 @@ public final class Marker extends Module {
    public void onRender3D(float partialTick) {
       int argb = this.color.argb();
 
+      boolean numbers = this.labels.get();
       for (int i = 0; i < this.boxes.size(); i++) {
          AABB box = this.boxes.get(i);
          this.shape.box(box, argb);
-         if (this.labels.get()) {
-            Render3D.text("#" + (i + 1), box.getCenter().add(0.0, box.getYsize() / 2.0 + 0.4, 0.0), argb, 0.4F, true);
+         if (numbers) {
+            Render3D.text(number(i + 1), (box.minX + box.maxX) * 0.5, box.maxY + 0.4, (box.minZ + box.maxZ) * 0.5, argb, 0.4F, true);
          }
       }
+   }
+
+   /** "#n", built once per number. */
+   private String number(int n) {
+      while (this.numbers.size() < n) {
+         this.numbers.add("#" + (this.numbers.size() + 1));
+      }
+
+      return this.numbers.get(n - 1);
    }
 
    @Override

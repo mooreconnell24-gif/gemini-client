@@ -161,10 +161,9 @@ public final class Trajectories extends Module {
 
       if (end != null && this.landing.get()) {
          int hit = this.hitColor.argb();
-         AABB marker = new AABB(end.x - 0.2, end.y - 0.2, end.z - 0.2, end.x + 0.2, end.y + 0.2, end.z + 0.2);
-         Render3D.box(marker, hit, true, true, 2.0F, 90, true);
+         Render3D.box(end.x - 0.2, end.y - 0.2, end.z - 0.2, end.x + 0.2, end.y + 0.2, end.z + 0.2, hit, true, true, 2.0F, 90, true);
          if (struck != null) {
-            Render3D.box(Render3D.interpolatedBox(struck, partialTick), hit, true, true, 2.0F, 40, true);
+            Render3D.entityBox(struck, partialTick, 0.0, hit, true, true, 2.0F, 40, true);
          }
       }
    }

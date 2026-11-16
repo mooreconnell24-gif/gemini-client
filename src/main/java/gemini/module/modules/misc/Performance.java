@@ -9,6 +9,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.CloudStatus;
@@ -17,9 +18,9 @@ import net.minecraft.client.Options;
 import net.minecraft.server.level.ParticleStatus;
 
 public final class Performance extends Module {
-   private final NumberSetting renderDistance = this.addSetting(new NumberSetting("Render Distance", "Chunks", 6.0, 2.0, 32.0, 1.0).onChange(this::apply));
+   private final NumberSetting renderDistance = this.addSetting(new NumberSetting("Render Distance", "Render distance in chunks while this is on", 6.0, 2.0, 32.0, 1.0).onChange(this::apply));
    private final NumberSetting simulationDistance = this.addSetting(
-      new NumberSetting("Simulation Distance", "Chunks that tick", 6.0, 5.0, 32.0, 1.0).onChange(this::apply)
+      new NumberSetting("Simulation Distance", "Chunks around you that keep ticking (mobs, crops, redstone) while this is on", 6.0, 5.0, 32.0, 1.0).onChange(this::apply)
    );
    private final NumberSetting entityDistance = this.addSetting(
       new NumberSetting("Entity Distance", "Entity render distance in percent", 50.0, 50.0, 500.0, 25.0).onChange(this::apply)
@@ -56,6 +57,7 @@ public final class Performance extends Module {
    private int savedBlend;
    private boolean savedVsync;
    private boolean saved;
+   private final InfoText infoText = new InfoText();
 
    public Performance() {
       super("Performance", "FPS mode: low render distance, no clouds, shadows or particles, all restored when switched off.", Category.CLIENT);
@@ -93,6 +95,9 @@ public final class Performance extends Module {
          options.biomeBlendRadius().set(this.savedBlend);
          options.enableVsync().set(this.savedVsync);
          this.saved = false;
+         // If the options file was written while the low values were in place (the video settings screen saves
+         // on close), it would bring them back on the next start. Writing the restored values fixes that.
+         options.save();
       }
    }
 
@@ -149,6 +154,6 @@ public final class Performance extends Module {
 
    @Override
    public String info() {
-      return this.renderDistance.intValue() + " chunks";
+      return this.infoText.whole(this.renderDistance.intValue(), " chunks");
    }
 }

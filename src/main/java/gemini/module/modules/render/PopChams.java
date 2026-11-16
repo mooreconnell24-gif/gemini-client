@@ -222,6 +222,21 @@ public final class PopChams extends Module {
       }
    }
 
+   /** Opacity of a ghost {@code age} seconds old that lives {@code life} seconds: 1 at the pop, easing out to 0. */
+   static float fade(float age, float life) {
+      if (life <= 0.0F || age >= life) {
+         return 0.0F;
+      }
+
+      float left = 1.0F - Math.max(0.0F, age) / life;
+      return left * left;
+   }
+
+   /** Size of a ghost {@code age} seconds old, growing by {@code growth} of its size per second. */
+   static float scale(float age, float growth) {
+      return 1.0F + growth * Math.max(0.0F, age);
+   }
+
    @Override
    public void onRender3D(float partialTick) {
       long now = Util.getMillis();
@@ -244,9 +259,8 @@ public final class PopChams extends Module {
             continue;
          }
 
-         float fade = 1.0F - age / life;
-         fade *= fade;
-         float scale = 1.0F + this.scaleGrowth.floatValue() * age;
+         float fade = fade(age, life);
+         float scale = scale(age, this.scaleGrowth.floatValue());
          double cy = ghost.centerY + this.floatSpeed.floatValue() * age;
          if (Render3D.behindCamera(ghost.x, cy, ghost.z, 3.0 * scale)) {
             continue;

@@ -49,7 +49,9 @@ public final class BetterChat extends Module {
          String lower = text.toLowerCase(Locale.ROOT);
 
          for (String word : this.hidden.get()) {
-            if (lower.contains(word.toLowerCase(Locale.ROOT))) {
+            String needle = word.trim().toLowerCase(Locale.ROOT);
+            // An empty entry would be part of every line and hide the whole chat.
+            if (!needle.isEmpty() && lower.contains(needle)) {
                return true;
             }
          }

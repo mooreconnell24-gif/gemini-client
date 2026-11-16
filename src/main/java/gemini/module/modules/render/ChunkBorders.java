@@ -11,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 
 public final class ChunkBorders extends Module {
    private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Extra chunks drawn around yours", 0.0, 0.0, 3.0, 1.0));
@@ -71,13 +70,9 @@ public final class ChunkBorders extends Module {
    }
 
    private static void ring(double west, double east, double north, double south, double y, int color, float width) {
-      Vec3 a = new Vec3(west, y, north);
-      Vec3 b = new Vec3(east, y, north);
-      Vec3 c = new Vec3(east, y, south);
-      Vec3 d = new Vec3(west, y, south);
-      Render3D.line(a, b, color, width, false);
-      Render3D.line(b, c, color, width, false);
-      Render3D.line(c, d, color, width, false);
-      Render3D.line(d, a, color, width, false);
+      Render3D.line(west, y, north, east, y, north, color, width, false);
+      Render3D.line(east, y, north, east, y, south, color, width, false);
+      Render3D.line(east, y, south, west, y, south, color, width, false);
+      Render3D.line(west, y, south, west, y, north, color, width, false);
    }
 }

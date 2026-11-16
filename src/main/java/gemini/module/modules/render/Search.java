@@ -10,6 +10,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.render.ShapeSettings;
 import gemini.util.ChunkScanner;
+import gemini.util.InfoText;
 import gemini.util.VersionBridge;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +49,7 @@ public final class Search extends Module {
    private ChunkScanner scanner;
    private int scanSpeed = -1;
    private int resultCap = -1;
+   private final InfoText infoText = new InfoText();
 
    public Search() {
       super("Search", "Highlight selected blocks across loaded chunks.", Category.RENDER);
@@ -118,6 +120,6 @@ public final class Search extends Module {
 
    @Override
    public String info() {
-      return this.scanner == null ? null : Integer.toString(this.scanner.count());
+      return this.scanner == null ? null : this.infoText.whole(this.scanner.count(), "");
    }
 }

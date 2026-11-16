@@ -22,6 +22,7 @@ public final class EntityOwner extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Longest label distance", 32.0, 4.0, 96.0, 2.0));
    private final BooleanSetting yours = this.addSetting(new BooleanSetting("Show Your Own", "Also label pets that belong to you", false));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Label color", 45));
+   /** Finished label ("Owner: name") per owner id, so a frame builds no strings. */
    private final Map<UUID, String> names = new HashMap<>();
 
    public EntityOwner() {
@@ -33,6 +34,12 @@ public final class EntityOwner extends Module {
       this.names.clear();
    }
 
+   /** Owners are looked up in the tab list of the world being left; the next world has its own. */
+   @Override
+   public void onWorldChange() {
+      this.names.clear();
+   }
+
    @Override
    public void onRender3D(float partialTick) {
       Minecraft client = Minecraft.getInstance();
@@ -41,15 +48,29 @@ public final class EntityOwner extends Module {
       if (me != null && level != null) {
          double limit = this.range.get() * this.range.get();
          int argb = this.color.argb();
+         boolean own = this.yours.get();
 
          for (Entity entity : level.entitiesForRendering()) {
             if (entity instanceof OwnableEntity ownable && !(entity.distanceToSqr(me) > limit)) {
                EntityReference<LivingEntity> reference = ownable.getOwnerReference();
                if (reference != null) {
                   UUID id = reference.getUUID();
-                  if (this.yours.get() || !id.equals(me.getUUID())) {
-                     String owner = this.names.computeIfAbsent(id, key -> resolve(client, key));
-                     Render3D.text("Owner: " + owner, entity.getPosition(partialTick).add(0.0, entity.getBbHeight() + 0.45, 0.0), argb, 0.38F, true);
+                  if (own || !id.equals(me.getUUID())) {
+                     String label = this.names.get(id);
+                     if (label == null) {
+                        label = "Owner: " + resolve(client, id);
+                        this.names.put(id, label);
+                     }
+
+                     Render3D.text(
+                        label,
+                        Render3D.entityX(entity, partialTick),
+                        Render3D.entityY(entity, partialTick) + entity.getBbHeight() + 0.45,
+                        Render3D.entityZ(entity, partialTick),
+                        argb,
+                        0.38F,
+                        true
+                     );
                   }
                }
             }
