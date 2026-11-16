@@ -14,7 +14,7 @@ public final class LagNotifier extends Ticked {
    private volatile long lastPacket = System.currentTimeMillis();
 
    public LagNotifier() {
-      super("Lag Notifier", "Warns you when the server stops sending data.", "Top Center", 0, 56, 100);
+      super("Lag Notifier", "Warns you when the world or server stops responding.", "Top Center", 0, 56, 100);
    }
 
    @Override
@@ -28,11 +28,36 @@ public final class LagNotifier extends Ticked {
       return false;
    }
 
+   /**
+    * In single player the world runs on the integrated server, which sends little when nothing happens, so the gap
+    * between packets means nothing there. Instead its tick counter is watched: a world that has not ticked for the
+    * threshold, while the game is not paused and the tick rate is not frozen, is stuck (saving, generating, a
+    * huge redstone or entity load).
+    */
+   private int lastServerTick = Integer.MIN_VALUE;
+   private long lastServerTickAt;
+
    @Override
    protected List<TextHudWidget.Line> build(HudContext hud) {
-      double gap = (System.currentTimeMillis() - this.lastPacket) / 1000.0;
-      return !(gap < this.threshold.get()) && !hud.client.hasSingleplayerServer()
-         ? List.of(new TextHudWidget.Line(String.format(Locale.ROOT, "Server not responding for %.1fs", gap), -1548963))
-         : List.of();
+      long now = System.currentTimeMillis();
+      net.minecraft.server.MinecraftServer server = hud.client.getSingleplayerServer();
+      if (server != null) {
+         int tick = server.getTickCount();
+         if (tick != this.lastServerTick || hud.client.isPaused() || server.tickRateManager().isFrozen()) {
+            this.lastServerTick = tick;
+            this.lastServerTickAt = now;
+            return List.of();
+         }
+
+         double stuck = (now - this.lastServerTickAt) / 1000.0;
+         return stuck < this.threshold.get()
+            ? List.of()
+            : List.of(new TextHudWidget.Line(String.format(Locale.ROOT, "World not responding for %.1fs", stuck), gemini.ui.Glass.ERROR));
+      }
+
+      double gap = (now - this.lastPacket) / 1000.0;
+      return gap < this.threshold.get()
+         ? List.of()
+         : List.of(new TextHudWidget.Line(String.format(Locale.ROOT, "Server not responding for %.1fs", gap), gemini.ui.Glass.ERROR));
    }
 }

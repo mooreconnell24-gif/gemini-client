@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class Welcome extends Ticked {
    private final ListSetting message = this.addSetting(
-      new ListSetting("Message", "Greeting text; {player} becomes your name", ListSetting.Kind.TEXT, "Welcome to Gemini, {player}")
+      new ListSetting("Message", "Greeting text; {player} becomes your name", ListSetting.Kind.TEXT, "Welcome, {player}")
    );
 
    public Welcome() {

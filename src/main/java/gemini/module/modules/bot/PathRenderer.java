@@ -17,7 +17,8 @@ public final class PathRenderer extends Module {
 
    public PathRenderer() {
       super("Path Renderer", "Draws Baritone's planned path and its goal.", Category.RENDER);
-      this.loadState(true, this.getKeybind());
+      // Off by default; while it is off the built-in engine draws no path either, so "off" means off from the start.
+      BuiltInBaritone.configureRender(false, this.lineColor.argb(), this.goalColor.argb());
    }
 
    @Override

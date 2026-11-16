@@ -35,7 +35,7 @@ public final class InventoryViewer extends HudWidget {
       for (int row = 0; row < this.rows(); row++) {
          for (int column = 0; column < 9; column++) {
             int index = row < 3 ? 9 + row * 9 + column : column;
-            int x = 6 + column * 18;
+            int x = 4 + column * 18;
             int y = 4 + row * 18;
             hud.graphics.fill(x, y, x + 16, y + 16, GeminiMark.withAlpha(-12958120, 70));
             ItemStack stack = items.get(index);

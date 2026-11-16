@@ -48,7 +48,8 @@ public final class DayInfo extends Ticked {
 
       long ticks = hud.client.level.getOverworldClockTime();
       long now = System.currentTimeMillis();
-      if (ticks != this.lastTicks) {
+      if (ticks != this.lastTicks || hud.client.isPaused()) {
+         // a paused game is not a stopped clock
          this.lastTicks = ticks;
          this.lastMoved = now;
       }
@@ -62,7 +63,9 @@ public final class DayInfo extends Ticked {
          lines.add(new TextHudWidget.Line("Day " + DayCycle.day(ticks) + "  " + DayCycle.clock(time) + (frozen ? "  (stopped)" : ""), Glass.TEXT));
       }
 
-      if (this.moon.get()) {
+      // The moon and the bedtime countdown only matter where there is a sky and beds work.
+      boolean overworld = hud.client.level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
+      if (this.moon.get() && overworld) {
          String text = DayCycle.phaseName(phase);
          if (this.slime.get()) {
             text = text + "  slimes " + Math.round(DayCycle.slimeChance(phase) * 100.0) + "%";
@@ -71,7 +74,7 @@ public final class DayInfo extends Ticked {
          lines.add(new TextHudWidget.Line(text, phase == 0 ? Glass.WARN : Glass.TEXT_DIM));
       }
 
-      if (this.countdown.get() && !frozen) {
+      if (this.countdown.get() && !frozen && overworld) {
          boolean night = DayCycle.isNight(time);
          String left = DayCycle.duration(DayCycle.ticksUntilChange(time));
          lines.add(night ? new TextHudWidget.Line("Night: sleep now, morning in " + left, Glass.INFO) : new TextHudWidget.Line("Night in " + left, Glass.TEXT_DIM));

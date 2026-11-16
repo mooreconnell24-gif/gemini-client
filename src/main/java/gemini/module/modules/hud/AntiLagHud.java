@@ -40,8 +40,9 @@ public final class AntiLagHud extends Ticked {
       long blocked = antiLag == null ? 0L : antiLag.totalBlocked();
       boolean active = antiLag != null && antiLag.isEnabled();
       List<TextHudWidget.Line> lines = new ArrayList<>(this.profiler.get() ? 4 + 3 * (this.rows.intValue() + 1) : 2);
-      lines.add(new TextHudWidget.Line("AntiLag " + (active ? "ACTIVE" : "OFF") + "  ·  " + fps + " FPS", active ? Glass.OK : Glass.TEXT_DIM));
-      lines.add(new TextHudWidget.Line("Blocked " + blocked + " lag spikes  ·  Heap " + usedPct + "%", hud.accent));
+      lines.add(new TextHudWidget.Line("AntiLag " + (active ? "on" : "off") + "  ·  " + fps + " FPS", active ? Glass.TEXT : Glass.TEXT_DIM));
+      // AntiLag counts the particles and sounds it dropped; "lag spikes" was not what the number meant.
+      lines.add(new TextHudWidget.Line(blocked > 0 ? "Blocked " + blocked + " particles and sounds  ·  Memory " + usedPct + "%" : "Memory " + usedPct + "%", Glass.TEXT_DIM));
       if (this.profiler.get()) {
          LiveProfiler.describe(lines, this.rows.intValue(), this.hook.get(), hud.accent2, Glass.TEXT, Glass.TEXT_DIM);
       }

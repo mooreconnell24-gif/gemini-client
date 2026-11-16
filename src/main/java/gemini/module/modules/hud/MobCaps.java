@@ -35,7 +35,7 @@ public final class MobCaps extends Ticked {
    private final BooleanSetting water = this.addSetting(
       new BooleanSetting("Water", "Show the squid, fish, glow squid and axolotl caps", false)
    );
-   private final BooleanSetting chunks = this.addSetting(new BooleanSetting("Chunk Count", "Show how many chunks around you count for spawning", false));
+   private final BooleanSetting chunks = this.addSetting(new BooleanSetting("Chunk Count", "Always show how many chunks around you count for spawning (shown anyway when fewer than 289 do, since that lowers the caps)", false));
    private volatile Snapshot snapshot;
    private int poll;
 
@@ -43,8 +43,12 @@ public final class MobCaps extends Ticked {
       super("Mob Caps", "Shows the natural spawning cap for each kind of mob, to help work out why a farm stops.", "Top Right", 6, 120, 250);
    }
 
-   /** {@code counts[i]} and {@code caps[i]} line up with {@link #SHOWN}; {@code chunks} is -1 while spawning has not run. */
-   private record Snapshot(int[] counts, int[] caps, int chunks) {
+   /**
+    * {@code counts[i]} and {@code caps[i]} line up with {@link #SHOWN}; {@code chunks} is -1 while spawning has not
+    * run. {@code spawning} is the Spawn Mobs game rule; {@code monsters} is false when monsters cannot spawn
+    * naturally at all (Peaceful, or the Spawn Monsters game rule off).
+    */
+   private record Snapshot(int[] counts, int[] caps, int chunks, boolean spawning, boolean monsters) {
    }
 
    /** The cap for one mob kind: its per-chunk limit spread over the spawnable chunks, as the spawner works it out. */
@@ -79,9 +83,13 @@ public final class MobCaps extends Ticked {
 
    /** Runs on the server thread. */
    private void read(ServerPlayer player) {
-      NaturalSpawner.SpawnState state = player.level().getChunkSource().getLastSpawnState();
+      net.minecraft.server.level.ServerLevel level = player.level();
+      boolean spawning = level.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.SPAWN_MOBS);
+      boolean monsters = level.getDifficulty() != net.minecraft.world.Difficulty.PEACEFUL
+         && level.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.SPAWN_MONSTERS);
+      NaturalSpawner.SpawnState state = level.getChunkSource().getLastSpawnState();
       if (state == null) {
-         this.snapshot = new Snapshot(new int[SHOWN.length], new int[SHOWN.length], -1);
+         this.snapshot = new Snapshot(new int[SHOWN.length], new int[SHOWN.length], -1, spawning, monsters);
          return;
       }
 
@@ -93,7 +101,7 @@ public final class MobCaps extends Ticked {
          caps[i] = globalCap(SHOWN[i].getMaxInstancesPerChunk(), spawnable);
       }
 
-      this.snapshot = new Snapshot(counts, caps, spawnable);
+      this.snapshot = new Snapshot(counts, caps, spawnable, spawning, monsters);
    }
 
    private boolean shown(int index) {
@@ -112,22 +120,35 @@ public final class MobCaps extends Ticked {
          return List.of();
       }
 
+      if (!s.spawning()) {
+         return List.of(new TextHudWidget.Line("Mob spawning is off (game rule)", Glass.TEXT_DIM));
+      }
+
       if (s.chunks() < 0) {
-         return List.of(new TextHudWidget.Line("Mob caps: spawning has not run here", Glass.TEXT_FAINT));
+         return List.of();
       }
 
       List<TextHudWidget.Line> lines = new ArrayList<>(SHOWN.length + 1);
       for (int i = 0; i < SHOWN.length; i++) {
          if (this.shown(i)) {
+            if (i == 0 && !s.monsters()) {
+               lines.add(new TextHudWidget.Line("Monsters off (Peaceful or game rule)", Glass.TEXT_DIM));
+               continue;
+            }
+
             int count = s.counts()[i];
             int cap = s.caps()[i];
-            int color = count >= cap ? Glass.ERROR : (count * 4 >= cap * 3 ? Glass.WARN : Glass.TEXT);
-            lines.add(new TextHudWidget.Line(LABELS[i] + " " + count + "/" + cap, color));
+            // The spawner only tries while the count is below the cap; more than the cap is normal (spawners,
+            // mobs walking in, animals from world generation) and just means none of that kind spawns naturally.
+            boolean full = count >= cap;
+            int color = full ? Glass.WARN : Glass.TEXT;
+            lines.add(new TextHudWidget.Line(LABELS[i] + " " + count + " / " + cap + (full ? "  full" : ""), color));
          }
       }
 
-      if (this.chunks.get()) {
-         lines.add(new TextHudWidget.Line(s.chunks() + " spawnable chunks", Glass.TEXT_DIM));
+      // The caps shrink with fewer spawnable chunks (a render distance below 8), so say so when that is happening.
+      if (this.chunks.get() || s.chunks() < CHUNK_AREA) {
+         lines.add(new TextHudWidget.Line(s.chunks() + " of " + CHUNK_AREA + " chunks can spawn mobs", Glass.TEXT_DIM));
       }
 
       return lines;

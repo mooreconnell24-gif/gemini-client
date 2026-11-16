@@ -24,7 +24,7 @@ public final class LightLevel extends Ticked {
       boolean spawnable = block <= blockLimit && effective <= skyLimit;
       return List.of(
          new TextHudWidget.Line("Light " + effective + "  (sky " + sky + " / block " + block + ")", -1511689),
-         new TextHudWidget.Line(spawnable ? "Monsters can spawn" : "Spawn-proof", spawnable ? -1548963 : -11086174)
+         new TextHudWidget.Line(spawnable ? "Dark enough for monsters" : "Too bright for monsters", spawnable ? -1548963 : -11086174)
       );
    }
 }

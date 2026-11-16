@@ -44,7 +44,18 @@ public final class ArmorHud extends HudWidget {
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      int n = this.stacks(hud.client.player).size();
+      List<ItemStack> stacks = this.stacks(hud.client.player);
+      boolean any = false;
+      for (ItemStack stack : stacks) {
+         any |= !stack.isEmpty();
+      }
+
+      // Nothing worn or held: no row of empty boxes.
+      if (!any) {
+         return 0;
+      }
+
+      int n = stacks.size();
       return this.vertical() ? 24 + (this.percent.get() ? 4 + hud.font.width("100%") : 0) : 8 + n * 20 - 4;
    }
 

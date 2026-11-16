@@ -256,7 +256,7 @@ public final class TargetHud extends HudWidget {
       int accent = hud.accent;
       if (super.hasBackground()) {
          if (neon) {
-            Glass.glow(g, 0, 0, w, h, Glass.RADIUS, accent, a * (0.55F + 0.45F * Glass.pulse(1400L)));
+            Glass.glow(g, 0, 0, w, h, Glass.RADIUS, accent, a * 0.55F);
             Glass.roundRect(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(0xFF05060A, Math.round(232.0F * a)));
             Glass.roundOutline(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(accent, Math.round(230.0F * a)));
          } else {
