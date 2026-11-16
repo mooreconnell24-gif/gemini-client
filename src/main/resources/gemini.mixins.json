@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_17",
 	"plugin": "gemini.mixin.GeminiMixinPlugin",
 	"client": [
+		"AbstractContainerScreenAccessor",
 		"BlockMixin",
 		"BlockStateBaseMixin",
 		"CameraMixin",
