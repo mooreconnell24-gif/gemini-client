@@ -19,7 +19,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class Fucker extends Module {
+public final class BedBreaker extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block to break, in blocks, walls included", 4.5, 1.5, 6.0, 0.1));
    private final BooleanSetting beds = this.addSetting(new BooleanSetting("Beds", "Break nearby beds", true));
    private final BooleanSetting eggs = this.addSetting(new BooleanSetting("Dragon Eggs", "Break dragon eggs", true));
@@ -27,8 +27,8 @@ public final class Fucker extends Module {
 
    private BlockPos target;
 
-   public Fucker() {
-      super("Fucker", "Breaks nearby beds, dragon eggs or cakes, even through walls.", Category.WORLD);
+   public BedBreaker() {
+      super("Bed Breaker", "Breaks nearby beds, dragon eggs or cakes, even through walls.", Category.WORLD);
    }
 
    @Override

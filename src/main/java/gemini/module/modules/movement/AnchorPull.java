@@ -14,7 +14,7 @@ public final class AnchorPull extends Module {
    private final NumberSetting pullSpeed = this.addSetting(new NumberSetting("Pull Speed", "Downward speed of the pull, in blocks per tick", 0.38, 0.15, 0.8, 0.02));
 
    public AnchorPull() {
-      super("AnchorPull", "Pulls you straight down into a safe hole below you.", Category.MOVEMENT);
+      super("Hole Pull", "Pulls you straight down into a safe hole below you.", Category.MOVEMENT);
    }
 
    @Override

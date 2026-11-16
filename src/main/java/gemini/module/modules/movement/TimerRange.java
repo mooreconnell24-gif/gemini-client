@@ -15,7 +15,7 @@ public final class TimerRange extends Module {
    private int cooldown;
 
    public TimerRange() {
-      super("TimerRange", "Gives you a short burst of speed towards a target more than 3 blocks away.", Category.MOVEMENT);
+      super("Gap Closer", "Gives you a short burst of speed towards a target more than 3 blocks away.", Category.MOVEMENT);
    }
 
    @Override

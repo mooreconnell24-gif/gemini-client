@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class PlayerTrails extends Module {
    private final NumberSetting length = this.addSetting(new NumberSetting("Trail Length", "Number of trail segments", 35.0, 10.0, 100.0, 5.0));
-   private final BooleanSetting rainbow = this.addSetting(new BooleanSetting("Rainbow", "Colour the trail with cycling rainbow colours", true));
+   private final BooleanSetting rainbow = this.addSetting(new BooleanSetting("Rainbow", "Colour the trail with cycling rainbow colours", false));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Trail colour", 195).showIf(() -> !this.rainbow.get()));
    private final ArrayDeque<Vec3> samples = new ArrayDeque<>();
 

@@ -14,7 +14,7 @@ public final class ChinaHat extends Module {
    private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Brim radius, in blocks", 0.65, 0.3, 1.2, 0.05));
 
    public ChinaHat() {
-      super("ChinaHat", "Draws a cone-shaped hat above your head in third person.", Category.RENDER);
+      super("Cone Hat", "Draws a cone-shaped hat above your head in third person.", Category.RENDER);
    }
 
    @Override

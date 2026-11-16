@@ -297,7 +297,7 @@ import gemini.module.modules.world.Locate;
 import gemini.module.modules.world.MobSweeper;
 import gemini.module.modules.world.Summoner;
 import gemini.module.modules.world.Flamethrower;
-import gemini.module.modules.world.Fucker;
+import gemini.module.modules.world.BedBreaker;
 import gemini.module.modules.world.Home;
 import gemini.module.modules.world.LawnMower;
 import gemini.module.modules.world.LiquidFiller;
@@ -666,7 +666,7 @@ public final class ModuleManager {
       this.register(new AutoSign());
       this.register(new Collisions());
       this.register(new AutoTorch());
-      this.register(new Fucker());
+      this.register(new BedBreaker());
       this.register(new BedDefender());
       this.register(new BlockIn());
       this.register(new Extinguish());

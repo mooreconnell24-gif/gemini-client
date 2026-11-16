@@ -14,7 +14,7 @@ import java.util.Set;
 
 public final class Presets extends Module {
    private final ModeSetting pack = this.addSetting(
-      new ModeSetting("Preset", "Which group of modules to turn on", "LiquidBounce", "LiquidBounce", "Performance", "PvP", "Explore", "Build", "Travel")
+      new ModeSetting("Preset", "Which group of modules to turn on", "General", "General", "Performance", "PvP", "Explore", "Build", "Travel")
    );
    private final BooleanSetting disableOthers = this.addSetting(new BooleanSetting("Disable Others", "First turn off the modules the other presets use that this one does not", false));
 
@@ -22,7 +22,7 @@ public final class Presets extends Module {
    private static final Map<String, List<String>> PACKS = new LinkedHashMap<>();
 
    static {
-      PACKS.put("LiquidBounce", List.of("Sprint", "HUD", "TargetHUD", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag"));
+      PACKS.put("General", List.of("Sprint", "HUD", "TargetHUD", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag"));
       PACKS.put("Performance", List.of("AntiLag", "EntityCulling", "Unfocused CPU", "Particles", "HUD", "FPS Graph", "AntiLag Status"));
       PACKS.put("PvP", List.of("KillAura", "Velocity", "Criticals", "AutoTotem", "AutoArmor", "Sprint", "TargetHUD", "HoleESP", "HitEffect"));
       PACKS.put("Explore", List.of("Fullbright", "Xray", "ESP", "StorageESP", "Waypoints", "Coordinates", "Zoom"));

@@ -13,7 +13,7 @@ public final class KeepY extends Module {
    private int lockedY;
 
    public KeepY() {
-      super("KeepY", "Jumps every time you land while moving.", Category.MOVEMENT);
+      super("Auto Hop", "Jumps every time you land while moving.", Category.MOVEMENT);
    }
 
    @Override

@@ -23,7 +23,7 @@ class MiscModuleLogicTest {
 
    @Test
    void everyPresetLeavesItsOwnModulesOn() {
-      for (String preset : new String[]{"LiquidBounce", "Performance", "PvP", "Explore", "Build", "Travel"}) {
+      for (String preset : new String[]{"General", "Performance", "PvP", "Explore", "Build", "Travel"}) {
          Set<String> off = Presets.othersOf(preset);
          assertFalse(off.isEmpty(), preset + " turns something off");
          assertFalse(off.contains("HUD"));

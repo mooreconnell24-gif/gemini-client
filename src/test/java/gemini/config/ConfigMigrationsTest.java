@@ -263,4 +263,16 @@ class ConfigMigrationsTest {
       ConfigMigrations.migrate(root);
       assertEquals("Card", settings(root, "HUD").get("Watermark Style").getAsString());
    }
+
+   @Test
+   void misleadingModuleNamesMoveTheirSettings() {
+      JsonObject root = config(10, "Fucker", module(true, 21, "Range", "4.0"), "KeepY", module(false, -1), "Presets", module(false, -1, "Preset", "\"LiquidBounce\""));
+      ConfigMigrations.migrate(root);
+      JsonObject modules = root.getAsJsonObject("modules");
+      assertFalse(modules.has("Fucker"));
+      assertEquals(21, modules.getAsJsonObject("Bed Breaker").get("keybind").getAsInt());
+      assertEquals(4.0, settings(root, "Bed Breaker").get("Range").getAsDouble());
+      assertTrue(modules.has("Auto Hop"));
+      assertEquals("General", settings(root, "Presets").get("Preset").getAsString());
+   }
 }
