@@ -16,6 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers.Entry;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.equipment.Equippable;
 
 public final class AutoArmorModule extends Module {
@@ -34,7 +36,7 @@ public final class AutoArmorModule extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && client.gameMode != null && Inventories.inventoryOpenOrClosed(player) && !player.isDeadOrDying()) {
+      if (player != null && client.gameMode != null && Inventories.canClick(player) && !player.isDeadOrDying()) {
          boolean inventoryScreen = client.gui.screen() instanceof InventoryScreen;
          if ((client.gui.screen() == null || inventoryScreen) && (!this.onlyInInventory.get() || inventoryScreen)) {
             if (this.cooldown > 0) {
@@ -43,7 +45,9 @@ public final class AutoArmorModule extends Module {
                for (int i = 0; i < SLOTS.length; i++) {
                   EquipmentSlot slot = SLOTS[i];
                   ItemStack worn = player.getItemBySlot(slot);
-                  if (!this.keepElytra.get() || slot != EquipmentSlot.CHEST || !worn.is(Items.ELYTRA)) {
+                  // Curse of Binding keeps a worn piece on outside creative: every swap attempt would just bounce.
+                  boolean bound = !worn.isEmpty() && !player.isCreative() && EnchantmentHelper.has(worn, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+                  if (!bound && (!this.keepElytra.get() || slot != EquipmentSlot.CHEST || !worn.is(Items.ELYTRA))) {
                      double bestScore = score(worn, slot);
                      int bestIndex = -1;
 

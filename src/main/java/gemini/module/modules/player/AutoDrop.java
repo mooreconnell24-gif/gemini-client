@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class AutoDrop extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Blacklist drops the listed items", "Blacklist", "Blacklist", "Whitelist")
+      new ModeSetting("Mode", "Blacklist throws out the listed items; Whitelist throws out everything except the listed items", "Blacklist", "Blacklist", "Whitelist")
    );
    private final ListSetting items = this.addSetting(
       new ListSetting(
@@ -41,7 +41,7 @@ public final class AutoDrop extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
+      if (ClientState.ready(client) && Inventories.canClick(player)) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else {

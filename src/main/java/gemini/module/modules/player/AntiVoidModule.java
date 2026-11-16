@@ -11,6 +11,8 @@ import gemini.util.VersionBridge;
 import gemini.event.ActionPriority;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public final class AntiVoidModule extends Module {
@@ -22,7 +24,7 @@ public final class AntiVoidModule extends Module {
       new NumberSetting("Boost", "Upward speed of the rescue", 0.7, 0.2, 2.0, 0.1).showIf(() -> this.mode.is("Bounce"))
    );
    private boolean haveSafe;
-   private String safeDimension;
+   private ResourceKey<Level> safeDimension;
    private double safeX;
    private double safeY;
    private double safeZ;
@@ -40,6 +42,14 @@ public final class AntiVoidModule extends Module {
    @Override
    public void onEnable() {
       this.haveSafe = false;
+      this.cooldown = 0;
+   }
+
+   /** The last safe spot belongs to the world that was left; a same-named dimension in another save is not it. */
+   @Override
+   public void onWorldChange() {
+      this.haveSafe = false;
+      this.safeDimension = null;
       this.cooldown = 0;
    }
 
@@ -63,7 +73,7 @@ public final class AntiVoidModule extends Module {
       int minY = VersionBridge.minWorldY(client.level);
       if (player.onGround() && !player.isInWater() && !player.isInLava() && player.getY() >= minY) {
          this.haveSafe = true;
-         this.safeDimension = player.level().dimension().identifier().toString();
+         this.safeDimension = player.level().dimension();
          this.safeX = player.getX();
          this.safeY = player.getY();
          this.safeZ = player.getZ();
@@ -74,9 +84,8 @@ public final class AntiVoidModule extends Module {
          return;
       }
 
-      String dimension = player.level().dimension().identifier().toString();
-      if (this.mode.is("Teleport") && this.haveSafe && dimension.equals(this.safeDimension)) {
-         if (this.cooldown <= 0 && SpCommands.teleport(this.safeDimension, this.safeX, this.safeY + 0.05, this.safeZ)) {
+      if (this.mode.is("Teleport") && this.haveSafe && player.level().dimension() == this.safeDimension) {
+         if (this.cooldown <= 0 && SpCommands.teleport(this.safeDimension.identifier().toString(), this.safeX, this.safeY + 0.05, this.safeZ)) {
             player.setDeltaMovement(Vec3.ZERO);
             AttributeBoost.resetFall(player);
             this.cooldown = 20;

@@ -22,6 +22,8 @@ public final class AutoEatModule extends Module {
    private final BooleanSetting badFood = this.addSetting(new BooleanSetting("Bad Food", "Allow eating rotten flesh and harmful food items", false));
    private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Return to the previous hotbar slot afterwards", true));
    private int previousSlot = -1;
+   /** A slot still to be selected again because a busier module held the hand when eating ended. */
+   private int restoreSlot = -1;
    private boolean eating;
 
    public AutoEatModule() {
@@ -30,6 +32,14 @@ public final class AutoEatModule extends Module {
 
    @Override
    public void onDisable() {
+      this.finish(Minecraft.getInstance());
+      this.restoreSlot = -1;
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.previousSlot = -1;
+      this.restoreSlot = -1;
       this.finish(Minecraft.getInstance());
    }
 
@@ -43,6 +53,11 @@ public final class AutoEatModule extends Module {
                client.options.keyUse.setDown(true);
             } else {
                this.finish(client);
+            }
+         } else if (this.restoreSlot >= 0) {
+            if (Hands.claimMainHand()) {
+               player.getInventory().setSelectedSlot(this.restoreSlot);
+               this.restoreSlot = -1;
             }
          } else if (client.gui.screen() == null && !player.isUsingItem() && player.getFoodData().getFoodLevel() <= this.hunger.intValue()) {
             int best = -1;
@@ -77,8 +92,12 @@ public final class AutoEatModule extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (this.restore.get() && client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
-            client.player.getInventory().setSelectedSlot(this.previousSlot);
+         if (this.restore.get() && client.player != null && this.previousSlot >= 0) {
+            if (Hands.claimMainHand()) {
+               client.player.getInventory().setSelectedSlot(this.previousSlot);
+            } else {
+               this.restoreSlot = this.previousSlot;
+            }
          }
 
          this.previousSlot = -1;

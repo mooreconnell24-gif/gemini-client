@@ -45,7 +45,7 @@ public final class ChestSwap extends Module {
          this.done = true;
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
-         if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
+         if (ClientState.ready(client) && Inventories.canClick(player)) {
             this.swap(client, player);
          }
 

@@ -20,6 +20,9 @@ public final class AutoHeal extends Module {
    private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown", "Ticks between heals", 40.0, 5.0, 400.0, 5.0));
    private int wait;
    private int heals;
+   private int infoHeals = -1;
+   private String infoMode;
+   private String infoCache;
 
    public AutoHeal() {
       super("Auto Heal", "Heal yourself with /effect whenever your health gets low.", Category.PLAYER);
@@ -69,6 +72,17 @@ public final class AutoHeal extends Module {
 
    @Override
    public String info() {
-      return this.mode.get() + (this.heals > 0 ? " · " + this.heals : "");
+      String mode = this.mode.get();
+      if (this.heals == 0) {
+         return mode;
+      }
+
+      if (this.heals != this.infoHeals || !mode.equals(this.infoMode)) {
+         this.infoHeals = this.heals;
+         this.infoMode = mode;
+         this.infoCache = mode + " · " + this.heals;
+      }
+
+      return this.infoCache;
    }
 }
