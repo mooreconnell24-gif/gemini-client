@@ -20,6 +20,12 @@ public final class JumpEffect extends Module {
    }
 
    @Override
+   public void onDisable() {
+      this.rings.clear();
+      this.wasOnGround = true;
+   }
+
+   @Override
    public void onTick() {
       LocalPlayer player = Minecraft.getInstance().player;
       if (player != null) {
