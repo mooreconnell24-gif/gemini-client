@@ -11,6 +11,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.BallisticSolver;
 import gemini.util.ClientState;
+import gemini.util.CombatTarget;
 import gemini.util.InfoText;
 import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
@@ -125,6 +126,7 @@ public final class BowAimbot extends Module {
 
    private void reset() {
       this.targeting.clear();
+      CombatTarget.release(this);
       this.hasShot = false;
       this.pathCount = 0;
       this.aimedLastTick = false;
@@ -145,6 +147,7 @@ public final class BowAimbot extends Module {
          this.aimedLastTick = false;
          this.releaseForcedUse(client);
          this.targeting.clear();
+         CombatTarget.release(this);
          return;
       }
 
@@ -173,6 +176,7 @@ public final class BowAimbot extends Module {
          this.aimedLastTick = false;
          this.releaseForcedUse(client);
          this.targeting.clear();
+         CombatTarget.release(this);
          return;
       }
 
@@ -190,10 +194,12 @@ public final class BowAimbot extends Module {
       if (target == null || this.plan(level, player, target, lx, ly, lz, wx, wy, wz, speed, this.solution, this.path) < 0) {
          this.aimedLastTick = false;
          this.releaseForcedUse(client);
+         CombatTarget.release(this);
          return;
       }
 
       this.hasShot = true;
+      CombatTarget.report(this, target);
       float tol = this.autoRelease.get() ? this.tolerance.floatValue() : 2.5F;
       boolean aimed = RotationManager.request(
          player, Mth.wrapDegrees(this.solution.yaw), Mth.clamp(this.solution.pitch, -90.0F, 90.0F), 95.0F, this.silent.get(), ActionPriority.COMBAT, tol
