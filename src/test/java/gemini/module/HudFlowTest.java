@@ -93,7 +93,7 @@ class HudFlowTest {
          {HudFlow.BOTTOM_RIGHT, 50, 16}, {HudFlow.BOTTOM_RIGHT, 60, 16}, {HudFlow.BOTTOM_RIGHT, 70, 46},
          {HudFlow.BOTTOM_LEFT, 72, 86}, {HudFlow.LEFT_CENTER, 106, 40}
       };
-      for (int[] screen : new int[][]{{640, 360}, {960, 540}, {480, 270}}) {
+      for (int[] screen : new int[][]{{640, 360}, {960, 540}, {853, 480}}) {
          HudFlow flow = new HudFlow();
          flow.begin(screen[0], screen[1]);
          for (Rect r : vanilla(screen[0], screen[1])) {

@@ -11,7 +11,7 @@ import java.util.Arrays;
  * {@link #x}/{@link #y}.
  *
  * <p>The rule: each widget belongs to one of eight stacks, named like the anchors ({@link #TOP_LEFT} ...). Stacks
- * are filled in a fixed order (the four corners, then top and bottom centre, then the side centres) and inside a
+ * are filled in a fixed order (top and bottom centre, then the four corners, then the side centres) and inside a
  * stack by the widget's order number, then by the order it was added. Each widget takes the free spot closest to
  * its stack's start that keeps at least {@link #gap} pixels to everything already taken:
  * <ul>
@@ -21,7 +21,9 @@ import java.util.Arrays;
  *   <li>the top and bottom centre stacks are rows: they fill sideways around the centre first and open a new row
  *       further in (down from the top, up from the bottom) when that row is full.</li>
  * </ul>
- * A widget that fits nowhere (the screen is genuinely full) goes to its stack's start and {@link #fitted} says so.
+ * Corner and side columns stay on their own side of the screen and centre rows in the middle half. When that
+ * leaves no room, any free spot on the screen is taken; a widget that fits nowhere at all (the screen is genuinely
+ * full) goes to its stack's start and {@link #fitted} says so.
  */
 public final class HudFlow {
    public static final int TOP_LEFT = 0;
@@ -37,6 +39,10 @@ public final class HudFlow {
       "Top Left", "Top Right", "Bottom Left", "Bottom Right", "Top Center", "Bottom Center", "Left Center", "Right Center"
    };
    public static final int DEFAULT_GAP = 3;
+   /** Fill order of the stacks: the two centre rows first (they are narrow), then the corners, then the side centres. */
+   private static final int[] RANK = {2, 3, 4, 5, 0, 1, 6, 7};
+   /** Second pass for a crowded screen: any free spot, whatever the stack's direction. */
+   private boolean relaxed;
    private int width = 1;
    private int height = 1;
    private int gap = DEFAULT_GAP;
@@ -177,7 +183,7 @@ public final class HudFlow {
 
    private boolean before(int a, int b) {
       if (this.anchor[a] != this.anchor[b]) {
-         return this.anchor[a] < this.anchor[b];
+         return RANK[this.anchor[a]] < RANK[this.anchor[b]];
       }
 
       return this.order[a] != this.order[b] ? this.order[a] < this.order[b] : a < b;
@@ -237,6 +243,24 @@ public final class HudFlow {
 
       x0 = clamp(x0, 0, maxX);
       y0 = clamp(y0, 0, maxY);
+      this.relaxed = false;
+      if (this.search(i, a, x0, y0, w, h, maxX, maxY)) {
+         return;
+      }
+
+      this.relaxed = true;
+      boolean found = this.search(i, a, x0, y0, w, h, maxX, maxY);
+      this.relaxed = false;
+      if (found) {
+         return;
+      }
+
+      this.outX[i] = x0;
+      this.outY[i] = y0;
+      this.fitted[i] = false;
+   }
+
+   private boolean search(int i, int a, int x0, int y0, int w, int h, int maxX, int maxY) {
       int xs = this.candidates(true, a, x0, w, maxX);
       int ys = this.candidates(false, a, y0, h, maxY);
       boolean rows = a == TOP_CENTER || a == BOTTOM_CENTER;
@@ -250,14 +274,12 @@ public final class HudFlow {
                this.outX[i] = x;
                this.outY[i] = y;
                this.fitted[i] = true;
-               return;
+               return true;
             }
          }
       }
 
-      this.outX[i] = x0;
-      this.outY[i] = y0;
-      this.fitted[i] = false;
+      return false;
    }
 
    /**
@@ -320,6 +342,26 @@ public final class HudFlow {
    private boolean allowed(boolean horizontal, int a, int start, int value, int max) {
       if (value < 0 || value > max) {
          return false;
+      }
+
+      if (this.relaxed) {
+         return true;
+      }
+
+      int size = this.width - max;
+      if (horizontal && leftSide(a) && value + size > this.width / 2 + this.width / 8) {
+         // left columns stay on the left part of the screen
+         return false;
+      }
+
+      if (horizontal && rightSide(a) && value < this.width / 2 - this.width / 8) {
+         return false;
+      }
+
+      if (horizontal && (a == TOP_CENTER || a == BOTTOM_CENTER)) {
+         // centre rows stay in the middle half of the screen instead of drifting into the corners' columns
+         int centre = value + (this.width - max) / 2;
+         return Math.abs(centre - this.width / 2) <= this.width / 4;
       }
 
       if (horizontal) {
