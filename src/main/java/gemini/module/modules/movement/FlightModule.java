@@ -32,7 +32,7 @@ public final class FlightModule extends LinearFlightModuleBase {
    private boolean abilitiesWritten;
 
    public FlightModule() {
-      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, Keys.fromGlfw('G'));
+      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, Keys.fromGlfw('R'));
    }
 
    private boolean creativeMode() {
