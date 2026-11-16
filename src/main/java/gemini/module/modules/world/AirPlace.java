@@ -11,6 +11,7 @@ import gemini.util.BlockPlacer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.phys.HitResult.Type;
@@ -18,7 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class AirPlace extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far ahead the block is placed", 5.0, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far ahead the block is placed (capped at your block reach + 1, which is 5.5 in survival)", 5.0, 2.0, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between blocks while the button is held", 3.0, 0.0, 10.0, 1.0));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand when placing", true));
    private final BooleanSetting preview = this.addSetting(new BooleanSetting("Preview", "Outline the spot the block will go", true));
@@ -31,7 +32,10 @@ public final class AirPlace extends Module {
    }
 
    private BlockPos target(LocalPlayer player, float partialTick) {
-      Vec3 end = player.getEyePosition(partialTick).add(player.getViewVector(partialTick).scale(this.range.get()));
+      // The server refuses placements beyond your block reach + 1 (5.5 in survival); further out would only leave
+      // a ghost block, so the distance is capped there.
+      double distance = Math.min(this.range.get(), player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE) + 1.0);
+      Vec3 end = player.getEyePosition(partialTick).add(player.getViewVector(partialTick).scale(distance));
       return BlockPos.containing(end);
    }
 

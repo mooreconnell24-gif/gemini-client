@@ -12,14 +12,12 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.render.Render3D;
 import gemini.util.InfoText;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -53,44 +51,12 @@ public final class WaypointsModule extends Module {
       }
    }
 
-   /** Weak, so a closed world's server is not kept alive by this cache. */
-   private static WeakReference<IntegratedServer> worldServer = new WeakReference<>(null);
-   private static String worldKey = "";
-   private static ResourceKey<Level> dimensionKey;
-   private static String dimensionText = "";
-
-   /**
-    * The seed of the open world as text. Asked for every pin on every frame by the renderer and {@link #info()},
-    * so it is worked out once per integrated server instead of formatting the seed each time.
-    */
    private static String currentWorld() {
-      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
-      if (server == null) {
-         return "";
-      }
-
-      if (server != worldServer.get()) {
-         try {
-            worldKey = Long.toString(server.overworld().getSeed());
-         } catch (RuntimeException ignored) {
-            // the overworld is not loaded yet: try again next time
-            return "";
-         }
-
-         worldServer = new WeakReference<>(server);
-      }
-
-      return worldKey;
+      return WorldHelpers.worldKey();
    }
 
-   /** The dimension id as text, formatted once per dimension rather than for every pin on every frame. */
    private static String dimensionName(ResourceKey<Level> dimension) {
-      if (dimension != dimensionKey) {
-         dimensionKey = dimension;
-         dimensionText = dimension.identifier().toString();
-      }
-
-      return dimensionText;
+      return WorldHelpers.dimensionName(dimension);
    }
 
    public void dropPin() {

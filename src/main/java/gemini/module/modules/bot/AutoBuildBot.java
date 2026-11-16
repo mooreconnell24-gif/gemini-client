@@ -66,7 +66,10 @@ public final class AutoBuildBot extends Module {
       new BooleanSetting("Ignite", "Light the finished portal with flint and steel", true).showIf(() -> this.pattern.is("Nether Portal"))
    );
    private final BooleanSetting confirmWither = this.addSetting(
-      new BooleanSetting("Confirm Wither", "Must be on before the Wither pattern will build: it spawns a boss", false).showIf(() -> this.pattern.is("Wither"))
+      new BooleanSetting(
+            "Confirm Wither", "Must be switched on for each Wither build: it spawns a boss. It switches itself off once a build starts", false
+         )
+         .showIf(() -> this.pattern.is("Wither"))
    );
    private final NumberSetting wallLength = this.addSetting(
       new NumberSetting("Wall Length", "Wall length in blocks", 5.0, 1.0, 32.0, 1.0).showIf(() -> this.pattern.is("Cobble Wall"))
@@ -115,6 +118,16 @@ public final class AutoBuildBot extends Module {
    private int placedCount;
    private int lastProgress;
    private int idleTicks;
+   /** Closest the player has come to the spot being walked to; walking only counts as progress while this shrinks. */
+   private double walkBest = Double.MAX_VALUE;
+   /** The block this module is breaking, so switching off can abort it. */
+   private BlockPos mining;
+   /** Ticks until the portal may be lit again after a try that did not light it. */
+   private int igniteWait;
+   private String infoPattern;
+   private int infoPlaced = -1;
+   private int infoTotal = -1;
+   private String infoText;
 
    public AutoBuildBot() {
       super(
@@ -145,7 +158,17 @@ public final class AutoBuildBot extends Module {
 
    @Override
    public String info() {
-      return this.positions.isEmpty() ? this.pattern.get() : this.pattern.get() + " " + this.placedCount + "/" + this.positions.size();
+      // Runs every frame: rebuild the text only when something in it changed.
+      String name = this.pattern.get();
+      int total = this.positions.size();
+      if (!name.equals(this.infoPattern) || this.placedCount != this.infoPlaced || total != this.infoTotal) {
+         this.infoPattern = name;
+         this.infoPlaced = this.placedCount;
+         this.infoTotal = total;
+         this.infoText = total == 0 ? name : name + " " + this.placedCount + "/" + total;
+      }
+
+      return this.infoText;
    }
 
    @Override
@@ -156,12 +179,16 @@ public final class AutoBuildBot extends Module {
          HudOverlay.toast("Auto Build Bot", problem, HudOverlay.Severity.ERROR);
          this.clearPlan();
          this.setEnabled(false, false);
+      } else if (this.pattern.is("Wither")) {
+         // The confirmation covers this one build; the next wither needs it switched on again.
+         this.confirmWither.set(false);
       }
    }
 
    @Override
    public void onDisable() {
       this.stopWalking();
+      this.stopMining();
       this.clearPlan();
       this.placer.reset();
    }
@@ -183,14 +210,30 @@ public final class AutoBuildBot extends Module {
       this.placedCount = 0;
       this.lastProgress = 0;
       this.idleTicks = 0;
+      this.walkBest = Double.MAX_VALUE;
+      this.mining = null;
+      this.igniteWait = 0;
    }
 
+   /** Cancels the walk only if it is still ours: a task another module or a command started since is left alone. */
    private void stopWalking() {
       if (this.walking) {
-         BaritoneBridge.stopAll();
+         BaritoneBridge.stopTaskOf(this);
          this.walking = false;
          this.walkGoal = null;
       }
+
+      this.walkBest = Double.MAX_VALUE;
+   }
+
+   private void stopMining() {
+      Minecraft client = Minecraft.getInstance();
+      if (this.mining != null && client.gameMode != null) {
+         BlockBreaking.release();
+         client.gameMode.stopDestroyBlock();
+      }
+
+      this.mining = null;
    }
 
    /** Works out the world positions and checks materials; returns what is wrong, or null to go ahead. */
@@ -410,6 +453,11 @@ public final class AutoBuildBot extends Module {
          return;
       }
 
+      if (this.mining != null) {
+         // The obstruction is gone: nothing is being broken any more.
+         this.mining = null;
+      }
+
       if (!this.placer.ready()) {
          return;
       }
@@ -448,10 +496,11 @@ public final class AutoBuildBot extends Module {
          return;
       }
 
-      BlockBreaking.keep();
       if (!this.placer.rotate.get() || RotationManager.request(player, RotationManager.toward(player, pos), 0.0F, true, ActionPriority.BOT)) {
+         BlockBreaking.keep();
          client.gameMode.continueDestroyBlock(pos, Direction.UP);
-         Swing.interact(player, InteractionHand.MAIN_HAND);
+         Swing.attack(player, InteractionHand.MAIN_HAND);
+         this.mining = pos;
       }
    }
 
@@ -493,20 +542,42 @@ public final class AutoBuildBot extends Module {
          this.walkCooldown--;
       }
 
-      if (this.walking && BaritoneBridge.isActive()) {
-         // Walking is progress too; the give-up timer is for standing still.
+      if (this.walking && !BaritoneBridge.holdsTask(this) && BaritoneBridge.isActive()) {
+         // Someone else (a command, another bot) took the pathfinder: do not fight over it.
+         this.walking = false;
+         this.fail("The pathfinder was given another task");
+         return;
+      }
+
+      // Getting closer is progress too; the give-up timer is for standing still or walking in circles.
+      double distance = player.position().distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+      if (distance < this.walkBest - 0.25) {
+         this.walkBest = distance;
          this.idleTicks = 0;
       }
 
-      if (!goal.equals(this.walkGoal) || !BaritoneBridge.isActive() && this.walkCooldown == 0) {
+      if (!goal.equals(this.walkGoal) || !BaritoneBridge.holdsTask(this) && this.walkCooldown == 0) {
          this.walkGoal = goal;
          this.walkCooldown = 40;
          this.walking = BaritoneBridge.gotoBlock(goal);
+         if (this.walking) {
+            BaritoneBridge.claimTask(this);
+         }
       }
    }
 
    private void igniteTick(Minecraft client, LocalPlayer player) {
       BlockPos base = this.ignitionBase;
+      if (client.level.getBlockState(base.above()).is(Blocks.NETHER_PORTAL)) {
+         this.ignited = true;
+         return;
+      }
+
+      if (this.igniteWait > 0) {
+         this.igniteWait--;
+         return;
+      }
+
       if (!BlockPlacer.inReach(player, base, this.placer.range.get())) {
          this.walkToward(client.level, player, base);
          return;
@@ -533,7 +604,9 @@ public final class AutoBuildBot extends Module {
          client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, hit);
          Swing.interact(player, InteractionHand.MAIN_HAND);
       });
-      this.ignited = true;
+      // Done once the portal block shows up; if it does not (the frame is off, the fire went out), try again in a
+      // second until the give-up timer runs out.
+      this.igniteWait = 20;
    }
 
    private void finish() {
@@ -564,7 +637,7 @@ public final class AutoBuildBot extends Module {
          if (this.materials.get(i) == Material.AIR) {
             Render3D.block(pos.getX(), pos.getY(), pos.getZ(), 0xFFE8605D, true, false, 1.2F, 0, false);
          } else if (first) {
-            Render3D.boxGlow(new net.minecraft.world.phys.AABB(pos), color, 1.8F, 70, true);
+            Render3D.boxGlow(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 1.0, pos.getZ() + 1.0, color, 1.8F, 70, true);
             first = false;
          } else {
             Render3D.block(pos.getX(), pos.getY(), pos.getZ(), color, true, true, 1.0F, 30, false);

@@ -13,6 +13,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
 import gemini.util.ChunkScanner;
+import gemini.util.InfoText;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +80,7 @@ public final class StashFinder extends Module {
    private final List<Stash> stashes = new ArrayList<>();
    private final Set<String> flagged = new HashSet<>();
    private int ticker;
+   private final InfoText infoText = new InfoText();
 
    public StashFinder() {
       super("Stash Finder", "Scan loaded chunks for dense storage clusters, log and pin them. .stashfinder list | clear | rescan", Category.WORLD);
@@ -178,12 +180,7 @@ public final class StashFinder extends Module {
    }
 
    private static String worldId() {
-      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
-      try {
-         return server == null ? "" : Long.toString(server.overworld().getSeed());
-      } catch (RuntimeException ignored) {
-         return "";
-      }
+      return WorldHelpers.worldKey();
    }
 
    private static String worldName() {
@@ -201,11 +198,12 @@ public final class StashFinder extends Module {
 
    @Override
    public String info() {
+      // Runs every frame: no string building unless the count changes.
       int count = 0;
       Minecraft client = Minecraft.getInstance();
       if (client.level != null) {
          String world = worldId();
-         String dimension = client.level.dimension().identifier().toString();
+         String dimension = WorldHelpers.dimensionName(client.level.dimension());
          for (Stash stash : this.stashes) {
             if (stash.world().equals(world) && stash.dimension().equals(dimension)) {
                count++;
@@ -213,7 +211,7 @@ public final class StashFinder extends Module {
          }
       }
 
-      return count == 0 ? null : Integer.toString(count);
+      return count == 0 ? null : this.infoText.whole(count, "");
    }
 
    @Override
@@ -455,7 +453,7 @@ public final class StashFinder extends Module {
       }
 
       String world = worldId();
-      String dimension = client.level.dimension().identifier().toString();
+      String dimension = WorldHelpers.dimensionName(client.level.dimension());
       int argb = this.color.argb();
       Vec3 crosshair = this.tracers.get() ? Render3D.crosshair() : null;
       for (Stash stash : this.stashes) {
@@ -465,7 +463,7 @@ public final class StashFinder extends Module {
 
          Render3D.box(stash.minX(), stash.minY(), stash.minZ(), stash.maxX() + 1.0, stash.maxY() + 1.0, stash.maxZ() + 1.0, argb, true, true, 2.0F, 30, true);
          if (crosshair != null) {
-            Render3D.line(crosshair, new Vec3(stash.x() + 0.5, stash.y() + 0.5, stash.z() + 0.5), argb, 1.5F, true);
+            Render3D.line(crosshair.x, crosshair.y, crosshair.z, stash.x() + 0.5, stash.y() + 0.5, stash.z() + 0.5, argb, 1.5F, true);
          }
       }
    }

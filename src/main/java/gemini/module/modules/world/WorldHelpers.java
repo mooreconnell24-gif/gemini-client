@@ -1,19 +1,13 @@
 package gemini.module.modules.world;
 
-import gemini.util.Swing;
-import gemini.util.BlockPlacer;
-import gemini.util.Hands;
-import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
-import java.util.function.Predicate;
+import java.lang.ref.WeakReference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /** Shared helpers for the world modules (formerly statics on the module container classes). */
@@ -21,8 +15,45 @@ public final class WorldHelpers {
    private WorldHelpers() {
    }
 
-   static boolean withinReach(LocalPlayer player, Entity entity, double reach) {
-      return entity.getBoundingBox().distanceToSqr(player.getEyePosition()) <= reach * reach;
+   /** Weak, so a closed world's server is not kept alive by this cache. */
+   private static WeakReference<IntegratedServer> keyServer = new WeakReference<>(null);
+   private static String key = "";
+   private static ResourceKey<Level> dimensionKey;
+   private static String dimensionText = "";
+
+   /**
+    * The open single-player world's seed as text: what Waypoints, Stash Finder and Home store to tell one world's
+    * entries from another's. Empty when no integrated server runs. Renderers and {@code info()} ask for it every
+    * frame, so it is formatted once per server rather than on every call.
+    */
+   static String worldKey() {
+      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+      if (server == null) {
+         return "";
+      }
+
+      if (server != keyServer.get()) {
+         try {
+            key = Long.toString(server.overworld().getSeed());
+         } catch (RuntimeException ignored) {
+            // the overworld is not loaded yet: try again next time
+            return "";
+         }
+
+         keyServer = new WeakReference<>(server);
+      }
+
+      return key;
+   }
+
+   /** The dimension id as text ("minecraft:overworld"), formatted once per dimension rather than on every call. */
+   static String dimensionName(ResourceKey<Level> dimension) {
+      if (dimension != dimensionKey) {
+         dimensionKey = dimension;
+         dimensionText = dimension.identifier().toString();
+      }
+
+      return dimensionText;
    }
 
    static Direction faceToward(LocalPlayer player, BlockPos pos) {

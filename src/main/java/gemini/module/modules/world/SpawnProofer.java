@@ -31,7 +31,7 @@ public final class SpawnProofer extends Module {
    );
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
-         "Blocks", "What goes on the floor", ListSetting.Kind.BLOCK, "minecraft:torch", "minecraft:stone_button", "minecraft:stone_pressure_plate"
+         "Blocks", "Blocks placed on dark floor spots (things mobs cannot spawn on, like torches, buttons or pressure plates); nothing is placed while the list is empty", ListSetting.Kind.BLOCK, "minecraft:torch", "minecraft:stone_button", "minecraft:stone_pressure_plate"
       )
    );
    private final ArrayDeque<BlockPos> recent = new ArrayDeque<>();
