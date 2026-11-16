@@ -46,7 +46,7 @@ import gemini.module.modules.combat.KeepSprintModule;
 import gemini.module.modules.combat.KillAura;
 import gemini.module.modules.combat.MaceKill;
 import gemini.module.modules.combat.Offhand;
-import gemini.module.modules.combat.ProjectileAimbot;
+import gemini.module.modules.combat.BowAimbot;
 import gemini.module.modules.combat.Quiver;
 import gemini.module.modules.combat.SelfTrap;
 import gemini.module.modules.combat.ShieldBreaker;
@@ -61,6 +61,7 @@ import gemini.module.modules.combat.AutoCity;
 import gemini.module.modules.combat.HitCrystal;
 import gemini.module.modules.combat.HolePush;
 import gemini.module.modules.combat.AutoWebFill;
+import gemini.module.modules.combat.SillyAimbot;
 import gemini.module.modules.hud.AntiLagHud;
 import gemini.module.modules.hud.ArrayListHud;
 import gemini.module.modules.hud.ArmorHud;
@@ -352,6 +353,8 @@ public final class ModuleManager {
    private WeakReference<ClientLevel> lastLevel = NO_LEVEL;
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
+   /** Module aliases (old names), consulted by {@link #getByName} only when no module has that exact name. */
+   private final Map<String, Module> byAlias = new HashMap<>();
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
       @Override
       public boolean profiling() {
@@ -578,7 +581,7 @@ public final class ModuleManager {
       this.register(new BlockHitModule());
       this.register(new BowSpam());
       this.register(new ArrowDodge());
-      this.register(new ProjectileAimbot());
+      this.register(new BowAimbot());
       this.register(new Quiver());
       this.register(new AutoRod());
       this.register(new AutoExp());
@@ -699,6 +702,7 @@ public final class ModuleManager {
       this.register(new HitCrystal());
       this.register(new HolePush());
       this.register(new AutoWebFill());
+      this.register(new SillyAimbot());
       this.register(new Derp());
       this.register(new BaritonePause());
       this.register(new BaritoneStatus());
@@ -762,6 +766,10 @@ public final class ModuleManager {
       } else {
          this.modules.add(module);
          this.byType.put(module.getClass(), module);
+         for (String alias : module.aliases()) {
+            this.byAlias.putIfAbsent(key(alias), module);
+         }
+
          this.bus.register(module);
       }
    }
@@ -795,7 +803,9 @@ public final class ModuleManager {
    }
 
    public Optional<Module> getByName(String name) {
-      return Optional.ofNullable(this.byKey.get(key(name)));
+      String key = key(name);
+      Module exact = this.byKey.get(key);
+      return Optional.ofNullable(exact != null ? exact : this.byAlias.get(key));
    }
 
    public <T extends Module> Optional<T> byClass(Class<T> type) {
