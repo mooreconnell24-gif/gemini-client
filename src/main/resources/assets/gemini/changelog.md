@@ -17,6 +17,14 @@
 - **Key-bind warnings.** Binding a key that a module or a vanilla control already uses shows a warning toast, wherever the bind was made: the panel menu, the window menu, `.bind`, the menu key, or a profile or import being loaded. The first time you enter a world each session, one toast sums up any existing conflicts.
 - **This guide.** What's new, the controls of both menus, every command and an About page. It opens by itself once after an update; afterwards from the title screen, the pause dock, the window menu, `.help` and `.changelog`.
 
+## Aim and targeting
+
+- **Who to target first, everywhere.** Every module that picks a target (KillAura, AimAssist, TriggerBot, Bow Aimbot, Silly Aimbot, AutoCrystal, Anchor/Bed Aura, Auto Trap, Web Aura, Hole Filler, Auto Web Fill, Auto City, Hole Push, Hit Crystal, Shield Breaker, Auto Rod, Backtrack, Keep Range, Target Strafe, Auto Block, Flamethrower and Follow Bot) has the same settings: **Priority** (Closest, Lowest Health, Highest Health, Closest To Crosshair, Most Armor, Least Armor, Most Dangerous), **Prefer** (Players First / Mobs First / Any), **Stick To Target**, and filters for players, hostiles, passives and invisible mobs. The placing auras fall back to the next enemy when nothing can be done to the first.
+- **Target box** around the current target in all of them: outline, fill or both, any colour or coloured by health, optionally through walls. KillAura's old Highlight became this box. Target HUD shows whoever KillAura, Shield Breaker, TriggerBot or the aimbots are targeting.
+- **Bow Aimbot** (was ProjectileAimbot; `.projectileaimbot` still finds it, and your settings carry over). An exact arc solver for bows, crossbows and tridents using the game's real drag and gravity, leads moving targets and accounts for your own movement, Low/High/Auto arc, **Aim Point** (Head, Chest, Feet, or Auto: the highest point it can actually hit), **Wall Check** (skips targets it can't reach), a drawn **trajectory** with impact marker, and optional **Auto Release** / **Auto Charge**.
+- **Silly Aimbot** (new). Your arrows, tridents and optionally snowballs, eggs and ender pearls home in on the target, steering around blocks and mobs in the way (a look-ahead check, then a small 3D path search when a wall is in the way). Speed, turn rate, look-ahead, max time and retarget are adjustable, and the homing path is drawn. It works because it steers the projectiles inside your own single-player world.
+- KillAura's Target Mode **Switch** now cycles through targets in priority order; **Single** holds one.
+
 ## HUD
 
 - **ArrayList** is now a widget you can drag like the others, with width/name/category sorting, category, rainbow, Astolfo, wave and gradient colours, a side bar, a frosted background and slide-in/out animations. Your old list settings are carried over.
@@ -56,6 +64,7 @@
 | Totem Pop Counter | Counts pops per player (chat, toast, Nametags, TargetHUD) |
 | Stash Finder | Finds dense storage clusters, logs them, toasts and pins a waypoint |
 | Auto Build Bot | Builds a nether portal, wither, wall, platform, pillar or bridge from your inventory |
+| Silly Aimbot | Your arrows and tridents steer around blocks and mobs and home in on the target |
 | Day Info | HUD: day number, clock, moon phase and a countdown to night or morning |
 | Spawn Info | HUD: world spawn and your bed or anchor, with distance and heading (Nether-aware) |
 | Session Stats | HUD: blocks mined and placed, kills, deaths, damage, crafts and XP this session, optionally per hour |
