@@ -55,6 +55,8 @@ public final class Targeting {
    private Targeting(Builder b) {
       Module m = b.module;
       BooleanSupplier show = b.visible;
+      // Priority, Prefer and Stick To Target only mean something where the module chooses among several targets.
+      BooleanSupplier showChoice = () -> show.getAsBoolean() && b.choice.getAsBoolean();
       this.players = b.players != null ? b.players : m.addSetting(new BooleanSetting("Players", "Target other players (including the Fake Player dummy)", b.defPlayers).showIf(show))::get;
       this.hostiles = b.hostiles != null ? b.hostiles : m.addSetting(new BooleanSetting("Hostiles", "Target hostile mobs", b.defHostiles).showIf(show))::get;
       this.passives = b.passives != null ? b.passives : m.addSetting(new BooleanSetting("Passives", "Target passive animals (never your own pets)", b.defPassives).showIf(show))::get;
@@ -66,15 +68,15 @@ public final class Targeting {
                b.defPriority,
                TargetPriority.MODES
             )
-            .showIf(show)
+            .showIf(showChoice)
       );
       this.prefer = m.addSetting(
          new ModeSetting("Prefer", "Try players before mobs (or the other way round) before Priority orders the rest", TargetPriority.PREFER_ANY, TargetPriority.PREFER)
-            .showIf(show)
+            .showIf(showChoice)
       );
       this.stick = m.addSetting(
          new BooleanSetting("Stick To Target", "Keep the current target while it stays valid instead of switching whenever a better one appears", b.defStick)
-            .showIf(show)
+            .showIf(showChoice)
       );
       this.box = m.addSetting(
          new ModeSetting("Target Box", "Box drawn around the current target", b.defBox, "Off", "Outline", "Fill", "Both").showIf(show)
@@ -222,6 +224,7 @@ public final class Targeting {
       private String defBox = "Outline";
       private int defHue = 0;
       private BooleanSupplier visible = () -> true;
+      private BooleanSupplier choice = () -> true;
 
       private Builder(Module module) {
          this.module = module;
@@ -270,6 +273,15 @@ public final class Targeting {
       /** Shows the targeting settings only while {@code visible} holds (for modules where targeting is optional). */
       public Builder showIf(BooleanSupplier visible) {
          this.visible = visible;
+         return this;
+      }
+
+      /**
+       * For modules that take their target from the crosshair or a hit rather than choosing one: Priority, Prefer
+       * and Stick To Target are hidden unless {@code choosing} holds (e.g. a "pick by priority" switch).
+       */
+      public Builder choiceShownIf(BooleanSupplier choosing) {
+         this.choice = choosing;
          return this;
       }
 

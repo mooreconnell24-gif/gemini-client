@@ -2,12 +2,12 @@ package gemini.module.modules.combat;
 
 import gemini.module.Category;
 import gemini.module.PlacementModuleBase;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.BlockPlacer;
-import gemini.util.Targets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -38,11 +38,12 @@ public final class AutoWebFill extends PlacementModuleBase {
    private final BooleanSetting feet = this.addSetting(new BooleanSetting("Feet", "Also web the block the enemy stands in", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the predicted path and the planned webs", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Path and plan colour", 190).showIf(this.render::get));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
    private final List<Vec3> path = new ArrayList<>();
    private final List<BlockPos> planned = new ArrayList<>();
 
    public AutoWebFill() {
-      super("Auto Web Fill", "Place cobwebs along the path an enemy is about to walk.", Category.COMBAT, 1, 2, 4.5);
+      super("Auto Web Fill", "Place cobwebs along the path the enemy Priority picks is about to walk.", Category.COMBAT, 1, 2, 4.5);
    }
 
    @Override
@@ -55,12 +56,14 @@ public final class AutoWebFill extends PlacementModuleBase {
       this.path.clear();
       this.planned.clear();
       this.placer.reset();
+      this.targeting.clear();
    }
 
    @Override
    public void onWorldChange() {
       this.path.clear();
       this.planned.clear();
+      this.targeting.clear();
    }
 
    @Override
@@ -79,7 +82,7 @@ public final class AutoWebFill extends PlacementModuleBase {
       this.path.clear();
       this.planned.clear();
       Level level = client.level;
-      LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.enemyRange.get(), true);
+      LivingEntity enemy = this.targeting.pick(player, client.level.entitiesForRendering(), this.enemyRange.get(), null);
       if (enemy == null) {
          return;
       }
@@ -130,6 +133,8 @@ public final class AutoWebFill extends PlacementModuleBase {
 
    @Override
    public void onRender3D(float partialTick) {
+      super.onRender3D(partialTick);
+      this.targeting.render(partialTick);
       if (!this.render.get()) {
          return;
       }

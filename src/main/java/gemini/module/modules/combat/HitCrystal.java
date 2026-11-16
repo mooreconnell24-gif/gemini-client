@@ -1,7 +1,10 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
+
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.ModeSetting;
@@ -11,8 +14,6 @@ import gemini.util.BlockPlacer;
 import gemini.util.ClientState;
 import gemini.util.Damage;
 import gemini.util.RotationManager;
-import gemini.util.Targets;
-import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -34,8 +35,12 @@ import net.minecraft.world.phys.Vec3;
  * the target's real position and motion are used, so the crystal follows it.
  */
 public final class HitCrystal extends Module {
+   private final InfoText infoText = new InfoText();
+   private final InfoText labelText = new InfoText();
    /** A combo that has not finished this long after the hit is abandoned. */
    private static final int COMBO_TIMEOUT = 40;
+   /** How far Priority Only looks for the enemy to combo: melee reach plus a step. */
+   private static final double PRIORITY_RANGE = 6.0;
    private final ModeSetting weapons = this.addSetting(
       new ModeSetting("Weapons", "Which hits start the combo: swords, any knockback weapon, or both", "Both", "Swords", "Knockback", "Both")
    );
@@ -52,6 +57,14 @@ public final class HitCrystal extends Module {
    private final BooleanSetting silentAim = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets only, leaving the camera alone", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the chosen crystal base", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 300).showIf(this.render::get));
+   private final BooleanSetting priorityOnly = this.addSetting(
+      new BooleanSetting(
+         "Priority Only",
+         "Start the combo only on the enemy Priority picks within 6 blocks (boxed while you look for it), so crystals go to who you want first; off starts it on any enemy you hit",
+         false
+      )
+   );
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 300).choiceShownIf(() -> this.priorityOnly.get()).build();
    private LivingEntity target;
    private Vec3 landing;
    private BlockPos base;
@@ -66,17 +79,19 @@ public final class HitCrystal extends Module {
 
    @Override
    public String info() {
-      return this.step == Step.IDLE ? null : String.format(Locale.ROOT, "%.1f", this.damage);
+      return this.step == Step.IDLE ? null : this.infoText.fixed(this.damage, 1);
    }
 
    @Override
    public void onDisable() {
       this.reset();
+      this.targeting.clear();
    }
 
    @Override
    public void onWorldChange() {
       this.reset();
+      this.targeting.clear();
    }
 
    private void reset() {
@@ -87,6 +102,10 @@ public final class HitCrystal extends Module {
       this.wait = 0;
       this.age = 0;
       this.damage = 0.0F;
+      if (!this.priorityOnly.get()) {
+         // The box shows the combo target only; with Priority Only it keeps showing who to hit next.
+         this.targeting.clear();
+      }
    }
 
    @Override
@@ -97,7 +116,11 @@ public final class HitCrystal extends Module {
          return;
       }
 
-      if (!Targets.isCandidate(player, living, true, true, false, true) || !this.weaponQualifies(client.level, player.getMainHandItem())) {
+      if (!this.targeting.accepts(player, living) || !this.weaponQualifies(client.level, player.getMainHandItem())) {
+         return;
+      }
+
+      if (this.priorityOnly.get() && this.pickPriority(client, player) != living) {
          return;
       }
 
@@ -109,6 +132,11 @@ public final class HitCrystal extends Module {
       this.step = Step.OBSIDIAN;
       this.wait = this.delay.intValue();
       this.age = 0;
+      this.targeting.setTarget(living);
+   }
+
+   private LivingEntity pickPriority(Minecraft client, LocalPlayer player) {
+      return this.targeting.pick(player, client.level.entitiesForRendering(), PRIORITY_RANGE, null);
    }
 
    /** Knockback a melee hit gives: 0.4 base, 0.5 more per Knockback level and 0.5 more for a sprint hit. */
@@ -145,11 +173,19 @@ public final class HitCrystal extends Module {
 
    @Override
    public void onTick() {
+      Minecraft client = Minecraft.getInstance();
       if (this.step == Step.IDLE) {
+         if (this.priorityOnly.get()) {
+            if (ClientState.readyNoScreen(client)) {
+               this.pickPriority(client, client.player);
+            } else {
+               this.targeting.clear();
+            }
+         }
+
          return;
       }
 
-      Minecraft client = Minecraft.getInstance();
       if (!ClientState.readyNoScreen(client) || this.target == null || !this.target.isAlive() || ++this.age > COMBO_TIMEOUT) {
          this.reset();
          return;
@@ -289,11 +325,12 @@ public final class HitCrystal extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       BlockPos pos = this.base;
       if (this.render.get() && pos != null) {
          Render3D.block(pos, this.color.argb(), true, true, 1.8F, 55, true);
          if (this.damage > 0.0F) {
-            Render3D.text(String.format(Locale.ROOT, "%.1f", this.damage), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
+            Render3D.text(this.labelText.fixed(this.damage, 1), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
          }
       }
    }

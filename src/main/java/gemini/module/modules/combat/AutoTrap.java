@@ -1,9 +1,9 @@
 package gemini.module.modules.combat;
 
-import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -26,15 +26,17 @@ public final class AutoTrap extends Module {
    private final NumberSetting predictTicks = this.addSetting(new NumberSetting("Predict Ticks", "Predict enemy movement ticks ahead", 2.0, 0.0, 6.0, 1.0));
    private final BooleanSetting antiStep = this.addSetting(new BooleanSetting("Anti Step", "Cap top of trap to block stepping out", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight queued trap blocks", true));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
    private final List<BlockPos> currentPlan = new ArrayList<>();
 
    public AutoTrap() {
-      super("AutoTrap", "Encase nearby enemies in obsidian with predictive aim.", Category.COMBAT);
+      super("AutoTrap", "Encase the enemy Priority picks in obsidian with predictive aim.", Category.COMBAT);
    }
 
    @Override
    public void onDisable() {
       this.currentPlan.clear();
+      this.targeting.clear();
    }
 
    @Override
@@ -42,7 +44,7 @@ public final class AutoTrap extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.targetRange.get(), true);
+         LivingEntity enemy = this.targeting.pick(player, client.level.entitiesForRendering(), this.targetRange.get(), null);
          if (enemy == null) {
             this.currentPlan.clear();
          } else {
@@ -74,11 +76,13 @@ public final class AutoTrap extends Module {
          }
       } else {
          this.currentPlan.clear();
+         this.targeting.clear();
       }
    }
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       Minecraft client = Minecraft.getInstance();
       if (this.render.get() && client.level != null) {
          for (BlockPos pos : this.currentPlan) {
@@ -93,5 +97,6 @@ public final class AutoTrap extends Module {
    @Override
    public void onWorldChange() {
       this.currentPlan.clear();
+      this.targeting.clear();
    }
 }
