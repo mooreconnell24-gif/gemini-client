@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  299 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
+  311 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -70,6 +70,9 @@ Everything runs locally. There is no account system, API key, cloud service or t
 - Many render modules and HUD widgets allocated objects every frame; most of that is gone.
 - Placing modules now check that your aim really hits the face before placing (**Raycast Check**, on by default), can turn smoothly (**Aim Speed**), and fade out the blocks they place. Scaffold gains a **Sprint Jump** tower mode.
 - The self-test now also checks that every setting survives a save and load.
+- **Player:** Middle Click Extra's Golden Apple never actually ate the apple; Exp Thrower's Look Down left your camera pointing at the floor; Auto Mend took armour off and never put it back; Auto Tool swapped a better held weapon for a worse one; Auto Armor retried cursed armour forever; modules that click in the inventory could drop the item on your cursor into the wrong slot; Anti Void and Clutch could teleport you to a safe spot remembered from another world; Hotbar Sorter and Inventory Cleaner cut eating or bow draws short.
+- **World:** Auto Sign could crash in a packet loop; Collisions changed collisions for every mob and the server's pathfinding, not just you; World Rules' Fire Spread used a rule that no longer exists; Nuker, Vein Miner, Auto Farm, Packet Mine and Fucker kept mining the previous world's block after a world change, and Packet Mine double-mined while you held attack; Lawn Mower could never break cobwebs; Mob Sweeper's All Mobs killed armour stands and pets (new **Spare Pets**, on by default); Home and Death Coords could teleport you to coordinates from another save; Locate's Nether teleport landed on the bedrock roof; Stronghold Finder now really triangulates from two eye throws (new **Pin Estimate**); Auto Build Bot no longer cancels other modules' pathing and gives up properly.
+- **Render and misc:** Panic switched off the Aim settings for good; Presets' Disable Others missed most modules; AutoGG said GG when a target merely walked away; Flag Check counted joins, respawns and teleports as setbacks; Zoom stepped at 20 Hz and never eased out; Performance, Fullbright, No Bob and No Hurt Cam could save their temporary video settings to your options file; Logoff Spot marked players who just walked away; Pearl Tracker re-simulated every pearl every frame; Name Protect stripped chat colours. **Crosshair** can now replace the vanilla crosshair (**Hide Vanilla**).
 
 **New modules**
 
@@ -90,6 +93,18 @@ Everything runs locally. There is no account system, API key, cloud service or t
 | Totem Pop Counter | Counts pops per player (chat, toast, Nametags, TargetHUD) |
 | Stash Finder | Finds dense storage clusters, logs them, toasts and pins a waypoint |
 | Auto Build Bot | Builds a nether portal, wither, wall, platform, pillar or bridge from your inventory |
+| Day Info | HUD: day number, clock, moon phase and a countdown to night or morning |
+| Spawn Info | HUD: world spawn and your bed or anchor, with distance and heading (Nether-aware) |
+| Session Stats | HUD: blocks mined and placed, kills, deaths, damage, crafts and XP this session, optionally per hour |
+| Weather Forecast | HUD: exact time until rain or a thunderstorm starts or stops |
+| Mob Caps | HUD: mobs counted against each spawn cap |
+| Ender Chest Preview | HUD: your ender chest contents without opening one |
+| Coords Copier | Copies your position (plain, comma, `/tp` or `/execute`) to the clipboard |
+| Screenshot Helper | Hides the HUD, takes one screenshot or a burst, then restores it |
+| Quick Move | Shift + drag across container slots to move every stack you pass over |
+| Craft Repeat | Repeats the last recipe-book craft until ingredients or a batch limit run out |
+| Biome Border | Draws fences where the biome changes |
+| Harvest ESP | Highlights ripe crops, nether wart, cocoa, berries and melon/pumpkin fruit |
 
 **Upgraded:** Fast Fall's *Ledges* mode (ReverseStep) gains a smooth pull, a *Holes Only* filter and an optional timer boost.
 
@@ -228,7 +243,7 @@ The rest:
 
 | | |
 |---|---|
-| **299 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
+| **311 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
@@ -242,11 +257,11 @@ The rest:
 |---|---|
 | Combat | KillAura, AutoCrystal, AnchorAura, Auto City, Hit Crystal, Criticals, Velocity, AutoTotem, ProjectileAimbot |
 | Movement | Flight, Speed, Step, Jesus, Elytra Fly, NoFall, NoWeb, Spider, Boat Fly, Click TP |
-| Player | Clutch, AutoArmor, AutoEat, AutoTool, AutoFish, Auto Heal, Kits, Inventory Sorter, Durability Alert, Reach, FastBreak |
+| Player | Clutch, AutoArmor, AutoEat, AutoTool, Quick Move, Craft Repeat, Auto Heal, Kits, Inventory Sorter, Durability Alert |
 | World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Mob Sweeper, Summoner, Time, Weather, Waypoints |
-| Render | ESP, Chams, Break ESP, View Model, StorageESP, Xray, Tracers, Nametags, Freecam, Zoom |
-| HUD | ArrayList, TargetHUD, FPS, CPS, Armor, Potion Timers, Radar, Keystrokes, Inventory Viewer |
-| Misc | ClickGUI, HUD, Macro 1–3, Panic, Presets, NameProtect, Better Chat |
+| Render | ESP, Chams, Break ESP, Harvest ESP, Biome Border, View Model, StorageESP, Xray, Nametags, Freecam |
+| HUD | ArrayList, TargetHUD, Day Info, Spawn Info, Session Stats, Weather Forecast, Mob Caps, FPS, Radar, Keystrokes |
+| Misc | ClickGUI, HUD, Coords Copier, Screenshot Helper, Macro 1–3, Panic, Presets, NameProtect |
 
 ### Clutch
 
