@@ -9,13 +9,20 @@ import net.minecraft.world.item.Items;
 public final class CombatItems extends HudWidget {
    private static final Item[] ITEMS = new Item[]{Items.TOTEM_OF_UNDYING, Items.END_CRYSTAL, Items.ENCHANTED_GOLDEN_APPLE, Items.EXPERIENCE_BOTTLE};
 
-   /** Drawn only, so built once instead of every frame. */
-   private static final ItemStack[] ICONS = new ItemStack[ITEMS.length];
+   /** Drawn only, so built once on first draw: not while the class loads, which is before items are bound. */
+   private ItemStack[] icons;
 
-   static {
-      for (int i = 0; i < ITEMS.length; i++) {
-         ICONS[i] = new ItemStack(ITEMS[i]);
+   private ItemStack[] icons() {
+      if (this.icons == null) {
+         ItemStack[] built = new ItemStack[ITEMS.length];
+         for (int i = 0; i < ITEMS.length; i++) {
+            built[i] = new ItemStack(ITEMS[i]);
+         }
+
+         this.icons = built;
       }
+
+      return this.icons;
    }
 
    public CombatItems() {
@@ -39,7 +46,7 @@ public final class CombatItems extends HudWidget {
          Item item = ITEMS[i];
          int count = HudHelpers.count(hud.client.player, item);
          int x = 6 + i * 24;
-         hud.graphics.item(ICONS[i], x, 2);
+         hud.graphics.item(this.icons()[i], x, 2);
          String label = Integer.toString(count);
          hud.graphics.text(hud.font, label, x + 8 - hud.font.width(label) / 2, 18, count > 0 ? -1511689 : -6641995, hud.shadow);
       }
