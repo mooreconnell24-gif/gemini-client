@@ -21,17 +21,17 @@ public final class DurabilityAlert extends Module {
    private static final EquipmentSlot[] SLOTS = new EquipmentSlot[]{
       EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
    };
-   private final NumberSetting percent = this.addSetting(new NumberSetting("Warn Below %", "Warn when durability drops below this", 10.0, 1.0, 50.0, 1.0));
+   private final NumberSetting percent = this.addSetting(new NumberSetting("Warn Below %", "Warn when durability drops below this (percent)", 10.0, 1.0, 50.0, 1.0));
    private final BooleanSetting chat = this.addSetting(new BooleanSetting("Chat", "Also write the warning in chat", true));
    private final NumberSetting critical = this.addSetting(
-      new NumberSetting("Critical Uses", "Raise a second, red alert when this many uses or fewer are left", 5.0, 1.0, 50.0, 1.0)
+      new NumberSetting("Critical Uses", "Show a second, red warning when this many uses or fewer are left", 5.0, 1.0, 50.0, 1.0)
    );
    /** Per slot: the item last warned about (null when nothing is), and whether its red alert went out too. */
    private final Item[] warned = new Item[SLOTS.length];
    private final boolean[] criticalSent = new boolean[SLOTS.length];
 
    public DurabilityAlert() {
-      super("Durability Alert", "Warn you before your armour or tools break.", Category.PLAYER);
+      super("Durability Alert", "Warns you before your armour or tools break.", Category.PLAYER);
    }
 
    @Override

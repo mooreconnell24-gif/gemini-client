@@ -25,7 +25,7 @@ public final class WeatherForecast extends Ticked {
    private int poll;
 
    public WeatherForecast() {
-      super("Weather Forecast", "Exactly when the rain starts or stops and when the next thunderstorm comes.", "Top Left", 6, 196, 250);
+      super("Weather Forecast", "Shows when the rain starts or stops and when the next thunderstorm comes.", "Top Left", 6, 196, 250);
    }
 
    private record Snapshot(boolean hasWeather, boolean cycle, int clear, boolean raining, int rainTime, boolean thundering, int thunderTime) {

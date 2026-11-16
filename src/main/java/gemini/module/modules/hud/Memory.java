@@ -6,7 +6,7 @@ import java.util.List;
 
 public final class Memory extends Ticked {
    public Memory() {
-      super("Memory", "Java heap usage of the game.", "Bottom Right", 6, 78, 1000);
+      super("Memory", "Shows how much memory the game is using.", "Bottom Right", 6, 78, 1000);
    }
 
    @Override

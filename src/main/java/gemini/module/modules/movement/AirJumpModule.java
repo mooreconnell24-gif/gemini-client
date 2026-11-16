@@ -8,13 +8,13 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class AirJumpModule extends Module {
    private final NumberSetting maxJumps = this.addSetting(
-      new NumberSetting("Max Jumps", "Extra jumps before touching the ground (10 = unlimited)", 2.0, 1.0, 10.0, 1.0)
+      new NumberSetting("Max Jumps", "Extra jumps allowed before you land (10 = unlimited)", 2.0, 1.0, 10.0, 1.0)
    );
    private boolean wasJump;
    private int used;
 
    public AirJumpModule() {
-      super("AirJump", "Jump again while in the air.", Category.MOVEMENT);
+      super("AirJump", "Lets you jump again while in the air.", Category.MOVEMENT);
    }
 
    @Override

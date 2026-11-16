@@ -17,14 +17,14 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class BlockSelection extends Module {
    private static final double GROW = 0.002;
-   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "Fixed color or an animated rainbow", "Custom", "Custom", "Rainbow"));
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline color", 175).showIf(() -> this.colors.is("Custom")));
+   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "One fixed colour or a cycling rainbow", "Custom", "Custom", "Rainbow"));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline colour", 175).showIf(() -> this.colors.is("Custom")));
    private final BooleanSetting exactShape = this.addSetting(
       new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain full-block box", true)
    );
    private final ShapeSettings shape = new ShapeSettings(this, "Both", false);
    private final BooleanSetting hideVanilla = this.addSetting(
-      new BooleanSetting("Hide Vanilla", "Hide the vanilla black outline so only this one is drawn, instead of drawing on top of it", true)
+      new BooleanSetting("Hide Vanilla", "Hide the vanilla black outline so only this one is drawn", true)
    );
    /** Read by the level renderer every frame; written on the client thread. */
    private static volatile boolean replacingVanilla;
@@ -41,7 +41,7 @@ public final class BlockSelection extends Module {
    );
 
    public BlockSelection() {
-      super("Block Selection", "Recolor the outline of the block you are looking at.", Category.RENDER);
+      super("Block Selection", "Changes the colour of the outline on the block you are looking at.", Category.RENDER);
    }
 
    /** Whether the vanilla block outline should be skipped this frame. */

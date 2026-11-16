@@ -13,13 +13,13 @@ import net.minecraft.world.entity.player.Player;
 public final class Animations extends Module {
    private static Animations instance;
    private final NumberSetting swingDuration = this.addSetting(
-      new NumberSetting("Swing Duration", "Ticks a swing takes (vanilla is 6, less with haste)", 6.0, 1.0, 20.0, 1.0)
+      new NumberSetting("Swing Duration", "Ticks a swing takes (vanilla is 6, less with Haste)", 6.0, 1.0, 20.0, 1.0)
    );
    private final InfoText infoText = new InfoText();
-   private final BooleanSetting othersToo = this.addSetting(new BooleanSetting("Other Players", "Also apply to other players' swings", false));
+   private final BooleanSetting othersToo = this.addSetting(new BooleanSetting("Other Players", "Also change other players' swings", false));
 
    public Animations() {
-      super("Animations", "Speed up or slow down arm swing animations.", Category.RENDER);
+      super("Animations", "Speeds up or slows down the arm swing animation.", Category.RENDER);
       instance = this;
    }
 

@@ -25,7 +25,7 @@ public final class StrongholdFinder extends Module {
    /** Horizontal blocks an eye must have moved for its heading to mean anything. */
    private static final double MIN_TRAVEL = 1.5;
    private final BooleanSetting pin = this.addSetting(
-      new BooleanSetting("Pin Estimate", "Drop a waypoint at the estimated stronghold once two throws cross", true)
+      new BooleanSetting("Pin Estimate", "Add a waypoint at the estimated stronghold once two throws cross", true)
    );
    /** Eyes being watched: entity id to {x, z, first tick seen}. */
    private final Int2ObjectOpenHashMap<double[]> watching = new Int2ObjectOpenHashMap<>();
@@ -41,7 +41,7 @@ public final class StrongholdFinder extends Module {
    public StrongholdFinder() {
       super(
          "StrongholdFinder",
-         "Report the heading of each Eye of Ender you throw and, after two throws from different spots, estimate where the stronghold is.",
+         "Shows the direction of each eye of ender you throw and, after two throws from different spots, estimates where the stronghold is.",
          Category.WORLD
       );
    }

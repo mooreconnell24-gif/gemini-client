@@ -17,7 +17,7 @@ import net.minecraft.world.entity.player.Player;
 
 /** Keeps the area around you clear by removing mobs (or dropped items) with the server's /kill command. */
 public final class MobSweeper extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to clear", 24.0, 4.0, 128.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to clear, in blocks", 24.0, 4.0, 128.0, 1.0));
    private final NumberSetting interval = this.addSetting(new NumberSetting("Interval", "Ticks between sweeps", 20.0, 1.0, 200.0, 1.0));
    private final ModeSetting targets = this.addSetting(
       new ModeSetting(
@@ -31,7 +31,7 @@ public final class MobSweeper extends Module {
       )
    );
    private final BooleanSetting sparePets = this.addSetting(
-      new BooleanSetting("Spare Pets", "Never remove tamed animals or mobs you gave a name tag", true)
+      new BooleanSetting("Spare Pets", "Never remove tamed animals or mobs with a name tag", true)
    );
    private final NumberSetting perSweep = this.addSetting(new NumberSetting("Per Sweep", "Most entities removed in one sweep", 16.0, 1.0, 64.0, 1.0));
    private int timer;
@@ -41,7 +41,7 @@ public final class MobSweeper extends Module {
    private String infoText;
 
    public MobSweeper() {
-      super("Mob Sweeper", "Remove hostile mobs, animals or dropped items around you with /kill.", Category.WORLD);
+      super("Mob Sweeper", "Removes hostile mobs, animals or dropped items around you with /kill.", Category.WORLD);
    }
 
    @Override

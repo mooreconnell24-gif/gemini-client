@@ -22,16 +22,16 @@ public final class CustomText extends Ticked {
    private final ListSetting entries = this.addSetting(
       new ListSetting(
          "Lines",
-         "Custom HUD lines ({fps} {ping} {x} {y} {z} {speed} {health})",
+         "Lines of text; {fps} {ping} {x} {y} {z} {speed} {health} are replaced with live values",
          ListSetting.Kind.TEXT,
          "Gemini {version}",
          "{fps} FPS  ·  {x} {y} {z}"
       )
    );
-   private final BooleanSetting accentColor = this.addSetting(new BooleanSetting("Accent Color", "Tint the text with the theme accent", false));
+   private final BooleanSetting accentColor = this.addSetting(new BooleanSetting("Accent Color", "Colour the text with the theme accent", false));
 
    public CustomText() {
-      super("Custom Text", "Your own lines of text with live placeholders.", "Left Center", 6, 0, 200);
+      super("Custom Text", "Shows your own lines of text, with placeholders for live values.", "Left Center", 6, 0, 200);
    }
 
    @Override

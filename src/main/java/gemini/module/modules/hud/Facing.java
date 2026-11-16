@@ -10,7 +10,7 @@ import net.minecraft.util.Mth;
 
 public final class Facing extends Ticked {
    public Facing() {
-      super("Facing", "The direction you are looking, with yaw and pitch.", "Top Left", 6, 62, 50);
+      super("Facing", "Shows the direction you are looking, with yaw and pitch.", "Top Left", 6, 62, 50);
    }
 
    @Override

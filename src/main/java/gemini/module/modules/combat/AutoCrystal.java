@@ -42,30 +42,30 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
 public final class AutoCrystal extends Module {
-   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy scan distance", 10.0, 4.0, 16.0, 0.5));
-   private final NumberSetting placeRange = this.addSetting(new NumberSetting("Place Range", "Max crystal placement reach", 4.5, 2.0, 6.0, 0.1));
-   private final NumberSetting breakRange = this.addSetting(new NumberSetting("Break Range", "Max crystal attack reach", 4.5, 2.0, 6.0, 0.1));
-   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Max reach through walls", 3.2, 0.0, 6.0, 0.1));
-   private final NumberSetting minDamage = this.addSetting(new NumberSetting("Min Damage", "Minimum damage dealt to enemy", 6.0, 1.0, 20.0, 0.5));
-   private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Maximum self-damage allowed", 8.0, 1.0, 20.0, 0.5));
+   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Farthest enemy to look for, in blocks", 10.0, 4.0, 16.0, 0.5));
+   private final NumberSetting placeRange = this.addSetting(new NumberSetting("Place Range", "Farthest crystal placement, in blocks", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting breakRange = this.addSetting(new NumberSetting("Break Range", "Farthest crystal to break, in blocks", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Farthest placement or break through a wall, in blocks", 3.2, 0.0, 6.0, 0.1));
+   private final NumberSetting minDamage = this.addSetting(new NumberSetting("Min Damage", "Least damage a crystal must deal the enemy", 6.0, 1.0, 20.0, 0.5));
+   private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Most damage a crystal may deal you", 8.0, 1.0, 20.0, 0.5));
    private final BooleanSetting antiSuicide = this.addSetting(
-      new BooleanSetting("Anti Suicide", "Avoid crystals that could pop or kill you", true)
+      new BooleanSetting("Anti Suicide", "Skip crystals whose blast could kill you or pop a totem", true)
    );
    private final NumberSetting placeDelay = this.addSetting(new NumberSetting("Place Delay", "Ticks between crystal placements", 1.0, 0.0, 10.0, 1.0));
-   private final NumberSetting breakDelay = this.addSetting(new NumberSetting("Break Delay", "Ticks between crystal attacks", 1.0, 0.0, 10.0, 1.0));
-   private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predictive Raycast", "Predict enemy movement ticks ahead", true));
+   private final NumberSetting breakDelay = this.addSetting(new NumberSetting("Break Delay", "Ticks between crystal breaks", 1.0, 0.0, 10.0, 1.0));
+   private final BooleanSetting predict = this.addSetting(new BooleanSetting("Predictive Raycast", "Aim at where the enemy is moving to", true));
    private final NumberSetting predictTicks = this.addSetting(
-      new NumberSetting("Predict Ticks", "Movement ticks to project target ahead", 3.0, 1.0, 8.0, 1.0).showIf(this.predict::get)
+      new NumberSetting("Predict Ticks", "Ticks ahead the enemy's movement is projected", 3.0, 1.0, 8.0, 1.0).showIf(this.predict::get)
    );
    private final BooleanSetting supportPlace = this.addSetting(
-      new BooleanSetting("Support Obsidian", "Place obsidian base if none is available", false)
+      new BooleanSetting("Support Obsidian", "Place obsidian to put a crystal on when there is no base", false)
    );
    private final ModeSetting autoSwitch = this.addSetting(
-      new ModeSetting("Switch", "Hotbar crystal selection mode", "Silent", "None", "Normal", "Silent")
+      new ModeSetting("Switch", "How crystals are selected from the hotbar", "Silent", "None", "Normal", "Silent")
    );
-   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets without moving camera", true));
-   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight active crystal base and damage", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 280).showIf(this.render::get));
+   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera", true));
+   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight the crystal base and the damage it would deal", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 280).showIf(this.render::get));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 0).build();
    private int placeTimer;
    private int breakTimer;
@@ -78,7 +78,7 @@ public final class AutoCrystal extends Module {
    public AutoCrystal() {
       super(
          "AutoCrystal",
-         "Predictive End Crystal placement and detonation. Crystals are worked out for the enemy Priority picks; if none can hurt it enough, the next enemy by priority is tried.",
+         "Places and breaks end crystals near the chosen enemy, moving on to the next enemy when no crystal can hurt it enough.",
          Category.COMBAT
       );
    }

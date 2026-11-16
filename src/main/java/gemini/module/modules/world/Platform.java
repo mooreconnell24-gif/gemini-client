@@ -29,12 +29,12 @@ public final class Platform extends Module {
          "White Concrete"
       )
    );
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Blocks from you to the edge", 3.0, 1.0, 12.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Distance from you to the edge, in blocks", 3.0, 1.0, 12.0, 1.0));
    private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "How many blocks below your feet", 1.0, 1.0, 5.0, 1.0));
-   private final ModeSetting onToggle = this.addSetting(new ModeSetting("On Toggle", "What switching the module on does", "Place", "Place", "Remove"));
+   private final ModeSetting onToggle = this.addSetting(new ModeSetting("On Toggle", "What turning the module on does", "Place", "Place", "Remove"));
 
    public Platform() {
-      super("Platform", "Put a platform under your feet, or remove it, with one click or key.", Category.WORLD);
+      super("Platform", "Places a platform under your feet, or removes it.", Category.WORLD);
       this.addSetting(new ActionSetting("Place", "Build the platform under you now", this::place));
       this.addSetting(new ActionSetting("Remove", "Remove a platform of this block under you", this::remove));
    }

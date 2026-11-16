@@ -10,7 +10,7 @@ import gemini.event.ActionPriority;
 
 public final class FollowBot extends Module {
    private final ModeSetting targetKind = this.addSetting(
-      new ModeSetting("Target", "Kind of entity to follow; Priority picks which one of them", "Players", "Players", "Hostile", "Passive", "All")
+      new ModeSetting("Target", "Kind of entity to follow; Priority picks which one", "Players", "Players", "Hostile", "Passive", "All")
    );
    // Target above is the kind filter; Priority picks which one of that kind to follow, Stick To Target keeps following them.
    private final Targeting targeting = Targeting.builder(this)
@@ -24,7 +24,7 @@ public final class FollowBot extends Module {
       .build();
 
    public FollowBot() {
-      super("Follow Bot", "Pathfind and follow nearby players or mobs.", Category.MOVEMENT);
+      super("Follow Bot", "Follows a nearby player or mob, using Baritone.", Category.MOVEMENT);
    }
 
    @Override

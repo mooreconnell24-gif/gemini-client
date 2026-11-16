@@ -13,14 +13,14 @@ import net.minecraft.world.entity.player.Input;
 
 public final class Sneak extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Vanilla = really crouch, Packet = only the server", "Vanilla", "Vanilla", "Packet")
+      new ModeSetting("Mode", "Vanilla really crouches; Packet only tells the game you are sneaking", "Vanilla", "Vanilla", "Packet")
    );
    private final BooleanSetting onlyMoving = this.addSetting(
-      new BooleanSetting("Only Moving", "Sneak only while you are walking", false).showIf(() -> this.mode.is("Vanilla"))
+      new BooleanSetting("Only Moving", "Only sneak while you are walking", false).showIf(() -> this.mode.is("Vanilla"))
    );
 
    public Sneak() {
-      super("Sneak", "Stay crouched without holding the key.", Category.MOVEMENT);
+      super("Sneak", "Keeps you sneaking without holding the key.", Category.MOVEMENT);
    }
 
    @Override

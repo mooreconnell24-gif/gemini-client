@@ -19,7 +19,7 @@ public final class ZoomModule extends Module {
    private long lastFrame;
 
    public ZoomModule() {
-      super("Zoom", "Optic zoom. Bind it to a key and hold it.", Category.RENDER, Keys.fromGlfw('C'));
+      super("Zoom", "Zooms the view in while its key (Z by default) is held.", Category.RENDER, Keys.fromGlfw('Z'));
       this.holdByDefault();
    }
 

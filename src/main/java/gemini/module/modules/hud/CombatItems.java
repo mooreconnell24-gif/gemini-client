@@ -10,7 +10,7 @@ public final class CombatItems extends HudWidget {
    private static final Item[] ITEMS = new Item[]{Items.TOTEM_OF_UNDYING, Items.END_CRYSTAL, Items.ENCHANTED_GOLDEN_APPLE, Items.EXPERIENCE_BOTTLE};
 
    public CombatItems() {
-      super("Combat Items", "Show your live Totem, Crystal, Gapple, and XP counts side by side.", "Bottom Center", -90, 68);
+      super("Combat Items", "Shows how many totems, crystals, golden apples and experience bottles you carry.", "Bottom Center", -90, 68);
    }
 
    @Override

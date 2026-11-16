@@ -64,14 +64,14 @@ public final class Targeting {
       this.priority = m.addSetting(
          new ModeSetting(
                b.priorityName,
-               "Which target goes first: the closest, the weakest or strongest, the one nearest your crosshair, by armour, or the one most dangerous to you right now",
+               "Which target goes first: the closest, the weakest or strongest, the one nearest your crosshair, by armour, or the one most dangerous to you",
                b.defPriority,
                TargetPriority.MODES
             )
             .showIf(showChoice)
       );
       this.prefer = m.addSetting(
-         new ModeSetting("Prefer", "Try players before mobs (or the other way round) before Priority orders the rest", TargetPriority.PREFER_ANY, TargetPriority.PREFER)
+         new ModeSetting("Prefer", "Pick players before mobs, or mobs before players, before Priority orders the rest", TargetPriority.PREFER_ANY, TargetPriority.PREFER)
             .showIf(showChoice)
       );
       this.stick = m.addSetting(
@@ -79,7 +79,7 @@ public final class Targeting {
             .showIf(showChoice)
       );
       this.box = m.addSetting(
-         new ModeSetting("Target Box", "Box drawn around the current target", b.defBox, "Off", "Outline", "Fill", "Both").showIf(show)
+         new ModeSetting("Target Box", "Draw a box around the current target", b.defBox, "Off", "Outline", "Fill", "Both").showIf(show)
       );
       this.boxColor = m.addSetting(
          new ColorSetting("Box Color", "Colour of the target box", b.defHue).showIf(() -> show.getAsBoolean() && this.fixedColorShown())
@@ -88,7 +88,7 @@ public final class Targeting {
          new BooleanSetting("Health Color", "Colour the box by the target's health, green to red", false).showIf(() -> show.getAsBoolean() && !this.box.is("Off"))
       );
       this.boxThroughWalls = m.addSetting(
-         new BooleanSetting("Box Through Walls", "Draw the target box on top of terrain", true).showIf(() -> show.getAsBoolean() && !this.box.is("Off"))
+         new BooleanSetting("Box Through Walls", "Draw the target box through blocks", true).showIf(() -> show.getAsBoolean() && !this.box.is("Off"))
       );
    }
 

@@ -9,7 +9,7 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class AutoExplore extends Module {
    public AutoExplore() {
-      super("Auto Explore", "Autonomously spiral outward to explore chunks.", Category.WORLD);
+      super("Auto Explore", "Walks outwards in a spiral with Baritone to explore new chunks.", Category.WORLD);
    }
 
    @Override

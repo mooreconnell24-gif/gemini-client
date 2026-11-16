@@ -17,17 +17,17 @@ import net.minecraft.world.item.ItemStack;
 
 public final class AutoEatModule extends Module {
    private static final Set<String> BAD_FOOD = Set.of("rotten_flesh", "spider_eye", "pufferfish", "poisonous_potato", "chorus_fruit", "suspicious_stew");
-   private final NumberSetting hunger = this.addSetting(new NumberSetting("Hunger", "Eat when food level is at or below this", 14.0, 1.0, 19.0, 1.0));
+   private final NumberSetting hunger = this.addSetting(new NumberSetting("Hunger", "Eat when your food level is at or below this", 14.0, 1.0, 19.0, 1.0));
    private final BooleanSetting goldenApples = this.addSetting(new BooleanSetting("Golden Apples", "Allow golden apples as food", false));
-   private final BooleanSetting badFood = this.addSetting(new BooleanSetting("Bad Food", "Allow eating rotten flesh and harmful food items", false));
-   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Return to the previous hotbar slot afterwards", true));
+   private final BooleanSetting badFood = this.addSetting(new BooleanSetting("Bad Food", "Allow rotten flesh and other food with harmful effects", false));
+   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to the previous hotbar slot afterwards", true));
    private int previousSlot = -1;
    /** A slot still to be selected again because a busier module held the hand when eating ended. */
    private int restoreSlot = -1;
    private boolean eating;
 
    public AutoEatModule() {
-      super("AutoEat", "Eat food automatically when hungry.", Category.PLAYER);
+      super("AutoEat", "Eats food from your hotbar when you get hungry.", Category.PLAYER);
    }
 
    @Override

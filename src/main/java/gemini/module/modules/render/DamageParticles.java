@@ -17,7 +17,7 @@ public final class DamageParticles extends Module {
    private final ArrayDeque<DamageParticles.Popup> popups = new ArrayDeque<>();
 
    public DamageParticles() {
-      super("DamageParticles", "Show floating 3D damage and heal numbers on hit.", Category.RENDER);
+      super("DamageParticles", "Shows floating numbers for damage dealt and health healed.", Category.RENDER);
    }
 
    @Override

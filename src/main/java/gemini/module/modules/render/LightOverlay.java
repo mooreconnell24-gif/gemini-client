@@ -18,8 +18,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class LightOverlay extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Horizontal radius", 8.0, 2.0, 16.0, 1.0));
-   private final NumberSetting vertical = this.addSetting(new NumberSetting("Vertical Range", "How far above and below you to look", 3.0, 1.0, 8.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to look, in blocks", 8.0, 2.0, 16.0, 1.0));
+   private final NumberSetting vertical = this.addSetting(new NumberSetting("Vertical Range", "How far above and below you to look, in blocks", 3.0, 1.0, 8.0, 1.0));
    private final NumberSetting interval = this.addSetting(new NumberSetting("Refresh", "Ticks between rescans", 10.0, 2.0, 40.0, 1.0));
    private final NumberSetting blockLimit = this.addSetting(
       new NumberSetting("Block Light Limit", "Mobs spawn at or below this block light", 0.0, 0.0, 14.0, 1.0)
@@ -28,17 +28,17 @@ public final class LightOverlay extends Module {
       new NumberSetting("Sky Light Limit", "Mobs spawn at or below this light level right now", 7.0, 0.0, 14.0, 1.0)
    );
    private final BooleanSetting night = this.addSetting(new BooleanSetting("Show Night Spots", "Also mark places that only become dangerous at night", true));
-   private final ColorSetting nowColor = this.addSetting(new ColorSetting("Danger Color", "Spawnable right now", 0));
-   private final ColorSetting nightColor = this.addSetting(new ColorSetting("Night Color", "Spawnable after dark", 52));
+   private final ColorSetting nowColor = this.addSetting(new ColorSetting("Danger Color", "Colour of spots where mobs can spawn now", 0));
+   private final ColorSetting nightColor = this.addSetting(new ColorSetting("Night Color", "Colour of spots where mobs can spawn after dark", 52));
    private final BooleanSetting cross = this.addSetting(new BooleanSetting("Cross", "Draw an X on the floor", true));
-   private final BooleanSetting fill = this.addSetting(new BooleanSetting("Fill", "Tint the floor tile", true));
+   private final BooleanSetting fill = this.addSetting(new BooleanSetting("Fill", "Tint the floor block", true));
    private final NumberSetting limit = this.addSetting(new NumberSetting("Max Marks", "Most markers drawn at once", 400.0, 50.0, 1500.0, 50.0));
    private final List<BlockPos> marks = new ArrayList<>();
    private final List<Boolean> dangerous = new ArrayList<>();
    private int countdown;
 
    public LightOverlay() {
-      super("Light Overlay", "Mark floor tiles where hostile mobs can spawn.", Category.RENDER);
+      super("Light Overlay", "Marks floor blocks where hostile mobs can spawn.", Category.RENDER);
    }
 
    @Override

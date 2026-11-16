@@ -14,10 +14,10 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class InstantMineModule extends Module {
-   private final BooleanSetting drops = this.addSetting(new BooleanSetting("Drops", "Blocks drop their items", true));
+   private final BooleanSetting drops = this.addSetting(new BooleanSetting("Drops", "Broken blocks drop their items", true));
 
    public InstantMineModule() {
-      super("InstantMine", "Break the block you are mining immediately.", Category.PLAYER);
+      super("InstantMine", "Breaks the block you start mining straight away.", Category.PLAYER);
    }
 
    public boolean breakNow(BlockPos pos) {

@@ -15,12 +15,12 @@ import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 public final class ArrowDamageModule extends Module {
    public static ArrowDamageModule instance;
    private final NumberSetting damage = this.addSetting(
-      new NumberSetting("Base Damage", "Arrow base damage (vanilla is 2; hits do about 3x this at full draw)", 50.0, 2.0, 1000.0, 1.0)
+      new NumberSetting("Base Damage", "Base damage of your arrows (vanilla is 2; a full-draw hit does about three times this)", 50.0, 2.0, 1000.0, 1.0)
    );
-   private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Also boost thrown tridents", true));
+   private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Also raise the damage of tridents you throw", true));
 
    public ArrowDamageModule() {
-      super("Arrow Damage", "Your arrows do crazy damage.", Category.COMBAT);
+      super("Arrow Damage", "Raises the damage of arrows you shoot.", Category.COMBAT);
       instance = this;
       ServerEntityEvents.ENTITY_LOAD.register((Load)(entity, level) -> {
          ArrowDamageModule module = instance;

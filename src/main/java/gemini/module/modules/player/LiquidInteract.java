@@ -7,7 +7,7 @@ public final class LiquidInteract extends Module {
    public static LiquidInteract instance;
 
    public LiquidInteract() {
-      super("Liquid Interact", "Allow placing blocks directly against water and lava.", Category.PLAYER);
+      super("Liquid Interact", "Lets you place blocks directly against water and lava.", Category.PLAYER);
       instance = this;
    }
 

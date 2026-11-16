@@ -13,14 +13,14 @@ import net.minecraft.world.phys.Vec3;
 
 public final class SoundLocator extends Module {
    public static SoundLocator instance;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum distance to locate sounds", 48.0, 12.0, 96.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest sound to mark, in blocks", 48.0, 12.0, 96.0, 4.0));
    private final BooleanSetting onlyImportant = this.addSetting(
       new BooleanSetting("Important Only", "Only show containers, explosions, teleports and totem pops; off also shows drinking, eating, footsteps and swimming", true)
    );
    private final ArrayDeque<SoundLocator.SoundPing> pings = new ArrayDeque<>();
 
    public SoundLocator() {
-      super("SoundLocator", "Mark where nearby sounds come from: containers, explosions, teleports and totem pops, or everything with Important Only off.", Category.RENDER);
+      super("SoundLocator", "Marks where nearby sounds come from.", Category.RENDER);
       instance = this;
    }
 

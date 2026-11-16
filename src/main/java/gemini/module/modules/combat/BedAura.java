@@ -18,13 +18,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
 public final class BedAura extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Bed placement and detonation reach", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest bed placement, in blocks", 4.5, 2.0, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between bed actions", 3.0, 1.0, 15.0, 1.0));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 0).build();
    private int wait;
 
    public BedAura() {
-      super("BedAura", "Place and detonate beds on the enemy Priority picks, in the Nether or End.", Category.COMBAT);
+      super("BedAura", "Places and sets off beds next to the chosen enemy in the Nether or the End.", Category.COMBAT);
    }
 
    @Override

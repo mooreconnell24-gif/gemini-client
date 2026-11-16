@@ -11,10 +11,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
 
 public final class MaceKill extends Module {
-   private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Simulated fall height in blocks", 6.0, 2.0, 22.0, 1.0));
+   private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Height of the fake fall, in blocks", 6.0, 2.0, 22.0, 1.0));
 
    public MaceKill() {
-      super("MaceKill", "Spoof a vertical drop packet for Mace smash damage.", Category.COMBAT);
+      super("MaceKill", "Sends a fake fall before each mace hit so it deals smash damage.", Category.COMBAT);
    }
 
    @Override

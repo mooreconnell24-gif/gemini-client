@@ -15,12 +15,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class InventoryCleaner extends Module {
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay Ticks", "Ticks between inventory clean actions", 3.0, 1.0, 20.0, 1.0));
-   private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Drop rotten flesh, seeds, string, bowls and other junk", true));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay Ticks", "Ticks between actions", 3.0, 1.0, 20.0, 1.0));
+   private final BooleanSetting dropJunk = this.addSetting(new BooleanSetting("Drop Junk", "Throw out rotten flesh, seeds, string, bowls and other junk", true));
    private int wait;
 
    public InventoryCleaner() {
-      super("InventoryCleaner", "Throw out junk items and keep a sword in the first hotbar slot.", Category.PLAYER);
+      super("InventoryCleaner", "Throws junk items out of your inventory and keeps a sword in the first hotbar slot.", Category.PLAYER);
    }
 
    @Override

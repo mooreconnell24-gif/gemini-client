@@ -8,7 +8,7 @@ public final class NoBobModule extends Module {
    private boolean previous = true;
 
    public NoBobModule() {
-      super("NoBob", "Disable view bobbing.", Category.RENDER);
+      super("NoBob", "Turns off view bobbing.", Category.RENDER);
    }
 
    @Override

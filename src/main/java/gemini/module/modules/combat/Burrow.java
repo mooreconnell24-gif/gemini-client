@@ -18,10 +18,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class Burrow extends Module {
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets", true));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Look down without moving your camera", true));
 
    public Burrow() {
-      super("Burrow", "Lag-place obsidian or ender chest inside your feet.", Category.COMBAT);
+      super("Burrow", "Jumps and places obsidian, an ender chest or an anvil in the block you stand in, then turns off.", Category.COMBAT);
    }
 
    @Override

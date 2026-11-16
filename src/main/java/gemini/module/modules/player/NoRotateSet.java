@@ -13,7 +13,7 @@ public final class NoRotateSet extends Module {
    private boolean restorePending;
 
    public NoRotateSet() {
-      super("NoRotateSet", "Block server packets from snapping your camera.", Category.PLAYER);
+      super("NoRotateSet", "Keeps your camera where it was when the game moves you back to a position.", Category.PLAYER);
    }
 
    /** A snap still waiting to be undone must not be replayed later, in another session or world. */

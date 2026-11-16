@@ -16,7 +16,7 @@ public final class PacketMine extends Module {
    private BlockPos targetPos;
 
    public PacketMine() {
-      super("PacketMine", "Keep mining the last block you started on after you let go of the attack button, until it breaks or leaves reach.", Category.WORLD);
+      super("PacketMine", "Keeps mining the last block you started on after you let go of attack, until it breaks or is out of reach.", Category.WORLD);
    }
 
    @Override

@@ -8,12 +8,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class SprintAssist extends Module {
-   private final BooleanSetting omni = this.addSetting(new BooleanSetting("Omni", "Sprint in every direction, not just forward", false));
-   private final BooleanSetting ignoreHunger = this.addSetting(new BooleanSetting("Ignore Hunger", "Keep sprinting at low food", false));
+   private final BooleanSetting omni = this.addSetting(new BooleanSetting("Omni", "Sprint in every direction, not just forwards", false));
+   private final BooleanSetting ignoreHunger = this.addSetting(new BooleanSetting("Ignore Hunger", "Keep sprinting when your food is low", false));
    private final BooleanSetting whileUsing = this.addSetting(new BooleanSetting("While Using", "Keep sprinting while using an item", false));
 
    public SprintAssist() {
-      super("Sprint", "Sprint automatically while moving.", Category.MOVEMENT, Keys.fromGlfw('V'));
+      super("Sprint", "Sprints for you whenever you move.", Category.MOVEMENT, Keys.fromGlfw('V'));
    }
 
    @Override

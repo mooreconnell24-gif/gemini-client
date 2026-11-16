@@ -67,15 +67,15 @@ public final class AutoBuildBot extends Module {
    );
    private final BooleanSetting confirmWither = this.addSetting(
       new BooleanSetting(
-            "Confirm Wither", "Must be switched on for each Wither build: it spawns a boss. It switches itself off once a build starts", false
+            "Confirm Wither", "Must be turned on for each wither build because it spawns a boss; it turns itself off once a build starts", false
          )
          .showIf(() -> this.pattern.is("Wither"))
    );
    private final NumberSetting wallLength = this.addSetting(
-      new NumberSetting("Wall Length", "Wall length in blocks", 5.0, 1.0, 32.0, 1.0).showIf(() -> this.pattern.is("Cobble Wall"))
+      new NumberSetting("Wall Length", "Wall length, in blocks", 5.0, 1.0, 32.0, 1.0).showIf(() -> this.pattern.is("Cobble Wall"))
    );
    private final NumberSetting wallHeight = this.addSetting(
-      new NumberSetting("Wall Height", "Wall height in blocks", 3.0, 1.0, 16.0, 1.0).showIf(() -> this.pattern.is("Cobble Wall"))
+      new NumberSetting("Wall Height", "Wall height, in blocks", 3.0, 1.0, 16.0, 1.0).showIf(() -> this.pattern.is("Cobble Wall"))
    );
    private final NumberSetting platformSize = this.addSetting(
       new NumberSetting("Platform Size", "Platform width (N x N)", 5.0, 1.0, 15.0, 1.0).showIf(() -> this.pattern.is("Platform"))
@@ -84,27 +84,27 @@ public final class AutoBuildBot extends Module {
       new NumberSetting("Platform Depth", "Blocks below your feet (1 = the layer you stand on)", 1.0, 1.0, 4.0, 1.0).showIf(() -> this.pattern.is("Platform"))
    );
    private final NumberSetting pillarHeight = this.addSetting(
-      new NumberSetting("Pillar Height", "Pillar height in blocks", 5.0, 1.0, 64.0, 1.0).showIf(() -> this.pattern.is("Pillar"))
+      new NumberSetting("Pillar Height", "Pillar height, in blocks", 5.0, 1.0, 64.0, 1.0).showIf(() -> this.pattern.is("Pillar"))
    );
    private final NumberSetting bridgeLength = this.addSetting(
-      new NumberSetting("Bridge Length", "Bridge length in blocks", 10.0, 1.0, 64.0, 1.0).showIf(() -> this.pattern.is("Bridge"))
+      new NumberSetting("Bridge Length", "Bridge length, in blocks", 10.0, 1.0, 64.0, 1.0).showIf(() -> this.pattern.is("Bridge"))
    );
    private final ModeSetting fillSource = this.addSetting(
-      new ModeSetting("Material", "Wall/Platform/Pillar/Bridge blocks: the block you hold when starting, or the list", "Held Block", "Held Block", "List")
+      new ModeSetting("Material", "Blocks for walls, platforms, pillars and bridges: the block you hold when starting, or the list", "Held Block", "Held Block", "List")
          .showIf(this::usesFill)
    );
    private final ListSetting fillBlocks = this.addSetting(
-      new ListSetting("Blocks", "Blocks the List material choice may use", ListSetting.Kind.BLOCK, "minecraft:cobblestone")
+      new ListSetting("Blocks", "Blocks the List material may use", ListSetting.Kind.BLOCK, "minecraft:cobblestone")
          .showIf(() -> this.usesFill() && this.fillSource.is("List"))
    );
    private final PlaceSettings placer = new PlaceSettings(this, 1, 2, 4.5);
-   private final BooleanSetting walk = this.addSetting(new BooleanSetting("Walk", "Path into reach of the next block with Baritone", true));
+   private final BooleanSetting walk = this.addSetting(new BooleanSetting("Walk", "Walk into reach of the next block with Baritone", true));
    private final BooleanSetting clearObstructions = this.addSetting(
-      new BooleanSetting("Clear Obstructions", "Mine blocks that stand where the pattern needs air or a different block", true)
+      new BooleanSetting("Clear Obstructions", "Mine blocks that are where the pattern needs air or a different block", true)
    );
    private final NumberSetting giveUp = this.addSetting(new NumberSetting("Give Up After", "Seconds without progress before stopping", 20.0, 5.0, 120.0, 5.0));
    private final BooleanSetting ghost = this.addSetting(new BooleanSetting("Ghost", "Show the blocks still to place", true));
-   private final ColorSetting ghostColor = this.addSetting(new ColorSetting("Ghost Color", "Colour of the remaining blocks", 200).showIf(this.ghost::get));
+   private final ColorSetting ghostColor = this.addSetting(new ColorSetting("Ghost Color", "Colour of the blocks still to place", 200).showIf(this.ghost::get));
    private final List<BlockPos> positions = new ArrayList<>();
    private final List<Material> materials = new ArrayList<>();
    private final List<BlockPos> batch = new ArrayList<>();
@@ -132,7 +132,7 @@ public final class AutoBuildBot extends Module {
    public AutoBuildBot() {
       super(
          "Auto Build Bot",
-         "Build a nether portal, wither, wall, platform, pillar or bridge from your inventory where you look, walking into reach with Baritone.",
+         "Builds a nether portal, wither, wall, platform, pillar or bridge from your inventory where you look, walking into reach with Baritone.",
          Category.WORLD
       );
    }

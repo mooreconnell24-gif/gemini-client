@@ -44,23 +44,23 @@ public final class HitCrystal extends Module {
    private final ModeSetting weapons = this.addSetting(
       new ModeSetting("Weapons", "Which hits start the combo: swords, any knockback weapon, or both", "Both", "Swords", "Knockback", "Both")
    );
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Step Delay", "Ticks between obsidian, crystal and detonation", 1.0, 0.0, 6.0, 1.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Place Range", "Farthest block or crystal you will place", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Step Delay", "Ticks between the obsidian, the crystal and the detonation", 1.0, 0.0, 6.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Place Range", "Farthest block or crystal to place, in blocks", 4.5, 2.0, 6.0, 0.1));
    private final NumberSetting minDamage = this.addSetting(new NumberSetting("Min Damage", "Least damage the crystal must deal the target", 4.0, 0.0, 20.0, 0.5));
    private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Most damage the crystal may deal you", 8.0, 0.0, 20.0, 0.5));
    private final BooleanSetting antiSuicide = this.addSetting(
-      new BooleanSetting("Anti Suicide", "Skip any crystal whose blast would kill or pop you", true)
+      new BooleanSetting("Anti Suicide", "Skip any crystal whose blast would kill you or pop a totem", true)
    );
    private final BooleanSetting placeObsidian = this.addSetting(
-      new BooleanSetting("Place Obsidian", "Put obsidian down when no obsidian or bedrock is where the target lands", true)
+      new BooleanSetting("Place Obsidian", "Place obsidian when there is no obsidian or bedrock where the target lands", true)
    );
-   private final BooleanSetting silentAim = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets only, leaving the camera alone", true));
+   private final BooleanSetting silentAim = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the chosen crystal base", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 300).showIf(this.render::get));
    private final BooleanSetting priorityOnly = this.addSetting(
       new BooleanSetting(
          "Priority Only",
-         "Start the combo only on the enemy Priority picks within 6 blocks (boxed while you look for it), so crystals go to who you want first; off starts it on any enemy you hit",
+         "Only start the combo on the enemy Priority picks within 6 blocks; when off, any enemy you hit starts it",
          false
       )
    );
@@ -74,7 +74,7 @@ public final class HitCrystal extends Module {
    private float damage;
 
    public HitCrystal() {
-      super("Hit Crystal", "After a melee hit, place obsidian and a crystal where the target is knocked to and set it off.", Category.COMBAT);
+      super("Hit Crystal", "Places obsidian and a crystal where your melee hit knocks the target, then sets the crystal off.", Category.COMBAT);
    }
 
    @Override

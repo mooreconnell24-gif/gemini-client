@@ -20,13 +20,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class AutoSleep extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Blocks around you to look for a bed", 4.0, 1.0, 6.0, 0.5));
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim at the bed server-side only", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to look for a bed, in blocks", 4.0, 1.0, 6.0, 0.5));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Face the bed without moving your camera", true));
    private final BooleanSetting disableAfter = this.addSetting(new BooleanSetting("Disable After", "Turn off once you are lying down", false));
    private int wait;
 
    public AutoSleep() {
-      super("Auto Sleep", "Hop into the nearest bed when night falls.", Category.PLAYER);
+      super("Auto Sleep", "Uses the nearest bed when it gets dark in the Overworld.", Category.PLAYER);
    }
 
    @Override

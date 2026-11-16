@@ -8,10 +8,10 @@ import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
 
 public final class Strafe extends Module {
-   private final NumberSetting strength = this.addSetting(new NumberSetting("Strength", "Air strafe responsiveness", 1.0, 0.2, 1.5, 0.05));
+   private final NumberSetting strength = this.addSetting(new NumberSetting("Strength", "Air speed as a share of walking speed", 1.0, 0.2, 1.5, 0.05));
 
    public Strafe() {
-      super("Strafe", "Maintain full directional air control while jumping.", Category.MOVEMENT);
+      super("Strafe", "Keeps your speed up while changing direction in the air.", Category.MOVEMENT);
    }
 
    @Override

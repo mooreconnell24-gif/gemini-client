@@ -21,15 +21,15 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 
 public final class AutoToolModule extends Module {
-   private final BooleanSetting weapons = this.addSetting(new BooleanSetting("Weapons", "Swap to your best weapon when attacking mobs", true));
-   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Go back to the previous slot when you stop", true));
-   private final BooleanSetting saveTools = this.addSetting(new BooleanSetting("Save Durability", "Don't use tools that are almost broken", true));
+   private final BooleanSetting weapons = this.addSetting(new BooleanSetting("Weapons", "Switch to your best weapon when attacking mobs", true));
+   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to the previous slot when you stop", true));
+   private final BooleanSetting saveTools = this.addSetting(new BooleanSetting("Save Durability", "Skip tools that are about to break", true));
    private int previousSlot = -1;
    /** Attack damage per hotbar slot, NaN for a non-weapon; reused every tick. */
    private final double[] damage = new double[9];
 
    public AutoToolModule() {
-      super("AutoTool", "Swap to the best tool for what you are hitting.", Category.PLAYER);
+      super("AutoTool", "Switches to the best tool for the block you are mining.", Category.PLAYER);
    }
 
    @Override

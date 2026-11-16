@@ -20,9 +20,9 @@ import net.minecraft.world.level.biome.Biome;
  */
 public final class BiomeBorder extends Module {
    private static final int REFRESH_TICKS = 40;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Chunks around you to show borders in", 3.0, 1.0, 8.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you borders are shown, in chunks", 3.0, 1.0, 8.0, 1.0));
    private final NumberSetting height = this.addSetting(
-      new NumberSetting("Wall Height", "How tall the border fence is drawn (0: a line on the ground only)", 2.0, 0.0, 16.0, 0.5)
+      new NumberSetting("Wall Height", "How tall the border fence is drawn (0 = a line on the ground only)", 2.0, 0.0, 16.0, 0.5)
    );
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Border line colour", 280));
    private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the border lines", 1.5, 1.0, 4.0, 0.5));
@@ -41,7 +41,7 @@ public final class BiomeBorder extends Module {
    private int countdown;
 
    public BiomeBorder() {
-      super("Biome Border", "Show where one biome ends and the next begins, as fences around you.", Category.RENDER);
+      super("Biome Border", "Shows where one biome ends and the next begins, as fences around you.", Category.RENDER);
       this.biomeIds.defaultReturnValue(-1);
    }
 

@@ -11,10 +11,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class TerrainSpeed extends Module {
-   private final NumberSetting boost = this.addSetting(new NumberSetting("Boost", "Speed multiplier on ice, soul sand, and stairs", 1.35, 1.05, 2.5, 0.05));
+   private final NumberSetting boost = this.addSetting(new NumberSetting("Boost", "Speed multiplier on those blocks", 1.35, 1.05, 2.5, 0.05));
 
    public TerrainSpeed() {
-      super("TerrainSpeed", "Move faster across ice, soul sand, and stairs.", Category.MOVEMENT);
+      super("TerrainSpeed", "Makes you move faster on ice, soul sand, soul soil and stairs.", Category.MOVEMENT);
    }
 
    @Override

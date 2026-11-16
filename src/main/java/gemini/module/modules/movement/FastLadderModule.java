@@ -8,10 +8,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class FastLadderModule extends Module {
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climbing speed in blocks per tick", 0.3, 0.15, 0.6, 0.01));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climbing speed, in blocks per tick", 0.3, 0.15, 0.6, 0.01));
 
    public FastLadderModule() {
-      super("FastLadder", "Climb ladders and vines faster.", Category.MOVEMENT);
+      super("FastLadder", "Makes you climb ladders and vines faster.", Category.MOVEMENT);
    }
 
    @Override

@@ -17,10 +17,10 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 
 public final class TriggerBot extends Module {
-   private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown %", "Required weapon charge % to attack", 92.0, 50.0, 100.0, 2.0));
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players under crosshair", true));
-   private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Attack hostile mobs under crosshair", true));
-   private final BooleanSetting critsOnly = this.addSetting(new BooleanSetting("Wait For Fall", "Wait until falling when airborne for crits", false));
+   private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown %", "Attack charge needed before hitting (percent)", 92.0, 50.0, 100.0, 2.0));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players under the crosshair", true));
+   private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Attack hostile mobs under the crosshair", true));
+   private final BooleanSetting critsOnly = this.addSetting(new BooleanSetting("Wait For Fall", "While in the air, wait until you are falling so the hit is a critical", false));
    // The target is whatever is under the crosshair, so only the filters (its own Players/Mobs) and the box apply.
    private final Targeting targeting = Targeting.builder(this)
       .filters(this.players::get, this.mobs::get, () -> false, () -> true)
@@ -28,7 +28,7 @@ public final class TriggerBot extends Module {
       .build();
 
    public TriggerBot() {
-      super("TriggerBot", "Attack targets under your crosshair when charged.", Category.COMBAT);
+      super("TriggerBot", "Attacks the entity under your crosshair once your attack is charged.", Category.COMBAT);
    }
 
    @Override

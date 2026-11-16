@@ -14,16 +14,16 @@ import net.minecraft.world.item.ItemStack;
 
 public final class Surround extends PlacementModuleBase {
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
-   private final BooleanSetting center = this.addSetting(new BooleanSetting("Auto Center", "Snap to block center on enable", true));
+   private final BooleanSetting center = this.addSetting(new BooleanSetting("Auto Center", "Move to the centre of your block when turned on", true));
    private final BooleanSetting support = this.addSetting(
-      new BooleanSetting("Support Blocks", "Place support blocks under air edges", true)
+      new BooleanSetting("Support Blocks", "Place a block under a side spot that has nothing to attach to", true)
    );
-   private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only Ground", "Only place while standing on ground", true));
-   private final BooleanSetting disableOnJump = this.addSetting(new BooleanSetting("Disable On Jump", "Disable when jumping out of hole", true));
+   private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only Ground", "Only place while standing on the ground", true));
+   private final BooleanSetting disableOnJump = this.addSetting(new BooleanSetting("Disable On Jump", "Turn off when you jump out of the hole", true));
    private int startY;
 
    public Surround() {
-      super("Surround", "Surround your feet with obsidian to block crystal damage.", Category.COMBAT, 0, 4, 4.5);
+      super("Surround", "Places obsidian around and under your feet to shield you from explosions.", Category.COMBAT, 0, 4, 4.5);
    }
 
    @Override

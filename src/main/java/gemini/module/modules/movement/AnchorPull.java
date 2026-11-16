@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 
 public final class AnchorPull extends Module {
-   private final NumberSetting maxDrop = this.addSetting(new NumberSetting("Max Drop", "Maximum vertical distance to pull into a hole", 4.0, 1.5, 6.0, 0.5));
-   private final NumberSetting pullSpeed = this.addSetting(new NumberSetting("Pull Speed", "Downward pull velocity", 0.38, 0.15, 0.8, 0.02));
+   private final NumberSetting maxDrop = this.addSetting(new NumberSetting("Max Drop", "Deepest hole to pull into, in blocks below you", 4.0, 1.5, 6.0, 0.5));
+   private final NumberSetting pullSpeed = this.addSetting(new NumberSetting("Pull Speed", "Downward speed of the pull, in blocks per tick", 0.38, 0.15, 0.8, 0.02));
 
    public AnchorPull() {
-      super("AnchorPull", "Pull straight down into safe PvP holes.", Category.MOVEMENT);
+      super("Hole Pull", "Pulls you straight down into a safe hole below you.", Category.MOVEMENT);
    }
 
    @Override

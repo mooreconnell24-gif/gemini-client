@@ -14,15 +14,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 
 public final class HoleEsp extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Horizontal scan radius for safe holes", 8.0, 3.0, 16.0, 1.0));
-   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Render holes through blocks", true));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to look for holes, in blocks", 8.0, 3.0, 16.0, 1.0));
+   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw holes behind blocks too", true));
    private final List<BlockPos> cached = new ArrayList<>();
    /** Colour of each cached hole, decided when it was found so drawing does not read the world again every frame. */
    private final IntArrayList colors = new IntArrayList();
    private int wait;
 
    public HoleEsp() {
-      super("HoleESP", "Highlight safe Bedrock and Obsidian PvP holes.", Category.RENDER);
+      super("HoleESP", "Highlights safe holes surrounded by bedrock or obsidian.", Category.RENDER);
    }
 
    @Override

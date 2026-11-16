@@ -14,7 +14,7 @@ public final class CoordinatesModule extends Module {
    private final BooleanSetting nether = this.addSetting(new BooleanSetting("Nether Coords", "Also show the matching Nether or Overworld position", true));
 
    public CoordinatesModule() {
-      super("Coordinates", "XYZ, facing and biome on screen.", Category.RENDER);
+      super("Coordinates", "Shows your coordinates, facing and biome on screen.", Category.RENDER);
    }
 
    public String position() {

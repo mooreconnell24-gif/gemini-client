@@ -30,20 +30,20 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class AutoWebFill extends PlacementModuleBase {
    private static final Predicate<ItemStack> COBWEB = stack -> stack.getItem() instanceof BlockItem item && item.getBlock() == Blocks.COBWEB;
-   private final NumberSetting enemyRange = this.addSetting(new NumberSetting("Enemy Range", "Target distance for cobwebs", 6.0, 2.0, 10.0, 0.5));
+   private final NumberSetting enemyRange = this.addSetting(new NumberSetting("Enemy Range", "Farthest enemy to look for, in blocks", 6.0, 2.0, 10.0, 0.5));
    private final NumberSetting predictTicks = this.addSetting(
-      new NumberSetting("Prediction Ticks", "How many ticks ahead the path is predicted", 8.0, 1.0, 20.0, 1.0)
+      new NumberSetting("Prediction Ticks", "Ticks ahead the enemy's path is predicted", 8.0, 1.0, 20.0, 1.0)
    );
-   private final NumberSetting ahead = this.addSetting(new NumberSetting("Webs Ahead", "Most path blocks ahead of the enemy to web", 2.0, 1.0, 6.0, 1.0));
+   private final NumberSetting ahead = this.addSetting(new NumberSetting("Webs Ahead", "Most blocks ahead of the enemy to web", 2.0, 1.0, 6.0, 1.0));
    private final BooleanSetting feet = this.addSetting(new BooleanSetting("Feet", "Also web the block the enemy stands in", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the predicted path and the planned webs", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Path and plan colour", 190).showIf(this.render::get));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Colour of the path and planned webs", 190).showIf(this.render::get));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
    private final List<Vec3> path = new ArrayList<>();
    private final List<BlockPos> planned = new ArrayList<>();
 
    public AutoWebFill() {
-      super("Auto Web Fill", "Place cobwebs along the path the enemy Priority picks is about to walk.", Category.COMBAT, 1, 2, 4.5);
+      super("Auto Web Fill", "Places cobwebs along the path the chosen enemy is about to walk.", Category.COMBAT, 1, 2, 4.5);
    }
 
    @Override

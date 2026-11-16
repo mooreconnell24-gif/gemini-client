@@ -9,10 +9,10 @@ import net.minecraft.world.item.BlockItem;
 
 public final class FastPlaceModule extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between placements (vanilla is 4)", 1.0, 0.0, 4.0, 1.0));
-   private final BooleanSetting blocksOnly = this.addSetting(new BooleanSetting("Blocks Only", "Only speed up block placement", false));
+   private final BooleanSetting blocksOnly = this.addSetting(new BooleanSetting("Blocks Only", "Only shorten the delay for blocks", false));
 
    public FastPlaceModule() {
-      super("FastPlace", "Remove the delay between placing blocks.", Category.PLAYER);
+      super("FastPlace", "Shortens the delay between placing blocks.", Category.PLAYER);
    }
 
    public int limit(Minecraft client) {

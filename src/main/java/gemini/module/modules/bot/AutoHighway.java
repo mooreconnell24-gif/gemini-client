@@ -14,11 +14,11 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Blocks;
 
 public final class AutoHighway extends Module {
-   private final NumberSetting width = this.addSetting(new NumberSetting("Width", "Highway floor width", 3.0, 1.0, 5.0, 1.0));
-   private final BooleanSetting rails = this.addSetting(new BooleanSetting("Guard Rails", "Place raised side curb blocks", true));
+   private final NumberSetting width = this.addSetting(new NumberSetting("Width", "Highway width, in blocks", 3.0, 1.0, 5.0, 1.0));
+   private final BooleanSetting rails = this.addSetting(new BooleanSetting("Guard Rails", "Place a raised block along each edge", true));
 
    public AutoHighway() {
-      super("Auto Highway", "Pave a multi-block highway with side curbs ahead.", Category.WORLD);
+      super("Auto Highway", "Paves a highway ahead of you, with raised edges if you want them.", Category.WORLD);
    }
 
    @Override

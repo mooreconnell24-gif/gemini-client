@@ -28,7 +28,7 @@ public final class Home extends Module {
    private double backZ;
 
    public Home() {
-      super("Home", "Save a spot in this world and teleport back to it.", Category.WORLD);
+      super("Home", "Saves a spot in this world and teleports you back to it.", Category.WORLD);
       instance = this;
       this.addSetting(new ActionSetting("Set Home", "Save where you are standing as this world's home (one home at a time)", this::setHere));
       this.addSetting(new ActionSetting("Go Home", "Teleport to the saved spot", this::go));

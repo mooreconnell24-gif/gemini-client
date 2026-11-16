@@ -9,7 +9,7 @@ import net.minecraft.client.player.LocalPlayer;
 /** Experience level, progress to the next level in percent, and total points. */
 public final class XpInfo extends Ticked {
    public XpInfo() {
-      super("Xp Info", "Experience level, progress to the next level and total points.", "Top Left", 6, 172, 250);
+      super("Xp Info", "Shows your experience level, progress to the next level and total points.", "Top Left", 6, 172, 250);
    }
 
    @Override

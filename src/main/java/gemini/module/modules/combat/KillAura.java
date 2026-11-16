@@ -36,7 +36,7 @@ public final class KillAura extends Module {
    private final ModeSetting targetMode = this.addSetting(
       new ModeSetting(
          "Target Mode",
-         "Single attacks the best target by Priority (Stick To Target keeps it while it stays valid); Switch moves on to the next target every 6 ticks",
+         "Single keeps hitting the best target by Priority; Switch moves to the next target every 6 ticks",
          "Switch",
          "Single",
          "Switch"
@@ -55,24 +55,24 @@ public final class KillAura extends Module {
    private final NumberSetting legacyCps = this.addSetting(
       new NumberSetting("Legacy CPS", "Clicks per second in 1.8 Legacy CPS mode", 14.0, 4.0, 20.0, 1.0).showIf(() -> this.versionMode.is("1.8 Legacy CPS"))
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum attack reach", 4.2, 2.5, 6.0, 0.1));
-   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Maximum reach through walls", 3.0, 0.0, 6.0, 0.1));
-   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view scan cone", 180.0, 30.0, 360.0, 5.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to attack, in blocks", 4.2, 2.5, 6.0, 0.1));
+   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Farthest target to attack through a wall, in blocks", 3.0, 0.0, 6.0, 0.1));
+   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Only attack targets within this many degrees of where you look", 180.0, 30.0, 360.0, 5.0));
    private final NumberSetting turnSpeed = this.addSetting(
-      new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 85.0, 15.0, 180.0, 5.0)
+      new NumberSetting("Turn Speed", "Most you turn per tick, in degrees", 85.0, 15.0, 180.0, 5.0)
    );
-   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Rotate in packets without moving camera", true));
-   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Require clear line-of-sight to target", false));
-   private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "Wait for falling window when airborne for crits", true));
-   private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Maintain sprint state while attacking", true));
+   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera", true));
+   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Only attack targets you can see", false));
+   private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "While in the air, wait until you are falling so the hit is a critical", true));
+   private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Keep sprinting after each hit", true));
    private final BooleanSetting smartSwitch = this.addSetting(
-      new BooleanSetting("Smart Switch", "Auto-select best sword or shield-breaking axe", true)
+      new BooleanSetting("Smart Switch", "Switch to the best sword, or an axe against a raised shield, before attacking", true)
    );
    private final BooleanSetting lagComp = this.addSetting(
-      new BooleanSetting("Lag Comp", "Lead moving targets by ping and velocity", true)
+      new BooleanSetting("Lag Comp", "Lead moving targets by their speed and your ping", true)
    );
    private final NumberSetting predictTicks = this.addSetting(
-      new NumberSetting("Predict Ticks", "Base movement ticks to lead target", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
+      new NumberSetting("Predict Ticks", "Ticks ahead to lead a moving target, before ping is added", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
    );
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players", true));
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Attack hostile mobs", true));
@@ -92,7 +92,7 @@ public final class KillAura extends Module {
    private double eyeZ;
 
    public KillAura() {
-      super("KillAura", "Automatically attack nearby mobs and players with smooth aim.", Category.COMBAT);
+      super("KillAura", "Attacks nearby targets, turning to face each one first.", Category.COMBAT);
    }
 
    @Override

@@ -13,7 +13,7 @@ public final class AutoGoto extends Module {
    private final NumberSetting targetZ = this.addSetting(new NumberSetting("Target Z", "Destination Z coordinate", 0.0, -30000.0, 30000.0, 1.0));
 
    public AutoGoto() {
-      super("Auto Goto", "Pathfind to X/Y/Z coordinates via Baritone.", Category.MOVEMENT);
+      super("Auto Goto", "Walks to the coordinates you set, using Baritone.", Category.MOVEMENT);
    }
 
    @Override

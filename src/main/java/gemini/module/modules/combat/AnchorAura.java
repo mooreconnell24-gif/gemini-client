@@ -23,14 +23,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public final class AnchorAura extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Target and placement range", 4.5, 2.0, 6.0, 0.5));
-   private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Max allowed self explosion damage", 9.0, 2.0, 18.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest enemy and anchor spot, in blocks", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Most damage an anchor blast may deal you", 9.0, 2.0, 18.0, 1.0));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between anchor actions", 2.0, 0.0, 10.0, 1.0));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 30).build();
    private int wait;
 
    public AnchorAura() {
-      super("AnchorAura", "Place, charge, and detonate Respawn Anchors on the enemy Priority picks, skipping enemies whose anchor would hurt you too much.", Category.COMBAT);
+      super("AnchorAura", "Places, charges and sets off respawn anchors next to the chosen enemy, skipping any blast that would hurt you too much.", Category.COMBAT);
    }
 
    @Override

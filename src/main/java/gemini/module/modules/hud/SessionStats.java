@@ -35,13 +35,13 @@ public final class SessionStats extends Ticked {
    private static final int COUNTERS = 8;
    /** Items that place a block; built once on the server thread, then only read there. */
    private static Item[] blockItems;
-   private final BooleanSetting mined = this.addSetting(new BooleanSetting("Blocks Mined", "Blocks you broke this session", true));
-   private final BooleanSetting placed = this.addSetting(new BooleanSetting("Blocks Placed", "Blocks you placed this session", true));
-   private final BooleanSetting kills = this.addSetting(new BooleanSetting("Mob Kills", "Mobs you killed this session", true));
-   private final BooleanSetting deaths = this.addSetting(new BooleanSetting("Deaths", "How often you died this session", false));
-   private final BooleanSetting damage = this.addSetting(new BooleanSetting("Damage", "Hearts of damage you dealt and took this session", false));
-   private final BooleanSetting crafted = this.addSetting(new BooleanSetting("Crafted", "Items you crafted this session", false));
-   private final BooleanSetting xp = this.addSetting(new BooleanSetting("Experience", "Experience points you collected this session", true));
+   private final BooleanSetting mined = this.addSetting(new BooleanSetting("Blocks Mined", "Show blocks you broke this session", true));
+   private final BooleanSetting placed = this.addSetting(new BooleanSetting("Blocks Placed", "Show blocks you placed this session", true));
+   private final BooleanSetting kills = this.addSetting(new BooleanSetting("Mob Kills", "Show mobs you killed this session", true));
+   private final BooleanSetting deaths = this.addSetting(new BooleanSetting("Deaths", "Show how often you died this session", false));
+   private final BooleanSetting damage = this.addSetting(new BooleanSetting("Damage", "Show hearts of damage you dealt and took this session", false));
+   private final BooleanSetting crafted = this.addSetting(new BooleanSetting("Crafted", "Show items you crafted this session", false));
+   private final BooleanSetting xp = this.addSetting(new BooleanSetting("Experience", "Show experience points you collected this session", true));
    private final BooleanSetting rates = this.addSetting(new BooleanSetting("Per Hour", "Add the hourly rate after each count (after the first minute)", false));
    private final SessionTally tally = new SessionTally(COUNTERS);
    private final InfoText infoText = new InfoText();
@@ -49,7 +49,7 @@ public final class SessionStats extends Ticked {
    private int poll;
 
    public SessionStats() {
-      super("Session Stats", "Blocks mined and placed, kills, deaths, damage, crafts and experience gained this session.", "Bottom Right", 6, 130, 500);
+      super("Session Stats", "Shows blocks mined and placed, kills, deaths, damage, crafts and experience gained this session.", "Bottom Right", 6, 130, 500);
       this.addSetting(new ActionSetting("Reset", "Start counting from zero again", this::restart));
    }
 

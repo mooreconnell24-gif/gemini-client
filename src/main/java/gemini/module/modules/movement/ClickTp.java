@@ -25,12 +25,12 @@ public final class ClickTp extends Module {
       new ModeSetting("Trigger", "What starts the teleport", "Middle Click", "Middle Click", "Sneak + Right Click")
    );
    private final BooleanSetting steps = this.addSetting(
-      new BooleanSetting("Step Packets", "Send the route in short hops so the server accepts long teleports", true)
+      new BooleanSetting("Step Packets", "Send the route in short hops so long teleports are accepted", true)
    );
    private boolean previous;
 
    public ClickTp() {
-      super("Click TP", "Teleport to the block you are looking at.", Category.MOVEMENT);
+      super("Click TP", "Teleports you to the block you are looking at.", Category.MOVEMENT);
    }
 
    @Override

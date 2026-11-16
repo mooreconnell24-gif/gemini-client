@@ -25,25 +25,25 @@ import net.minecraft.world.item.ItemStack;
  */
 public final class ElytraRecast extends Module {
    private final BooleanSetting autoJump = this.addSetting(
-      new BooleanSetting("Auto Jump", "Jump by itself on every landing (off: only while you hold Jump)", true)
+      new BooleanSetting("Auto Jump", "Jump on every landing (off: only while you hold Jump)", true)
    );
-   private final BooleanSetting autoSprint = this.addSetting(new BooleanSetting("Auto Sprint", "Hold sprint for you while bouncing", true));
+   private final BooleanSetting autoSprint = this.addSetting(new BooleanSetting("Auto Sprint", "Sprint for you while bouncing", true));
    private final ModeSetting redeploy = this.addSetting(
-      new ModeSetting("Redeploy", "Instant reopens the elytra as soon as you are airborne; Falling waits until you drop", "Instant", "Instant", "Falling")
+      new ModeSetting("Redeploy", "Instant reopens the elytra as soon as you leave the ground; Falling waits until you start to drop", "Instant", "Instant", "Falling")
    );
    private final NumberSetting minFall = this.addSetting(
-      new NumberSetting("Min Fall Speed", "Downward speed (blocks per tick) needed before reopening", 0.0, 0.0, 1.0, 0.05)
+      new NumberSetting("Min Fall Speed", "Downward speed needed before reopening, in blocks per tick", 0.0, 0.0, 1.0, 0.05)
          .showIf(() -> this.redeploy.is("Falling"))
    );
    private final NumberSetting delay = this.addSetting(new NumberSetting("Redeploy Delay", "Ticks in the air before reopening", 0.0, 0.0, 10.0, 1.0));
    private final BooleanSetting pitchHold = this.addSetting(
-      new BooleanSetting("Pitch Hold", "Hold your pitch at a fixed angle, which keeps the bounces efficient", false)
+      new BooleanSetting("Pitch Hold", "Hold your view at a fixed pitch, which keeps the bounces long", false)
    );
    private final NumberSetting pitch = this.addSetting(
-      new NumberSetting("Pitch", "Angle to hold (positive looks down)", 75.0, -30.0, 90.0, 1.0).showIf(this.pitchHold::get)
+      new NumberSetting("Pitch", "Pitch to hold, in degrees (positive looks down)", 75.0, -30.0, 90.0, 1.0).showIf(this.pitchHold::get)
    );
    private final NumberSetting minDurability = this.addSetting(
-      new NumberSetting("Min Durability", "Stop when the elytra has this little durability left", 10.0, 1.0, 100.0, 1.0)
+      new NumberSetting("Min Durability", "Stop when the elytra has this much durability left", 10.0, 1.0, 100.0, 1.0)
    );
    private int airTicks;
    private int bounces;
@@ -52,7 +52,7 @@ public final class ElytraRecast extends Module {
    private float savedPitch;
 
    public ElytraRecast() {
-      super("Elytra Recast", "Reopen your elytra on every landing to keep bouncing at speed without fireworks.", Category.MOVEMENT);
+      super("Elytra Recast", "Reopens your elytra after every landing so you keep bouncing along without fireworks.", Category.MOVEMENT);
    }
 
    /** The elytra is worn down to the stop threshold (items that cannot break never are). */

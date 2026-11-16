@@ -15,14 +15,14 @@ import net.minecraft.world.item.Items;
 
 public final class AutoExp extends Module {
    private final NumberSetting threshold = this.addSetting(
-      new NumberSetting("Durability %", "Repair when armor durability is below %", 60.0, 5.0, 99.0, 1.0)
+      new NumberSetting("Durability %", "Throw bottles while any armour piece is below this durability (percent)", 60.0, 5.0, 99.0, 1.0)
    );
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between throws", 2.0, 1.0, 20.0, 1.0));
-   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim down in packets only", true));
+   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Look down without moving your camera", true));
    private int wait;
 
    public AutoExp() {
-      super("Auto EXP", "Throw XP bottles at your feet when armor is damaged.", Category.COMBAT);
+      super("Auto EXP", "Throws experience bottles at your feet while your armour is worn down.", Category.COMBAT);
    }
 
    @Override

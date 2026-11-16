@@ -8,7 +8,7 @@ import gemini.event.ActionPriority;
 
 public final class BaritonePause extends Module {
    public BaritonePause() {
-      super("Baritone Pause", "Pause active Baritone pathing and mining.", Category.CLIENT);
+      super("Baritone Pause", "Pauses Baritone's current pathing or mining.", Category.CLIENT);
    }
 
    @Override

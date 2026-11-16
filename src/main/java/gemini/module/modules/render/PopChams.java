@@ -39,15 +39,15 @@ public final class PopChams extends Module {
    private static final int[] EDGES = {0, 1, 2, 3, 4, 5, 6, 7, 0, 2, 1, 3, 4, 6, 5, 7, 0, 4, 1, 5, 2, 6, 3, 7};
    /** The six faces as corner indices in winding order. */
    private static final int[] FACES = {0, 1, 3, 2, 4, 5, 7, 6, 0, 1, 5, 4, 2, 3, 7, 6, 0, 2, 6, 4, 1, 3, 7, 5};
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How the ghost is drawn", "Both", "Fill", "Wireframe", "Both"));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ghost colour; its alpha sets the fill strength", 275));
-   private final NumberSetting fadeTime = this.addSetting(new NumberSetting("Fade Time", "Seconds until a ghost has faded away", 1.6, 0.3, 6.0, 0.1));
-   private final NumberSetting floatSpeed = this.addSetting(new NumberSetting("Float Speed", "Blocks per second the ghost rises", 0.6, 0.0, 3.0, 0.05));
-   private final NumberSetting scaleGrowth = this.addSetting(new NumberSetting("Scale Growth", "How much larger the ghost grows per second", 0.15, 0.0, 1.5, 0.05));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How the copy is drawn", "Both", "Fill", "Wireframe", "Both"));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Copy colour; its alpha sets the fill strength", 275));
+   private final NumberSetting fadeTime = this.addSetting(new NumberSetting("Fade Time", "Seconds until a copy has faded away", 1.6, 0.3, 6.0, 0.1));
+   private final NumberSetting floatSpeed = this.addSetting(new NumberSetting("Float Speed", "How fast the copy rises, in blocks per second", 0.6, 0.0, 3.0, 0.05));
+   private final NumberSetting scaleGrowth = this.addSetting(new NumberSetting("Scale Growth", "How much larger the copy grows per second", 0.15, 0.0, 1.5, 0.05));
    private final NumberSetting lineWidth = this.addSetting(new NumberSetting("Line Width", "Wireframe thickness", 1.5, 1.0, 4.0, 0.5));
-   private final BooleanSetting self = this.addSetting(new BooleanSetting("Self", "Also leave a ghost when you pop", false));
-   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw ghosts on top of blocks", false));
-   private final NumberSetting maxGhosts = this.addSetting(new NumberSetting("Max Ghosts", "Most ghosts shown at once; the oldest makes way", 12.0, 1.0, POOL, 1.0));
+   private final BooleanSetting self = this.addSetting(new BooleanSetting("Self", "Also leave a copy when you pop", false));
+   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw copies on top of blocks", false));
+   private final NumberSetting maxGhosts = this.addSetting(new NumberSetting("Max Ghosts", "Most copies shown at once; the oldest is removed first", 12.0, 1.0, POOL, 1.0));
    private final Ghost[] ghosts = new Ghost[POOL];
 
    /** One ghost; reused from the pool. */
@@ -65,7 +65,7 @@ public final class PopChams extends Module {
    }
 
    public PopChams() {
-      super("Pop Chams", "Leaves a fading, floating ghost of an entity at the spot and pose where it popped a totem.", Category.RENDER);
+      super("Pop Chams", "Leaves a fading, floating copy of an entity where it popped a totem.", Category.RENDER);
       for (int i = 0; i < POOL; i++) {
          this.ghosts[i] = new Ghost();
       }

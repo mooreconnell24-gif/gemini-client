@@ -13,7 +13,7 @@ public final class LastDeath extends Ticked {
    private boolean dead;
 
    public LastDeath() {
-      super("Last Death", "Where you last died, and how far away that is.", "Top Left", 6, 184, 500);
+      super("Last Death", "Shows where you last died and how far away that is.", "Top Left", 6, 184, 500);
    }
 
    @Override

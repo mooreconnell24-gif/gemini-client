@@ -16,15 +16,15 @@ import net.minecraft.world.phys.Vec3;
 
 public final class HitEffect extends Module {
    private final ModeSetting style = this.addSetting(
-      new ModeSetting("Style", "Energy Burst: a growing box; Shockwave: an expanding ring; Lightning: a bolt striking the target", "Energy Burst", "Energy Burst", "Shockwave", "Lightning")
+      new ModeSetting("Style", "Energy Burst draws a growing box; Shockwave an expanding ring; Lightning a bolt striking the target", "Energy Burst", "Energy Burst", "Shockwave", "Lightning")
    );
-   private final BooleanSetting hitmarker = this.addSetting(new BooleanSetting("Crosshair Hitmarker", "Flash a crisp X hitmarker on your crosshair", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hit effect hue", 195));
+   private final BooleanSetting hitmarker = this.addSetting(new BooleanSetting("Crosshair Hitmarker", "Flash an X on your crosshair when you hit", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Effect colour", 195));
    private final ArrayDeque<HitEffect.HitBurst> bursts = new ArrayDeque<>();
    private long lastHitMs;
 
    public HitEffect() {
-      super("HitEffect", "Show 3D impact bursts and a crosshair hitmarker.", Category.RENDER);
+      super("HitEffect", "Shows an effect where your hits land and a hit marker on your crosshair.", Category.RENDER);
    }
 
    @Override

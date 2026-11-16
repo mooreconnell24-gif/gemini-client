@@ -30,7 +30,7 @@ public final class SilentPearl extends Module {
    private int waited;
 
    public SilentPearl() {
-      super("Silent Pearl", "Throw an ender pearl from anywhere in your inventory with one key press.", Category.PLAYER);
+      super("Silent Pearl", "Throws an ender pearl from anywhere in your inventory with one key press.", Category.PLAYER);
    }
 
    @Override

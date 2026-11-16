@@ -12,9 +12,9 @@ import net.minecraft.client.player.LocalPlayer;
 
 /** Tops your health up with a server-side effect once it drops below a threshold. */
 public final class AutoHeal extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Heal once health (in half-hearts) drops to this", 8.0, 1.0, 19.0, 1.0));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Heal when health drops to this (half-hearts)", 8.0, 1.0, 19.0, 1.0));
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "How to heal", "Instant Health", "Instant Health", "Regeneration", "Full Heal")
+      new ModeSetting("Mode", "Effect used to heal: instant health, regeneration, or a stronger instant health", "Instant Health", "Instant Health", "Regeneration", "Full Heal")
    );
    private final BooleanSetting feed = this.addSetting(new BooleanSetting("Feed", "Also refill hunger with saturation", true));
    private final NumberSetting cooldown = this.addSetting(new NumberSetting("Cooldown", "Ticks between heals", 40.0, 5.0, 400.0, 5.0));
@@ -25,7 +25,7 @@ public final class AutoHeal extends Module {
    private String infoCache;
 
    public AutoHeal() {
-      super("Auto Heal", "Heal yourself with /effect whenever your health gets low.", Category.PLAYER);
+      super("Auto Heal", "Heals you with the /effect command when your health gets low.", Category.PLAYER);
    }
 
    @Override

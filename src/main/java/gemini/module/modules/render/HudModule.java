@@ -7,7 +7,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 
 public final class HudModule extends Module {
-   private final BooleanSetting watermark = this.addSetting(new BooleanSetting("Watermark", "Show Gemini branding", true));
+   private final BooleanSetting watermark = this.addSetting(new BooleanSetting("Watermark", "Show the Gemini name in the top-left corner", true));
    private final ModeSetting watermarkStyle = this.addSetting(
       new ModeSetting(
             "Watermark Style",
@@ -20,15 +20,15 @@ public final class HudModule extends Module {
          .showIf(this.watermark::get)
    );
    private final NumberSetting watermarkSize = this.addSetting(
-      new NumberSetting("Watermark Size", "Size of the watermark on its own, on top of the HUD scale", 1.0, 0.4, 1.5, 0.05).showIf(this.watermark::get)
+      new NumberSetting("Watermark Size", "Size of the watermark, on top of the HUD scale", 1.0, 0.4, 1.5, 0.05).showIf(this.watermark::get)
    );
    private final BooleanSetting logo = this.addSetting(new BooleanSetting("Logo", "Show the Gemini logo next to the name", true).showIf(this.watermark::get));
-   private final BooleanSetting fps = this.addSetting(new BooleanSetting("FPS", "Show the FPS counter", true).showIf(this.watermark::get));
+   private final BooleanSetting fps = this.addSetting(new BooleanSetting("FPS", "Show frames per second", true).showIf(this.watermark::get));
    private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show your latency; hidden in single player, where it is always zero", true).showIf(this.watermark::get));
    private final BooleanSetting speed = this.addSetting(new BooleanSetting("Speed", "Show your speed in blocks per second", false).showIf(this.watermark::get));
    private final BooleanSetting shadow = this.addSetting(new BooleanSetting("Text Shadow", "Draw text with a shadow", true));
    private final BooleanSetting toasts = this.addSetting(
-      new BooleanSetting("Toasts", "Show pop-up notifications for module toggles, warnings and finished tasks", true)
+      new BooleanSetting("Toasts", "Show notifications for module toggles, warnings and finished tasks", true)
    );
    private final ModeSetting toastPosition = this.addSetting(
       new ModeSetting("Toast Position", "Screen corner the notifications stack in", "Bottom Right", "Bottom Right", "Top Right", "Bottom Left", "Top Left")
@@ -37,7 +37,7 @@ public final class HudModule extends Module {
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Overall HUD scale", 1.0, 0.6, 1.6, 0.05));
 
    public HudModule() {
-      super("HUD", "In-game overlay: watermark, notifications and overall scale. The module list is the ArrayList widget.", Category.RENDER);
+      super("HUD", "Shows the watermark and notifications and sets the overall HUD scale; the module list is the ArrayList widget.", Category.RENDER);
       this.loadState(true, this.getKeybind());
    }
 

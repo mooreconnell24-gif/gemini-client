@@ -19,10 +19,10 @@ import net.minecraft.world.phys.HitResult.Type;
 
 public final class AutoClickerModule extends Module {
    private final NumberSetting cps = this.addSetting(new NumberSetting("CPS", "Clicks per second", 8.0, 1.0, 20.0, 1.0));
-   private final NumberSetting jitter = this.addSetting(new NumberSetting("Jitter", "How wide the click timing spreads (%)", 28.0, 0.0, 50.0, 1.0));
-   private final BooleanSetting requireMouse = this.addSetting(new BooleanSetting("Require Mouse", "Only click while attack is held", true));
-   private final BooleanSetting weaponOnly = this.addSetting(new BooleanSetting("Weapon Only", "Only while holding a weapon", true));
-   private final BooleanSetting respectCooldown = this.addSetting(new BooleanSetting("Respect Cooldown", "Wait until the hit will actually count", true));
+   private final NumberSetting jitter = this.addSetting(new NumberSetting("Jitter", "How much the time between clicks varies (percent)", 28.0, 0.0, 50.0, 1.0));
+   private final BooleanSetting requireMouse = this.addSetting(new BooleanSetting("Require Mouse", "Only click while the attack button is held", true));
+   private final BooleanSetting weaponOnly = this.addSetting(new BooleanSetting("Weapon Only", "Only click while holding a weapon", true));
+   private final BooleanSetting respectCooldown = this.addSetting(new BooleanSetting("Respect Cooldown", "Wait until the attack is charged so each hit counts", true));
    private final Random random = new Random();
    private long nextClick;
    private int burstLeft;
@@ -30,7 +30,7 @@ public final class AutoClickerModule extends Module {
    private int untilBurst = 8;
 
    public AutoClickerModule() {
-      super("AutoClicker", "Click with a human rhythm while you hold attack.", Category.COMBAT);
+      super("AutoClicker", "Attacks the entity under your crosshair at a set rate with slightly uneven timing.", Category.COMBAT);
    }
 
    @Override

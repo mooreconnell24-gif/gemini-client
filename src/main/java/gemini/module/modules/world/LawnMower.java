@@ -29,9 +29,9 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class LawnMower extends Module {
    /** Ticks a cobweb may take before it is abandoned (shears need about 8, a sword about 8, a bare hand 80). */
    private static final int MAX_WEB_TICKS = 60;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Clear radius around you in blocks", 4.0, 2.0, 5.5, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to clear, in blocks", 4.0, 2.0, 5.5, 0.5));
    private final BooleanSetting flowers = this.addSetting(
-      new BooleanSetting("Flowers", "Also clear flowers that break in one hit (leaves and other slow flowering blocks are left alone)", false)
+      new BooleanSetting("Flowers", "Also clear flowers that break in one hit (slower flowering blocks are left alone)", false)
    );
    private final BooleanSetting cobwebs = this.addSetting(
       new BooleanSetting("Cobwebs", "Mine cobwebs while you hold a sword or shears in your main hand", true)
@@ -40,7 +40,7 @@ public final class LawnMower extends Module {
    private int webTicks;
 
    public LawnMower() {
-      super("LawnMower", "Clear tall grass, ferns, dead bushes and fire (and optionally flowers and cobwebs) around you.", Category.WORLD);
+      super("LawnMower", "Clears grass, ferns, dead bushes and fire around you, and optionally flowers and cobwebs.", Category.WORLD);
    }
 
    @Override

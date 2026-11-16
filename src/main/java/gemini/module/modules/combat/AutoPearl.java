@@ -13,11 +13,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 
 public final class AutoPearl extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Panic Health", "Throw pearl below this health", 6.0, 1.0, 16.0, 1.0));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Panic Health", "Throw a pearl at or below this health", 6.0, 1.0, 16.0, 1.0));
    private int cooldown;
 
    public AutoPearl() {
-      super("AutoPearl", "Throw an Ender Pearl when health drops critically low.", Category.COMBAT);
+      super("AutoPearl", "Throws an ender pearl from your hotbar, wherever you are looking, when your health gets low.", Category.COMBAT);
    }
 
    @Override

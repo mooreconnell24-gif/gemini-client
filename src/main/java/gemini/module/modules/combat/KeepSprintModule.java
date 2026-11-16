@@ -7,7 +7,7 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class KeepSprintModule extends Module {
    public KeepSprintModule() {
-      super("KeepSprint", "Stay sprinting after attacking.", Category.COMBAT);
+      super("KeepSprint", "Keeps you sprinting after you attack.", Category.COMBAT);
    }
 
    @Override

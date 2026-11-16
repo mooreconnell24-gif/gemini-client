@@ -5,6 +5,6 @@ import gemini.module.Module;
 
 public final class SafeWalkModule extends Module {
    public SafeWalkModule() {
-      super("SafeWalk", "Never walk off an edge, without having to sneak.", Category.MOVEMENT);
+      super("SafeWalk", "Stops you walking off edges without having to sneak.", Category.MOVEMENT);
    }
 }

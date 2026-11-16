@@ -10,12 +10,12 @@ import net.minecraft.world.entity.LivingEntity;
 
 public final class TimerRange extends Module {
    private final NumberSetting boost = this.addSetting(
-      new NumberSetting("Burst Speed", "Horizontal burst multiplier when closing gap", 1.45, 1.1, 2.2, 0.05)
+      new NumberSetting("Burst Speed", "Speed multiplier of the burst", 1.45, 1.1, 2.2, 0.05)
    );
    private int cooldown;
 
    public TimerRange() {
-      super("TimerRange", "Burst speed briefly when closing gap to a target.", Category.MOVEMENT);
+      super("Gap Closer", "Gives you a short burst of speed towards a target more than 3 blocks away.", Category.MOVEMENT);
    }
 
    @Override

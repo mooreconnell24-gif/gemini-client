@@ -47,7 +47,7 @@ public final class AutoNametag extends AuraModuleBase<LivingEntity> {
    public AutoNametag() {
       super(
          "Auto Nametag",
-         "Name nearby unnamed mobs with a renamed name tag from your hotbar.",
+         "Names nearby unnamed mobs with a renamed name tag from your hotbar.",
          Category.WORLD,
          LivingEntity.class,
          "How far away mobs are named",

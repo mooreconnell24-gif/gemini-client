@@ -17,7 +17,7 @@ public final class InventoryMoveModule extends Module {
    private boolean driving;
 
    public InventoryMoveModule() {
-      super("InventoryMove", "Walk and jump while inventories are open.", Category.MOVEMENT);
+      super("InventoryMove", "Lets you walk and jump while a menu is open.", Category.MOVEMENT);
    }
 
    @Override

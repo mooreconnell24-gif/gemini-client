@@ -8,7 +8,7 @@ import net.minecraft.world.level.biome.Biome;
 
 public final class BiomeInfo extends Ticked {
    public BiomeInfo() {
-      super("Biome", "The biome you are standing in.", "Top Left", 6, 94, 500);
+      super("Biome", "Shows the biome you are standing in.", "Top Left", 6, 94, 500);
    }
 
    @Override

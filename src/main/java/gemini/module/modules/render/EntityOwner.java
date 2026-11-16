@@ -19,14 +19,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 
 public final class EntityOwner extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Longest label distance", 32.0, 4.0, 96.0, 2.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest label, in blocks", 32.0, 4.0, 96.0, 2.0));
    private final BooleanSetting yours = this.addSetting(new BooleanSetting("Show Your Own", "Also label pets that belong to you", false));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Label color", 45));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Label colour", 45));
    /** Finished label ("Owner: name") per owner id, so a frame builds no strings. */
    private final Map<UUID, String> names = new HashMap<>();
 
    public EntityOwner() {
-      super("Entity Owner", "Show who owns tamed pets and horses.", Category.RENDER);
+      super("Entity Owner", "Shows who owns tamed pets and horses.", Category.RENDER);
    }
 
    @Override

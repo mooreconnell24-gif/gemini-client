@@ -16,14 +16,14 @@ public final class AutoSign extends Module {
       new ListSetting("Lines", "Sign text, one entry per line (the first four are used, each cut to 15 characters)", ListSetting.Kind.TEXT, "Gemini", "was here")
    );
    private final BooleanSetting backToo = this.addSetting(
-      new BooleanSetting("Back Side", "Also replace the text when you edit the back of a sign (the server only lets one side be written per edit)", false)
+      new BooleanSetting("Back Side", "Also write the text when you edit the back of a sign (only one side can be written per edit)", false)
    );
    /** The packet this module is sending in place of the editor's, so the send hook does not replace it again. */
    private ServerboundSignUpdatePacket replacement;
-   private final BooleanSetting closeScreen = this.addSetting(new BooleanSetting("Skip Editor", "Close the sign editor instantly", true));
+   private final BooleanSetting closeScreen = this.addSetting(new BooleanSetting("Skip Editor", "Close the sign editor straight away", true));
 
    public AutoSign() {
-      super("Auto Sign", "Fill in every sign you place with preset text.", Category.WORLD);
+      super("Auto Sign", "Fills in every sign you place with preset text.", Category.WORLD);
    }
 
    @Override

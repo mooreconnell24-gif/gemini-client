@@ -13,7 +13,7 @@ public final class Cps extends Ticked {
    private boolean wasRight;
 
    public Cps() {
-      super("CPS", "Clicks per second for both mouse buttons.", "Bottom Right", 6, 114, 100);
+      super("CPS", "Shows your clicks per second for both mouse buttons.", "Bottom Right", 6, 114, 100);
    }
 
    @Override

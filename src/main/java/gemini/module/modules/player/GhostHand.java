@@ -19,11 +19,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class GhostHand extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max reach through walls", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest container to open through walls, in blocks", 4.5, 2.0, 6.0, 0.5));
    private boolean wasDown;
 
    public GhostHand() {
-      super("GhostHand", "Open containers through walls.", Category.PLAYER);
+      super("GhostHand", "Opens the chest, barrel, ender chest or shulker box you look at through walls.", Category.PLAYER);
    }
 
    @Override

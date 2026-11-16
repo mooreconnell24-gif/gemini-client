@@ -18,20 +18,20 @@ import net.minecraft.world.item.Items;
 
 public final class Offhand extends Module {
    private final ModeSetting item = this.addSetting(
-      new ModeSetting("Item", "Preferred offhand item", "Totem", "Totem", "Golden Apple", "Enchanted Golden Apple", "End Crystal", "Shield")
+      new ModeSetting("Item", "Item to keep in your offhand", "Totem", "Totem", "Golden Apple", "Enchanted Golden Apple", "End Crystal", "Shield")
    );
    private final NumberSetting totemHealth = this.addSetting(
-      new NumberSetting("Totem Health", "Force totem at or below this health", 10.0, 0.0, 20.0, 1.0)
+      new NumberSetting("Totem Health", "Hold a totem instead at or below this health", 10.0, 0.0, 20.0, 1.0)
    );
    private final BooleanSetting swordGapple = this.addSetting(
-      new BooleanSetting("Sword Gapple", "Hold golden apple while right-clicking with sword", false)
+      new BooleanSetting("Sword Gapple", "Hold an enchanted golden apple while you use the item in your hand with a sword", false)
    );
-   private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only pull items from hotbar slots", false));
+   private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only take items from the hotbar", false));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between offhand swaps", 2.0, 0.0, 20.0, 1.0));
    private int cooldown;
 
    public Offhand() {
-      super("Offhand", "Keep your offhand stocked with totems.", Category.COMBAT);
+      super("Offhand", "Keeps your chosen item in your offhand and switches to a totem when your health is low.", Category.COMBAT);
    }
 
    @Override

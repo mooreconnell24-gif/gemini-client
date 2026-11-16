@@ -10,12 +10,12 @@ import net.minecraft.world.entity.LivingEntity;
 
 public final class WTap extends Module {
    private final NumberSetting holdTicks = this.addSetting(
-      new NumberSetting("Release Ticks", "Ticks to release W after landing a hit", 2.0, 1.0, 5.0, 1.0)
+      new NumberSetting("Release Ticks", "Ticks to let go of forward after the hit", 2.0, 1.0, 5.0, 1.0)
    );
    private int releaseTimer;
 
    public WTap() {
-      super("WTap", "Briefly re-tap W after melee hits for combo knockback.", Category.COMBAT);
+      super("WTap", "Lets go of the forward key briefly after a sprinting hit so the next hit deals sprint knockback.", Category.COMBAT);
    }
 
    @Override

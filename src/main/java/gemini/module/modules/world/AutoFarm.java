@@ -41,16 +41,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class AutoFarm extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far from you crops are worked", 4.5, 1.0, 6.0, 0.5));
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between bursts", 2.0, 0.0, 10.0, 1.0));
-   private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Most crops handled in one burst", 2.0, 1.0, 8.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far from you crops are worked, in blocks", 4.5, 1.0, 6.0, 0.5));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between rounds", 2.0, 0.0, 10.0, 1.0));
+   private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Most crops handled in one round", 2.0, 1.0, 8.0, 1.0));
    private final BooleanSetting crops = this.addSetting(new BooleanSetting("Crops", "Harvest ripe wheat, carrots, potatoes, beetroot and cocoa (cocoa is not replanted)", true));
    private final BooleanSetting wart = this.addSetting(new BooleanSetting("Nether Wart", "Harvest grown nether wart", true));
-   private final BooleanSetting fruit = this.addSetting(new BooleanSetting("Melons And Pumpkins", "Harvest melons and pumpkins, only ones attached to a stem so built blocks are left alone", true));
+   private final BooleanSetting fruit = this.addSetting(new BooleanSetting("Melons And Pumpkins", "Harvest melons and pumpkins attached to a stem, so placed blocks are left alone", true));
    private final BooleanSetting stalks = this.addSetting(new BooleanSetting("Sugar Cane And Cactus", "Cut sugar cane and cactus, leaving the bottom block to regrow", true));
-   private final BooleanSetting replant = this.addSetting(new BooleanSetting("Replant", "Plant the same seed again after harvesting, pulling seeds from the inventory into an empty hotbar slot if needed", true));
+   private final BooleanSetting replant = this.addSetting(new BooleanSetting("Replant", "Plant the same seed again after harvesting, moving seeds from the inventory to an empty hotbar slot if needed", true));
    private final BooleanSetting boneMeal = this.addSetting(
-      new BooleanSetting("Bone Meal", "Apply hotbar bone meal to unripe crops nearby", false)
+      new BooleanSetting("Bone Meal", "Use bone meal from the hotbar on unripe crops nearby", false)
    );
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while working", true));
    private final Map<BlockPos, Item> seeds = new LinkedHashMap<>();
@@ -59,7 +59,7 @@ public final class AutoFarm extends Module {
    private int cooldown;
 
    public AutoFarm() {
-      super("Auto Farm", "Harvest ripe crops around you.", Category.WORLD);
+      super("Auto Farm", "Harvests ripe crops around you.", Category.WORLD);
    }
 
    @Override

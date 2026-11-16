@@ -12,11 +12,11 @@ import net.minecraft.world.phys.Vec3;
 
 public final class EdgeJump extends Module {
    private final NumberSetting edgeOffset = this.addSetting(
-      new NumberSetting("Edge Threshold", "How close to the block edge before jumping", 0.18, 0.05, 0.4, 0.02)
+      new NumberSetting("Edge Threshold", "How far over the edge you get before jumping, in blocks", 0.18, 0.05, 0.4, 0.02)
    );
 
    public EdgeJump() {
-      super("EdgeJump", "Auto-jump at the outer edge of blocks.", Category.MOVEMENT);
+      super("EdgeJump", "Jumps when you are about to walk off the edge of a block.", Category.MOVEMENT);
    }
 
    @Override

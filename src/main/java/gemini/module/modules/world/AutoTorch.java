@@ -23,19 +23,19 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class AutoTorch extends Module {
    private final NumberSetting lightLevel = this.addSetting(
-      new NumberSetting("Light Level", "Place a torch when block light is at or below this", 0.0, 0.0, 14.0, 1.0)
+      new NumberSetting("Light Level", "Place a torch where block light is at or below this", 0.0, 0.0, 14.0, 1.0)
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Blocks around you to check", 3.0, 1.0, 5.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to check, in blocks", 3.0, 1.0, 5.0, 1.0));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between torches", 5.0, 1.0, 40.0, 1.0));
    private final ModeSetting kind = this.addSetting(new ModeSetting("Torch", "Which torch to use", "Any", "Any", "Torch", "Soul Torch"));
    private final ListSetting avoid = this.addSetting(
       new ListSetting("Avoid", "Blocks never to place torches on", ListSetting.Kind.BLOCK, "farmland", "ice", "packed_ice", "blue_ice")
    );
-   private final BooleanSetting onlyWhenStill = this.addSetting(new BooleanSetting("Only When Still", "Do not place while you are moving", false));
+   private final BooleanSetting onlyWhenStill = this.addSetting(new BooleanSetting("Only When Still", "Only place while you are standing still", false));
    private int wait;
 
    public AutoTorch() {
-      super("Auto Torch", "Light up dark floors around you with torches.", Category.WORLD);
+      super("Auto Torch", "Places torches on dark floor around you.", Category.WORLD);
    }
 
    @Override

@@ -96,24 +96,24 @@ public final class XrayModule extends Module {
       )
    );
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Hide strips non-ores; Ghost renders translucent terrain", "Hide", "Hide", "Ghost")
+      new ModeSetting("Mode", "Hide removes every other block; Ghost makes terrain see-through", "Hide", "Hide", "Ghost")
          .onChange(this::markDirty)
    );
    private final NumberSetting opacity = this.addSetting(
-      new NumberSetting("Opacity", "World terrain opacity percentage in Ghost mode", 12.0, 2.0, 80.0, 1.0)
+      new NumberSetting("Opacity", "Terrain opacity in Ghost mode (percent)", 12.0, 2.0, 80.0, 1.0)
          .showIf(() -> this.mode.is("Ghost"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting exposedOnly = this.addSetting(
-      new BooleanSetting("Exposed Only", "Only show ores touching air or fluid (anti-antixray)", false)
+      new BooleanSetting("Exposed Only", "Only show ores touching air or a fluid", false)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting fullbright = this.addSetting(
-      new BooleanSetting("Fullbright", "Render Xray target blocks at full brightness", true).onChange(this::markDirty)
+      new BooleanSetting("Fullbright", "Draw the shown blocks at full brightness", true).onChange(this::markDirty)
    );
    private final BooleanSetting lava = this.addSetting(
-      new BooleanSetting("Show Lava", "Keep lava visible while Xray Hide mode is active", true)
+      new BooleanSetting("Show Lava", "Keep lava visible in Hide mode", true)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
@@ -122,23 +122,23 @@ public final class XrayModule extends Module {
    );
    private final BooleanSetting[] presetToggles = new BooleanSetting[PRESETS.size()];
    private final ListSetting custom = this.addSetting(
-      new ListSetting("Custom Blocks", "Extra blocks to reveal, picked from the block list", ListSetting.Kind.BLOCK).onChange(this::markDirty)
+      new ListSetting("Custom Blocks", "Extra blocks to show, picked from the block list", ListSetting.Kind.BLOCK).onChange(this::markDirty)
    );
-   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw 3D outline boxes around nearby target ores", false));
-   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines from the crosshair to the nearest targets", false));
+   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw outline boxes around nearby ores", false));
+   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines from the crosshair to the nearest ores", false));
    private final ShapeSettings shape = new ShapeSettings(this, "Lines", true, () -> this.outlines.get() || this.tracers.get());
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far outlines, tracers and counts look", 48.0, 8.0, 128.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far outlines, tracers and counts look, in blocks", 48.0, 8.0, 128.0, 4.0));
    private final NumberSetting maxOutlines = this.addSetting(
       new NumberSetting("Max Outlines", "Most boxes drawn per frame, nearest first", 96.0, 8.0, 512.0, 8.0).showIf(this.outlines::get)
    );
    private final NumberSetting tracerCount = this.addSetting(
-      new NumberSetting("Tracer Count", "How many of the nearest targets get a line", 3.0, 1.0, 16.0, 1.0).showIf(this.tracers::get)
+      new NumberSetting("Tracer Count", "How many of the nearest ores get a line", 3.0, 1.0, 16.0, 1.0).showIf(this.tracers::get)
    );
-   private final BooleanSetting counts = this.addSetting(new BooleanSetting("Show Counts", "List nearby targets by type on the HUD", true));
+   private final BooleanSetting counts = this.addSetting(new BooleanSetting("Show Counts", "List nearby ores by type on the HUD", true));
    private final ModeSetting countsSide = this.addSetting(
       new ModeSetting("Counts Side", "Which edge of the screen the list sits on", "Left", "Left", "Right").showIf(this.counts::get)
    );
-   private final ActionSetting rebuild = this.addSetting(new ActionSetting("Rebuild Chunks", "Rebuild every visible chunk right now", this::rebuildNow));
+   private final ActionSetting rebuild = this.addSetting(new ActionSetting("Rebuild Chunks", "Redraw every visible chunk now", this::rebuildNow));
    private List<List<Block>> presetBlocks;
    private int reloadIn = -1;
    private int refreshIn;
@@ -153,7 +153,7 @@ public final class XrayModule extends Module {
    private String infoText = "";
 
    public XrayModule() {
-      super("Xray", "Render target ores and blocks through solid terrain.", Category.RENDER);
+      super("Xray", "Shows ores and other chosen blocks through solid terrain.", Category.RENDER);
 
       for (int i = 0; i < PRESETS.size(); i++) {
          XrayModule.Preset preset = PRESETS.get(i);

@@ -23,12 +23,12 @@ public final class WorldRules extends Module {
    private final NumberSetting tickSpeed;
    private final ModeSetting difficulty;
    private final BooleanSetting restore = this.addSetting(
-      new BooleanSetting("Restore On Disable", "Put every rule and the random tick speed back to their vanilla defaults when you switch this off (difficulty is left as it is)", false)
+      new BooleanSetting("Restore On Disable", "Put every rule and the random tick speed back to their vanilla defaults when you turn this off (difficulty is left as it is)", false)
    );
    private boolean applying;
 
    public WorldRules() {
-      super("World Rules", "Flip game rules like Keep Inventory and Mob Griefing without typing commands. Rules are saved with the world and stay set after switching off unless Restore On Disable is on.", Category.WORLD);
+      super("World Rules", "Changes game rules such as Keep Inventory and Mob Griefing without typing commands; they stay set after turning off unless Restore On Disable is on.", Category.WORLD);
       this.rule("Keep Inventory", "Keep your items and XP when you die", false, true, "keepInventory", "keep_inventory");
       this.rule("Daylight Cycle", "Let the sun move; off freezes the time of day", true, true, "doDaylightCycle", "advance_time", "do_daylight_cycle");
       this.rule("Weather Cycle", "Let the weather change by itself", true, true, "doWeatherCycle", "advance_weather", "do_weather_cycle");

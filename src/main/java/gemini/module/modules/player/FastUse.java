@@ -11,11 +11,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class FastUse extends Module {
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between item uses", 1.0, 1.0, 4.0, 1.0));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between uses", 1.0, 1.0, 4.0, 1.0));
    private int wait;
 
    public FastUse() {
-      super("FastUse", "Use throwables and XP bottles rapidly on right-click.", Category.PLAYER);
+      super("FastUse", "Uses throwables, potions and experience bottles quickly while you hold use.", Category.PLAYER);
    }
 
    @Override

@@ -20,14 +20,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 
 public final class Marker extends Module {
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Marker color", 280));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Marker colour", 280));
    private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Number each marker", true));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true);
    private final List<AABB> boxes = new ArrayList<>();
    private final List<String> numbers = new ArrayList<>();
 
    public Marker() {
-      super("Marker", "Draw boxes you place yourself. Use .marker add / box.", Category.RENDER);
+      super("Marker", "Draws boxes at positions you mark (.marker add / box).", Category.RENDER);
       this.addSetting(new ActionSetting("Mark Here", "Add a marker on your block", this::markHere));
       this.addSetting(new ActionSetting("Clear", "Remove every marker", this::clear));
    }

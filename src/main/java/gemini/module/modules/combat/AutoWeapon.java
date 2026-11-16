@@ -19,13 +19,13 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 
 public final class AutoWeapon extends Module {
    private final ModeSetting prefer = this.addSetting(
-      new ModeSetting("Prefer", "Preferred weapon type (Best compares DPS)", "Best", "Best", "Sword", "Axe", "Mace", "Trident")
+      new ModeSetting("Prefer", "Weapon type to switch to (Best compares damage per second)", "Best", "Best", "Sword", "Axe", "Mace", "Trident")
    );
-   private final BooleanSetting antiBreak = this.addSetting(new BooleanSetting("Anti Break", "Skip weapons near 0 durability", true));
-   private final BooleanSetting keepCurrent = this.addSetting(new BooleanSetting("Keep Current", "Keep current slot if already holding a weapon", false));
+   private final BooleanSetting antiBreak = this.addSetting(new BooleanSetting("Anti Break", "Skip weapons that are about to break", true));
+   private final BooleanSetting keepCurrent = this.addSetting(new BooleanSetting("Keep Current", "Keep the current slot if it already holds a weapon", false));
 
    public AutoWeapon() {
-      super("Auto Weapon", "Switch to your best hotbar weapon on attack.", Category.COMBAT);
+      super("Auto Weapon", "Switches to your best hotbar weapon when you attack.", Category.COMBAT);
    }
 
    @Override

@@ -22,7 +22,7 @@ public final class CoordsCopier extends Module {
    private final ModeSetting format = this.addSetting(
       new ModeSetting(
          "Format",
-         "Plain: x y z. Comma: x, y, z. Teleport: a /tp command. Execute: a /execute in <dimension> run tp command that works from any dimension",
+         "Plain: x y z. Comma: x, y, z. Teleport: a /tp command. Execute: an /execute in <dimension> run tp command that works from any dimension",
          "Plain",
          "Plain",
          "Comma",
@@ -36,11 +36,11 @@ public final class CoordsCopier extends Module {
    private final BooleanSetting linked = this.addSetting(
       new BooleanSetting("Linked Coords", "Add the matching Nether coordinates in the Overworld, or Overworld coordinates in the Nether", false)
    );
-   private final BooleanSetting waypoint = this.addSetting(new BooleanSetting("Pin Waypoint", "Also pin this spot in Waypoints", false));
+   private final BooleanSetting waypoint = this.addSetting(new BooleanSetting("Pin Waypoint", "Also save this spot as a waypoint", false));
 
    public CoordsCopier() {
-      super("Coords Copier", "Copy your coordinates (and optionally dimension, biome and Nether coords) to the clipboard with one key.", Category.CLIENT);
-      this.addSetting(new ActionSetting("Copy Now", "Copy your coordinates right away", this::copy));
+      super("Coords Copier", "Copies your coordinates to the clipboard, optionally with dimension, biome and Nether coordinates.", Category.CLIENT);
+      this.addSetting(new ActionSetting("Copy Now", "Copy your coordinates now", this::copy));
    }
 
    @Override

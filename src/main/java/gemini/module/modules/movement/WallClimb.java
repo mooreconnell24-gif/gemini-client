@@ -11,12 +11,12 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class WallClimb extends Module {
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Climbing physics mode", "Motion", "Motion", "Pulse", "LedgeStep"));
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Climb Speed", "Upward velocity against walls", 0.26, 0.1, 0.5, 0.02));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Motion climbs at a steady speed; Pulse jumps every fourth tick; LedgeStep climbs in steps", "Motion", "Motion", "Pulse", "LedgeStep"));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Climb Speed", "Upward speed in Motion mode, in blocks per tick", 0.26, 0.1, 0.5, 0.02));
    private int tick;
 
    public WallClimb() {
-      super("WallClimb", "Climb solid walls with Motion, Pulse, or LedgeStep.", Category.MOVEMENT);
+      super("WallClimb", "Lets you climb walls by moving into them.", Category.MOVEMENT);
    }
 
    @Override

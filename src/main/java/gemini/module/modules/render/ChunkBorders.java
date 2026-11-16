@@ -15,15 +15,15 @@ import net.minecraft.util.Mth;
 public final class ChunkBorders extends Module {
    private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Extra chunks drawn around yours", 0.0, 0.0, 3.0, 1.0));
    private final NumberSetting vertical = this.addSetting(
-      new NumberSetting("Vertical Range", "Blocks above and below you that get lines", 48.0, 16.0, 256.0, 16.0)
+      new NumberSetting("Vertical Range", "How far above and below you lines are drawn, in blocks", 48.0, 16.0, 256.0, 16.0)
    );
-   private final BooleanSetting sections = this.addSetting(new BooleanSetting("Section Lines", "Rings every 16 blocks of height", true));
-   private final ColorSetting edge = this.addSetting(new ColorSetting("Chunk Color", "Color of your chunk's edges", 210));
-   private final ColorSetting inner = this.addSetting(new ColorSetting("Section Color", "Color of the 16-block rings", 120));
+   private final BooleanSetting sections = this.addSetting(new BooleanSetting("Section Lines", "Draw a ring every 16 blocks of height", true));
+   private final ColorSetting edge = this.addSetting(new ColorSetting("Chunk Color", "Colour of your chunk's edges", 210));
+   private final ColorSetting inner = this.addSetting(new ColorSetting("Section Color", "Colour of the 16-block rings", 120));
    private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the lines", 1.5, 0.5, 4.0, 0.5));
 
    public ChunkBorders() {
-      super("Chunk Borders", "Draw chunk and section boundaries around you.", Category.RENDER);
+      super("Chunk Borders", "Draws chunk and section borders around you.", Category.RENDER);
    }
 
    @Override

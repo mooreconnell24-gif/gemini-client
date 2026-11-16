@@ -37,20 +37,20 @@ import net.minecraft.world.phys.Vec3;
 
 public final class ScaffoldModule extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between block placements", 0.0, 0.0, 6.0, 1.0));
-   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks bridged ahead", 0.0, 0.0, 4.0, 1.0));
+   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks placed ahead of you", 0.0, 0.0, 4.0, 1.0));
    private final ModeSetting sprintMode = this.addSetting(
-      new ModeSetting("Sprint", "Sprinting bridge style", "Godbridge", "Telly", "Godbridge", "Breeze", "Eagle", "Normal", "Legit", "Off")
+      new ModeSetting("Sprint", "How you move while bridging", "Godbridge", "Telly", "Godbridge", "Breeze", "Eagle", "Normal", "Legit", "Off")
    );
    private final ModeSetting rotate = this.addSetting(
-      new ModeSetting("Rotate", "Aim mode: Silent packet rotations", "Silent", "Silent", "Godbridge", "Strict", "Snap", "None")
+      new ModeSetting("Rotate", "How you face the block being placed; Silent turns without moving your camera", "Silent", "Silent", "Godbridge", "Strict", "Snap", "None")
    );
    private final NumberSetting turnSpeed = this.addSetting(
-      new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
+      new NumberSetting("Turn Speed", "Most you turn per tick, in degrees", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
    );
    private final ModeSetting towerMode = this.addSetting(
       new ModeSetting(
          "Tower",
-         "Holding Jump: Motion/Constant push you up, Jump hops in place, Sprint Jump keeps running and jumping while it builds a block under you at the top of each jump",
+         "While holding Jump: Motion and Constant push you up, Jump hops in place, Sprint Jump keeps running and jumping and places a block under you at the top of each jump",
          "Motion",
          "Motion",
          "Constant",
@@ -60,21 +60,21 @@ public final class ScaffoldModule extends Module {
       )
    );
    private final NumberSetting towerSpeed = this.addSetting(
-      new NumberSetting("Tower Motion", "Upward velocity while towering", 0.42, 0.25, 0.6, 0.02)
+      new NumberSetting("Tower Motion", "Upward speed while building up, in blocks per tick", 0.42, 0.25, 0.6, 0.02)
          .showIf(() -> this.towerMode.is("Motion") || this.towerMode.is("Constant"))
    );
    private boolean steerExact;
    private final BooleanSetting raycast = this.addSetting(
-      new BooleanSetting("Raycast Check", "Only place when the aimed look ray really hits the face being clicked", true).showIf(() -> !this.rotate.is("None"))
+      new BooleanSetting("Raycast Check", "Only place when your aim really hits the face being clicked", true).showIf(() -> !this.rotate.is("None"))
    );
-   private final BooleanSetting keepY = this.addSetting(new BooleanSetting("Keep Y", "Lock placement height to starting Y level", false));
-   private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Search up to 3 blocks away for diagonal/air support", true));
-   private final BooleanSetting autoRefill = this.addSetting(new BooleanSetting("Auto Refill", "Refill hotbar blocks from inventory automatically", true));
-   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Prevent walking off block edges", true));
-   private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing hand on block placement", true));
-   private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Restore original hotbar slot after placing", false));
-   private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause Sneak", "Pause placement while manually sneaking", false));
-   private final BooleanSetting downwards = this.addSetting(new BooleanSetting("Downwards", "Place blocks 1 level lower when sneaking", false));
+   private final BooleanSetting keepY = this.addSetting(new BooleanSetting("Keep Y", "Keep placing at the height you started at", false));
+   private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Look up to 3 blocks away for something to place against when there is nothing directly below", true));
+   private final BooleanSetting autoRefill = this.addSetting(new BooleanSetting("Auto Refill", "Refill hotbar blocks from your inventory", true));
+   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Stop you walking off block edges", true));
+   private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand on each placement", true));
+   private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to the original hotbar slot after placing", false));
+   private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause Sneak", "Pause placing while you sneak", false));
+   private final BooleanSetting downwards = this.addSetting(new BooleanSetting("Downwards", "Place blocks one level lower while sneaking", false));
    private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight", "Show the blocks Scaffold places as fading boxes", true));
    private final PlacementFade fade = new PlacementFade(this, true, 286, this.renderBlock::get);
    private final InfoText infoText = new InfoText();
@@ -87,7 +87,7 @@ public final class ScaffoldModule extends Module {
    private int blockCount;
 
    public ScaffoldModule() {
-      super("Scaffold", "Fast block bridging with clutch search.", Category.WORLD);
+      super("Scaffold", "Places blocks under you as you walk so you can bridge over gaps.", Category.WORLD);
    }
 
    @Override

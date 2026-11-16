@@ -17,8 +17,8 @@ import net.minecraft.world.phys.AABB;
 public final class Backtrack extends Module {
    private static final double SCAN_RANGE = 6.0;
    private static final double KEEP_RANGE_SQ = 49.0;
-   private final NumberSetting maxTicks = this.addSetting(new NumberSetting("History Ticks", "Ticks of target positions to retain", 8.0, 2.0, 20.0, 1.0));
-   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Box", "Draw delayed backtrack hitbox in 3D", true));
+   private final NumberSetting maxTicks = this.addSetting(new NumberSetting("History Ticks", "How many ticks back the box is drawn", 8.0, 2.0, 20.0, 1.0));
+   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Box", "Draw the box", true));
    // Stick by default: the history should follow one entity, as it always did.
    private final Targeting targeting = Targeting.builder(this).stick(true).build();
    private final ArrayDeque<AABB> history = new ArrayDeque<>();
@@ -27,7 +27,7 @@ public final class Backtrack extends Module {
    private LivingEntity tracked;
 
    public Backtrack() {
-      super("Backtrack", "Show where your combat target was a few ticks ago.", Category.COMBAT);
+      super("Backtrack", "Shows a box where your target was a few ticks ago.", Category.COMBAT);
    }
 
    @Override

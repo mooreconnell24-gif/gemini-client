@@ -21,20 +21,20 @@ public final class Buffs extends Module {
    private final InfoText infoText = new InfoText();
 
    public Buffs() {
-      super("Buffs", "Permanent potion effects on switches: god mode, speed, haste, night vision and more.", Category.PLAYER);
+      super("Buffs", "Gives you lasting potion effects, each with its own switch, such as invulnerability, speed, haste and night vision.", Category.PLAYER);
       this.buff("God Mode", "Resistance V: no damage from mobs, falls, fire or explosions (the void still kills)", "resistance", 4, false);
-      this.buff("Fire Resistance", "Lava and fire do nothing", "fire_resistance", 0, false);
+      this.buff("Fire Resistance", "Take no damage from fire and lava", "fire_resistance", 0, false);
       this.buff("Speed", "Move faster", "speed", 1, true);
       this.buff("Haste", "Mine and attack faster", "haste", 1, true);
       this.buff("Strength", "Hit harder", "strength", 1, true);
       this.buff("Jump Boost", "Jump higher", "jump_boost", 1, true);
       this.buff("Night Vision", "See in the dark", "night_vision", 0, false);
       this.buff("Water Breathing", "Breathe under water", "water_breathing", 0, false);
-      this.buff("Slow Falling", "Float down gently", "slow_falling", 0, false);
-      this.buff("Saturation", "Never go hungry", "saturation", 0, false);
+      this.buff("Slow Falling", "Fall slowly", "slow_falling", 0, false);
+      this.buff("Saturation", "Keep your food bar full", "saturation", 0, false);
       this.buff("Regeneration", "Heal over time", "regeneration", 1, true);
       this.buff("Dolphin's Grace", "Swim fast", "dolphins_grace", 0, false);
-      this.buff("Hero of the Village", "Villager discounts", "hero_of_the_village", 0, false);
+      this.buff("Hero of the Village", "Get discounts from villagers", "hero_of_the_village", 0, false);
    }
 
    private void buff(String name, String description, String effectId, int defaultLevel, boolean leveled) {

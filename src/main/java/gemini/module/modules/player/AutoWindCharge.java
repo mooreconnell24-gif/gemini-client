@@ -16,7 +16,7 @@ public final class AutoWindCharge extends Module {
    private boolean wasOnGround = true;
 
    public AutoWindCharge() {
-      super("AutoWindCharge", "Fire a Wind Charge downward when jumping.", Category.PLAYER);
+      super("AutoWindCharge", "Throws a wind charge from your hotbar straight down when you jump.", Category.PLAYER);
    }
 
    @Override

@@ -44,15 +44,15 @@ public final class BowAimbot extends Module {
    private static final int BOW = 1;
    private static final int TRIDENT = 2;
 
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max target distance in blocks", 45.0, 10.0, 120.0, 2.0));
-   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets only: the shot goes where the aimbot points while your camera stays put", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target, in blocks", 45.0, 10.0, 120.0, 2.0));
+   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera; the shot still goes where the aim points", true));
    private final BooleanSetting predict = this.addSetting(
-      new BooleanSetting("Predict Motion", "Lead moving targets: aim where the target will be when the projectile arrives", true)
+      new BooleanSetting("Predict Motion", "Aim where a moving target will be when the projectile arrives", true)
    );
    private final ModeSetting aimPoint = this.addSetting(
       new ModeSetting(
          "Aim Point",
-         "Where on the target to aim. Auto picks the highest point of the hit box the shot can reach without hitting a block",
+         "Where on the target to aim; Auto picks the highest point the shot can reach without hitting a block",
          "Auto",
          "Head",
          "Chest",
@@ -61,22 +61,22 @@ public final class BowAimbot extends Module {
       )
    );
    private final ModeSetting arc = this.addSetting(
-      new ModeSetting("Arc", "Low: the flat, fast arc. High: the lob over cover. Auto: the low arc unless blocks are in the way, then the high one", "Auto", "Low", "High", "Auto")
+      new ModeSetting("Arc", "Low is the flat, fast arc; High lobs over cover; Auto uses the low arc unless blocks are in the way", "Auto", "Low", "High", "Auto")
    );
    private final BooleanSetting wallCheck = this.addSetting(
-      new BooleanSetting("Wall Check", "Replay the arc against the blocks and skip targets the shot cannot reach", true)
+      new BooleanSetting("Wall Check", "Skip targets the shot cannot reach because blocks are in the way", true)
    );
    private final BooleanSetting showPath = this.addSetting(new BooleanSetting("Show Trajectory", "Draw the predicted flight path and where it lands", true));
-   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Trajectory Color", "Colour of the predicted flight path and impact marker", 190).showIf(this.showPath::get));
+   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Trajectory Color", "Colour of the predicted flight path and landing marker", 190).showIf(this.showPath::get));
    private final BooleanSetting autoRelease = this.addSetting(
-      new BooleanSetting("Auto Release", "Let go of a bow by itself once it is fully drawn and aimed within the tolerance", false)
+      new BooleanSetting("Auto Release", "Release a fully drawn bow once the aim is within the tolerance", false)
    );
    private final NumberSetting tolerance = this.addSetting(
-      new NumberSetting("Aim Tolerance", "How close (degrees) the aim must be to the solution, two ticks running, before Auto Release fires", 1.0, 0.2, 5.0, 0.1)
+      new NumberSetting("Aim Tolerance", "How close the aim must be, in degrees, for two ticks before Auto Release fires", 1.0, 0.2, 5.0, 0.1)
          .showIf(this.autoRelease::get)
    );
    private final BooleanSetting autoCharge = this.addSetting(
-      new BooleanSetting("Auto Charge", "Start drawing the bow in your hand by itself whenever a target can be hit", false).showIf(this.autoRelease::get)
+      new BooleanSetting("Auto Charge", "Start drawing the bow in your hand whenever a target can be hit", false).showIf(this.autoRelease::get)
    );
    private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
 
@@ -95,7 +95,7 @@ public final class BowAimbot extends Module {
    private boolean forcingUse;
 
    public BowAimbot() {
-      super("Bow Aimbot", "Aims bows, crossbows and tridents with real arrow physics: picks the target, leads it, avoids cover and shows the arc.", Category.COMBAT);
+      super("Bow Aimbot", "Aims bows, crossbows and tridents at the chosen target, leading moving targets and avoiding cover.", Category.COMBAT);
    }
 
    /** Found by its old name in search and as {@code .projectileaimbot}. */

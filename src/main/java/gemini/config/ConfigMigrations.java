@@ -93,6 +93,29 @@ public final class ConfigMigrations {
       remapMode(modules, "ArrayList", "Colors", Set.of("Astolfo"), "Pink-Blue Wave", notes);
       remapMode(modules, "ClickGUI", "Theme", Set.of("LiquidBounce"), "Blue", notes);
       remapMode(modules, "ClickGUI", "Theme", Set.of("Neon"), "Purple", notes);
+      remapMode(modules, "Presets", "Preset", Set.of("LiquidBounce"), "General", notes);
+      // Names that were crude or said something the module does not do.
+      renameModule(modules, "Fucker", "Bed Breaker", notes);
+      renameModule(modules, "KeepY", "Auto Hop", notes);
+      renameModule(modules, "TimerRange", "Gap Closer", notes);
+      renameModule(modules, "AnchorPull", "Hole Pull", notes);
+      renameModule(modules, "ChinaHat", "Cone Hat", notes);
+   }
+
+   /** Moves a module's saved entry to its new name, unless an entry under the new name already exists. */
+   private static void renameModule(JsonObject modules, String oldName, String newName, List<String> notes) {
+      String oldKey = findKey(modules, oldName);
+      if (oldKey == null || findKey(modules, newName) != null) {
+         return;
+      }
+
+      JsonElement moved = modules.remove(oldKey);
+      if (moved.isJsonObject() && moved.getAsJsonObject().has("id")) {
+         moved.getAsJsonObject().addProperty("id", normalizeId(newName));
+      }
+
+      modules.add(newName, moved);
+      notes.add(oldName + " -> " + newName);
    }
 
    /**

@@ -14,7 +14,7 @@ public final class AutoGG extends Module {
    private int timeout;
 
    public AutoGG() {
-      super("AutoGG", "Say GG in chat when a player you hit in the last five seconds dies.", Category.CLIENT);
+      super("AutoGG", "Says GG in chat when a player you hit in the last five seconds dies.", Category.CLIENT);
    }
 
    @Override

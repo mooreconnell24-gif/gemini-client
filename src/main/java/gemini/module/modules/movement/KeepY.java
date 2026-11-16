@@ -9,11 +9,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class KeepY extends Module {
-   private final BooleanSetting boost = this.addSetting(new BooleanSetting("Air Strafe", "Maintain sprint air speed while jumping", true));
+   private final BooleanSetting boost = this.addSetting(new BooleanSetting("Air Strafe", "Keep at least walking speed while in the air", true));
    private int lockedY;
 
    public KeepY() {
-      super("KeepY", "Auto-jump on landing to lock your Y level.", Category.MOVEMENT);
+      super("Auto Hop", "Jumps every time you land while moving.", Category.MOVEMENT);
    }
 
    @Override

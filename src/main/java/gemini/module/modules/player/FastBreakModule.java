@@ -11,7 +11,7 @@ public final class FastBreakModule extends Module {
    private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Mining speed multiplier", 2.0, 1.0, 20.0, 0.5));
 
    public FastBreakModule() {
-      super("FastBreak", "Mine blocks faster.", Category.PLAYER);
+      super("FastBreak", "Makes you mine blocks faster.", Category.PLAYER);
    }
 
    @Override

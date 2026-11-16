@@ -12,7 +12,7 @@ public final class FreeSlots extends Ticked {
    private final NumberSetting warnBelow = this.addSetting(new NumberSetting("Warn Below", "Turn red when this many slots or fewer are free", 3.0, 0.0, 36.0, 1.0));
 
    public FreeSlots() {
-      super("Free Slots", "Empty inventory slots, red when you are nearly full.", "Top Left", 6, 148, 250);
+      super("Free Slots", "Shows how many inventory slots are empty, in red when you are nearly full.", "Top Left", 6, 148, 250);
    }
 
    @Override

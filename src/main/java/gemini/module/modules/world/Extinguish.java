@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class Extinguish extends Module {
    public Extinguish() {
-      super("Extinguish", "Automatically punch out fire blocks around your feet.", Category.WORLD);
+      super("Extinguish", "Punches out fire blocks around you.", Category.WORLD);
    }
 
    @Override

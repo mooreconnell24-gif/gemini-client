@@ -14,14 +14,14 @@ import java.util.List;
 /** Hands out ready-made loadouts with /give and /item so a test world is kitted in one click. */
 public final class Kits extends Module {
    private final ModeSetting kit = this.addSetting(
-      new ModeSetting("Kit", "What to hand out", "PvP", "PvP", "Crystal", "Builder", "Miner", "Explorer", "Food")
+      new ModeSetting("Kit", "Kit to give", "PvP", "PvP", "Crystal", "Builder", "Miner", "Explorer", "Food")
    );
    private final BooleanSetting clearFirst = this.addSetting(new BooleanSetting("Clear First", "Empty your inventory before giving the kit", false));
-   private final BooleanSetting equip = this.addSetting(new BooleanSetting("Equip Armour", "Put the kit's armour straight on", true));
+   private final BooleanSetting equip = this.addSetting(new BooleanSetting("Equip Armour", "Put the kit's armour on straight away", true));
 
    public Kits() {
-      super("Kits", "Give yourself a PvP, crystal, builder, miner, explorer or food kit.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Give", "Hand out the selected kit", this::give));
+      super("Kits", "Gives you a ready-made PvP, crystal, builder, miner, explorer or food kit.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Give", "Give the selected kit", this::give));
    }
 
    @Override

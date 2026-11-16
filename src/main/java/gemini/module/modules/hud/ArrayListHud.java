@@ -59,7 +59,7 @@ public final class ArrayListHud extends HudWidget {
       new ColorSetting("Gradient End", "Colour of the last row", 300).showIf(() -> this.colors.is("Static Gradient"))
    );
    private final NumberSetting colorSpeed = this.addSetting(
-      new NumberSetting("Color Speed", "How fast moving colours cycle", 1.0, 0.1, 4.0, 0.1)
+      new NumberSetting("Color Speed", "How fast cycling colours change", 1.0, 0.1, 4.0, 0.1)
          .showIf(this::movingColors)
    );
    private final NumberSetting colorSpread = this.addSetting(
@@ -69,20 +69,20 @@ public final class ArrayListHud extends HudWidget {
    private final ModeSetting sideBar = this.addSetting(
       new ModeSetting("Side Bar", "Coloured bar beside the rows; Auto puts it on the screen edge the list is anchored to", "Auto", "Auto", "Left", "Right", "None")
    );
-   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Opacity of the tint behind the rows", 0.55, 0.05, 1.0, 0.05));
+   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Opacity of the background behind the rows", 0.55, 0.05, 1.0, 0.05));
    private final BooleanSetting blur = this.addSetting(
-      new BooleanSetting("Blur", "Frosted glass behind the rows: a denser tint with a sheen (the HUD cannot truly blur the world)", false)
+      new BooleanSetting("Blur", "Use a denser background with a light sheen behind the rows (the world behind is not actually blurred)", false)
    );
-   private final BooleanSetting outline = this.addSetting(new BooleanSetting("Outline", "Thin coloured contour along the inner edge of the list", false));
+   private final BooleanSetting outline = this.addSetting(new BooleanSetting("Outline", "Thin coloured line along the inner edge of the list", false));
    private final BooleanSetting showInfo = this.addSetting(new BooleanSetting("Show Info", "Show a module's mode or status after its name", true));
    private final ModeSetting tagStyle = this.addSetting(
-      new ModeSetting("Tag Style", "How the info suffix is written", "Plain", "Plain", "Brackets [Info]", "Dot · Info", "Angle <Info>").showIf(this.showInfo::get)
+      new ModeSetting("Tag Style", "How the info after the name is written", "Plain", "Plain", "Brackets [Info]", "Dot · Info", "Angle <Info>").showIf(this.showInfo::get)
    );
    private final BooleanSetting showKeys = this.addSetting(new BooleanSetting("Show Keys", "Show each module's key bind after its name", false));
    private final BooleanSetting lowercase = this.addSetting(new BooleanSetting("Lowercase", "Write names and info in lower case", false));
    private final NumberSetting lineSpacing = this.addSetting(new NumberSetting("Line Spacing", "Extra pixels between rows", 1.0, 0.0, 6.0, 1.0));
    private final BooleanSetting textShadow = this.addSetting(new BooleanSetting("Text Shadow", "Draw the text with a shadow", true));
-   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Slide rows in and out when modules toggle", true));
+   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Slide rows in and out when modules are turned on or off", true));
    private final NumberSetting animationSpeed = this.addSetting(
       new NumberSetting("Animation Speed", "How quickly rows slide", 14.0, 4.0, 30.0, 1.0).showIf(this.animations::get)
    );
@@ -110,7 +110,7 @@ public final class ArrayListHud extends HudWidget {
    private int decorationKey = -1;
 
    public ArrayListHud() {
-      super("ArrayList", "Animated list of the modules that are running, with colour modes, a side bar and smooth slide animations.", "Top Right", 0, 3);
+      super("ArrayList", "Shows a list of the modules that are turned on.", "Top Right", 0, 3);
       // On by default, like the built-in list it replaced.
       this.loadState(true, this.getKeybind());
    }

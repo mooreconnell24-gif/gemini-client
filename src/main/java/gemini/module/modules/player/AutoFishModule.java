@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
 public final class AutoFishModule extends Module {
    private final NumberSetting recast = this.addSetting(new NumberSetting("Recast Delay", "Ticks to wait after reeling in before casting again", 14.0, 5.0, 60.0, 1.0));
    private final BooleanSetting autoCast = this.addSetting(new BooleanSetting("Auto Cast", "Cast the rod when no bobber is out", true));
-   private final NumberSetting sensitivity = this.addSetting(new NumberSetting("Sensitivity", "How small a dip counts as a bite", 0.15, 0.05, 0.4, 0.01));
+   private final NumberSetting sensitivity = this.addSetting(new NumberSetting("Sensitivity", "How small a dip of the bobber counts as a bite", 0.15, 0.05, 0.4, 0.01));
    private final NumberSetting timeout = this.addSetting(
       new NumberSetting("Timeout", "Seconds without a bite before reeling in and casting again", 45.0, 10.0, 120.0, 5.0)
    );
@@ -26,7 +26,7 @@ public final class AutoFishModule extends Module {
    private final InfoText infoText = new InfoText();
 
    public AutoFishModule() {
-      super("AutoFish", "Reel in bites and recast automatically.", Category.PLAYER);
+      super("AutoFish", "Reels in when a fish bites and casts again.", Category.PLAYER);
    }
 
    @Override

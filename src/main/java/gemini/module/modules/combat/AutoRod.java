@@ -19,8 +19,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Items;
 
 public final class AutoRod extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max distance to rod enemies", 6.8, 3.0, 10.0, 0.5));
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between rod casts", 12.0, 4.0, 30.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest enemy to cast at, in blocks", 6.8, 3.0, 10.0, 0.5));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between casts", 12.0, 4.0, 30.0, 1.0));
    private final Targeting targeting = Targeting.builder(this).build();
    /** A rod only pays off past melee reach. */
    private static final Predicate<LivingEntity> PAST_MELEE = living -> {
@@ -32,7 +32,7 @@ public final class AutoRod extends Module {
    private int previousSlot = -1;
 
    public AutoRod() {
-      super("AutoRod", "Cast a fishing rod at enemies for combo knockback.", Category.COMBAT);
+      super("AutoRod", "Casts a fishing rod at enemies just outside melee reach to knock them back.", Category.COMBAT);
    }
 
    @Override
