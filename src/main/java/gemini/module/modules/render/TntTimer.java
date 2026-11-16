@@ -1,15 +1,18 @@
 package gemini.module.modules.render;
 
-import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.render.Render3D;
-import java.util.Locale;
+import gemini.util.InfoText;
+import java.util.Arrays;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.PrimedTnt;
 
 public final class TntTimer extends Module {
+   /** "1.23s" per hundredth of a second, built the first time each is shown; a fuse is at most a few hundred of them. */
+   private String[] labels = new String[0];
+
    public TntTimer() {
       super("TNTTimer", "Render a floating fuse countdown above lit TNT.", Category.RENDER);
    }
@@ -23,7 +26,7 @@ public final class TntTimer extends Module {
                float seconds = Math.max(0.0F, (tnt.getFuse() - partialTick) / 20.0F);
                int color = seconds <= 1.2F ? -1548963 : -14249;
                Render3D.text(
-                  InfoText.format(seconds, 2) + "s",
+                  this.label(seconds),
                   Render3D.entityX(tnt, partialTick),
                   Render3D.entityY(tnt, partialTick) + 1.25,
                   Render3D.entityZ(tnt, partialTick),
@@ -34,5 +37,24 @@ public final class TntTimer extends Module {
             }
          }
       }
+   }
+
+   private String label(float seconds) {
+      int hundredths = Math.round(seconds * 100.0F);
+      if (hundredths < 0 || hundredths > 6_000) {
+         return InfoText.format(seconds, 2) + "s";
+      }
+
+      if (hundredths >= this.labels.length) {
+         this.labels = Arrays.copyOf(this.labels, Math.max(hundredths + 1, Math.max(401, this.labels.length * 2)));
+      }
+
+      String text = this.labels[hundredths];
+      if (text == null) {
+         text = InfoText.format(hundredths / 100.0, 2) + "s";
+         this.labels[hundredths] = text;
+      }
+
+      return text;
    }
 }

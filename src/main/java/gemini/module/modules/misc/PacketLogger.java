@@ -31,6 +31,17 @@ public final class PacketLogger extends Module {
       this.repeats = 0;
    }
 
+   /** A burst still being counted is written out, so the last repeat count is not lost. */
+   @Override
+   public void onDisable() {
+      if (this.repeats > 0 && this.lastLine != null) {
+         CommandManager.feedback(this.lastLine + " §8x" + (this.repeats + 1));
+      }
+
+      this.lastLine = null;
+      this.repeats = 0;
+   }
+
    @Override
    public boolean onSendPacket(Packet<?> packet) {
       if (this.outgoing.get()) {

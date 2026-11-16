@@ -381,7 +381,7 @@ public final class HudOverlay {
       if (esp != null && esp.isEnabled() && esp.tags() && client.level != null) {
          List<Entity> shown = this.espShown;
          for (Entity entity : client.level.entitiesForRendering()) {
-            if (esp.shouldGlow(entity) && !(entity instanceof ItemEntity)) {
+            if (esp.matchesTarget(entity) && !(entity instanceof ItemEntity)) {
                shown.add(entity);
             }
          }

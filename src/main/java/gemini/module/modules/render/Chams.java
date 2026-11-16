@@ -29,7 +29,6 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -328,10 +327,9 @@ public final class Chams extends Module {
             continue;
          }
 
-         AABB box = Render3D.interpolatedBox(entity, partialTick);
          boolean hidden = this.occluded.contains(entity.getId());
          int color = hidden ? this.occludedColor.argb() : this.visibleColor.argb();
-         Render3D.box(box, color, wire, !wire, this.lineWidth.floatValue(), fill, hidden);
+         Render3D.entityBox(entity, partialTick, 0.0, color, wire, !wire, this.lineWidth.floatValue(), fill, hidden);
       }
    }
 }

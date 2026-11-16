@@ -8,6 +8,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.util.VersionBridge;
 import gemini.util.AreaScan;
+import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -33,9 +34,14 @@ public final class TunnelEsp extends Module {
       super("Tunnel ESP", "Highlight 1x2 tunnels dug by players.", Category.RENDER);
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public void onDisable() {
       this.found.clear();
+      this.building.clear();
+      this.scan.stop();
+      this.wait = 0;
    }
 
    @Override
@@ -109,7 +115,7 @@ public final class TunnelEsp extends Module {
 
    @Override
    public String info() {
-      return this.found.isEmpty() ? null : this.found.size() + " blocks";
+      return this.found.isEmpty() ? null : this.infoText.whole(this.found.size(), " blocks");
    }
 
    /** Everything remembered here belongs to the world that was just left. */
@@ -117,5 +123,8 @@ public final class TunnelEsp extends Module {
    public void onWorldChange() {
       this.found.clear();
       this.building.clear();
+      // A walk still running covers the old world's coordinates; start over in the new one.
+      this.scan.stop();
+      this.wait = 0;
    }
 }

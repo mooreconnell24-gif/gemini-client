@@ -533,24 +533,26 @@ public final class Render3D {
          return;
       }
 
-      AABB biased = new AABB(minX - DEPTH_BIAS, minY - DEPTH_BIAS, minZ - DEPTH_BIAS, maxX + DEPTH_BIAS, maxY + DEPTH_BIAS, maxZ + DEPTH_BIAS);
-      Frustum view = frustum;
-      if (view != null && !view.isVisible(biased) || !take()) {
-         return;
-      }
-
-      GizmoProperties properties = Gizmos.cuboid(
-         biased, style(stroked ? argb : 0, stroked ? Math.max(1.0F, width) : 0.0F, filled ? alpha(argb, fillAlpha) : 0)
+      // Same path as the other boxes: the frustum test allocates nothing, so an off-screen box costs no AABB.
+      submitBox(
+         minX, minY, minZ, maxX, maxY, maxZ, stroked ? argb : 0, stroked ? Math.max(1.0F, width) : 0.0F, filled ? alpha(argb, fillAlpha) : 0, throughWalls
       );
-      if (throughWalls) {
-         properties.setAlwaysOnTop();
-      }
    }
 
    /** Billboard text whose colour keeps its own alpha, for labels that fade. */
    public static void textArgb(String text, Vec3 position, int argb, float scale, boolean throughWalls) {
       if (text != null && position != null && (argb >>> 24) > 0 && !behindCamera(position.x, position.y, position.z, 0.0) && take()) {
          GizmoProperties properties = Gizmos.billboardText(text, position, Style.forColorAndCentered(argb).withScale(scale));
+         if (throughWalls) {
+            properties.setAlwaysOnTop();
+         }
+      }
+   }
+
+   /** {@link #textArgb(String, Vec3, int, float, boolean)} at a point given as coordinates; the position is only built when the label is submitted. */
+   public static void textArgb(String text, double x, double y, double z, int argb, float scale, boolean throughWalls) {
+      if (text != null && (argb >>> 24) > 0 && !behindCamera(x, y, z, 0.0) && take()) {
+         GizmoProperties properties = Gizmos.billboardText(text, new Vec3(x, y, z), Style.forColorAndCentered(argb).withScale(scale));
          if (throughWalls) {
             properties.setAlwaysOnTop();
          }

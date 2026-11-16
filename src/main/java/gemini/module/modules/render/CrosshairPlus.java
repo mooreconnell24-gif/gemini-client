@@ -24,7 +24,9 @@ public final class CrosshairPlus extends Module {
          int cx = hud.width / 2;
          int cy = hud.height / 2;
          double speed = Math.hypot(player.getDeltaMovement().x, player.getDeltaMovement().z);
-         int g = this.gap.intValue() + (this.dynamic.get() ? Mth.floor(speed * 14.0) : 0);
+         // Moving spreads the arms by up to a few pixels, a swing by up to four more at the top of the swing.
+         int spread = Mth.floor(speed * 14.0) + Mth.floor(Mth.sin(player.getSwingAnimation(hud.partialTick) * Mth.PI) * 4.0F);
+         int g = this.gap.intValue() + (this.dynamic.get() ? spread : 0);
          int len = this.length.intValue();
          hud.graphics.fill(cx - g - len, cy, cx - g, cy + 1, hud.accent2);
          hud.graphics.fill(cx + g + 1, cy, cx + g + 1 + len, cy + 1, hud.accent2);

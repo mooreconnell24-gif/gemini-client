@@ -48,7 +48,7 @@ public abstract class CameraMixin {
       Gemini gemini = Gemini.getInstance();
       if (gemini != null && gemini.modules() != null) {
          ZoomModule zoom = gemini.modules().byClass(ZoomModule.class).orElse(null);
-         if (zoom != null && zoom.isEnabled()) {
+         if (zoom != null && zoom.zooming()) {
             fov = Math.max(4.0F, fov / zoom.multiplier());
             changed = true;
          }

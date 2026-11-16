@@ -5,15 +5,16 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ListSetting;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
 public final class AutoGG extends Module {
-   private final ListSetting phrase = this.addSetting(new ListSetting("Message", "GG text to send", ListSetting.Kind.TEXT, "GG"));
+   private final ListSetting phrase = this.addSetting(new ListSetting("Message", "Text to send in chat; only the first line is used", ListSetting.Kind.TEXT, "GG"));
    private Entity lastAttacked;
    private int timeout;
 
    public AutoGG() {
-      super("AutoGG", "Auto-say GG when a player you recently fought dies.", Category.CLIENT);
+      super("AutoGG", "Say GG in chat when a player you hit in the last five seconds dies.", Category.CLIENT);
    }
 
    @Override
@@ -33,12 +34,19 @@ public final class AutoGG extends Module {
    public void onTick() {
       if (this.timeout > 0) {
          this.timeout--;
-         if (this.lastAttacked != null && (!this.lastAttacked.isAlive() || this.lastAttacked.isRemoved())) {
+         Entity target = this.lastAttacked;
+         if (target instanceof LivingEntity living && living.isDeadOrDying()) {
             String msg = this.phrase.isEmpty() ? "GG" : this.phrase.get().getFirst();
             CommandManager.sendRaw(msg);
             this.lastAttacked = null;
             this.timeout = 0;
+         } else if (target != null && target.isRemoved()) {
+            // Gone without dying first (walked out of range, logged off, changed dimension): no GG for that.
+            this.lastAttacked = null;
+            this.timeout = 0;
          }
+      } else {
+         this.lastAttacked = null;
       }
    }
 
