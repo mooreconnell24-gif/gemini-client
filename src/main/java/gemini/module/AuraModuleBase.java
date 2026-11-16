@@ -97,7 +97,14 @@ public abstract class AuraModuleBase<T extends LivingEntity> extends Module {
          return;
       }
 
-      useOn(client, player, best, this.itemFor(best), this.swings());
+      int outcome = useOn(client, player, best, this.itemFor(best), this.swings());
+      if (outcome == NOT_USED) {
+         // Another module holds the hand this tick (or the item just left the hotbar): try again shortly without
+         // counting it against the mob, which was never touched.
+         this.cooldown = 2;
+         return;
+      }
+
       if (this.nextTry.size() >= MAX_TRACKED) {
          this.nextTry.clear();
       }
@@ -107,23 +114,34 @@ public abstract class AuraModuleBase<T extends LivingEntity> extends Module {
       this.afterUse(best, now);
    }
 
-   /** Uses the first matching hotbar item on the entity with the main hand, swapping the slot in and back. */
-   public static boolean useOn(Minecraft client, LocalPlayer player, LivingEntity target, Predicate<ItemStack> item, boolean swing) {
+   /** {@link #useOn} could not act: no matching hotbar item, or a more important module holds the main hand. */
+   public static final int NOT_USED = -1;
+   /** {@link #useOn} interacted, but the game did not take the item (the mob refused it). */
+   public static final int REFUSED = 0;
+   /** {@link #useOn} interacted and the item was used. */
+   public static final int USED = 1;
+
+   /**
+    * Uses the first matching hotbar item on the entity with the main hand, swapping the slot in and back (the
+    * selected slot is restored even if the interaction throws). Returns {@link #NOT_USED}, {@link #REFUSED} or
+    * {@link #USED}.
+    */
+   public static int useOn(Minecraft client, LocalPlayer player, LivingEntity target, Predicate<ItemStack> item, boolean swing) {
       int slot = BlockPlacer.pickSlot(player, item);
-      if (slot < 0 || !Hands.claimMainHand()) {
-         return false;
+      if (slot < 0 || client.gameMode == null || !Hands.claimMainHand()) {
+         return NOT_USED;
       }
 
-      boolean[] used = new boolean[1];
+      int[] outcome = {NOT_USED};
       Inventories.withHotbarSlot(player, slot, () -> {
          InteractionResult result = client.gameMode.interact(player, target, new EntityHitResult(target), InteractionHand.MAIN_HAND);
          if (swing) {
             Swing.interact(player, InteractionHand.MAIN_HAND);
          }
 
-         used[0] = result.consumesAction();
+         outcome[0] = result.consumesAction() ? USED : REFUSED;
       });
-      return used[0];
+      return outcome[0];
    }
 
    /** Checked before looking for a mob; return false to wait (no tool on the hotbar, for example). */
@@ -150,7 +168,7 @@ public abstract class AuraModuleBase<T extends LivingEntity> extends Module {
 
    protected abstract boolean swings();
 
-   /** Called after the item was used, for bookkeeping of the module's own. */
+   /** Called after the item was offered to the mob (taken or refused), for bookkeeping of the module's own. */
    protected void afterUse(T target, long gameTime) {
    }
 }
