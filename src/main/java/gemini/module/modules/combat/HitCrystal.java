@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
+
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.Targeting;
@@ -12,7 +14,6 @@ import gemini.util.BlockPlacer;
 import gemini.util.ClientState;
 import gemini.util.Damage;
 import gemini.util.RotationManager;
-import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -34,6 +35,8 @@ import net.minecraft.world.phys.Vec3;
  * the target's real position and motion are used, so the crystal follows it.
  */
 public final class HitCrystal extends Module {
+   private final InfoText infoText = new InfoText();
+   private final InfoText labelText = new InfoText();
    /** A combo that has not finished this long after the hit is abandoned. */
    private static final int COMBO_TIMEOUT = 40;
    /** How far Priority Only looks for the enemy to combo: melee reach plus a step. */
@@ -61,7 +64,7 @@ public final class HitCrystal extends Module {
          false
       )
    );
-   private final Targeting targeting = Targeting.builder(this).box("Outline", 300).build();
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 300).choiceShownIf(() -> this.priorityOnly.get()).build();
    private LivingEntity target;
    private Vec3 landing;
    private BlockPos base;
@@ -76,7 +79,7 @@ public final class HitCrystal extends Module {
 
    @Override
    public String info() {
-      return this.step == Step.IDLE ? null : String.format(Locale.ROOT, "%.1f", this.damage);
+      return this.step == Step.IDLE ? null : this.infoText.fixed(this.damage, 1);
    }
 
    @Override
@@ -327,7 +330,7 @@ public final class HitCrystal extends Module {
       if (this.render.get() && pos != null) {
          Render3D.block(pos, this.color.argb(), true, true, 1.8F, 55, true);
          if (this.damage > 0.0F) {
-            Render3D.text(String.format(Locale.ROOT, "%.1f", this.damage), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
+            Render3D.text(this.labelText.fixed(this.damage, 1), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
          }
       }
    }

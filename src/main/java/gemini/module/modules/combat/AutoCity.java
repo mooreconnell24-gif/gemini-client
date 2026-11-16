@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import gemini.util.InfoText;
+
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.Targeting;
@@ -19,7 +21,6 @@ import gemini.util.Swing;
 import gemini.util.Tools;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -38,6 +39,7 @@ import net.minecraft.world.phys.Vec3;
  * so vanilla does not abort the break in between. Detonating the crystals is left to Auto Crystal.
  */
 public final class AutoCity extends Module {
+   private final InfoText progressText = new InfoText();
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block you will mine", 4.5, 2.0, 6.0, 0.1));
    private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy search distance", 6.0, 2.0, 10.0, 0.5));
@@ -326,6 +328,6 @@ public final class AutoCity extends Module {
          this.shape.box(full.deflate(inset), argb);
       }
 
-      Render3D.text(String.format(Locale.ROOT, "%d%%", Math.round(this.progress * 100.0F)), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
+      Render3D.text(this.progressText.whole(Math.round(this.progress * 100.0F), "%"), Vec3.atCenterOf(pos).add(0.0, 0.7, 0.0), -1, 0.8F, true);
    }
 }

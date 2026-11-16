@@ -133,6 +133,7 @@ public final class AutoWebFill extends PlacementModuleBase {
 
    @Override
    public void onRender3D(float partialTick) {
+      super.onRender3D(partialTick);
       this.targeting.render(partialTick);
       if (!this.render.get()) {
          return;
