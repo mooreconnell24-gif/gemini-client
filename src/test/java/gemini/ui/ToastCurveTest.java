@@ -7,15 +7,17 @@ import org.junit.jupiter.api.Test;
 
 class ToastCurveTest {
    @Test
-   void slidesInWithOvershootHoldsThenEasesOut() {
+   void slidesInWithoutOvershootHoldsThenEasesOut() {
       long duration = 3000L;
       assertEquals(0.0F, HudOverlay.toastSlide(0L, duration), 1.0E-4F);
-      float peak = 0.0F;
-      for (long t = 0L; t < 360L; t += 10L) {
-         peak = Math.max(peak, HudOverlay.toastSlide(t, duration));
+      float previous = 0.0F;
+      for (long t = 0L; t < 400L; t += 10L) {
+         float slide = HudOverlay.toastSlide(t, duration);
+         assertTrue(slide <= 1.0F, "never slides past its place");
+         assertTrue(slide >= previous, "slides in monotonically");
+         previous = slide;
       }
 
-      assertTrue(peak > 1.0F, "ease-out-back overshoots before settling");
       assertEquals(1.0F, HudOverlay.toastSlide(1500L, duration));
       float early = HudOverlay.toastSlide(duration - 250L, duration);
       float late = HudOverlay.toastSlide(duration - 20L, duration);

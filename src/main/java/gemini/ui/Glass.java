@@ -90,7 +90,7 @@ public final class Glass {
       return hsb(hue - (float)Math.floor(hue), saturation, brightness);
    }
 
-   /** The pink-to-blue "Astolfo" wave, shifted by {@code offset} (0..1) per element. */
+   /** The pink-to-blue wave (the ArrayList's "Pink-Blue Wave" colours), shifted by {@code offset} (0..1) per element. */
    public static int astolfo(long periodMs, float offset) {
       float phase = (Util.getMillis() % periodMs) / (float)periodMs + offset;
       phase -= (float)Math.floor(phase);
@@ -196,8 +196,9 @@ public final class Glass {
    }
 
    /**
-    * The standard card: translucent surface, a faint top sheen and a thin accent border. {@code opacity} (0..1)
-    * fades the whole card; {@code glow} (0..1) is hover or focus emphasis and brightens the border and adds a halo.
+    * The standard card: translucent surface, a faint top sheen and a thin, mostly neutral border. {@code opacity}
+    * (0..1) fades the whole card; {@code glow} (0..1) is hover or focus emphasis: it tints the border toward the
+    * accent and adds a faint halo. Kept deliberately quiet so a screen full of cards still reads calm.
     */
    public static void panel(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int radius, int surface, int accent, float opacity, float glow) {
       if (opacity <= 0.0F) {
@@ -210,8 +211,8 @@ public final class Glass {
       }
 
       roundRect(g, x1, y1, x2, y2, radius, withAlpha(surface, Math.round(214.0F * opacity)));
-      roundRect(g, x1 + 1, y1 + 1, x2 - 1, y1 + Math.max(2, (y2 - y1) / 3), Math.max(0, radius - 1), withAlpha(0xFFFFFF, Math.round((7.0F + 9.0F * emphasis) * opacity)));
-      roundOutline(g, x1, y1, x2, y2, radius, withAlpha(lerp(0xFFFFFFFF, accent, 0.55F + 0.45F * emphasis), Math.round((38.0F + 150.0F * emphasis) * opacity)));
+      roundRect(g, x1 + 1, y1 + 1, x2 - 1, y1 + Math.max(2, (y2 - y1) / 3), Math.max(0, radius - 1), withAlpha(0xFFFFFF, Math.round((5.0F + 3.0F * emphasis) * opacity)));
+      roundOutline(g, x1, y1, x2, y2, radius, withAlpha(lerp(0xFFFFFFFF, accent, 0.3F + 0.6F * emphasis), Math.round((30.0F + 80.0F * emphasis) * opacity)));
    }
 
    /** As {@link #panel(GuiGraphicsExtractor, int, int, int, int, int, int, int, float, float)} with the theme colours and default radius. */
@@ -220,8 +221,9 @@ public final class Glass {
    }
 
    /**
-    * The HUD card shared by every HUD widget and the watermark: translucent surface, faint top sheen, one accent
-    * border and an accent-to-secondary line along the top edge, all faded by {@code opacity} (0..1).
+    * The HUD card shared by every HUD widget and the watermark: translucent surface, a faint top sheen and a thin
+    * border tinted slightly toward the accent, all faded by {@code opacity} (0..1). {@code accent2} is no longer
+    * drawn (the card used to carry a two-colour line along its top edge); the parameter stays for callers.
     */
    public static void hudCard(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int surface, int accent, int accent2, float opacity) {
       if (opacity <= 0.0F || x2 <= x1 || y2 <= y1) {
@@ -230,13 +232,10 @@ public final class Glass {
 
       roundRect(g, x1, y1, x2, y2, RADIUS, withAlpha(surface, Math.round(200.0F * opacity)));
       roundRect(g, x1 + 1, y1 + 1, x2 - 1, y1 + Math.max(2, (y2 - y1) / 3), Math.max(0, RADIUS - 1), withAlpha(0xFFFFFF, Math.round(7.0F * opacity)));
-      roundOutline(g, x1, y1, x2, y2, RADIUS, withAlpha(accent, Math.round(96.0F * opacity)));
-      if (x2 - x1 > 2 * RADIUS + 2) {
-         gradientBar(g, x1 + RADIUS, y1, x2 - RADIUS, y1 + 1, withAlpha(accent, Math.round(200.0F * opacity)), withAlpha(accent2, Math.round(200.0F * opacity)));
-      }
+      roundOutline(g, x1, y1, x2, y2, RADIUS, withAlpha(lerp(0xFFFFFFFF, accent, 0.4F), Math.round(34.0F * opacity)));
    }
 
-   /** Soft halo around a rounded rectangle: three widening rings of falling alpha. */
+   /** Soft halo around a rounded rectangle: three widening rings of falling alpha (faint even at full strength). */
    public static void glow(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int radius, int color, float strength) {
       float s = Mth.clamp(strength, 0.0F, 1.0F);
       if (s <= 0.0F) {
@@ -244,7 +243,7 @@ public final class Glass {
       }
 
       for (int ring = 3; ring >= 1; ring--) {
-         roundOutline(g, x1 - ring, y1 - ring, x2 + ring, y2 + ring, radius + ring, withAlpha(color, Math.round(s * (48.0F / ring))));
+         roundOutline(g, x1 - ring, y1 - ring, x2 + ring, y2 + ring, radius + ring, withAlpha(color, Math.round(s * (22.0F / ring))));
       }
    }
 

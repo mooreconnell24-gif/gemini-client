@@ -1,20 +1,21 @@
 package gemini.ui;
 
 /**
- * Placement of the pause-menu quick-action dock. Pure arithmetic so it can be tested without a running game.
+ * Placement of the small Gemini group on the pause menu. Pure arithmetic so it can be tested without a running game.
  *
  * <p>The vanilla pause menu is a 204 pixel wide column in the middle of the screen with its title at y 40. The
- * dock is a labelled column down the left edge when that leaves the vanilla column untouched, and otherwise a
- * single row along the very top, above the title, with short labels if the full ones do not fit.
+ * group is a short stack in the bottom-left corner when that leaves the vanilla column untouched, and otherwise a
+ * single row along the very top, above the title, with short labels if the full ones do not fit. The panel
+ * fields are the bounding box of the group (nothing is drawn behind it).
  */
 public record DockLayout(boolean side, boolean shortLabels, int panelX, int panelY, int panelWidth, int panelHeight, int[] x, int[] y, int[] w, int buttonHeight) {
    /** Half the width of the vanilla pause column plus its cell padding. */
    public static final int VANILLA_HALF_WIDTH = 106;
-   /** The vanilla "Game Menu" title sits at this y; a top dock has to end above it. */
+   /** The vanilla "Game Menu" title sits at this y; a top row has to end above it. */
    public static final int VANILLA_TITLE_Y = 40;
-   public static final int CAPTION_HEIGHT = 12;
+   public static final int BUTTON_HEIGHT = 16;
    private static final int EDGE = 6;
-   private static final int PAD = 4;
+   private static final int GAP = 3;
 
    /**
     * @param fullWidths text width of each full label
@@ -27,28 +28,23 @@ public record DockLayout(boolean side, boolean shortLabels, int panelX, int pane
          widest = Math.max(widest, width);
       }
 
-      int sideButton = Math.max(88, Math.min(132, widest + 20));
-      int sideHeight = 18;
-      int sideGap = 3;
-      int sidePanelWidth = sideButton + PAD * 2;
-      int sidePanelHeight = CAPTION_HEIGHT + count * sideHeight + (count - 1) * sideGap + PAD * 2;
+      int sideButton = Math.max(72, Math.min(120, widest + 16));
+      int sideHeight = count * BUTTON_HEIGHT + (count - 1) * GAP;
       int[] x = new int[count];
       int[] y = new int[count];
       int[] w = new int[count];
-      if (EDGE + sidePanelWidth + EDGE <= screenWidth / 2 - VANILLA_HALF_WIDTH && sidePanelHeight + EDGE * 2 <= screenHeight) {
-         int panelY = (screenHeight - sidePanelHeight) / 2;
+      if (EDGE + sideButton + EDGE <= screenWidth / 2 - VANILLA_HALF_WIDTH && sideHeight + EDGE * 2 <= screenHeight) {
+         int top = screenHeight - EDGE - sideHeight;
          for (int i = 0; i < count; i++) {
-            x[i] = EDGE + PAD;
-            y[i] = panelY + PAD + CAPTION_HEIGHT + i * (sideHeight + sideGap);
+            x[i] = EDGE;
+            y[i] = top + i * (BUTTON_HEIGHT + GAP);
             w[i] = sideButton;
          }
 
-         return new DockLayout(true, false, EDGE, panelY, sidePanelWidth, sidePanelHeight, x, y, w, sideHeight);
+         return new DockLayout(true, false, EDGE, top, sideButton, sideHeight, x, y, w, BUTTON_HEIGHT);
       }
 
-      int gap = 3;
-      int rowHeight = 16;
-      int available = Math.max(count, screenWidth - EDGE * 2 - PAD * 2 - (count - 1) * gap);
+      int available = Math.max(count, screenWidth - EDGE * 2 - (count - 1) * GAP);
       int fullTotal = 0;
       for (int width : fullWidths) {
          fullTotal += width + 12;
@@ -74,17 +70,16 @@ public record DockLayout(boolean side, boolean shortLabels, int panelX, int pane
          }
       }
 
-      int rowWidth = total + (count - 1) * gap;
-      int panelWidth = rowWidth + PAD * 2;
-      int panelX = (screenWidth - panelWidth) / 2;
-      int panelY = 3;
-      int cursor = panelX + PAD;
+      int rowWidth = total + (count - 1) * GAP;
+      int panelX = (screenWidth - rowWidth) / 2;
+      int panelY = 8;
+      int cursor = panelX;
       for (int i = 0; i < count; i++) {
          x[i] = cursor;
-         y[i] = panelY + PAD;
-         cursor += w[i] + gap;
+         y[i] = panelY;
+         cursor += w[i] + GAP;
       }
 
-      return new DockLayout(false, shortLabels, panelX, panelY, panelWidth, rowHeight + PAD * 2, x, y, w, rowHeight);
+      return new DockLayout(false, shortLabels, panelX, panelY, rowWidth, BUTTON_HEIGHT, x, y, w, BUTTON_HEIGHT);
    }
 }
