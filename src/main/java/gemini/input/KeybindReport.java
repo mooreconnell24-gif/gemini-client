@@ -31,6 +31,11 @@ public final class KeybindReport {
       Minecraft client = Minecraft.getInstance();
       if (client != null && client.options != null) {
          for (KeyMapping mapping : client.options.keyMappings) {
+            // F3 debug combos (F3+B, F3+G...) only fire while F3 is held, so a module on the same letter never clashes.
+            if (mapping.getName().startsWith("key.debug.")) {
+               continue;
+            }
+
             int code = keyboardCode(mapping);
             if (KeybindConflicts.isBound(code)) {
                bindings.put(Component.translatable(mapping.getName()).getString() + " (Controls)", code);
