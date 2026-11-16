@@ -202,4 +202,33 @@ class ConfigMigrationsTest {
       ConfigMigrations.migrate(root);
       assertEquals(ConfigMigrations.CURRENT_VERSION, ConfigMigrations.versionOf(root));
    }
+
+   @Test
+   void projectileAimbotBecomesBowAimbot() {
+      JsonObject root = config(9, "ProjectileAimbot", module(true, 66, "Range", "30.0"));
+      ConfigMigrations.migrate(root);
+      JsonObject modules = root.getAsJsonObject("modules");
+      assertFalse(modules.has("ProjectileAimbot"));
+      JsonObject moved = modules.getAsJsonObject("Bow Aimbot");
+      assertTrue(moved.get("enabled").getAsBoolean());
+      assertEquals(66, moved.get("keybind").getAsInt());
+      assertEquals(30.0, settings(root, "Bow Aimbot").get("Range").getAsDouble());
+   }
+
+   @Test
+   void existingBowAimbotIsNotOverwritten() {
+      JsonObject root = config(9, "ProjectileAimbot", module(true, 66), "Bow Aimbot", module(false, 12));
+      ConfigMigrations.migrate(root);
+      assertEquals(12, root.getAsJsonObject("modules").getAsJsonObject("Bow Aimbot").get("keybind").getAsInt());
+   }
+
+   @Test
+   void killAuraPriorityTakesTheSharedModes() {
+      String[][] cases = {{"Distance", "Closest"}, {"Health", "Lowest Health"}, {"Angle", "Closest To Crosshair"}, {"Armor", "Least Armor"}};
+      for (String[] c : cases) {
+         JsonObject root = config(9, "KillAura", module(true, -1, "Priority", "\"" + c[0] + "\""));
+         ConfigMigrations.migrate(root);
+         assertEquals(c[1], settings(root, "KillAura").get("Priority").getAsString());
+      }
+   }
 }

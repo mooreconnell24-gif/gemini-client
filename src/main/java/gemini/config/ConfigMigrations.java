@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
  * {@code modules} object and must tolerate anything in it: configs are hand-edited.
  */
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 9;
+   public static final int CURRENT_VERSION = 10;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -30,7 +30,8 @@ public final class ConfigMigrations {
       new Step(6, ConfigMigrations::toV6),
       new Step(7, ConfigMigrations::toV7),
       new Step(8, ConfigMigrations::toV8),
-      new Step(9, ConfigMigrations::toV9)
+      new Step(9, ConfigMigrations::toV9),
+      new Step(10, ConfigMigrations::toV10)
    );
    /** The HUD module's module-list settings that moved to the ArrayList widget in version 9. */
    static final List<String> OLD_LIST_SETTINGS = List.of(
@@ -83,6 +84,29 @@ public final class ConfigMigrations {
     * options move over (renamed where the widget names them differently), and the old settings leave the HUD module.
     * A config that already has an ArrayList widget keeps it as it is, so nobody ends up with two lists.
     */
+   /**
+    * ProjectileAimbot became "Bow Aimbot" (its key, switch and settings move over unless a Bow Aimbot entry already
+    * exists), and KillAura's Priority takes the shared targeting modes: Distance → Closest, Health → Lowest Health,
+    * Angle → Closest To Crosshair, Armor (it sorted the least armoured first) → Least Armor.
+    */
+   private static void toV10(JsonObject modules, List<String> notes) {
+      String oldKey = findKey(modules, "ProjectileAimbot");
+      if (oldKey != null && findKey(modules, "Bow Aimbot") == null) {
+         JsonElement moved = modules.remove(oldKey);
+         modules.add("Bow Aimbot", moved);
+         if (moved.isJsonObject() && moved.getAsJsonObject().has("id")) {
+            moved.getAsJsonObject().addProperty("id", normalizeId("Bow Aimbot"));
+         }
+
+         notes.add("ProjectileAimbot -> Bow Aimbot");
+      }
+
+      remapMode(modules, "KillAura", "Priority", Set.of("Distance"), "Closest", notes);
+      remapMode(modules, "KillAura", "Priority", Set.of("Health"), "Lowest Health", notes);
+      remapMode(modules, "KillAura", "Priority", Set.of("Angle"), "Closest To Crosshair", notes);
+      remapMode(modules, "KillAura", "Priority", Set.of("Armor"), "Least Armor", notes);
+   }
+
    private static void toV9(JsonObject modules, List<String> notes) {
       JsonObject hudSettings = settingsOf(modules, "HUD");
       if (hudSettings == null) {
