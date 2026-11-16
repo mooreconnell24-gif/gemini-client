@@ -105,6 +105,17 @@ public final class ConfigMigrations {
       remapMode(modules, "KillAura", "Priority", Set.of("Health"), "Lowest Health", notes);
       remapMode(modules, "KillAura", "Priority", Set.of("Angle"), "Closest To Crosshair", notes);
       remapMode(modules, "KillAura", "Priority", Set.of("Armor"), "Least Armor", notes);
+      // KillAura's own Highlight box became the shared Target Box; switched off stays off.
+      JsonObject aura = settingsOf(modules, "KillAura");
+      if (aura != null) {
+         Boolean highlight = booleanSetting(aura, "Highlight");
+         if (highlight != null && !highlight && findKey(aura, "Target Box") == null) {
+            putSetting(aura, "Target Box", new JsonPrimitive("Off"));
+            notes.add("KillAura Highlight off -> Target Box Off");
+         }
+
+         dropSetting(modules, "KillAura", "Highlight", notes);
+      }
    }
 
    private static void toV9(JsonObject modules, List<String> notes) {

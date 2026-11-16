@@ -231,4 +231,16 @@ class ConfigMigrationsTest {
          assertEquals(c[1], settings(root, "KillAura").get("Priority").getAsString());
       }
    }
+
+   @Test
+   void killAuraHighlightBecomesTargetBox() {
+      JsonObject off = config(9, "KillAura", module(true, -1, "Highlight", "false"));
+      ConfigMigrations.migrate(off);
+      assertEquals("Off", settings(off, "KillAura").get("Target Box").getAsString());
+      assertFalse(settings(off, "KillAura").has("Highlight"));
+      JsonObject on = config(9, "KillAura", module(true, -1, "Highlight", "true"));
+      ConfigMigrations.migrate(on);
+      assertFalse(settings(on, "KillAura").has("Target Box"), "on keeps the new default box");
+      assertFalse(settings(on, "KillAura").has("Highlight"));
+   }
 }
