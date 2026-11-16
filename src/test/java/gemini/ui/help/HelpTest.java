@@ -80,7 +80,14 @@ class HelpTest {
       long tables = blocks.stream().filter(b -> b instanceof Markdown.Table).count();
       assertTrue(tables >= 1, "the new-modules table");
       Markdown.Table modules = (Markdown.Table)blocks.stream().filter(b -> b instanceof Markdown.Table).findFirst().orElseThrow();
-      assertEquals(15, modules.rows().size());
+      // Every "| Name | ... |" row under the header and divider of the file's first table.
+      long rowsInFile = bundledChangelog().lines()
+         .dropWhile(line -> !line.startsWith("|"))
+         .takeWhile(line -> line.startsWith("|"))
+         .skip(2)
+         .count();
+      assertTrue(rowsInFile > 0, "the changelog lists new modules");
+      assertEquals(rowsInFile, modules.rows().size(), "every table row is parsed, none merged or dropped");
       assertTrue(blocks.stream().filter(b -> b instanceof Markdown.Bullet).count() > 10);
       for (Markdown.Block block : blocks) {
          String text = block instanceof Markdown.Paragraph p ? p.text() : (block instanceof Markdown.Bullet b ? b.text() : "");

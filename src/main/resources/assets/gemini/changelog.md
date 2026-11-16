@@ -33,6 +33,9 @@
 - Many render modules and HUD widgets allocated objects every frame; most of that is gone.
 - Placing modules now check that your aim really hits the face before placing (**Raycast Check**, on by default), can turn smoothly (**Aim Speed**), and fade out the blocks they place. Scaffold gains a **Sprint Jump** tower mode.
 - The self-test now also checks that every setting survives a save and load.
+- **Player:** Middle Click Extra's Golden Apple never actually ate the apple; Exp Thrower's Look Down left your camera pointing at the floor; Auto Mend took armour off and never put it back; Auto Tool swapped a better held weapon for a worse one; Auto Armor retried cursed armour forever; modules that click in the inventory could drop the item on your cursor into the wrong slot; Anti Void and Clutch could teleport you to a safe spot remembered from another world; Hotbar Sorter and Inventory Cleaner cut eating or bow draws short.
+- **World:** Auto Sign could crash in a packet loop; Collisions changed collisions for every mob and the server's pathfinding, not just you; World Rules' Fire Spread used a rule that no longer exists; Nuker, Vein Miner, Auto Farm, Packet Mine and Fucker kept mining the previous world's block after a world change, and Packet Mine double-mined while you held attack; Lawn Mower could never break cobwebs; Mob Sweeper's All Mobs killed armour stands and pets (new **Spare Pets**, on by default); Home and Death Coords could teleport you to coordinates from another save; Locate's Nether teleport landed on the bedrock roof; Stronghold Finder now really triangulates from two eye throws (new **Pin Estimate**); Auto Build Bot no longer cancels other modules' pathing and gives up properly.
+- **Render and misc:** Panic switched off the Aim settings for good; Presets' Disable Others missed most modules; AutoGG said GG when a target merely walked away; Flag Check counted joins, respawns and teleports as setbacks; Zoom stepped at 20 Hz and never eased out; Performance, Fullbright, No Bob and No Hurt Cam could save their temporary video settings to your options file; Logoff Spot marked players who just walked away; Pearl Tracker re-simulated every pearl every frame; Name Protect stripped chat colours. **Crosshair** and **Block Selection** can now replace the vanilla crosshair and block outline instead of drawing on top of them (**Hide Vanilla**).
 
 ## New modules
 
@@ -53,6 +56,18 @@
 | Totem Pop Counter | Counts pops per player (chat, toast, Nametags, TargetHUD) |
 | Stash Finder | Finds dense storage clusters, logs them, toasts and pins a waypoint |
 | Auto Build Bot | Builds a nether portal, wither, wall, platform, pillar or bridge from your inventory |
+| Day Info | HUD: day number, clock, moon phase and a countdown to night or morning |
+| Spawn Info | HUD: world spawn and your bed or anchor, with distance and heading (Nether-aware) |
+| Session Stats | HUD: blocks mined and placed, kills, deaths, damage, crafts and XP this session, optionally per hour |
+| Weather Forecast | HUD: exact time until rain or a thunderstorm starts or stops |
+| Mob Caps | HUD: mobs counted against each spawn cap |
+| Ender Chest Preview | HUD: your ender chest contents without opening one |
+| Coords Copier | Copies your position (plain, comma, `/tp` or `/execute`) to the clipboard |
+| Screenshot Helper | Hides the HUD, takes one screenshot or a burst, then restores it |
+| Quick Move | Shift + drag across container slots to move every stack you pass over |
+| Craft Repeat | Repeats the last recipe-book craft until ingredients or a batch limit run out |
+| Biome Border | Draws fences where the biome changes |
+| Harvest ESP | Highlights ripe crops, nether wart, cocoa, berries and melon/pumpkin fruit |
 
 **Upgraded:** Fast Fall's *Ledges* mode (ReverseStep) gains a smooth pull, a *Holes Only* filter and an optional timer boost.
 

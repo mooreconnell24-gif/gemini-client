@@ -47,12 +47,19 @@ Everything runs locally. There is no account system, API key, cloud service or t
 **A new look everywhere.** Every Gemini surface now shares one dark-glass theme: rounded panels, thin accent borders and smooth motion that runs at the same speed whatever your frame rate.
 
 - **Home screen.** Gemini replaces the title screen with its own: a drifting particle background with mouse parallax, the logo with a version badge, glass buttons (Singleplayer, Multiplayer, Realms, ClickGUI, WindowGUI, Presets & Configs, Options, Quit), the sandbox switch, and a status bar with FPS, the active profile, key-bind conflicts and mixin health. "Vanilla menu" in the footer switches back to the normal title screen, and the vanilla screen has a "Gemini menu" button to return.
-- **Pause dock.** The Esc menu gets one-click buttons for ClickGUI, WindowGUI, the HUD editor, the config manager, a key-bind report and Panic.
+- **Pause dock.** The Esc menu gets one-click buttons for ClickGUI, WindowGUI, the HUD editor, the config manager, a key-bind report (with the number of conflicts), quick search, this guide and Panic.
 - **Window menu dashboard.** The sidebar has the categories (with active-module counts) plus three pages: **Presets & Configs** (load, save, overwrite, delete, export and import profiles, and the built-in presets), **Keybinds** (every bound key, conflicts in red, clashes with vanilla controls in amber, and one-click Rebind / Clear / Toggle-Hold), and **Baritone** (live engine, task, owner, goal, progress and ETA, Pause/Resume/Cancel, and quick starts for Auto Goto, Auto Mine Bot, Follow Bot, Auto Tunnel, Auto Highway and Auto Explore). It can be opened from the title screen to configure Gemini before loading a world.
 - **Panel menu.** Opens and closes with a fade, scrolls with inertia, and panels snap to the grid and to each other. Module rows have animated switches and description tooltips; right-click opens settings, middle-click binds a key. Search covers setting names (and says which one matched); arrow keys and Enter work through the results.
 - **Setting controls.** A full colour picker (saturation/brightness square, hue and alpha sliders, hex input, copy/paste, Static/Rainbow/Pulse), number sliders with Shift for fine control and double-click to type a value, and a list editor with icons, fuzzy search and category filters.
 - **HUD editor.** Centre guides, snapping to other widgets' edges, centres and equal gaps, and arrow-key nudging (Shift for 10px).
 - **Toasts** slide in, stack and close up smoothly, show a countdown, and are colour-coded by what they are about. They can be switched off or moved to any corner.
+
+**Find anything, share everything**
+
+- **Quick search** (`Ctrl+K`, or `K` in game; rebind it in Controls). Type to search every module, setting name, command and page. **Enter** toggles a module, **Shift+Enter** opens it in the window menu, **Tab** cycles between all results, modules, commands and pages. It also opens from the title screen and the pause dock, and works before a world is loaded (modules can then be configured but not switched on).
+- **Share codes.** "Copy share code" in Presets & Configs, or `.config share <name>`, puts your settings on the clipboard as one line starting with `gemini:`. "Paste share code", or `.config import code`, shows what it would change (modules switched on and off, key binds, settings) before you save or apply it. Damaged and oversized codes are refused with a reason.
+- **Key-bind warnings.** Binding a key that a module or a vanilla control already uses shows a warning toast, wherever the bind was made: the panel menu, the window menu, `.bind`, the menu key, or a profile or import being loaded. The first time you enter a world each session, one toast sums up any existing conflicts.
+- **In-game guide.** What's new, the controls of both menus, every command and an About page. It opens by itself once after an update; afterwards from the title screen, the pause dock, the window menu, `.help` and `.changelog`.
 
 **HUD**
 
@@ -304,6 +311,7 @@ Clutch (Player) watches for whatever is about to kill you and answers it with th
 | Input | Action |
 |---|---|
 | **Right Shift** | Open / close the menu (rebind it from the sidebar or in Controls) |
+| **K** (in game) / **Ctrl + K** (in menus) | Quick search: modules, settings, commands and pages |
 | **Click a module** | Show its settings |
 | **Click the switch** / **right-click** a module | Toggle it |
 | **Middle-click a module** | Bind a key (`Delete` clears, `Esc` cancels) |
