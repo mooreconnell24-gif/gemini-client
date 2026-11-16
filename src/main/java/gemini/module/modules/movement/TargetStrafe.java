@@ -3,6 +3,7 @@ package gemini.module.modules.movement;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
@@ -21,6 +22,7 @@ public final class TargetStrafe extends Module {
    private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Orbit speed multiplier", 1.05, 0.5, 2.0, 0.05));
    private final BooleanSetting holdJump = this.addSetting(new BooleanSetting("Require Jump", "Only orbit while holding Jump", true));
    private final BooleanSetting renderRing = this.addSetting(new BooleanSetting("Render Ring", "Draw the 3D orbit ring around the target", true));
+   private final Targeting targeting = Targeting.builder(this).build();
    private int dir = 1;
    private LivingEntity activeTarget;
 
@@ -31,6 +33,7 @@ public final class TargetStrafe extends Module {
    @Override
    public void onDisable() {
       this.activeTarget = null;
+      this.targeting.clear();
    }
 
    @Override
@@ -38,9 +41,10 @@ public final class TargetStrafe extends Module {
       Minecraft client = Minecraft.getInstance();
       if (!ClientState.ready(client)) {
          this.activeTarget = null;
+         this.targeting.clear();
       } else {
          LocalPlayer player = client.player;
-         this.activeTarget = findNearestTarget(client, player, 6.0);
+         this.activeTarget = this.targeting.pick(player, client.level.entitiesForRendering(), 6.0, null);
          if (this.activeTarget != null && (!this.holdJump.get() || client.options.keyJump.isDown())) {
             if (player.horizontalCollision) {
                this.dir = -this.dir;
@@ -63,6 +67,7 @@ public final class TargetStrafe extends Module {
       }
    }
 
+   /** The nearest player or hostile mob within {@code range}; TimerRange uses it to decide when to speed up. */
    static LivingEntity findNearestTarget(Minecraft client, LocalPlayer self, double range) {
       LivingEntity best = null;
       double bestD = range * range;
@@ -82,6 +87,7 @@ public final class TargetStrafe extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       if (this.renderRing.get() && this.activeTarget != null && this.activeTarget.isAlive()) {
          Render3D.ring(
             Render3D.entityX(this.activeTarget, partialTick),
@@ -99,6 +105,6 @@ public final class TargetStrafe extends Module {
    /** Everything remembered here belongs to the world that was just left. */
    @Override
    public void onWorldChange() {
-      this.activeTarget = null;
+      this.onDisable();
    }
 }

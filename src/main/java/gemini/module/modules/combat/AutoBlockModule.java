@@ -5,6 +5,7 @@ import gemini.util.Swing;
 
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -17,6 +18,8 @@ import gemini.event.ActionPriority;
 import it.unimi.dsi.fastutil.ints.Int2IntMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.ArrayList;
+import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
@@ -60,7 +63,15 @@ public final class AutoBlockModule extends Module {
    private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Face the attacker in packets only", true).showIf(this.look::get));
    private final BooleanSetting workInGui = this.addSetting(new BooleanSetting("In Screens", "Keep blocking while a screen is open", false));
    private final BooleanSetting pauseBaritone = this.addSetting(new BooleanSetting("Pause Baritone", "Stop Baritone pathing while the shield is up", true));
+   // Which attacker to face when several swing at once; the box marks it. Players/Hostile above are its filters.
+   private final Targeting targeting = Targeting.builder(this)
+      .filters(this.players::get, this.hostile::get, () -> false, () -> true)
+      .box("Outline", 30)
+      .build();
    private final Int2IntOpenHashMap sinceAttack = new Int2IntOpenHashMap();
+   /** This tick's melee threats (reused, never reallocated); Targeting picks the one to face among them. */
+   private final ArrayList<Entity> threats = new ArrayList<>();
+   private final Predicate<LivingEntity> isThreat = living -> this.threats.contains(living);
    private static boolean managing;
    private int holdLeft;
    private boolean raisedByUs;
@@ -89,6 +100,13 @@ public final class AutoBlockModule extends Module {
       this.sinceAttack.clear();
       this.holdLeft = 0;
       this.faceTarget = null;
+      this.threats.clear();
+      this.targeting.clear();
+   }
+
+   @Override
+   public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
    }
 
    @Override
@@ -141,6 +159,7 @@ public final class AutoBlockModule extends Module {
             this.lower(client);
             this.holdLeft = 0;
             this.faceTarget = null;
+            this.targeting.clear();
          }
       }
    }
@@ -163,7 +182,7 @@ public final class AutoBlockModule extends Module {
       double reach = this.range.get();
       int early = delay + this.lead.intValue();
       boolean found = false;
-      double best = Double.MAX_VALUE;
+      this.threats.clear();
 
       for (Entity entity : client.level.entitiesForRendering()) {
          if (this.projectiles.get() && entity instanceof AbstractArrow arrow && incomingArrow(player, arrow, early)) {
@@ -174,14 +193,17 @@ public final class AutoBlockModule extends Module {
             && this.meleeThreat(player, living, early)) {
             found = true;
             this.noteAttackCycle(living);
-            double distance = player.distanceToSqr(living);
-            if (distance < best) {
-               best = distance;
-               this.faceTarget = living;
-            }
+            this.threats.add(living);
          }
       }
 
+      if (this.threats.isEmpty()) {
+         this.targeting.clear();
+      } else {
+         this.faceTarget = this.targeting.pick(player, this.threats, reach, this.isThreat);
+      }
+
+      this.threats.clear();
       return found;
    }
 
@@ -340,5 +362,7 @@ public final class AutoBlockModule extends Module {
    public void onWorldChange() {
       this.sinceAttack.clear();
       this.faceTarget = null;
+      this.threats.clear();
+      this.targeting.clear();
    }
 }

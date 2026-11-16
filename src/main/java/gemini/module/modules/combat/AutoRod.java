@@ -1,11 +1,12 @@
 package gemini.module.modules.combat;
 
-import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
+import gemini.module.Targeting;
+import java.util.function.Predicate;
 import gemini.module.setting.NumberSetting;
 import gemini.util.Inventories;
 import gemini.util.RotationManager;
@@ -20,6 +21,12 @@ import net.minecraft.world.item.Items;
 public final class AutoRod extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max distance to rod enemies", 6.8, 3.0, 10.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between rod casts", 12.0, 4.0, 30.0, 1.0));
+   private final Targeting targeting = Targeting.builder(this).build();
+   /** A rod only pays off past melee reach. */
+   private static final Predicate<LivingEntity> PAST_MELEE = living -> {
+      LocalPlayer self = Minecraft.getInstance().player;
+      return self != null && self.distanceTo(living) > 3.1;
+   };
    private int wait;
    private int retractTicks;
    private int previousSlot = -1;
@@ -31,6 +38,21 @@ public final class AutoRod extends Module {
    @Override
    public void onDisable() {
       this.restore(Minecraft.getInstance().player);
+      this.targeting.clear();
+   }
+
+   @Override
+   public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
+   }
+
+   /** Everything remembered here belongs to the world that was just left: no slot to restore there. */
+   @Override
+   public void onWorldChange() {
+      this.previousSlot = -1;
+      this.retractTicks = 0;
+      this.wait = 0;
+      this.targeting.clear();
    }
 
    private void restore(LocalPlayer player) {
@@ -46,6 +68,8 @@ public final class AutoRod extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
+         // Picked every tick so the box follows the current choice while a cast or the delay is running.
+         LivingEntity enemy = this.targeting.pick(player, client.level.entitiesForRendering(), this.range.get(), PAST_MELEE);
          if (this.retractTicks > 0) {
             this.retractTicks--;
             if (this.retractTicks == 0) {
@@ -62,8 +86,7 @@ public final class AutoRod extends Module {
             return;
          }
 
-         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
-         if (enemy != null && player.distanceTo(enemy) > 3.1) {
+         if (enemy != null) {
             int slot = Inventories.findHotbar(player, s -> s.is(Items.FISHING_ROD));
             if (slot >= 0 && Hands.claimMainHand()) {
                float[] rot = Rotations.face(player, enemy, 2.5);
@@ -79,6 +102,7 @@ public final class AutoRod extends Module {
          }
       } else {
          this.restore(client.player);
+         this.targeting.clear();
       }
    }
 }

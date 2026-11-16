@@ -7,6 +7,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
+import gemini.util.CombatTarget;
 import gemini.util.Damage;
 import gemini.util.TotemPops;
 import net.minecraft.client.Minecraft;
@@ -33,7 +34,8 @@ import org.joml.Vector2f;
  * Card for the entity you are fighting: face or 3D model, an animated health bar with a trailing damage ghost and an
  * absorption overlay, distance, totem pops, worn armour with durability, and an honest fight estimate.
  *
- * <p>The target is picked once a tick (the entity you last hit, for a few seconds, else the nearest player or hurt
+ * <p>The target is picked once a tick (the target a combat module is attacking right now, else the entity you last
+ * hit, for a few seconds, else the nearest player or hurt
  * mob in range) and every text on the card is rebuilt only then; a frame animates and draws. When the target goes
  * away the card fades out still showing it, then hides.
  */
@@ -101,6 +103,12 @@ public final class TargetHud extends HudWidget {
       LocalPlayer self = client.player;
       if (self == null || client.level == null) {
          return null;
+      }
+
+      // A combat module that is attacking right now (KillAura, TriggerBot, ...) decides: show the same target it has.
+      LivingEntity active = CombatTarget.current();
+      if (active != null && active != self) {
+         return active;
       }
 
       double max = this.range.get() * this.range.get();
