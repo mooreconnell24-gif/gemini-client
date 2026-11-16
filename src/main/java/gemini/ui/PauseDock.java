@@ -1,9 +1,12 @@
 package gemini.ui;
 
 import gemini.Gemini;
+import gemini.input.BindWarnings;
 import gemini.module.ModuleManager;
 import gemini.ui.clickgui.ClickGuiScreen;
 import gemini.ui.clickgui.WindowGuiScreen;
+import gemini.ui.help.HelpScreen;
+import gemini.ui.palette.PaletteScreen;
 import gemini.util.SingleplayerGate;
 import java.util.List;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
@@ -19,14 +22,15 @@ import net.minecraft.util.Util;
 
 /**
  * The quick-action dock on the Esc menu: one-click glass buttons for both menus, the HUD layout editor, the
- * config manager, the keybind report and Panic.
+ * config manager, the keybind report (with a live count of conflicting keys), quick search, the guide and Panic.
  *
  * <p>It is added from Fabric's screen-init hook (see {@link SandboxUi#onScreenInit}) and only where Gemini may
  * act, i.e. in a private single-player world with sandbox mode on. {@link DockLayout} keeps it clear of the
  * vanilla buttons: a column down the left edge on roomy screens, a row above the "Game Menu" title otherwise.
  */
 public final class PauseDock {
-   private static final String[] KEYS = {"clickgui", "windowgui", "hud", "configs", "keybinds", "panic"};
+   private static final String[] KEYS = {"clickgui", "windowgui", "hud", "configs", "keybinds", "search", "guide", "panic"};
+   private static final int KEYBINDS = 4;
 
    private PauseDock() {
    }
@@ -49,6 +53,13 @@ public final class PauseDock {
          briefWidths[i] = font.width(brief[i]);
       }
 
+      ModuleManager modules = Gemini.getInstance().modules();
+      if (BindWarnings.conflictCount(modules) > 0) {
+         // Room for the conflict badge, so the label is not squeezed by it.
+         fullWidths[KEYBINDS] += GlassButton.badgeRoom(font);
+         briefWidths[KEYBINDS] += GlassButton.badgeRoom(font);
+      }
+
       DockLayout layout = DockLayout.compute(screen.width, screen.height, fullWidths, briefWidths);
       GlassButton[] buttons = new GlassButton[count];
       List<AbstractWidget> widgets = Screens.getWidgets(screen);
@@ -61,6 +72,10 @@ public final class PauseDock {
             )
             .expand(layout.side() ? 2 : 0);
          buttons[i].setTooltip(Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip")));
+         if (i == KEYBINDS) {
+            buttons[i].badge(() -> BindWarnings.conflictCount(modules), Glass.ERROR);
+         }
+
          widgets.add(buttons[i]);
       }
    }
@@ -79,6 +94,8 @@ public final class PauseDock {
          case 2 -> client.gui.setScreen(ClickGuiScreen.hudEditor());
          case 3 -> GeminiTitleScreen.openConfigs(screen);
          case 4 -> KeybindReportScreen.open(client, screen);
+         case 5 -> client.gui.setScreen(new PaletteScreen(screen));
+         case 6 -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, screen);
          default -> panic(client, gemini.modules());
       }
    }
@@ -131,7 +148,7 @@ public final class PauseDock {
          Glass.panel(g, this.getX(), this.getY(), this.getRight(), this.getBottom(), this.shown, 0.0F);
          if (this.layout.side()) {
             Font font = Minecraft.getInstance().font;
-            g.text(font, "GEMINI", this.getX() + 6, this.getY() + 5, Glass.fade(Glass.accent2(), this.shown), false);
+            g.text(font, "GEMINI", this.getX() + Theme.SPACE_M, this.getY() + 5, Glass.fade(Glass.accent2(), this.shown), false);
             Glass.gradientBar(
                g,
                this.getX() + 6 + font.width("GEMINI") + 5,
@@ -139,7 +156,7 @@ public final class PauseDock {
                this.getRight() - 6,
                this.getY() + 9,
                Glass.fade(Glass.withAlpha(Glass.accent(), 150), this.shown),
-               Glass.withAlpha(Glass.accent2(), 0)
+               Glass.fade(Glass.withAlpha(Glass.accent2(), 0), this.shown)
             );
          }
       }

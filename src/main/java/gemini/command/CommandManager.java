@@ -8,6 +8,8 @@ import com.google.gson.JsonObject;
 import gemini.config.ConfigManager;
 import gemini.config.JsonFiles;
 import gemini.config.ProfileBundle;
+import gemini.config.ProfileDiff;
+import gemini.config.ShareCode;
 import gemini.diags.MixinReport;
 import gemini.input.GeminiKeys;
 import gemini.input.KeybindConflicts;
@@ -45,49 +47,7 @@ import net.minecraft.world.entity.player.Player;
 
 public final class CommandManager {
    private static final int LIST_PREVIEW = 40;
-   private static final List<String> COMMAND_WORDS = List.of(
-      "help",
-      "baritone",
-      "bind",
-      "unbind",
-      "binds",
-      "toggle",
-      "modules",
-      "set",
-      "get",
-      "settings",
-      "reset",
-      "panic",
-      "config",
-      "sandbox",
-      "gui",
-      "menu",
-      "version",
-      "vclip",
-      "hclip",
-      "dismount",
-      "drop",
-      "leave",
-      "disconnect",
-      "say",
-      "rotate",
-      "coords",
-      "sethome",
-      "home",
-      "back",
-      "gm",
-      "gamemode",
-      "day",
-      "noon",
-      "night",
-      "sun",
-      "rain",
-      "heal",
-      "feed",
-      "clear",
-      "reload",
-      "selftest"
-   );
+   private static final List<String> COMMAND_WORDS = CommandHelp.WORDS;
    private static volatile boolean rawSending;
    private final ModuleManager moduleManager;
    private final ConfigManager configManager;
@@ -128,7 +88,7 @@ public final class CommandManager {
    }
 
    /** Commands that answer even when Gemini may not act (switched off, in a menu, world open to LAN). */
-   private static final Set<String> ALWAYS_AVAILABLE = Set.of("help", "?", "sandbox", "version", "ver", "config", "cfg", "binds", "keybinds", "modules");
+   private static final Set<String> ALWAYS_AVAILABLE = Set.of("help", "?", "changelog", "sandbox", "version", "ver", "config", "cfg", "binds", "keybinds", "modules");
 
    /** Whether the chat line is a command that still works while Gemini is switched off. */
    public static boolean worksWhileDormant(String rawMessage) {
@@ -163,7 +123,15 @@ public final class CommandManager {
                   switch (command) {
                      case "help":
                      case "?":
-                        this.sendHelp();
+                        if (parts.length > 1 && "chat".equalsIgnoreCase(parts[1])) {
+                           this.sendHelp();
+                        } else {
+                           openHelp(gemini.ui.help.HelpScreen.Tab.COMMANDS);
+                        }
+                        break;
+                     case "changelog":
+                     case "whatsnew":
+                        openHelp(gemini.ui.help.HelpScreen.Tab.WHATS_NEW);
                         break;
                      case "b":
                      case "baritone":
@@ -483,27 +451,15 @@ public final class CommandManager {
    }
 
    private void sendHelp() {
-      feedback("§bGemini Client §7commands:");
-      feedback("§f#<cmd> §7or §f.b <cmd> §7- Baritone (§f#goto§7, §f#mine§7, §f#follow§7, §f#tunnel§7, §f#farm§7, §f#explore§7, §f#stop§7)");
-      feedback("§f.toggle <module> [on|off] §7- toggle a module (or just §f.<module>§7)");
-      feedback("§f.set <module> <setting> <value> §7- change a setting (§f_ §7stands for a space)");
-      feedback("§f.set <module> <list> add|remove|toggle|set|clear|list <items> §7- edit block, item and entity lists");
-      feedback("§f.get <module> [setting] §7- inspect a module");
-      feedback("§f.reset §7- restore every setting  §f.reset <module> [setting] §7- restore one");
-      feedback("§f.<module> <setting> [value] §7- shortcut for get and set");
-      feedback("§f.bind <module> <key> §7/ §f.unbind <module> §7/ §f.binds §7- keybinds (§f.binds §7flags keys used twice)");
-      feedback("§f.modules [category] §7- list modules");
-      feedback("§f.config save|load|delete|list|reset <name> §7/ §f.reload §7- profiles and the config file");
-      feedback("§f.config export <name> [clipboard] §7/ §f.config import <name> [clipboard] §7- share profiles as files or text");
-      feedback("§f.sandbox [on|off] §7- on: Gemini active, single-player only  ·  off: Gemini switched off, online play allowed");
-      feedback("§f.vclip <blocks> §7/ §f.hclip <blocks> §7/ §f.rotate <yaw> [pitch] §7- move and aim");
-      feedback("§f.drop hand|offhand|hotbar|inventory|all §7/ §f.dismount §7- inventory and mounts");
-      feedback("§f.say <text> §7/ §f.leave [reason] §7/ §f.coords §7/ §f.clear");
-      feedback("§f.sethome §7/ §f.home §7/ §f.back §7- saved teleport in this world");
-      feedback("§f.gm survival|creative|adventure|spectator §7/ §f.day §7/ §f.night §7/ §f.sun §7/ §f.rain §7/ §f.heal §7/ §f.feed");
-      feedback("§f.selftest §7- crash-test every module in a throwaway world");
-      feedback("§f.panic §7- turn every module off (also the Panic module)  §f.gui §7- open the menu  §f.version §7- build info");
-      feedback("§7Module commands: §f.xray reload§7, §f.marker add|remove|list|clear§7, §f.waypoints add|remove|list|tp|clear");
+      for (String line : CommandHelp.chatLines()) {
+         feedback(line);
+      }
+   }
+
+   /** Opens the help screen once the chat screen that sent the command has closed. */
+   private static void openHelp(gemini.ui.help.HelpScreen.Tab tab) {
+      Minecraft client = Minecraft.getInstance();
+      client.execute(() -> client.gui.setScreen(new gemini.ui.help.HelpScreen(tab, null)));
    }
 
    private Optional<Module> module(String name) {
@@ -712,7 +668,7 @@ public final class CommandManager {
                } else {
                   module.setKeybind(code);
                   feedback("§b" + module.getName() + " §7bound to §f" + parts[2].toUpperCase(Locale.ROOT));
-                  String clash = KeybindReport.warning(this.moduleManager, module, code);
+                  String clash = gemini.input.BindWarnings.afterBind(this.moduleManager, module, code);
                   if (clash != null) {
                      feedback("§e" + clash + ". §7Both will run when you press it.");
                   }
@@ -1023,6 +979,9 @@ public final class CommandManager {
          case "export":
             this.handleConfigExport(parts);
             break;
+         case "share":
+            this.handleConfigShare(parts);
+            break;
          case "import":
             this.handleConfigImport(parts);
             break;
@@ -1068,12 +1027,23 @@ public final class CommandManager {
          return;
       }
 
+      if ("code".equalsIgnoreCase(parts[2]) && (parts.length >= 4 || this.configManager.exports().stream().noneMatch("code"::equals))) {
+         this.handleConfigImportCode(parts);
+         return;
+      }
+
       try {
          int modules;
          if (parts.length >= 4 && "clipboard".equalsIgnoreCase(parts[3])) {
             String text = Minecraft.getInstance().keyboardHandler.getClipboard();
             if (text == null || text.isBlank()) {
                feedback("§cThe clipboard is empty.");
+               return;
+            }
+
+            if (ShareCode.looksLikeCode(text)) {
+               // A share code on the clipboard: same preview-and-store path as .config import code.
+               this.importCode(text, parts[2]);
                return;
             }
 
@@ -1094,6 +1064,90 @@ public final class CommandManager {
       } catch (ProfileBundle.FormatException e) {
          feedback("§cImport failed: §7" + e.getMessage() + ".");
       }
+   }
+
+   /** {@code .config share [name]}: the current settings as a share code on the clipboard. */
+   private void handleConfigShare(String[] parts) {
+      String name = parts.length >= 3 ? parts[2] : (this.configManager.activeProfile() == null ? "my-settings" : this.configManager.activeProfile());
+      if (ConfigManager.profileId(name) == null) {
+         feedback("§cThe profile name needs letters or digits.");
+         return;
+      }
+
+      String code = this.configManager.shareCode(name);
+      Minecraft.getInstance().keyboardHandler.setClipboard(code);
+      feedback("§aCopied a share code for §f" + ConfigManager.profileId(name) + " §a(" + code.length() + " characters) to the clipboard.");
+      feedback("§7The other side copies it and runs §f.config import code§7, or uses Paste share code in Presets & Configs.");
+   }
+
+   /** {@code .config import code [<code>|clipboard] [name]}: preview a share code, then store it as a profile. */
+   private void handleConfigImportCode(String[] parts) {
+      String code;
+      String name = null;
+      if (parts.length < 4 || "clipboard".equalsIgnoreCase(parts[3])) {
+         code = Minecraft.getInstance().keyboardHandler.getClipboard();
+         if (code == null || code.isBlank()) {
+            feedback("§cThe clipboard is empty. §7Copy a share code (gemini:...) first, then run §f.config import code");
+            return;
+         }
+
+         if (parts.length >= 5) {
+            name = parts[4];
+         }
+      } else {
+         code = parts[3];
+         if (parts.length >= 5) {
+            name = parts[4];
+         }
+      }
+
+      this.importCode(code, name);
+   }
+
+   private void importCode(String code, String name) {
+      ConfigManager.ImportPreview preview;
+      try {
+         preview = this.configManager.previewImport(code);
+      } catch (ProfileBundle.FormatException e) {
+         feedback("§cImport failed: §7" + e.getMessage() + ".");
+         if (code != null && code.length() >= 250 && !code.contains(" ")) {
+            feedback("§7Chat lines stop at 256 characters, so long codes are cut off. Copy the code and run §f.config import code §7with nothing after it.");
+         }
+
+         return;
+      }
+
+      String id = ConfigManager.profileId(name);
+      if (id == null) {
+         id = preview.suggestedName() == null ? "imported" : preview.suggestedName();
+      }
+
+      try {
+         id = this.configManager.storeImport(id, preview);
+      } catch (ProfileBundle.FormatException e) {
+         feedback("§cImport failed: §7" + e.getMessage() + ".");
+         return;
+      }
+
+      ProfileDiff diff = preview.diff();
+      feedback("§aStored profile §f" + id + "§a. §7Loading it would change: §f" + diff.summary());
+      if (!diff.switchedOn().isEmpty()) {
+         feedback("§7  switches on: §f" + ProfileDiff.names(diff.switchedOn(), 8));
+      }
+
+      if (!diff.switchedOff().isEmpty()) {
+         feedback("§7  switches off: §f" + ProfileDiff.names(diff.switchedOff(), 8));
+      }
+
+      if (!diff.rebound().isEmpty()) {
+         feedback("§7  new key binds: §f" + ProfileDiff.names(diff.rebound(), 8));
+      }
+
+      if (!diff.unknown().isEmpty()) {
+         feedback("§e  " + diff.unknown().size() + " module(s) this build does not have are skipped: §7" + ProfileDiff.names(diff.unknown(), 6));
+      }
+
+      feedback("§7Apply it with §f.config load " + id);
    }
 
    private void handleSandbox(String[] parts) {

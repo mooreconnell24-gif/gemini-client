@@ -62,18 +62,9 @@ public final class Controls {
       }
    }
 
-   /** The text cut down with ".." so it is no wider than {@code maxWidth}. */
+   /** The text cut down with ".." so it is no wider than {@code maxWidth} (see {@link gemini.ui.Theme#fit}). */
    public static String fit(Font font, String text, int maxWidth) {
-      if (font.width(text) <= maxWidth) {
-         return text;
-      }
-
-      String cut = text;
-      while (cut.length() > 1 && font.width(cut + "..") > maxWidth) {
-         cut = cut.substring(0, cut.length() - 1);
-      }
-
-      return cut + "..";
+      return gemini.ui.Theme.fit(text, maxWidth, font::width);
    }
 
    /** A light/dark checkerboard (the usual "this is transparent" backdrop) in at most a few dozen fills. */

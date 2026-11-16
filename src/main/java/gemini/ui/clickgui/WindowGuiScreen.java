@@ -155,6 +155,23 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       this.currentPage().ifPresent(DashboardPage::opened);
    }
 
+   /**
+    * Opens the Modules page with {@code module} selected in its category (the search cleared), as the quick-search
+    * palette's Shift+Enter does. {@code parent} is shown again when the dashboard closes.
+    */
+   public static WindowGuiScreen forModule(Module module, Screen parent) {
+      WindowGuiScreen screen = new WindowGuiScreen(Page.MODULES, parent);
+      if (module != null) {
+         screen.category = module.getCategory();
+         screen.selected = module;
+         screen.search = "";
+         screen.filter = "All";
+         screen.revealed = false;
+      }
+
+      return screen;
+   }
+
    @Override
    protected void init() {
       // Minecraft 26.3 reads keys through SDL, which only sends typed characters to a screen that asks for them.
@@ -376,7 +393,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          tabsTop += 14;
       }
 
-      int buttonsTop = y + h - 44;
+      int buttonsTop = y + h - 64;
       int count = Category.values().length + PAGE_TABS.length;
       int step = Mth.clamp((buttonsTop - 6 - tabsTop - 9) / count, 13, 20);
       int th = step - 2;
@@ -422,10 +439,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       int half = (SIDEBAR - 12 - 3) / 2;
-      this.sidebarButton(g, x + 6, buttonsTop, half, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
-      this.sidebarButton(g, x + 6 + half + 3, buttonsTop, half, "Panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6, buttonsTop, half, "Search", WindowGuiScreen.Kind.PALETTE, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6 + half + 3, buttonsTop, half, "Guide", WindowGuiScreen.Kind.HELP, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6, buttonsTop + 20, half, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6 + half + 3, buttonsTop + 20, half, "Panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
       String menuKey = this.bindingMenu ? "Press a key..." : "Menu key: " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString();
-      this.sidebarButton(g, x + 6, buttonsTop + 20, SIDEBAR - 12, menuKey, WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
+      this.sidebarButton(g, x + 6, buttonsTop + 40, SIDEBAR - 12, menuKey, WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
    }
 
    private boolean tabActive(Object tab) {
@@ -508,20 +527,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       g.text(this.font, fit(this.font, name, right - (x + 25) - 2), x + 25, ty, textColor, false);
    }
 
-   private static long conflictCacheAt;
-   private static int conflictCache;
-
-   /** Conflicting keys for the sidebar badge, recounted at most twice a second. */
+   /** Conflicting keys for the sidebar badge: the same cached count the title screen and the pause dock show. */
    private static int conflictCount() {
-      long now = Util.getMillis();
-      if (now - conflictCacheAt > 500L) {
-         conflictCacheAt = now;
-         conflictCache = gemini.ui.clickgui.window.KeybindGroups.conflictCount(
-            gemini.ui.clickgui.window.KeybindGroups.build(KeybindReport.snapshot(Gemini.getInstance().modules()), KeybindReport.CONTROLS_SUFFIX, true)
-         );
-      }
-
-      return conflictCache;
+      return gemini.input.BindWarnings.conflictCount(Gemini.getInstance().modules());
    }
 
    private void sidebarButton(GuiGraphicsExtractor g, int x, int y, int w, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
@@ -537,6 +545,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       if (over) {
          this.tip = switch (kind) {
             case MENU_KEY -> "Click, then press the key that opens this menu";
+            case PALETTE -> "Quick search over modules, settings, commands and pages (" + GeminiKeys.paletteHint() + ")";
+            case HELP -> "What's new, controls, every command and about";
             case LAYOUT -> "Switch to the classic draggable panels (change back in ClickGUI > Layout)";
             default -> "Drag HUD widgets around the screen";
          };
@@ -1111,6 +1121,11 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             this.minecraft.gui.setScreen(new ClickGuiScreen());
          }
          case HUD_EDIT -> this.minecraft.gui.setScreen(ClickGuiScreen.hudEditor());
+         case PALETTE -> {
+            this.blurAll();
+            gemini.ui.palette.PaletteScreen.open(this.minecraft);
+         }
+         case HELP -> gemini.ui.help.HelpScreen.open(gemini.ui.help.HelpScreen.Tab.WHATS_NEW, this);
          case MENU_KEY -> {
             this.bindingMenu = true;
             this.binding = null;
@@ -1188,6 +1203,10 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             KeyMapping.resetMapping();
             this.minecraft.options.save();
             save();
+            String clash = gemini.input.BindWarnings.afterMenuKey(Gemini.getInstance().modules());
+            if (clash != null) {
+               this.showNotice(clash);
+            }
          }
 
          this.bindingMenu = false;
@@ -1196,18 +1215,25 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          if (key != Keys.ESCAPE) {
             if (key == Keys.DELETE || key == Keys.BACKSPACE) {
                this.binding.setKeybind(-1);
+               gemini.input.BindWarnings.invalidate();
                this.showNotice(this.binding.getName() + " unbound");
             } else {
                this.binding.setKeybind(key);
-               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.binding, key);
+               String clash = gemini.input.BindWarnings.afterBind(Gemini.getInstance().modules(), this.binding, key);
                this.showNotice(clash != null ? clash : this.binding.getName() + " bound to " + GeminiKeys.displayName(key));
             }
 
-            conflictCacheAt = 0L;
+            gemini.input.BindWarnings.invalidate();
             this.keybindsPage.opened();
          }
 
          this.binding = null;
+         return true;
+      }
+
+      if (GeminiKeys.opensPalette(event)) {
+         this.blurAll();
+         gemini.ui.palette.PaletteScreen.open(this.minecraft);
          return true;
       }
 
@@ -1643,7 +1669,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       ACTION,
       LAYOUT,
       HUD_EDIT,
-      MENU_KEY;
+      MENU_KEY,
+      PALETTE,
+      HELP;
    }
 
    private record PageHit(Object owner, DashboardPage.Click click) {

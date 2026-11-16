@@ -219,6 +219,23 @@ public final class Glass {
       panel(g, x1, y1, x2, y2, RADIUS, surface(0), accent(), opacity, glow);
    }
 
+   /**
+    * The HUD card shared by every HUD widget and the watermark: translucent surface, faint top sheen, one accent
+    * border and an accent-to-secondary line along the top edge, all faded by {@code opacity} (0..1).
+    */
+   public static void hudCard(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int surface, int accent, int accent2, float opacity) {
+      if (opacity <= 0.0F || x2 <= x1 || y2 <= y1) {
+         return;
+      }
+
+      roundRect(g, x1, y1, x2, y2, RADIUS, withAlpha(surface, Math.round(200.0F * opacity)));
+      roundRect(g, x1 + 1, y1 + 1, x2 - 1, y1 + Math.max(2, (y2 - y1) / 3), Math.max(0, RADIUS - 1), withAlpha(0xFFFFFF, Math.round(7.0F * opacity)));
+      roundOutline(g, x1, y1, x2, y2, RADIUS, withAlpha(accent, Math.round(96.0F * opacity)));
+      if (x2 - x1 > 2 * RADIUS + 2) {
+         gradientBar(g, x1 + RADIUS, y1, x2 - RADIUS, y1 + 1, withAlpha(accent, Math.round(200.0F * opacity)), withAlpha(accent2, Math.round(200.0F * opacity)));
+      }
+   }
+
    /** Soft halo around a rounded rectangle: three widening rings of falling alpha. */
    public static void glow(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int radius, int color, float strength) {
       float s = Mth.clamp(strength, 0.0F, 1.0F);

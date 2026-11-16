@@ -3,8 +3,10 @@ package gemini.ui;
 import com.mojang.realmsclient.RealmsMainScreen;
 import gemini.Gemini;
 import gemini.diags.MixinReport;
-import gemini.input.KeybindConflicts;
-import gemini.input.KeybindReport;
+import gemini.input.BindWarnings;
+import gemini.input.GeminiKeys;
+import gemini.ui.help.HelpScreen;
+import gemini.ui.palette.PaletteScreen;
 import gemini.ui.clickgui.ClickGuiScreen;
 import gemini.ui.clickgui.WindowGuiScreen;
 import gemini.util.SingleplayerGate;
@@ -18,6 +20,7 @@ import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.SafetyScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
@@ -41,6 +44,7 @@ public final class GeminiTitleScreen extends Screen {
    private static final int STATUS_GAP = 13;
    private static final long STATUS_INTERVAL_MS = 1000L;
    private static final String VERSION_BADGE = "Gemini v" + Gemini.VERSION;
+   private static boolean whatsNewChecked;
    // Particle state lives in flat arrays that are allocated once per screen; nothing is allocated per frame.
    private final float[] particleX = new float[PARTICLES];
    private final float[] particleY = new float[PARTICLES];
@@ -134,8 +138,10 @@ public final class GeminiTitleScreen extends Screen {
       GlassButton clickGui = this.nav(3, "clickgui", () -> this.minecraft.gui.setScreen(new ClickGuiScreen()));
       GlassButton windowGui = this.nav(4, "windowgui", () -> this.minecraft.gui.setScreen(new WindowGuiScreen()));
       GlassButton configs = this.nav(5, "configs", () -> openConfigs(this));
-      GlassButton options = this.nav(6, "options", () -> this.minecraft.gui.setScreen(new OptionsScreen(this, this.minecraft.options)));
-      GlassButton quit = this.nav(7, "quit", this.minecraft::stop);
+      GlassButton search = this.nav(6, "search", () -> this.minecraft.gui.setScreen(new PaletteScreen(this)));
+      GlassButton guide = this.nav(7, "guide", () -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, this));
+      GlassButton options = this.nav(8, "options", () -> this.minecraft.gui.setScreen(new OptionsScreen(this, this.minecraft.options)));
+      GlassButton quit = this.nav(9, "quit", this.minecraft::stop);
       if (!online) {
          multiplayer.active = false;
          realms.active = false;
@@ -162,8 +168,8 @@ public final class GeminiTitleScreen extends Screen {
          )
       );
       sandbox.setTooltip(Tooltip.create(SandboxUi.tooltip()));
-      this.geminiButtons = new GlassButton[]{clickGui, windowGui, configs};
-      this.fading = new GlassButton[]{singleplayer, multiplayer, realms, clickGui, windowGui, configs, options, quit, vanilla, sandbox};
+      this.geminiButtons = new GlassButton[]{clickGui, windowGui, configs, search};
+      this.fading = new GlassButton[]{singleplayer, multiplayer, realms, clickGui, windowGui, configs, search, guide, options, quit, vanilla, sandbox};
       this.applySandboxState();
       this.credits = Component.translatable("title.credits");
       this.creditsWidth = this.font.width(this.credits);
@@ -174,6 +180,26 @@ public final class GeminiTitleScreen extends Screen {
 
       this.statusAt = 0L;
       this.shownFps = -1;
+      if (!whatsNewChecked) {
+         // Once per game start: after an update, "What's new" opens over the home screen by itself.
+         whatsNewChecked = true;
+         this.minecraft.execute(() -> {
+            if (this.minecraft.gui.screen() == this) {
+               HelpScreen.maybeShowWhatsNew(this);
+            }
+         });
+      }
+   }
+
+   /** Ctrl + the quick-search key opens the palette here too (while Gemini is switched on). */
+   @Override
+   public boolean keyPressed(KeyEvent event) {
+      if (GeminiKeys.opensPalette(event) && SingleplayerGate.sandboxMode()) {
+         this.minecraft.gui.setScreen(new PaletteScreen(this));
+         return true;
+      }
+
+      return super.keyPressed(event);
    }
 
    private GlassButton nav(int index, String key, Runnable action) {
@@ -188,7 +214,7 @@ public final class GeminiTitleScreen extends Screen {
    /** ClickGUI, WindowGUI and Presets &amp; Configs are only for a switched-on Gemini; off, they explain why. */
    private void applySandboxState() {
       boolean on = SingleplayerGate.sandboxMode();
-      String[] keys = {"clickgui", "windowgui", "configs"};
+      String[] keys = {"clickgui", "windowgui", "configs", "search"};
       for (int i = 0; i < this.geminiButtons.length; i++) {
          this.geminiButtons[i].active = on;
          this.geminiButtons[i].setTooltip(Tooltip.create(Component.translatable(on ? "gemini.title." + keys[i] + ".tooltip" : "gemini.title.disabled.tooltip")));
@@ -334,7 +360,7 @@ public final class GeminiTitleScreen extends Screen {
       g.text(this.font, Gemini.NAME, 0, 0, Glass.fade(Glass.TEXT, this.fade), true);
       g.pose().popMatrix();
       int badgeY = y + logo - 12;
-      Glass.panel(g, textX, badgeY, textX + badgeWidth, badgeY + 12, 5, Glass.surface(1), Glass.accent(), this.fade, 0.35F);
+      Glass.panel(g, textX, badgeY, textX + badgeWidth, badgeY + 12, Theme.RADIUS, Glass.surface(1), Glass.accent(), this.fade, 0.35F);
       g.text(this.font, VERSION_BADGE, textX + 5, badgeY + 2, Glass.fade(Glass.lerp(Glass.TEXT_DIM, Glass.accent2(), 0.35F), this.fade), false);
    }
 
@@ -364,7 +390,7 @@ public final class GeminiTitleScreen extends Screen {
       Gemini gemini = Gemini.getInstance();
       String profile = gemini == null || gemini.config() == null ? null : gemini.config().activeProfile();
       this.setStatus(1, "Profile: " + (profile == null ? "none" : profile), profile == null ? "No profile" : profile, Glass.TEXT_DIM);
-      int conflicts = gemini == null || gemini.modules() == null ? 0 : KeybindConflicts.find(KeybindReport.snapshot(gemini.modules())).size();
+      int conflicts = gemini == null || gemini.modules() == null ? 0 : BindWarnings.conflictCount(gemini.modules());
       if (conflicts == 0) {
          this.setStatus(2, "Keybinds: No conflicts", "No conflicts", Glass.OK);
       } else {

@@ -7,10 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class ScreenLayoutTest {
-   /** GUI sizes from the smallest Minecraft allows up to a large window at GUI scale 2. */
-   private static final int[][] SIZES = {{320, 240}, {427, 240}, {480, 270}, {640, 360}, {854, 480}, {960, 540}, {1280, 720}};
-   private static final int[] FULL = {46, 60, 96, 82, 78, 28};
-   private static final int[] SHORT = {24, 38, 22, 40, 24, 28};
+   /**
+    * GUI sizes from the smallest Minecraft allows up to a large window: 1280x720 and 1920x1080 at GUI scales 1-4
+    * (1280x720 at scale 4 is 320x180), plus 854x480 and the 320x240 minimum.
+    */
+   private static final int[][] SIZES = {
+      {320, 180}, {320, 240}, {427, 240}, {480, 270}, {640, 360}, {854, 480}, {960, 540}, {1280, 720}, {1920, 1080}
+   };
+   /** Dock labels: ClickGUI, WindowGUI, HUD Layout Editor, Config Manager, Keybind Report (+ badge), Quick Search, Guide, Panic. */
+   private static final int[] FULL = {46, 60, 96, 82, 78 + 22, 70, 30, 28};
+   private static final int[] SHORT = {24, 18, 22, 16, 22 + 22, 22, 22, 28};
 
    @Test
    void titleButtonsStayBetweenHeaderAndFooter() {
@@ -60,6 +66,25 @@ class ScreenLayoutTest {
    }
 
    @Test
+   void titleSplitsIntoTwoColumnsOfFive() {
+      TitleLayout layout = TitleLayout.compute(320, 180);
+      assertEquals(2, layout.columns());
+      assertEquals(5, layout.rows());
+      assertEquals(layout.buttonX(0), layout.buttonX(4), "first column holds buttons 0-4");
+      assertTrue(layout.buttonX(5) > layout.buttonX(4), "button 5 starts the second column");
+   }
+
+   @Test
+   void dockTopRowFitsEveryScreenWidth() {
+      for (int width = 320; width <= 2000; width += 37) {
+         DockLayout layout = DockLayout.compute(width, 240, FULL, SHORT);
+         int last = layout.x().length - 1;
+         assertTrue(layout.panelX() >= 0, "panel starts on screen at " + width);
+         assertTrue(layout.x()[last] + layout.w()[last] <= width, "last button on screen at " + width);
+      }
+   }
+
+   @Test
    void dockSitsBesideTheVanillaColumnWhenThereIsRoom() {
       DockLayout layout = DockLayout.compute(960, 540, FULL, SHORT);
       assertTrue(layout.side());
@@ -71,7 +96,7 @@ class ScreenLayoutTest {
 
    @Test
    void dockMovesAboveTheTitleOnSmallScreens() {
-      for (int[] size : new int[][]{{320, 240}, {427, 240}, {480, 270}}) {
+      for (int[] size : new int[][]{{320, 180}, {320, 240}, {427, 240}, {480, 270}}) {
          DockLayout layout = DockLayout.compute(size[0], size[1], FULL, SHORT);
          assertFalse(layout.side(), size[0] + " wide has no room beside the vanilla column");
          assertTrue(layout.panelY() + layout.panelHeight() <= DockLayout.VANILLA_TITLE_Y, "above the Game Menu title");
@@ -79,7 +104,7 @@ class ScreenLayoutTest {
       }
 
       assertTrue(DockLayout.compute(320, 240, FULL, SHORT).shortLabels(), "full labels do not fit in 320");
-      int[] narrow = {30, 30, 30, 30, 30, 28};
+      int[] narrow = {24, 24, 24, 24, 24, 24, 24, 24};
       assertFalse(DockLayout.compute(480, 270, narrow, narrow).shortLabels(), "full labels are kept when they fit");
    }
 
