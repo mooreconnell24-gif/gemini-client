@@ -9,15 +9,15 @@ import gemini.module.setting.NumberSetting;
 import gemini.util.SpCommands;
 
 public final class TimeControlModule extends Module {
-   private final ModeSetting preset = this.addSetting(new ModeSetting("Time", "Clock preset to apply", "Day", "Day", "Noon", "Night", "Midnight", "Custom"));
+   private final ModeSetting preset = this.addSetting(new ModeSetting("Time", "Time of day to set: Day (1000), Noon (6000), Night (13000), Midnight (18000) or Custom ticks", "Day", "Day", "Noon", "Night", "Midnight", "Custom"));
    private final NumberSetting ticks = this.addSetting(
-      new NumberSetting("Ticks", "Custom time of day in ticks", 6000.0, 0.0, 24000.0, 250.0).showIf(() -> this.preset.is("Custom"))
+      new NumberSetting("Ticks", "Time of day in ticks for Custom (0 = sunrise, 6000 = noon, 18000 = midnight)", 6000.0, 0.0, 24000.0, 250.0).showIf(() -> this.preset.is("Custom"))
    );
-   private final BooleanSetting lock = this.addSetting(new BooleanSetting("Lock", "Keep the time fixed while enabled", false));
+   private final BooleanSetting lock = this.addSetting(new BooleanSetting("Lock", "Stay on and set the time again every 2 seconds, so the clock barely moves; off sets it once and switches off", false));
    private int counter;
 
    public TimeControlModule() {
-      super("Time", "Set the time of day.", Category.WORLD);
+      super("Time", "Set the world's time of day, like /time set. This is a lasting change to the world: switching the module off does not undo it.", Category.WORLD);
    }
 
    @Override
@@ -56,7 +56,10 @@ public final class TimeControlModule extends Module {
 
    @Override
    public void onTick() {
-      if (this.lock.get() && ++this.counter % 40 == 0) {
+      if (!this.lock.get()) {
+         // Lock was switched off while running: there is nothing left to keep up.
+         this.setEnabled(false, false);
+      } else if (++this.counter % 40 == 0) {
          SpCommands.run(this.command());
       }
    }

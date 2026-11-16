@@ -14,24 +14,28 @@ import net.minecraft.client.Minecraft;
 /**
  * Game rules on switches. Rule ids changed from camelCase to snake_case in recent versions, so each rule is sent
  * under every known spelling; the ones the running version does not know fail silently.
+ *
+ * <p>Game rules are saved with the world: they stay as set after this module is switched off unless "Restore On
+ * Disable" is on, and leaving the world keeps them too.
  */
 public final class WorldRules extends Module {
    private final List<WorldRules.Rule> rules = new ArrayList<>();
    private final NumberSetting tickSpeed;
    private final ModeSetting difficulty;
    private final BooleanSetting restore = this.addSetting(
-      new BooleanSetting("Restore On Disable", "Put every rule back to its vanilla default when you switch this off", false)
+      new BooleanSetting("Restore On Disable", "Put every rule and the random tick speed back to their vanilla defaults when you switch this off (difficulty is left as it is)", false)
    );
    private boolean applying;
 
    public WorldRules() {
-      super("World Rules", "Flip game rules like Keep Inventory and Mob Griefing without typing commands.", Category.WORLD);
+      super("World Rules", "Flip game rules like Keep Inventory and Mob Griefing without typing commands. Rules are saved with the world and stay set after switching off unless Restore On Disable is on.", Category.WORLD);
       this.rule("Keep Inventory", "Keep your items and XP when you die", false, true, "keepInventory", "keep_inventory");
       this.rule("Daylight Cycle", "Let the sun move; off freezes the time of day", true, true, "doDaylightCycle", "advance_time", "do_daylight_cycle");
       this.rule("Weather Cycle", "Let the weather change by itself", true, true, "doWeatherCycle", "advance_weather", "do_weather_cycle");
       this.rule("Mob Spawning", "Let monsters and animals spawn naturally", true, true, "doMobSpawning", "spawn_mobs", "do_mob_spawning");
       this.rule("Mob Griefing", "Creepers, endermen and others can change blocks", true, true, "mobGriefing", "mob_griefing");
-      this.rule("Fire Spread", "Fire spreads and burns blocks", true, true, "doFireTick", "fire_tick", "do_fire_tick");
+      // 26.x replaced the doFireTick switch with a radius (default 128 blocks around a player, 0 = fire never spreads).
+      this.valuedRule("Fire Spread", "Fire spreads and burns blocks", true, true, "128", "0", "fire_spread_radius_around_player");
       this.rule("Phantoms", "Phantoms spawn when you skip sleeping", true, true, "doInsomnia", "spawn_phantoms", "do_insomnia");
       this.rule("Fall Damage", "Take damage from falling", true, true, "fallDamage", "fall_damage");
       this.rule("Instant Respawn", "Respawn without the death screen", false, false, "doImmediateRespawn", "immediate_respawn", "do_immediate_respawn");
@@ -52,8 +56,13 @@ public final class WorldRules extends Module {
    }
 
    private void rule(String name, String description, boolean ruleDefault, boolean vanilla, String... ids) {
+      this.valuedRule(name, description, ruleDefault, vanilla, "true", "false", ids);
+   }
+
+   /** A switch whose game rule takes {@code onValue} when the switch is on and {@code offValue} when it is off. */
+   private void valuedRule(String name, String description, boolean ruleDefault, boolean vanilla, String onValue, String offValue, String... ids) {
       WorldRules.Rule rule = new WorldRules.Rule(
-         this.addSetting(new BooleanSetting(name, description, ruleDefault)), vanilla, ids
+         this.addSetting(new BooleanSetting(name, description, ruleDefault)), vanilla, onValue, offValue, ids
       );
       rule.setting.onChange(() -> {
          if (this.isEnabled() && !this.applying) {
@@ -124,9 +133,9 @@ public final class WorldRules extends Module {
       return changed == 0 ? null : changed + " changed";
    }
 
-   private record Rule(BooleanSetting setting, boolean vanilla, String[] ids) {
+   private record Rule(BooleanSetting setting, boolean vanilla, String onValue, String offValue, String[] ids) {
       void send(boolean value) {
-         WorldRules.send(Boolean.toString(value), this.ids);
+         WorldRules.send(value ? this.onValue : this.offValue, this.ids);
       }
    }
 }

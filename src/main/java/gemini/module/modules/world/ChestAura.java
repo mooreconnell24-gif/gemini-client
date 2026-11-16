@@ -8,6 +8,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
+import gemini.util.InfoText;
 import gemini.util.RotationManager;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,12 +30,13 @@ import net.minecraft.world.phys.Vec3;
 public final class ChestAura extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far away a container may be", 4.5, 1.0, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between opens", 5.0, 1.0, 40.0, 1.0));
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim at the container in packets", true));
-   private final BooleanSetting onlyOnce = this.addSetting(new BooleanSetting("Open Once", "Remember containers that were already opened", true));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Turn toward the container (server-side only) before opening it", true));
+   private final BooleanSetting onlyOnce = this.addSetting(new BooleanSetting("Open Once", "Open each container only once until you switch this off (otherwise the nearest is opened again every time you close it)", true));
    private final BooleanSetting shulkers = this.addSetting(new BooleanSetting("Shulker Boxes", "Also open shulker boxes", true));
    private final BooleanSetting enderChests = this.addSetting(new BooleanSetting("Ender Chests", "Also open ender chests", false));
    private final Set<BlockPos> opened = new HashSet<>();
    private int wait;
+   private final InfoText infoText = new InfoText();
 
    public ChestAura() {
       super("Chest Aura", "Automatically open containers near you.", Category.WORLD);
@@ -93,7 +95,7 @@ public final class ChestAura extends Module {
 
    @Override
    public String info() {
-      return this.opened.isEmpty() ? null : this.opened.size() + " opened";
+      return this.opened.isEmpty() ? null : this.infoText.whole(this.opened.size(), " opened");
    }
 
    /** Everything remembered here belongs to the world that was just left. */

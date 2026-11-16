@@ -13,9 +13,13 @@ import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 
 public final class AutoSign extends Module {
    private final ListSetting lines = this.addSetting(
-      new ListSetting("Lines", "Sign text, one entry per line (first four are used)", ListSetting.Kind.TEXT, "Gemini", "was here")
+      new ListSetting("Lines", "Sign text, one entry per line (the first four are used, each cut to 15 characters)", ListSetting.Kind.TEXT, "Gemini", "was here")
    );
-   private final BooleanSetting backToo = this.addSetting(new BooleanSetting("Back Side", "Also write on the back of the sign", false));
+   private final BooleanSetting backToo = this.addSetting(
+      new BooleanSetting("Back Side", "Also replace the text when you edit the back of a sign (the server only lets one side be written per edit)", false)
+   );
+   /** The packet this module is sending in place of the editor's, so the send hook does not replace it again. */
+   private ServerboundSignUpdatePacket replacement;
    private final BooleanSetting closeScreen = this.addSetting(new BooleanSetting("Skip Editor", "Close the sign editor instantly", true));
 
    public AutoSign() {
@@ -29,11 +33,17 @@ public final class AutoSign extends Module {
             return false;
          } else {
             Minecraft client = Minecraft.getInstance();
-            if (client.getConnection() == null) {
+            if (client.getConnection() == null || packet == this.replacement) {
+               // Our own replacement passes through this hook again on its way out: let it go.
                return false;
             } else {
-               client.getConnection()
-                  .send(new ServerboundSignUpdatePacket(sign.pos(), List.of(this.line(0), this.line(1), this.line(2), this.line(3)), sign.slot()));
+               this.replacement = new ServerboundSignUpdatePacket(sign.pos(), List.of(this.line(0), this.line(1), this.line(2), this.line(3)), sign.slot());
+               try {
+                  client.getConnection().send(this.replacement);
+               } finally {
+                  this.replacement = null;
+               }
+
                return true;
             }
          }

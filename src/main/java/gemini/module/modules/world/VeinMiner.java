@@ -8,7 +8,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,10 +27,10 @@ import net.minecraft.world.phys.Vec3;
 
 public final class VeinMiner extends Module {
    private final ModeSetting targets = this.addSetting(
-      new ModeSetting("Targets", "Which blocks count as a vein", "Ores", "Ores", "Logs", "Ores And Logs", "Same Block")
+      new ModeSetting("Targets", "Which blocks count as a vein: ores (each ore type separately), logs, both, or any block of the same kind you broke", "Ores", "Ores", "Logs", "Ores And Logs", "Same Block")
    );
-   private final NumberSetting maxBlocks = this.addSetting(new NumberSetting("Max Blocks", "Largest vein that is followed", 32.0, 2.0, 128.0, 1.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block that is mined", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting maxBlocks = this.addSetting(new NumberSetting("Max Blocks", "Most blocks mined after the one you broke", 32.0, 2.0, 128.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block (from your eyes) that is added to the vein", 4.5, 2.0, 6.0, 0.5));
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Creative only: blocks broken each tick", 4.0, 1.0, 16.0, 1.0));
    private final BooleanSetting diagonals = this.addSetting(new BooleanSetting("Diagonals", "Follow veins that only touch at corners", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while mining", true));
@@ -132,37 +132,24 @@ public final class VeinMiner extends Module {
 
    private void follow(ClientLevel level, LocalPlayer player, BlockPos origin, Object key) {
       double reach = this.range.get();
+      double reachSq = reach * reach;
       Vec3 eye = player.getEyePosition();
-      int limit = this.maxBlocks.intValue();
-      boolean corners = this.diagonals.get();
-      LongOpenHashSet seen = new LongOpenHashSet();
-      ArrayDeque<BlockPos> frontier = new ArrayDeque<>();
-      List<BlockPos> vein = new ArrayList<>();
-      seen.add(origin.asLong());
-      frontier.add(origin);
-
-      while (!frontier.isEmpty() && vein.size() < limit) {
-         BlockPos at = frontier.poll();
-
-         for (int dx = -1; dx <= 1 && vein.size() < limit; dx++) {
-            for (int dy = -1; dy <= 1 && vein.size() < limit; dy++) {
-               for (int dz = -1; dz <= 1 && vein.size() < limit; dz++) {
-                  if ((dx != 0 || dy != 0 || dz != 0) && (corners || Math.abs(dx) + Math.abs(dy) + Math.abs(dz) == 1)) {
-                     BlockPos next = at.offset(dx, dy, dz);
-                     if (seen.add(next.asLong())
-                        && key.equals(this.keyOf(level.getBlockState(next)))
-                        && !(eye.distanceToSqr(Vec3.atCenterOf(next)) > reach * reach)) {
-                        vein.add(next);
-                        frontier.add(next);
-                     }
-                  }
-               }
-            }
-         }
+      BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+      LongArrayList vein = VeinFill.collect(
+         origin.getX(),
+         origin.getY(),
+         origin.getZ(),
+         this.maxBlocks.intValue(),
+         this.diagonals.get(),
+         (x, y, z) -> eye.distanceToSqr(x + 0.5, y + 0.5, z + 0.5) <= reachSq && key.equals(this.keyOf(level.getBlockState(probe.set(x, y, z))))
+      );
+      List<BlockPos> positions = new ArrayList<>(vein.size());
+      for (int i = 0; i < vein.size(); i++) {
+         positions.add(BlockPos.of(vein.getLong(i)));
       }
 
-      vein.sort(Comparator.comparingDouble(pos -> eye.distanceToSqr(Vec3.atCenterOf(pos))));
-      this.queue.addAll(vein);
+      positions.sort(Comparator.comparingDouble(pos -> eye.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)));
+      this.queue.addAll(positions);
    }
 
    private void mine(Minecraft client, LocalPlayer player, ClientLevel level, boolean attacking) {
@@ -211,9 +198,13 @@ public final class VeinMiner extends Module {
       }
    }
 
-   /** Everything remembered here belongs to the world that was just left. */
+   /** Everything remembered here belongs to the world that was just left, including the block being broken. */
    @Override
    public void onWorldChange() {
       this.queue.clear();
+      this.current = null;
+      this.stuck = 0;
+      this.watchedPos = null;
+      this.watchedKey = null;
    }
 }

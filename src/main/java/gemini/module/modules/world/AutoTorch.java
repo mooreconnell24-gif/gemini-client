@@ -9,6 +9,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
 import gemini.util.MoveUtil;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -48,6 +50,8 @@ public final class AutoTorch extends Module {
             BlockPos center = player.blockPosition();
             BlockPos best = null;
             int darkest = Integer.MAX_VALUE;
+            Set<Block> avoided = this.avoid.blocks();
+            int maxLight = this.lightLevel.intValue();
 
             for (BlockPos cursor : BlockPos.betweenClosed(center.offset(-r, -1, -r), center.offset(r, 1, r))) {
                BlockState state = level.getBlockState(cursor);
@@ -55,10 +59,10 @@ public final class AutoTorch extends Module {
                BlockState floor = level.getBlockState(below);
                if (state.isAir()
                   && floor.isFaceSturdy(level, below, Direction.UP)
-                  && !this.avoid.blocks().contains(floor.getBlock())
+                  && !avoided.contains(floor.getBlock())
                   && !cursor.equals(center)) {
                   int light = level.getBrightness(LightLayer.BLOCK, cursor);
-                  if (light <= this.lightLevel.intValue() && BlockPlacer.inReach(player, cursor, 4.5) && !lit(level, cursor) && light < darkest) {
+                  if (light <= maxLight && BlockPlacer.inReach(player, cursor, 4.5) && !lit(level, cursor) && light < darkest) {
                      darkest = light;
                      best = cursor.immutable();
                   }

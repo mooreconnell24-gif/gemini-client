@@ -23,7 +23,7 @@ public abstract class BlockStateBaseMixin {
    )
    private void gemini$collisions(BlockGetter level, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
       if (Gemini.getInstance() != null && (Object)this instanceof BlockState state) {
-         VoxelShape shape = Collisions.replacement(state);
+         VoxelShape shape = Collisions.replacement(state, context);
          if (shape != null) {
             cir.setReturnValue(shape);
          }
