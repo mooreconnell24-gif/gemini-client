@@ -19,6 +19,7 @@
 		"FluidRendererMixin",
 		"FramerateLimitTrackerMixin",
 		"HudMixin",
+		"LevelRendererMixin",
 		"LiquidBlockMixin",
 		"LivingEntityMixin",
 		"LivingEntityRendererMixin",

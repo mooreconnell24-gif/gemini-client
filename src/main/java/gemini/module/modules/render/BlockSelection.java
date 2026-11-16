@@ -23,6 +23,11 @@ public final class BlockSelection extends Module {
       new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain full-block box", true)
    );
    private final ShapeSettings shape = new ShapeSettings(this, "Both", false);
+   private final BooleanSetting hideVanilla = this.addSetting(
+      new BooleanSetting("Hide Vanilla", "Hide the vanilla black outline so only this one is drawn, instead of drawing on top of it", true)
+   );
+   /** Read by the level renderer every frame; written on the client thread. */
+   private static volatile boolean replacingVanilla;
    /** The shape of the block last looked at; looked up again only when the block or its state changes. */
    private BlockPos shapePos;
    private BlockState shapeState;
@@ -39,8 +44,24 @@ public final class BlockSelection extends Module {
       super("Block Selection", "Recolor the outline of the block you are looking at.", Category.RENDER);
    }
 
+   /** Whether the vanilla block outline should be skipped this frame. */
+   public static boolean replacesVanilla() {
+      return replacingVanilla;
+   }
+
+   @Override
+   public void onEnable() {
+      replacingVanilla = this.hideVanilla.get();
+   }
+
+   @Override
+   public void onTick() {
+      replacingVanilla = this.hideVanilla.get();
+   }
+
    @Override
    public void onDisable() {
+      replacingVanilla = false;
       this.shapePos = null;
       this.shapeState = null;
       this.cachedShape = null;
