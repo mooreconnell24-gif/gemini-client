@@ -20,13 +20,13 @@ public final class InventoryCleaner extends Module {
    private int wait;
 
    public InventoryCleaner() {
-      super("InventoryCleaner", "Clean junk items and organize your hotbar.", Category.PLAYER);
+      super("InventoryCleaner", "Throw out junk items and keep a sword in the first hotbar slot.", Category.PLAYER);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.canClick(client.player)) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          if (this.dropJunk.get()) {
@@ -39,7 +39,8 @@ public final class InventoryCleaner extends Module {
             }
          }
 
-         if (!player.getInventory().getItem(0).is(ItemTags.SWORDS)) {
+         // Not while the player is using an item: the swap could take it out of their hand.
+         if (!player.isUsingItem() && !player.getInventory().getItem(0).is(ItemTags.SWORDS)) {
             int sword = Inventories.find(player, s -> s.is(ItemTags.SWORDS), false);
             if (sword > 0) {
                client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(sword), 0, ContainerInput.SWAP, player);

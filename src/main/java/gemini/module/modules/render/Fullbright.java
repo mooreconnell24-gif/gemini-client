@@ -67,6 +67,8 @@ public final class Fullbright extends Module {
       if (this.gammaApplied) {
          client.options.gamma().set(this.previousGamma);
          this.gammaApplied = false;
+         // The options file may have been written while this was on; write the restored value so it sticks.
+         client.options.save();
       }
    }
 }

@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +15,7 @@ public final class Animations extends Module {
    private final NumberSetting swingDuration = this.addSetting(
       new NumberSetting("Swing Duration", "Ticks a swing takes (vanilla is 6, less with haste)", 6.0, 1.0, 20.0, 1.0)
    );
+   private final InfoText infoText = new InfoText();
    private final BooleanSetting othersToo = this.addSetting(new BooleanSetting("Other Players", "Also apply to other players' swings", false));
 
    public Animations() {
@@ -33,6 +35,6 @@ public final class Animations extends Module {
 
    @Override
    public String info() {
-      return this.swingDuration.intValue() + "t";
+      return this.infoText.whole(this.swingDuration.intValue(), "t");
    }
 }

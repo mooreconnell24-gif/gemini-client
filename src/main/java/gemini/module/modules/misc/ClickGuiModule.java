@@ -10,10 +10,15 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.HudOverlay;
 
 public final class ClickGuiModule extends Module {
+   private static final int[] SURFACE_OLED = {-16579836, -16316663, -15856110, -15263971};
+   private static final int[] SURFACE_SLATE = {-15657182, -15064784, -14537923, -13879475};
+   private static final int[] SURFACE_GRAPHITE = {-15856114, -15395563, -14869219, -14211289};
+   private static final int[] SURFACE_PLUM = {-15726057, -15331553, -14739920, -13951166};
+   private static final int[] SURFACE_DARK = {-15987178, -15723481, -15196629, -14604492};
    private final ModeSetting theme = this.addSetting(
       new ModeSetting(
          "Theme",
-         "Accent palette",
+         "Accent colours of the menus and HUD; Custom uses the Primary and Secondary colours below",
          "LiquidBounce",
          "LiquidBounce",
          "Neon",
@@ -74,7 +79,7 @@ public final class ClickGuiModule extends Module {
    );
 
    public ClickGuiModule() {
-      super("ClickGUI", "Menu look and feel.", Category.CLIENT);
+      super("ClickGUI", "Look and feel of the menus: theme colours, layout, motion, scale and tooltips.", Category.CLIENT);
       this.loadState(true, this.getKeybind());
    }
 
@@ -230,12 +235,13 @@ public final class ClickGuiModule extends Module {
 
    /** Panel colour for an elevation level: 0 is the backdrop, 3 the most raised control. */
    public int surface(int level) {
+      // Asked many times per menu frame, so the palettes are constants rather than new arrays.
       int[] shades = switch (this.surface.get()) {
-         case "OLED" -> new int[]{-16579836, -16316663, -15856110, -15263971};
-         case "Slate" -> new int[]{-15657182, -15064784, -14537923, -13879475};
-         case "Graphite" -> new int[]{-15856114, -15395563, -14869219, -14211289};
-         case "Plum" -> new int[]{-15726057, -15331553, -14739920, -13951166};
-         default -> new int[]{-15987178, -15723481, -15196629, -14604492};
+         case "OLED" -> SURFACE_OLED;
+         case "Slate" -> SURFACE_SLATE;
+         case "Graphite" -> SURFACE_GRAPHITE;
+         case "Plum" -> SURFACE_PLUM;
+         default -> SURFACE_DARK;
       };
       return shades[Math.max(0, Math.min(3, level))];
    }

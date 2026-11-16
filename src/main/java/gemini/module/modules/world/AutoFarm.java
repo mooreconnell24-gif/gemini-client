@@ -44,11 +44,11 @@ public final class AutoFarm extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far from you crops are worked", 4.5, 1.0, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between bursts", 2.0, 0.0, 10.0, 1.0));
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Most crops handled in one burst", 2.0, 1.0, 8.0, 1.0));
-   private final BooleanSetting crops = this.addSetting(new BooleanSetting("Crops", "Wheat, carrots, potatoes, beetroot and cocoa", true));
+   private final BooleanSetting crops = this.addSetting(new BooleanSetting("Crops", "Harvest ripe wheat, carrots, potatoes, beetroot and cocoa (cocoa is not replanted)", true));
    private final BooleanSetting wart = this.addSetting(new BooleanSetting("Nether Wart", "Harvest grown nether wart", true));
-   private final BooleanSetting fruit = this.addSetting(new BooleanSetting("Melons And Pumpkins", "Only fruit that grew next to a stem", true));
-   private final BooleanSetting stalks = this.addSetting(new BooleanSetting("Sugar Cane And Cactus", "Cut everything above the bottom block", true));
-   private final BooleanSetting replant = this.addSetting(new BooleanSetting("Replant", "Plant the same seed again after harvesting", true));
+   private final BooleanSetting fruit = this.addSetting(new BooleanSetting("Melons And Pumpkins", "Harvest melons and pumpkins, only ones attached to a stem so built blocks are left alone", true));
+   private final BooleanSetting stalks = this.addSetting(new BooleanSetting("Sugar Cane And Cactus", "Cut sugar cane and cactus, leaving the bottom block to regrow", true));
+   private final BooleanSetting replant = this.addSetting(new BooleanSetting("Replant", "Plant the same seed again after harvesting, pulling seeds from the inventory into an empty hotbar slot if needed", true));
    private final BooleanSetting boneMeal = this.addSetting(
       new BooleanSetting("Bone Meal", "Apply hotbar bone meal to unripe crops nearby", false)
    );
@@ -174,7 +174,7 @@ public final class AutoFarm extends Module {
                }
             }
 
-            harvest.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(Vec3.atCenterOf(posx))));
+            harvest.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(posx.getX() + 0.5, posx.getY() + 0.5, posx.getZ() + 0.5)));
             int budget = this.perTick.intValue();
             boolean worked = false;
 
@@ -205,7 +205,7 @@ public final class AutoFarm extends Module {
             }
 
             if (this.current == null && !worked && !growing.isEmpty()) {
-               growing.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(Vec3.atCenterOf(posx))));
+               growing.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(posx.getX() + 0.5, posx.getY() + 0.5, posx.getZ() + 0.5)));
                worked = this.fertilise(client, player, growing.get(0));
             }
 
@@ -234,7 +234,8 @@ public final class AutoFarm extends Module {
                planted = true;
                budget--;
             }
-         } else if (!state.isAir() && !(state.getBlock() instanceof CropBlock) && !(state.getBlock() instanceof NetherWartBlock)) {
+         } else if (!state.isAir()) {
+            // Planted (by us or by hand) or built over: nothing left to do here.
             iterator.remove();
          }
       }
@@ -246,17 +247,26 @@ public final class AutoFarm extends Module {
       return planted;
    }
 
+   /**
+    * Moves seeds from the main inventory to the hotbar: into an empty hotbar slot when there is one, so the item
+    * in your hand stays where it is, otherwise into the selected slot.
+    */
    private static boolean pullSeed(Minecraft client, LocalPlayer player, Item seed) {
       int index = Inventories.find(player, stack -> stack.is(seed), false);
-      if (index < 0) {
+      if (index < 9 || !Inventories.inventoryOpenOrClosed(player)) {
          return false;
-      } else {
-         client.gameMode
-            .handleContainerInput(
-               player.inventoryMenu.containerId, Inventories.menuSlot(index), player.getInventory().getSelectedSlot(), ContainerInput.SWAP, player
-            );
-         return true;
       }
+
+      int slot = player.getInventory().getSelectedSlot();
+      for (int i = 0; i < 9; i++) {
+         if (player.getInventory().getItem(i).isEmpty()) {
+            slot = i;
+            break;
+         }
+      }
+
+      client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(index), slot, ContainerInput.SWAP, player);
+      return true;
    }
 
    private boolean fertilise(Minecraft client, LocalPlayer player, BlockPos pos) {
@@ -269,9 +279,12 @@ public final class AutoFarm extends Module {
       }
    }
 
-   /** Everything remembered here belongs to the world that was just left. */
+   /** Everything remembered here belongs to the world that was just left, including the block being broken. */
    @Override
    public void onWorldChange() {
       this.seeds.clear();
+      this.current = null;
+      this.stuck = 0;
+      this.cooldown = 0;
    }
 }

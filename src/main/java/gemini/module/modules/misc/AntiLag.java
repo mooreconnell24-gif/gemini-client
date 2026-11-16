@@ -60,6 +60,9 @@ public final class AntiLag extends Module {
    private int particlesThisTick;
    private int soundsThisTick;
    private long totalBlocked;
+   private long infoBlocked = -1L;
+   private String infoMode = "";
+   private String infoText = "";
 
    public AntiLag() {
       super("AntiLag", "Boost FPS and prevent lag machines.", Category.CLIENT);
@@ -93,7 +96,15 @@ public final class AntiLag extends Module {
 
    @Override
    public String info() {
-      return this.mode.get() + " · " + this.totalBlocked;
+      String mode = this.mode.get();
+      long blocked = this.totalBlocked;
+      if (blocked != this.infoBlocked || !mode.equals(this.infoMode)) {
+         this.infoBlocked = blocked;
+         this.infoMode = mode;
+         this.infoText = mode + " · " + blocked;
+      }
+
+      return this.infoText;
    }
 
    @Override

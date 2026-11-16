@@ -6,6 +6,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.ui.HudOverlay;
+import gemini.util.InfoText;
 import gemini.util.TotemPops;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
@@ -27,6 +28,8 @@ public final class TotemPopCounter extends Module {
    private final ModeSetting reset = this.addSetting(
       new ModeSetting("Reset", "When an entity's count goes back to zero", "On Death", "On Death", "When Gone", "On World Change")
    );
+
+   private final InfoText infoText = new InfoText();
 
    public TotemPopCounter() {
       super("Totem Pop Counter", "Counts Totem of Undying pops per entity, announces them, and shows the counts on Nametags and TargetHUD.", Category.RENDER);
@@ -61,7 +64,8 @@ public final class TotemPopCounter extends Module {
       return TotemPops.count(entity);
    }
 
-   private boolean announces(LivingEntity entity) {
+   /** Whether this module is on and would announce a pop or death of {@code entity} itself. */
+   public boolean announces(LivingEntity entity) {
       if (!this.isEnabled()) {
          return false;
       }
@@ -79,7 +83,7 @@ public final class TotemPopCounter extends Module {
       }
 
       String name = entity.getName().getString();
-      String times = count == 1 ? "1 totem" : count + " totems";
+      String times = amount(count, "totem");
       if (this.toast.get()) {
          HudOverlay.toast("Pop: " + name, name + " has popped " + times, entity == Minecraft.getInstance().player ? HudOverlay.Severity.ERROR : HudOverlay.Severity.WARNING);
       }
@@ -95,7 +99,7 @@ public final class TotemPopCounter extends Module {
       }
 
       String name = entity.getName().getString();
-      String after = pops == 1 ? "1 pop" : pops + " pops";
+      String after = amount(pops, "pop");
       if (this.toast.get()) {
          HudOverlay.toast("Pop: " + name, name + " died after " + after, HudOverlay.Severity.SUCCESS);
       }
@@ -105,9 +109,14 @@ public final class TotemPopCounter extends Module {
       }
    }
 
+   /** "1 totem", "3 totems": a count with its noun, plural unless the count is one. */
+   static String amount(int count, String noun) {
+      return count + " " + (count == 1 ? noun : noun + "s");
+   }
+
    @Override
    public String info() {
       int tracked = TotemPops.tracked();
-      return tracked == 0 ? null : Integer.toString(tracked);
+      return tracked == 0 ? null : this.infoText.whole(tracked, "");
    }
 }

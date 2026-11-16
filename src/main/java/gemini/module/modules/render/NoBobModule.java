@@ -20,5 +20,7 @@ public final class NoBobModule extends Module {
    @Override
    public void onDisable() {
       Minecraft.getInstance().options.bobView().set(this.previous);
+      // The options file may have been written while this was on; write the restored value so it sticks.
+      Minecraft.getInstance().options.save();
    }
 }

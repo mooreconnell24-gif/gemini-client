@@ -17,10 +17,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class SmartEat extends Module {
-   private final NumberSetting gappleHealth = this.addSetting(new NumberSetting("Gapple Health", "Eat Golden Apple below this health", 12.0, 4.0, 18.0, 1.0));
+   private final NumberSetting gappleHealth = this.addSetting(new NumberSetting("Gapple Health", "Eat a golden apple at or below this health (half-hearts, absorption included)", 12.0, 4.0, 18.0, 1.0));
    private final NumberSetting hunger = this.addSetting(new NumberSetting("Hunger", "Eat normal food at or below this food level", 16.0, 1.0, 19.0, 1.0));
    private boolean eating;
    private int previousSlot = -1;
+   /** A slot still to be selected again because a busier module held the hand when eating ended. */
+   private int restoreSlot = -1;
 
    public SmartEat() {
       super("SmartEat", "Eat Golden Apples when low on HP and food when hungry.", Category.PLAYER);
@@ -33,6 +35,14 @@ public final class SmartEat extends Module {
 
    @Override
    public void onDisable() {
+      this.stop(Minecraft.getInstance());
+      this.restoreSlot = -1;
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.previousSlot = -1;
+      this.restoreSlot = -1;
       this.stop(Minecraft.getInstance());
    }
 
@@ -63,6 +73,13 @@ public final class SmartEat extends Module {
          }
 
          this.stop(client);
+         if (this.restoreSlot >= 0 && Hands.claimMainHand()) {
+            client.player.getInventory().setSelectedSlot(this.restoreSlot);
+            this.restoreSlot = -1;
+         }
+      } else {
+         // A screen opened or the player died mid-meal: never leave the use key held down.
+         this.stop(client);
       }
    }
 
@@ -70,8 +87,12 @@ public final class SmartEat extends Module {
       if (this.eating) {
          this.eating = false;
          client.options.keyUse.setDown(MoveUtil.physicalKeyDown(client.options.keyUse));
-         if (client.player != null && this.previousSlot >= 0 && Hands.claimMainHand()) {
-            client.player.getInventory().setSelectedSlot(this.previousSlot);
+         if (client.player != null && this.previousSlot >= 0) {
+            if (Hands.claimMainHand()) {
+               client.player.getInventory().setSelectedSlot(this.previousSlot);
+            } else {
+               this.restoreSlot = this.previousSlot;
+            }
          }
 
          this.previousSlot = -1;

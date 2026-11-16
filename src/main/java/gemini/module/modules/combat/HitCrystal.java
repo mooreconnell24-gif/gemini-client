@@ -101,17 +101,27 @@ public final class HitCrystal extends Module {
          return;
       }
 
-      // Knockback goes along the attacker's facing: 0.4 base, 0.5 more per Knockback level and for a sprint hit,
-      // which the target's ground friction turns into roughly two blocks of travel per unit.
       int knockback = knockbackLevel(client.level, player.getMainHandItem());
-      double strength = 0.4 + 0.5 * knockback + (player.isSprinting() ? 0.5 : 0.0);
-      Vec3 push = Vec3.directionFromRotation(0.0F, player.getYRot()).scale(strength * 2.0);
+      Vec3 push = landingOffset(player.getYRot(), knockbackStrength(knockback, player.isSprinting()));
       this.target = living;
       this.landing = living.position().add(push.x, 0.0, push.z);
       this.base = null;
       this.step = Step.OBSIDIAN;
       this.wait = this.delay.intValue();
       this.age = 0;
+   }
+
+   /** Knockback a melee hit gives: 0.4 base, 0.5 more per Knockback level and 0.5 more for a sprint hit. */
+   static double knockbackStrength(int knockbackLevel, boolean sprinting) {
+      return 0.4 + 0.5 * knockbackLevel + (sprinting ? 0.5 : 0.0);
+   }
+
+   /**
+    * Where the target is expected to land relative to where it stood: knockback goes along the attacker's facing,
+    * and the target's ground friction turns it into roughly two blocks of travel per unit of strength.
+    */
+   static Vec3 landingOffset(float attackerYaw, double strength) {
+      return Vec3.directionFromRotation(0.0F, attackerYaw).scale(strength * 2.0);
    }
 
    private boolean weaponQualifies(Level level, ItemStack stack) {

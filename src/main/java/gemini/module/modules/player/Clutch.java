@@ -30,6 +30,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
@@ -128,12 +129,16 @@ public final class Clutch extends Module {
    private BlockPos placedWater;
    private int scoopTicks;
    private boolean haveSafe;
-   private String safeDimension;
+   private ResourceKey<Level> safeDimension;
    private double safeX;
    private double safeY;
    private double safeZ;
    private int saves;
    private String lastSave;
+   /** {@link #info()} text, rebuilt only when a save happens. */
+   private String infoText;
+   /** Reused every tick instead of a new set. */
+   private final Set<Danger> dangers = EnumSet.noneOf(Danger.class);
 
    public Clutch() {
       super("Clutch", "Saves you from lethal falls, lava, fire, the void, drowning and more, and can switch other modules on.", Category.PLAYER);
@@ -170,6 +175,18 @@ public final class Clutch extends Module {
       this.haveSafe = false;
       this.saves = 0;
       this.lastSave = null;
+      this.infoText = null;
+   }
+
+   /** The safe spot and the placed water belong to the world that was left. */
+   @Override
+   public void onWorldChange() {
+      this.haveSafe = false;
+      this.safeDimension = null;
+      this.placedWater = null;
+      this.scoopTicks = 0;
+      this.lavaTicks = 0;
+      this.wallTicks = 0;
    }
 
    @Override
@@ -180,7 +197,7 @@ public final class Clutch extends Module {
 
    @Override
    public String info() {
-      return this.saves == 0 ? null : this.lastSave + " · " + this.saves;
+      return this.saves == 0 ? null : this.infoText;
    }
 
    @Override
@@ -197,13 +214,14 @@ public final class Clutch extends Module {
       }
 
       this.commandCooldown.replaceAll((danger, ticks) -> Math.max(0, ticks - 1));
+      Set<Danger> dangers = this.dangers;
+      dangers.clear();
       if (player.getAbilities().invulnerable || player.getAbilities().flying) {
-         this.trackSafety(EnumSet.noneOf(Danger.class));
+         this.trackSafety(dangers);
          return;
       }
 
       boolean canUseItems = client.gui.screen() == null;
-      Set<Danger> dangers = EnumSet.noneOf(Danger.class);
       this.tickScoop(client, player, level, canUseItems);
 
       if (this.falls.get() || this.lava.get() || this.voidSave.get()) {
@@ -347,8 +365,7 @@ public final class Clutch extends Module {
          return;
       }
 
-      String dimension = level.dimension().identifier().toString();
-      if (this.haveSafe && dimension.equals(this.safeDimension) && this.teleportSafe(player)) {
+      if (this.haveSafe && level.dimension() == this.safeDimension && this.teleportSafe(player)) {
          this.saved("Void rescue");
       }
    }
@@ -375,7 +392,7 @@ public final class Clutch extends Module {
          Vec3 motion = player.getDeltaMovement();
          double x = motion.x;
          double z = motion.z;
-         if (this.haveSafe && level.dimension().identifier().toString().equals(this.safeDimension)) {
+         if (this.haveSafe && level.dimension() == this.safeDimension) {
             double dx = this.safeX - player.getX();
             double dz = this.safeZ - player.getZ();
             double distance = Math.sqrt(dx * dx + dz * dz);
@@ -388,7 +405,7 @@ public final class Clutch extends Module {
          player.setDeltaMovement(x, Math.max(motion.y, 0.12), z);
          if (this.lastResort.get() && (this.lavaTicks >= 6 || Damage.health(player) <= this.health.floatValue()) && this.ready(Danger.LAVA, 40)) {
             boolean ok = SpCommands.run("effect give @s minecraft:fire_resistance 30 0 true");
-            if (this.haveSafe && level.dimension().identifier().toString().equals(this.safeDimension)) {
+            if (this.haveSafe && level.dimension() == this.safeDimension) {
                this.teleportSafe(player);
             }
 
@@ -467,7 +484,7 @@ public final class Clutch extends Module {
       dangers.add(Danger.SUFFOCATION);
       this.wallTicks++;
       if (this.lastResort.get() && this.wallTicks >= 3 && this.ready(Danger.SUFFOCATION, 20)) {
-         boolean moved = this.haveSafe && player.level().dimension().identifier().toString().equals(this.safeDimension)
+         boolean moved = this.haveSafe && player.level().dimension() == this.safeDimension
             ? this.teleportSafe(player)
             : SpCommands.run("execute positioned over motion_blocking run tp @s ~ ~ ~");
          if (moved) {
@@ -486,11 +503,10 @@ public final class Clutch extends Module {
       if (this.totem.get()
          && !player.getOffhandItem().is(Items.TOTEM_OF_UNDYING)
          && !player.getMainHandItem().is(Items.TOTEM_OF_UNDYING)
-         && Inventories.inventoryOpenOrClosed(player)
+         && Inventories.canClick(player)
          && this.itemCooldown <= 0) {
          int index = Inventories.find(player, s -> s.is(Items.TOTEM_OF_UNDYING), false);
-         if (index >= 0) {
-            Inventories.swapToOffhand(client, player, index);
+         if (index >= 0 && Inventories.swapToOffhand(client, player, index)) {
             this.itemCooldown = 4;
             this.saved("Totem");
          }
@@ -613,14 +629,14 @@ public final class Clutch extends Module {
       }
 
       this.haveSafe = true;
-      this.safeDimension = level.dimension().identifier().toString();
+      this.safeDimension = level.dimension();
       this.safeX = player.getX();
       this.safeY = player.getY();
       this.safeZ = player.getZ();
    }
 
    private boolean teleportSafe(LocalPlayer player) {
-      if (this.haveSafe && SpCommands.teleport(this.safeDimension, this.safeX, this.safeY + 0.05, this.safeZ)) {
+      if (this.haveSafe && this.safeDimension != null && SpCommands.teleport(this.safeDimension.identifier().toString(), this.safeX, this.safeY + 0.05, this.safeZ)) {
          player.setDeltaMovement(Vec3.ZERO);
          AttributeBoost.resetFall(player);
          return true;
@@ -903,6 +919,7 @@ public final class Clutch extends Module {
    private void saved(String how) {
       this.saves++;
       this.lastSave = how;
+      this.infoText = how + " · " + this.saves;
       if (this.notify.get()) {
          CommandManager.feedback("§bClutch §7» §f" + how);
       }

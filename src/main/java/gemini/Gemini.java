@@ -13,6 +13,7 @@ import gemini.ui.palette.PaletteScreen;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
 import gemini.util.ClientThread;
+import gemini.module.modules.render.CrosshairPlus;
 import gemini.util.SingleplayerGate;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -106,6 +107,15 @@ public final class Gemini implements ClientModInitializer {
             return false;
          }
       });
+      // Crosshair (render module) can stand in for the vanilla crosshair rather than drawing over it.
+      HudElementRegistry.replaceElement(
+         VanillaHudElements.CROSSHAIR,
+         vanilla -> (graphics, deltaTracker) -> {
+            if (!CrosshairPlus.replacesVanilla() || !SingleplayerGate.allowed()) {
+               vanilla.extractRenderState(graphics, deltaTracker);
+            }
+         }
+      );
       HudElementRegistry.attachElementBefore(
          VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("gemini", "overlay"), new HudOverlay(this.moduleManager)::onHudRender
       );

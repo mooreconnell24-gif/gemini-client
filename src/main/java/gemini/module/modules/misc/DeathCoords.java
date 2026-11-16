@@ -12,6 +12,7 @@ import gemini.util.SingleplayerGate;
 import gemini.util.SpCommands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 
 public final class DeathCoords extends Module {
@@ -22,6 +23,9 @@ public final class DeathCoords extends Module {
    private int x;
    private int y;
    private int z;
+   /** The save the death happened in ("" for deaths recorded before this was kept: those match any save). */
+   private String world = "";
+   private String infoText;
 
    public DeathCoords() {
       super("Death Coords", "Write your death coordinates in client chat and teleport back to them.", Category.CLIENT);
@@ -43,6 +47,8 @@ public final class DeathCoords extends Module {
             this.x = pos.getX();
             this.y = pos.getY();
             this.z = pos.getZ();
+            this.world = worldKey();
+            this.infoText = null;
             this.save();
             CommandManager.feedback("§bDeath Coords §7" + this.x + " " + this.y + " " + this.z + " §8(" + this.dimension.replace("minecraft:", "") + ")");
             if (this.pin.get() && Gemini.getInstance() != null) {
@@ -53,7 +59,7 @@ public final class DeathCoords extends Module {
    }
 
    private void teleport() {
-      if (!this.hasDeath) {
+      if (!this.hasDeath || !this.world.isEmpty() && !this.world.equals(worldKey())) {
          CommandManager.feedback("§cYou have not died in this world yet.");
       } else if (!SingleplayerGate.allowed()) {
          CommandManager.feedback(SingleplayerGate.denialMessage());
@@ -62,9 +68,27 @@ public final class DeathCoords extends Module {
       }
    }
 
+   /** Which save is open: its seed and name, or "" outside a single-player world. */
+   private static String worldKey() {
+      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
+      try {
+         return server == null ? "" : server.overworld().getSeed() + "|" + server.getWorldData().getLevelName();
+      } catch (RuntimeException ignored) {
+         return "";
+      }
+   }
+
    @Override
    public String info() {
-      return this.hasDeath ? this.x + " " + this.y + " " + this.z : null;
+      if (!this.hasDeath) {
+         return null;
+      }
+
+      if (this.infoText == null) {
+         this.infoText = this.x + " " + this.y + " " + this.z;
+      }
+
+      return this.infoText;
    }
 
    @Override
@@ -74,6 +98,7 @@ public final class DeathCoords extends Module {
       json.addProperty("deathX", this.x);
       json.addProperty("deathY", this.y);
       json.addProperty("deathZ", this.z);
+      json.addProperty("deathWorld", this.world);
    }
 
    @Override
@@ -88,5 +113,8 @@ public final class DeathCoords extends Module {
          this.y = json.get("deathY").getAsInt();
          this.z = json.get("deathZ").getAsInt();
       }
+
+      this.world = json.has("deathWorld") ? json.get("deathWorld").getAsString() : "";
+      this.infoText = null;
    }
 }

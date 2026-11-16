@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class EspModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "ESP rendering style", "Glow + Box", "Glow + Box", "3D Box", "GlowBox", "Shader Glow")
+      new ModeSetting("Mode", "Glow + Box: outline shader plus boxes; 3D Box: plain boxes; GlowBox: boxes with a halo; Shader Glow: only the vanilla glowing outline", "Glow + Box", "Glow + Box", "3D Box", "GlowBox", "Shader Glow")
    );
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Outline other players", true));
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Outline hostile mobs", true));

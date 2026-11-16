@@ -55,6 +55,24 @@ public final class ElytraRecast extends Module {
       super("Elytra Recast", "Reopen your elytra on every landing to keep bouncing at speed without fireworks.", Category.MOVEMENT);
    }
 
+   /** The elytra is worn down to the stop threshold (items that cannot break never are). */
+   static boolean durabilityLow(boolean damageable, int maxDamage, int damage, int minDurability) {
+      return damageable && maxDamage - damage <= minDurability;
+   }
+
+   /**
+    * Whether to reopen the elytra on this airborne tick: not while it is already open, only after {@code delay}
+    * ticks in the air, and in Falling mode only once the downward speed reaches {@code minFall} (at least 0.001,
+    * so the top of the jump never counts as falling).
+    */
+   static boolean shouldRedeploy(boolean fallFlying, int airTicks, int delay, boolean fallingMode, double verticalSpeed, double minFall) {
+      if (fallFlying || airTicks <= delay) {
+         return false;
+      }
+
+      return !fallingMode || -verticalSpeed >= Math.max(0.001, minFall);
+   }
+
    @Override
    public String info() {
       return this.bounces > 0 ? Integer.toString(this.bounces) : null;
@@ -107,7 +125,7 @@ public final class ElytraRecast extends Module {
          return;
       }
 
-      if (chest.isDamageableItem() && chest.getMaxDamage() - chest.getDamageValue() <= this.minDurability.intValue()) {
+      if (durabilityLow(chest.isDamageableItem(), chest.getMaxDamage(), chest.getDamageValue(), this.minDurability.intValue())) {
          HudOverlay.toast("Elytra Recast", "Elytra durability is low, stopping", HudOverlay.Severity.WARNING);
          this.setEnabled(false, false);
          return;
@@ -160,11 +178,9 @@ public final class ElytraRecast extends Module {
       }
 
       this.airTicks++;
-      if (player.isFallFlying() || this.airTicks <= this.delay.intValue()) {
-         return;
-      }
-
-      if (this.redeploy.is("Falling") && -player.getDeltaMovement().y < Math.max(0.001, this.minFall.get())) {
+      if (!shouldRedeploy(
+         player.isFallFlying(), this.airTicks, this.delay.intValue(), this.redeploy.is("Falling"), player.getDeltaMovement().y, this.minFall.get()
+      )) {
          return;
       }
 

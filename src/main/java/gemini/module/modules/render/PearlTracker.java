@@ -5,7 +5,8 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.render.Render3D;
-import java.util.Locale;
+import gemini.util.InfoText;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
@@ -13,70 +14,168 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext.Block;
 import net.minecraft.world.level.ClipContext.Fluid;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Ender pearls in flight, their predicted arc and where they land. The arc is worked out once a tick (a pearl only
+ * moves once a tick) and kept per pearl; a frame only draws the stored points.
+ */
 public final class PearlTracker extends Module {
    private final BooleanSetting trajectory = this.addSetting(new BooleanSetting("Flight Path", "Draw predicted landing arc for thrown pearls", true));
    private final BooleanSetting landingBox = this.addSetting(new BooleanSetting("Landing Box", "Highlight predicted impact spot in 3D", true));
    private final BooleanSetting labels = this.addSetting(new BooleanSetting("Owner Label", "Display thrower name and impact countdown", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Pearl tracker accent hue", 285));
+   private final Int2ObjectOpenHashMap<Track> tracks = new Int2ObjectOpenHashMap<>();
+   private int tickStamp;
 
    public PearlTracker() {
       super("PearlTracker", "Track Ender Pearl arcs, owners, and landing spots.", Category.RENDER);
    }
 
+   /** One pearl's predicted flight. */
+   private static final class Track {
+      static final int STEPS = 120;
+      final double[] points = new double[(STEPS + 1) * 3];
+      int count;
+      boolean landed;
+      int ticksToLand;
+      String owner = "";
+      int labelTicks = Integer.MIN_VALUE;
+      String label = "";
+      int seen;
+   }
+
+   @Override
+   public void onDisable() {
+      this.tracks.clear();
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.tracks.clear();
+   }
+
+   @Override
+   public void onTick() {
+      Minecraft client = Minecraft.getInstance();
+      if (client.level == null || client.player == null) {
+         this.tracks.clear();
+         return;
+      }
+
+      int stamp = ++this.tickStamp;
+      for (Entity entity : client.level.entitiesForRendering()) {
+         if (entity instanceof Projectile pearl && entity.getType() == EntityTypes.ENDER_PEARL) {
+            Track track = this.tracks.get(pearl.getId());
+            if (track == null) {
+               track = new Track();
+               this.tracks.put(pearl.getId(), track);
+            }
+
+            track.seen = stamp;
+            this.simulate(client, pearl, track);
+            Entity owner = pearl.getOwner();
+            String ownerName = owner != null ? owner.getName().getString() : "Pearl";
+            int ticks = track.landed ? track.ticksToLand : -1;
+            if (ticks != track.labelTicks || !ownerName.equals(track.owner)) {
+               track.owner = ownerName;
+               track.labelTicks = ticks;
+               track.label = ticks >= 0 ? ownerName + " (" + InfoText.format(ticks / 20.0, 1) + "s)" : ownerName;
+            }
+         }
+      }
+
+      if (this.tracks.size() > 0) {
+         this.tracks.values().removeIf(track -> track.seen != stamp);
+      }
+   }
+
+   private void simulate(Minecraft client, Projectile pearl, Track track) {
+      Vec3 simPos = pearl.position();
+      Vec3 simVel = pearl.getDeltaMovement();
+      double[] points = track.points;
+      points[0] = simPos.x;
+      points[1] = simPos.y;
+      points[2] = simPos.z;
+      int count = 1;
+      track.landed = false;
+      track.ticksToLand = -1;
+      for (int step = 0; step < Track.STEPS; step++) {
+         Vec3 next = simPos.add(simVel);
+         BlockHitResult hit = client.level.clip(new ClipContext(simPos, next, Block.COLLIDER, Fluid.NONE, pearl));
+         boolean struck = hit.getType() != Type.MISS;
+         Vec3 end = struck ? hit.getLocation() : next;
+         points[count * 3] = end.x;
+         points[count * 3 + 1] = end.y;
+         points[count * 3 + 2] = end.z;
+         count++;
+         if (struck) {
+            track.landed = true;
+            track.ticksToLand = step;
+            break;
+         }
+
+         simPos = next;
+         simVel = simVel.scale(0.99).subtract(0.0, 0.03, 0.0);
+      }
+
+      track.count = count;
+   }
+
    @Override
    public void onRender3D(float partialTick) {
       Minecraft client = Minecraft.getInstance();
-      if (client.level != null && client.player != null) {
-         int argb = this.color.argb();
+      if (client.level == null || client.player == null || this.tracks.isEmpty()) {
+         return;
+      }
 
-         for (Entity entity : client.level.entitiesForRendering()) {
-            if (entity instanceof Projectile pearl && entity.getType() == EntityTypes.ENDER_PEARL) {
-               Vec3 pos = pearl.getPosition(partialTick);
-               Vec3 vel = pearl.getDeltaMovement();
-               Entity owner = pearl.getOwner();
-               String ownerName = owner != null ? owner.getName().getString() : "Pearl";
-               Render3D.boxGlow(Render3D.interpolatedBox(pearl, partialTick).inflate(0.08), argb, 1.8F, 70, true);
-               Vec3 simPos = pos;
-               Vec3 simVel = vel;
-               Vec3 landing = null;
-               int ticksToLand = 0;
+      int argb = this.color.argb();
+      int faint = Render3D.alpha(argb, 185);
+      boolean path = this.trajectory.get();
+      boolean showLabels = this.labels.get();
+      for (Entity entity : client.level.entitiesForRendering()) {
+         if (!(entity instanceof Projectile) || entity.getType() != EntityTypes.ENDER_PEARL) {
+            continue;
+         }
 
-               for (int step = 0; step < 120; step++) {
-                  Vec3 next = simPos.add(simVel);
-                  BlockHitResult hit = client.level.clip(new ClipContext(simPos, next, Block.COLLIDER, Fluid.NONE, pearl));
-                  if (hit.getType() != Type.MISS) {
-                     landing = hit.getLocation();
-                     ticksToLand = step;
-                     if (this.trajectory.get()) {
-                        Render3D.line(simPos, landing, argb, 1.6F, true);
-                     }
-                     break;
-                  }
+         Track track = this.tracks.get(entity.getId());
+         if (track == null) {
+            continue;
+         }
 
-                  if (this.trajectory.get()) {
-                     Render3D.line(simPos, next, Render3D.alpha(argb, 185), 1.5F, true);
-                  }
-
-                  simPos = next;
-                  simVel = simVel.scale(0.99).subtract(0.0, 0.03, 0.0);
-               }
-
-               if (landing != null && this.landingBox.get()) {
-                  AABB spot = new AABB(landing.x - 0.3, landing.y - 0.1, landing.z - 0.3, landing.x + 0.3, landing.y + 0.5, landing.z + 0.3);
-                  Render3D.boxGlow(spot, argb, 2.0F, 65, true);
-                  if (this.labels.get()) {
-                     String tag = String.format(Locale.ROOT, "%s (%.1fs)", ownerName, ticksToLand / 20.0F);
-                     Render3D.text(tag, landing.add(0.0, 0.75, 0.0), argb, 0.85F, true);
-                  }
-               } else if (this.labels.get()) {
-                  Render3D.text(ownerName, pos.add(0.0, 0.55, 0.0), argb, 0.85F, true);
-               }
+         Render3D.entityBoxGlow(entity, partialTick, 0.08, argb, 1.8F, 70, true);
+         double[] p = track.points;
+         if (path) {
+            for (int i = 1; i < track.count; i++) {
+               // The segment that ends on the impact point is drawn solid, the rest of the arc a little fainter.
+               boolean last = track.landed && i == track.count - 1;
+               int from = (i - 1) * 3;
+               int to = i * 3;
+               Render3D.line(p[from], p[from + 1], p[from + 2], p[to], p[to + 1], p[to + 2], last ? argb : faint, last ? 1.6F : 1.5F, true);
             }
+         }
+
+         if (track.landed && this.landingBox.get()) {
+            int at = (track.count - 1) * 3;
+            double lx = p[at];
+            double ly = p[at + 1];
+            double lz = p[at + 2];
+            Render3D.boxGlow(lx - 0.3, ly - 0.1, lz - 0.3, lx + 0.3, ly + 0.5, lz + 0.3, argb, 2.0F, 65, true);
+            if (showLabels) {
+               Render3D.text(track.label, lx, ly + 0.75, lz, argb, 0.85F, true);
+            }
+         } else if (showLabels) {
+            Render3D.text(
+               track.owner,
+               Render3D.entityX(entity, partialTick),
+               Render3D.entityY(entity, partialTick) + 0.55,
+               Render3D.entityZ(entity, partialTick),
+               argb,
+               0.85F,
+               true
+            );
          }
       }
    }

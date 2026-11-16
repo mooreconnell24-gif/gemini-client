@@ -3,13 +3,16 @@ package gemini.module.modules.render;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.ui.HudContext;
+import gemini.util.InfoText;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 
 public final class BlockCounter extends Module {
+   private final InfoText text = new InfoText();
+
    public BlockCounter() {
-      super("BlockCounter", "Show a live block counter pill near your crosshair.", Category.RENDER);
+      super("BlockCounter", "Show how many blocks your hotbar holds in a pill under the crosshair.", Category.RENDER);
    }
 
    @Override
@@ -34,7 +37,7 @@ public final class BlockCounter extends Module {
          }
 
          if (totalBlocks > 0 && !iconStack.isEmpty()) {
-            String text = totalBlocks + " blocks";
+            String text = this.text.whole(totalBlocks, " blocks");
             int boxW = 24 + hud.font.width(text) + 8;
             int boxH = 20;
             int x = hud.width / 2 - boxW / 2;

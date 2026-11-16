@@ -8,6 +8,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.ui.Glass;
+import gemini.util.InfoText;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public final class BreakEsp extends Module {
    private final ArrayList<Entry> active = new ArrayList<>();
    private final ArrayList<Entry> pool = new ArrayList<>();
    private long lastFrame;
+   private final InfoText infoText = new InfoText();
 
    public BreakEsp() {
       super("Break ESP", "Progress boxes on blocks being mined, with the breaker's name and percentage.", Category.RENDER);
@@ -63,9 +65,25 @@ public final class BreakEsp extends Module {
       Vec3 labelPos;
    }
 
+   /** How far along a block is at a destruction stage (0..9 from the game): a tenth per stage, 1 at the last. */
+   static float stageProgress(int stage) {
+      return Math.max(0.0F, Math.min(1.0F, (stage + 1) / 10.0F));
+   }
+
+   /** Edge length of the box at {@code progress} (0..1): 0.1 growing to a full block, or a full block shrinking to 0.1. */
+   static float boxSize(float progress, boolean shrink) {
+      float p = Math.max(0.0F, Math.min(1.0F, progress));
+      return shrink ? 1.0F - p * 0.9F : 0.1F + p * 0.9F;
+   }
+
+   /** The opacity of a finished entry after {@code dt} more seconds of its linear fade-out. */
+   static float faded(float alpha, float dt) {
+      return alpha - Math.max(0.0F, dt) / FADE_SECONDS;
+   }
+
    @Override
    public String info() {
-      return this.active.isEmpty() ? null : Integer.toString(this.active.size());
+      return this.active.isEmpty() ? null : this.infoText.whole(this.active.size(), "");
    }
 
    @Override
@@ -142,7 +160,7 @@ public final class BreakEsp extends Module {
             entry.labelPercent = -1;
          }
 
-         entry.target = Math.min(1.0F, (progress.getProgress() + 1) / 10.0F);
+         entry.target = stageProgress(progress.getProgress());
          entry.seen = true;
          entry.finishing = false;
          entry.alpha = 1.0F;
@@ -178,7 +196,7 @@ public final class BreakEsp extends Module {
          Entry entry = this.active.get(i);
          entry.shown = Glass.approach(entry.shown, entry.target, 10.0F, dt);
          if (entry.finishing) {
-            entry.alpha -= dt / FADE_SECONDS;
+            entry.alpha = faded(entry.alpha, dt);
             if (entry.alpha <= 0.0F) {
                this.byPos.remove(entry.key);
                this.active.set(i, this.active.get(this.active.size() - 1));
@@ -189,7 +207,7 @@ public final class BreakEsp extends Module {
          }
 
          float p = Math.max(0.0F, Math.min(1.0F, entry.shown));
-         float size = shrink ? 1.0F - p * 0.9F : 0.1F + p * 0.9F;
+         float size = boxSize(p, shrink);
          double half = size * 0.5;
          double cx = entry.x + 0.5;
          double cy = entry.y + 0.5;

@@ -44,8 +44,10 @@ public final class ParticleBlocker extends Module {
             ids = new HashSet<>();
 
             for (String entry : this.types.get()) {
-               String id = entry.toLowerCase(Locale.ROOT);
-               ids.add(id.indexOf(58) < 0 ? "minecraft:" + id : id);
+               String id = entry.trim().toLowerCase(Locale.ROOT);
+               if (!id.isEmpty()) {
+                  ids.add(id.indexOf(':') < 0 ? "minecraft:" + id : id);
+               }
             }
 
             this.cache = ids;

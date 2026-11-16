@@ -16,11 +16,23 @@ public final class PacketMine extends Module {
    private BlockPos targetPos;
 
    public PacketMine() {
-      super("PacketMine", "Mine clicked blocks silently in the background.", Category.WORLD);
+      super("PacketMine", "Keep mining the last block you started on after you let go of the attack button, until it breaks or leaves reach.", Category.WORLD);
    }
 
    @Override
    public void onDisable() {
+      Minecraft client = Minecraft.getInstance();
+      if (this.targetPos != null && client.gameMode != null && !client.options.keyAttack.isDown()) {
+         BlockBreaking.release();
+         client.gameMode.stopDestroyBlock();
+      }
+
+      this.targetPos = null;
+   }
+
+   /** The remembered block belongs to the world that was just left. */
+   @Override
+   public void onWorldChange() {
       this.targetPos = null;
    }
 
@@ -28,14 +40,19 @@ public final class PacketMine extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
-         if (client.options.keyAttack.isDown() && client.hitResult instanceof BlockHitResult bhr && bhr.getType() == Type.BLOCK) {
+         boolean attacking = client.options.keyAttack.isDown();
+         if (attacking && client.hitResult instanceof BlockHitResult bhr && bhr.getType() == Type.BLOCK) {
             this.targetPos = bhr.getBlockPos().immutable();
          }
 
          if (this.targetPos != null) {
             if (!client.level.getBlockState(this.targetPos).isAir() && BlockPlacer.inReach(client.player, this.targetPos, 5.2)) {
-               BlockBreaking.keep();
-               client.gameMode.continueDestroyBlock(this.targetPos, Direction.UP);
+               // While the button is held vanilla already mines the block under the crosshair; driving it here as
+               // well would add a second dose of progress every tick. Take over only once the button is let go.
+               if (!attacking) {
+                  BlockBreaking.keep();
+                  client.gameMode.continueDestroyBlock(this.targetPos, Direction.UP);
+               }
             } else {
                this.targetPos = null;
             }

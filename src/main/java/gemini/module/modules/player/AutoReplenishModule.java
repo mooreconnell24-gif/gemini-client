@@ -22,7 +22,7 @@ public final class AutoReplenishModule extends Module {
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && client.gameMode != null && client.gui.screen() == null && Inventories.inventoryOpenOrClosed(player)) {
+      if (player != null && client.gameMode != null && client.gui.screen() == null && Inventories.canClick(player)) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else {

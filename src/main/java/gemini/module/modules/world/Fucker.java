@@ -25,8 +25,26 @@ public final class Fucker extends Module {
    private final BooleanSetting eggs = this.addSetting(new BooleanSetting("Dragon Eggs", "Break dragon eggs", true));
    private final BooleanSetting cakes = this.addSetting(new BooleanSetting("Cakes", "Break cakes", false));
 
+   private BlockPos target;
+
    public Fucker() {
       super("Fucker", "Break nearby Beds, Dragon Eggs, or Cakes through walls.", Category.WORLD);
+   }
+
+   @Override
+   public void onDisable() {
+      Minecraft client = Minecraft.getInstance();
+      if (this.target != null && client.gameMode != null) {
+         BlockBreaking.release();
+         client.gameMode.stopDestroyBlock();
+      }
+
+      this.target = null;
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.target = null;
    }
 
    @Override
@@ -34,19 +52,32 @@ public final class Fucker extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         int r = (int)Math.ceil(this.range.get());
-         BlockPos c = player.blockPosition();
+         double reach = this.range.get();
+         // Stay on the block being broken while it still qualifies, so the scan (up to 13x13x13 reads) only runs
+         // when there is nothing to break and the damage is never thrown away by hopping to another block.
+         if (this.target == null || !BlockPlacer.inReach(player, this.target, reach) || !this.matches(client.level.getBlockState(this.target))) {
+            this.target = this.find(client, player, reach);
+         }
 
-         for (BlockPos pos : BlockPos.betweenClosed(c.offset(-r, -r, -r), c.offset(r, r, r))) {
-            if (BlockPlacer.inReach(player, pos, this.range.get()) && this.matches(client.level.getBlockState(pos))) {
-               RotationManager.request(player, RotationManager.toward(player, pos), 90.0F, true, ActionPriority.WORLD_UTILITY);
-               BlockBreaking.keep();
-               client.gameMode.continueDestroyBlock(pos.immutable(), Direction.UP);
-               Swing.attack(player, InteractionHand.MAIN_HAND);
-               return;
-            }
+         if (this.target != null) {
+            RotationManager.request(player, RotationManager.toward(player, this.target), 90.0F, true, ActionPriority.WORLD_UTILITY);
+            BlockBreaking.keep();
+            client.gameMode.continueDestroyBlock(this.target, Direction.UP);
+            Swing.attack(player, InteractionHand.MAIN_HAND);
          }
       }
+   }
+
+   private BlockPos find(Minecraft client, LocalPlayer player, double reach) {
+      int r = (int)Math.ceil(reach);
+      BlockPos c = player.blockPosition();
+      for (BlockPos pos : BlockPos.betweenClosed(c.offset(-r, -r, -r), c.offset(r, r, r))) {
+         if (BlockPlacer.inReach(player, pos, reach) && this.matches(client.level.getBlockState(pos))) {
+            return pos.immutable();
+         }
+      }
+
+      return null;
    }
 
    private boolean matches(BlockState state) {

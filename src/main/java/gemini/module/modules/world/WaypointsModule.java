@@ -11,14 +11,16 @@ import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.render.Render3D;
+import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public final class WaypointsModule extends Module {
@@ -27,6 +29,7 @@ public final class WaypointsModule extends Module {
    private final BooleanSetting beacons = this.addSetting(new BooleanSetting("3D Beacons", "Draw a marker and a beam at every pin in the world", true));
    private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Show each pin's name and distance in the world", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Beacon and label colour", 190));
+   private final InfoText infoText = new InfoText();
 
    public WaypointsModule() {
       super("Waypoints", "Pin locations and see how far away they are.", Category.WORLD);
@@ -41,7 +44,7 @@ public final class WaypointsModule extends Module {
    /** Pins belong to one world (identified by its seed); pins saved before that existed show everywhere. */
    public boolean visible(WaypointsModule.Waypoint waypoint) {
       Minecraft client = Minecraft.getInstance();
-      if (client.level == null || !waypoint.dimension().equals(client.level.dimension().identifier().toString())) {
+      if (client.level == null || !waypoint.dimension().equals(dimensionName(client.level.dimension()))) {
          return false;
       } else {
          return waypoint.world().isEmpty() || waypoint.world().equals(currentWorld());
@@ -49,12 +52,11 @@ public final class WaypointsModule extends Module {
    }
 
    private static String currentWorld() {
-      IntegratedServer server = Minecraft.getInstance().getSingleplayerServer();
-      try {
-         return server == null ? "" : Long.toString(server.overworld().getSeed());
-      } catch (RuntimeException ignored) {
-         return "";
-      }
+      return WorldHelpers.worldKey();
+   }
+
+   private static String dimensionName(ResourceKey<Level> dimension) {
+      return WorldHelpers.dimensionName(dimension);
    }
 
    public void dropPin() {
@@ -220,8 +222,16 @@ public final class WaypointsModule extends Module {
 
    @Override
    public String info() {
-      int count = this.inThisWorld().size();
-      return count == 0 ? null : Integer.toString(count);
+      // info() runs every frame: count without building a list, and only format when the count changes.
+      String world = currentWorld();
+      int count = 0;
+      for (WaypointsModule.Waypoint waypoint : this.waypoints) {
+         if (waypoint.world().isEmpty() || waypoint.world().equals(world)) {
+            count++;
+         }
+      }
+
+      return count == 0 ? null : this.infoText.whole(count, "");
    }
 
    @Override
