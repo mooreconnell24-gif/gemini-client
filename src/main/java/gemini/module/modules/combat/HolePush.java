@@ -166,6 +166,29 @@ public final class HolePush extends Module {
       }
    }
 
+   /** The piston goes at head height on {@code side} of the target, facing it. */
+   static BlockPos pistonSpot(BlockPos feet, Direction side) {
+      return feet.above().relative(side);
+   }
+
+   /** Where the target's head is pushed to: the block on the far side from the piston, at head height. */
+   static BlockPos destinationSpot(BlockPos feet, Direction side) {
+      return feet.above().relative(side.getOpposite());
+   }
+
+   /**
+    * Where the power source may go around a piston on {@code side}, in order of preference: behind it, on top,
+    * beside it, underneath. Never in front, where the head extends.
+    */
+   static Direction[] powerDirections(Direction side) {
+      return new Direction[]{side, Direction.UP, side.getClockWise(), side.getCounterClockWise(), Direction.DOWN};
+   }
+
+   /** A torch under the piston would have to hang from it; only standing torches are planned. */
+   static boolean torchSide(Direction dir) {
+      return dir != Direction.DOWN;
+   }
+
    /** A free spot: nothing to collide with, no fluid. */
    private static boolean clear(Level level, BlockPos pos) {
       BlockState state = level.getBlockState(pos);
@@ -189,9 +212,9 @@ public final class HolePush extends Module {
       Plan best = null;
       double bestDistance = Double.MAX_VALUE;
       for (Direction side : SIDES) {
-         BlockPos piston = head.relative(side);
+         BlockPos piston = pistonSpot(feet, side);
          // The far side at head height and the space above it must be open, or the push goes nowhere.
-         BlockPos destination = head.relative(side.getOpposite());
+         BlockPos destination = destinationSpot(feet, side);
          if (!BlockPlacer.replaceable(level, piston)
             || BlockPlacer.occupied(level, piston)
             || !BlockPlacer.inReach(player, piston, this.range.get())
@@ -222,12 +245,7 @@ public final class HolePush extends Module {
     * A redstone block needs only a free spot with a neighbour to place against; a torch must stand on a solid block.
     */
    private BlockPos powerSpot(Level level, LocalPlayer player, BlockPos piston, Direction side) {
-      Direction front = side.getOpposite();
-      for (Direction dir : new Direction[]{side, Direction.UP, side.getClockWise(), side.getCounterClockWise(), Direction.DOWN}) {
-         if (dir == front) {
-            continue;
-         }
-
+      for (Direction dir : powerDirections(side)) {
          BlockPos pos = piston.relative(dir);
          if (!BlockPlacer.replaceable(level, pos) || BlockPlacer.occupied(level, pos) || !BlockPlacer.inReach(player, pos, this.range.get())) {
             continue;
@@ -235,8 +253,7 @@ public final class HolePush extends Module {
 
          if (this.power.is("Torch")) {
             BlockPos below = pos.below();
-            // A torch under the piston would have to hang from it; only standing torches are planned.
-            if (dir != Direction.DOWN && level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)) {
+            if (torchSide(dir) && level.getBlockState(below).isFaceSturdy(level, below, Direction.UP)) {
                return pos;
             }
          } else {
