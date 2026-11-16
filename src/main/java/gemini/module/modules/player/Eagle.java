@@ -65,12 +65,12 @@ public final class Eagle extends Module {
       double y = player.getY() - 0.5;
       double half = player.getBbWidth() / 2.0 + extra;
 
-      for (double dx : new double[]{-half, half}) {
-         for (double dz : new double[]{-half, half}) {
-            BlockPos pos = BlockPos.containing(player.getX() + dx, y, player.getZ() + dz);
-            if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
-               return false;
-            }
+      for (int corner = 0; corner < 4; corner++) {
+         double dx = (corner & 1) == 0 ? -half : half;
+         double dz = (corner & 2) == 0 ? -half : half;
+         BlockPos pos = BlockPos.containing(player.getX() + dx, y, player.getZ() + dz);
+         if (!level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()) {
+            return false;
          }
       }
 

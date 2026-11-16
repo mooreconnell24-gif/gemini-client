@@ -5,6 +5,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import gemini.util.SingleplayerGate;
 import gemini.util.SpCommands;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public final class Buffs extends Module {
    private final BooleanSetting hideParticles = this.addSetting(new BooleanSetting("Hide Particles", "Give the effects without the swirling particles", true));
    private int refresh;
    private boolean applying;
+   private final InfoText infoText = new InfoText();
 
    public Buffs() {
       super("Buffs", "Permanent potion effects on switches: god mode, speed, haste, night vision and more.", Category.PLAYER);
@@ -73,6 +75,12 @@ public final class Buffs extends Module {
       }
    }
 
+   /** A new world (or a respawn into one) starts without the effects: give them again right away. */
+   @Override
+   public void onWorldChange() {
+      this.refresh = 0;
+   }
+
    @Override
    public void onDisable() {
       if (Minecraft.getInstance().player != null) {
@@ -112,7 +120,7 @@ public final class Buffs extends Module {
          }
       }
 
-      return active == 0 ? null : active + " active";
+      return active == 0 ? null : this.infoText.whole(active, " active");
    }
 
    private record Buff(BooleanSetting on, NumberSetting level, String id, int defaultLevel) {

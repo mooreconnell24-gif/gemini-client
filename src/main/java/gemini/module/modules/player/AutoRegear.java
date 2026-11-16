@@ -248,12 +248,22 @@ public final class AutoRegear extends Module {
       this.mining = false;
       this.openedMenu = false;
       this.boxPos = null;
+      // Slots remembered for the old player must not be swapped around in the new one's inventory.
+      this.borrowedInventory = -1;
+      this.borrowedHotbar = -1;
+      this.originalSlot = -1;
       this.finish("Stopped: you changed worlds", HudOverlay.Severity.WARNING);
    }
 
-   /** Puts the item that made room for the shulker back into its hotbar slot. */
+   /**
+    * Puts the item that made room for the shulker back into its hotbar slot, unless Match Hotbar already filled
+    * that slot from the saved layout this run.
+    */
    private void returnBorrowedSlot(Minecraft client, LocalPlayer player) {
-      if (this.borrowedInventory >= 0 && this.borrowedHotbar >= 0 && !this.matchHotbar.get() && Inventories.inventoryOpenOrClosed(player)) {
+      if (this.borrowedInventory >= 0
+         && this.borrowedHotbar >= 0
+         && !this.triedHotbar.contains(this.borrowedHotbar)
+         && Inventories.canClick(player)) {
          Inventories.moveToHotbar(client, player, this.borrowedInventory, this.borrowedHotbar);
       }
 
@@ -349,7 +359,7 @@ public final class AutoRegear extends Module {
    }
 
    private void begin(Minecraft client, LocalPlayer player) {
-      if (client.gui.screen() != null || !Inventories.inventoryOpenOrClosed(player)) {
+      if (client.gui.screen() != null || !Inventories.canClick(player)) {
          this.fail("Close the open screen first");
          return;
       }

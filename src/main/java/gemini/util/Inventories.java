@@ -87,6 +87,15 @@ public final class Inventories {
       return player.containerMenu == player.inventoryMenu;
    }
 
+   /**
+    * Whether a module may click around in the player's own inventory right now: no other container is open and
+    * nothing is on the cursor. With the inventory screen open the player may be carrying a stack, and a scripted
+    * PICKUP sequence would drop that stack into the wrong slot.
+    */
+   public static boolean canClick(LocalPlayer player) {
+      return player != null && player.containerMenu == player.inventoryMenu && player.inventoryMenu.getCarried().isEmpty();
+   }
+
    public static int find(LocalPlayer player, Predicate<ItemStack> match, boolean hotbarOnly) {
       int limit = hotbarOnly ? 9 : 36;
 
@@ -100,19 +109,27 @@ public final class Inventories {
       return -1;
    }
 
-   public static void swapToOffhand(Minecraft client, LocalPlayer player, int index) {
-      if (client.gameMode != null && Hands.claimOffhand()) {
-         int container = player.inventoryMenu.containerId;
-         if (index < 9) {
-            client.gameMode.handleContainerInput(container, 45, index, ContainerInput.SWAP, player);
-         } else {
-            int menuSlot = menuSlot(index);
+   /**
+    * Swaps an inventory stack (0-35) with the offhand. Returns false, changing nothing, when the index is out of
+    * range, there is no game mode, or a more important module holds the offhand this tick.
+    */
+   public static boolean swapToOffhand(Minecraft client, LocalPlayer player, int index) {
+      int menuSlot = menuSlot(index);
+      if (client.gameMode == null || menuSlot < 0 || !Hands.claimOffhand()) {
+         return false;
+      }
+
+      int container = player.inventoryMenu.containerId;
+      if (index < 9) {
+         client.gameMode.handleContainerInput(container, 45, index, ContainerInput.SWAP, player);
+      } else {
+         client.gameMode.handleContainerInput(container, menuSlot, 0, ContainerInput.PICKUP, player);
+         client.gameMode.handleContainerInput(container, 45, 0, ContainerInput.PICKUP, player);
+         if (!player.inventoryMenu.getCarried().isEmpty()) {
             client.gameMode.handleContainerInput(container, menuSlot, 0, ContainerInput.PICKUP, player);
-            client.gameMode.handleContainerInput(container, 45, 0, ContainerInput.PICKUP, player);
-            if (!player.inventoryMenu.getCarried().isEmpty()) {
-               client.gameMode.handleContainerInput(container, menuSlot, 0, ContainerInput.PICKUP, player);
-            }
          }
       }
+
+      return true;
    }
 }

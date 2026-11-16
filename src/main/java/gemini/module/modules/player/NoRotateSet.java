@@ -16,6 +16,17 @@ public final class NoRotateSet extends Module {
       super("NoRotateSet", "Block server packets from snapping your camera.", Category.PLAYER);
    }
 
+   /** A snap still waiting to be undone must not be replayed later, in another session or world. */
+   @Override
+   public void onDisable() {
+      this.restorePending = false;
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.restorePending = false;
+   }
+
    @Override
    public boolean onReceivePacket(Packet<?> packet) {
       Minecraft client = Minecraft.getInstance();

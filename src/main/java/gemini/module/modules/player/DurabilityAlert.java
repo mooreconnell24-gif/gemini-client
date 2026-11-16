@@ -6,17 +6,18 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.HudOverlay;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Locale;
-import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /** Warns once when worn armour or a held tool gets close to breaking. */
 public final class DurabilityAlert extends Module {
+   private static final int NONE = PlayerMath.ALERT_NONE;
+   private static final int CRITICAL = PlayerMath.ALERT_CRITICAL;
    private static final EquipmentSlot[] SLOTS = new EquipmentSlot[]{
       EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
    };
@@ -25,8 +26,9 @@ public final class DurabilityAlert extends Module {
    private final NumberSetting critical = this.addSetting(
       new NumberSetting("Critical Uses", "Raise a second, red alert when this many uses or fewer are left", 5.0, 1.0, 50.0, 1.0)
    );
-   private final Set<String> warned = new HashSet<>();
-   private final Set<String> criticalSlots = new HashSet<>();
+   /** Per slot: the item last warned about (null when nothing is), and whether its red alert went out too. */
+   private final Item[] warned = new Item[SLOTS.length];
+   private final boolean[] criticalSent = new boolean[SLOTS.length];
 
    public DurabilityAlert() {
       super("Durability Alert", "Warn you before your armour or tools break.", Category.PLAYER);
@@ -34,8 +36,8 @@ public final class DurabilityAlert extends Module {
 
    @Override
    public void onDisable() {
-      this.warned.clear();
-      this.criticalSlots.clear();
+      Arrays.fill(this.warned, null);
+      Arrays.fill(this.criticalSent, false);
    }
 
    @Override
@@ -47,37 +49,31 @@ public final class DurabilityAlert extends Module {
 
       for (int i = 0; i < SLOTS.length; i++) {
          ItemStack stack = player.getItemBySlot(SLOTS[i]);
-         String key = "slot" + i;
-         if (stack.isEmpty() || !stack.isDamageableItem() || stack.getMaxDamage() <= 0) {
-            this.warned.removeIf(entry -> entry.startsWith(key + ":"));
-            this.criticalSlots.removeIf(entry -> entry.startsWith(key + ":"));
+         int level = stack.isEmpty() || !stack.isDamageableItem()
+            ? NONE
+            : PlayerMath.durabilityAlert(stack.getMaxDamage() - stack.getDamageValue(), stack.getMaxDamage(), this.percent.get(), this.critical.intValue());
+         if (level == NONE) {
+            // Repaired, swapped for something healthy, or taken off: warn again next time it gets low.
+            this.warned[i] = null;
+            this.criticalSent[i] = false;
             continue;
          }
 
-         int left = stack.getMaxDamage() - stack.getDamageValue();
-         double pct = 100.0 * left / stack.getMaxDamage();
-         String id = key + ":" + BuiltInRegistries.ITEM.getKey(stack.getItem());
-         if (pct < this.percent.get()) {
-            boolean critical = left <= this.critical.intValue();
-            if (!this.warned.contains(id)) {
-               this.warned.removeIf(entry -> entry.startsWith(key + ":"));
-               this.warned.add(id);
-               this.alert(stack, left, pct, critical);
-               if (critical) {
-                  this.criticalSlots.add(id);
-               }
-            } else if (critical && this.criticalSlots.add(id)) {
-               // Already warned once; it is now about to break, which deserves a louder second alert.
-               this.alert(stack, left, pct, true);
-            }
-         } else {
-            this.warned.remove(id);
-            this.criticalSlots.remove(id);
+         if (this.warned[i] != stack.getItem()) {
+            this.warned[i] = stack.getItem();
+            this.criticalSent[i] = level == CRITICAL;
+            this.alert(stack, level == CRITICAL);
+         } else if (level == CRITICAL && !this.criticalSent[i]) {
+            // Already warned once; it is now about to break, which deserves a louder second alert.
+            this.criticalSent[i] = true;
+            this.alert(stack, true);
          }
       }
    }
 
-   private void alert(ItemStack stack, int left, double pct, boolean critical) {
+   private void alert(ItemStack stack, boolean critical) {
+      int left = stack.getMaxDamage() - stack.getDamageValue();
+      double pct = 100.0 * left / Math.max(1, stack.getMaxDamage());
       String name = stack.getHoverName().getString();
       HudOverlay.toast(
          critical ? "About to break" : "Durability",

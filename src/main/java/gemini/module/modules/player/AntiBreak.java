@@ -6,6 +6,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.Hands;
 import gemini.util.Inventories;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -27,13 +28,13 @@ public final class AntiBreak extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && Inventories.canClick(client.player)) {
          LocalPlayer player = client.player;
          if (this.tools.get()) {
             ItemStack held = player.getMainHandItem();
             if (this.atRisk(held)) {
                int target = emptySlot(player);
-               if (target >= 0) {
+               if (target >= 0 && Hands.claimMainHand()) {
                   int selected = player.getInventory().getSelectedSlot();
                   client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(selected), 0, ContainerInput.PICKUP, player);
                   client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(target), 0, ContainerInput.PICKUP, player);

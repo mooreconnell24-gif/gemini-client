@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -22,6 +23,7 @@ public final class AutoFishModule extends Module {
    private double lastHookY = Double.NaN;
    private int stableTicks;
    private int catches;
+   private final InfoText infoText = new InfoText();
 
    public AutoFishModule() {
       super("AutoFish", "Reel in bites and recast automatically.", Category.PLAYER);
@@ -40,9 +42,16 @@ public final class AutoFishModule extends Module {
       this.resetHook();
    }
 
+   /** The bobber belongs to the world that was left. */
+   @Override
+   public void onWorldChange() {
+      this.cooldown = 0;
+      this.resetHook();
+   }
+
    @Override
    public String info() {
-      return this.catches > 0 ? this.catches + " caught" : null;
+      return this.catches > 0 ? this.infoText.whole(this.catches, " caught") : null;
    }
 
    @Override

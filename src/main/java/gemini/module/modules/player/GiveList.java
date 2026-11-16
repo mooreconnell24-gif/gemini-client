@@ -7,6 +7,7 @@ import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ListSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import gemini.util.SingleplayerGate;
 import gemini.util.SpCommands;
 
@@ -18,6 +19,8 @@ public final class GiveList extends Module {
    );
    private final NumberSetting count = this.addSetting(new NumberSetting("Count", "How many of each", 1.0, 1.0, 64.0, 1.0));
    private final BooleanSetting clearFirst = this.addSetting(new BooleanSetting("Clear First", "Empty your inventory before giving the items", false));
+
+   private final InfoText infoText = new InfoText();
 
    public GiveList() {
       super("Give List", "Give yourself your own list of items in one click.", Category.PLAYER);
@@ -64,6 +67,6 @@ public final class GiveList extends Module {
 
    @Override
    public String info() {
-      return this.items.size() + " items";
+      return this.infoText.whole(this.items.size(), " items");
    }
 }

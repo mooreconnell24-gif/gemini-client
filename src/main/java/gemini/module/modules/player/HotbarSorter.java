@@ -30,7 +30,7 @@ public final class HotbarSorter extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.canClick(client.player) && !client.player.isUsingItem()) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          if (this.swordSlot1.get() && this.ensureSlot(client, player, 0, s -> s.is(ItemTags.SWORDS))) {

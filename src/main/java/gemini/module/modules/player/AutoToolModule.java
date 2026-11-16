@@ -4,6 +4,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.util.Hands;
+import gemini.util.Tools;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -24,6 +25,8 @@ public final class AutoToolModule extends Module {
    private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Go back to the previous slot when you stop", true));
    private final BooleanSetting saveTools = this.addSetting(new BooleanSetting("Save Durability", "Don't use tools that are almost broken", true));
    private int previousSlot = -1;
+   /** Attack damage per hotbar slot, NaN for a non-weapon; reused every tick. */
+   private final double[] damage = new double[9];
 
    public AutoToolModule() {
       super("AutoTool", "Swap to the best tool for what you are hitting.", Category.PLAYER);
@@ -32,6 +35,23 @@ public final class AutoToolModule extends Module {
    @Override
    public void onDisable() {
       this.restoreSlot();
+   }
+
+   /** The slot to go back to belonged to the player that just left. */
+   @Override
+   public void onWorldChange() {
+      this.previousSlot = -1;
+   }
+
+   private static double attackDamage(ItemStack stack) {
+      double total = 0.0;
+      for (ItemAttributeModifiers.Entry entry : stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers()) {
+         if (entry.attribute().is(Attributes.ATTACK_DAMAGE)) {
+            total += entry.modifier().amount();
+         }
+      }
+
+      return total;
    }
 
    @Override
@@ -44,38 +64,20 @@ public final class AutoToolModule extends Module {
             if (client.hitResult.getType() == Type.BLOCK) {
                BlockPos pos = ((BlockHitResult)client.hitResult).getBlockPos();
                BlockState state = client.level.getBlockState(pos);
-               float bestSpeed = player.getInventory().getItem(player.getInventory().getSelectedSlot()).getDestroySpeed(state);
-
-               for (int i = 0; i < 9; i++) {
-                  ItemStack stack = player.getInventory().getItem(i);
-                  if (!this.saveTools.get() || !stack.isDamageableItem() || stack.getMaxDamage() - stack.getDamageValue() >= 8) {
-                     float speed = stack.getDestroySpeed(state);
-                     if (speed > bestSpeed + 0.01F) {
-                        bestSpeed = speed;
-                        best = i;
-                     }
-                  }
-               }
+               int slot = Tools.bestSlot(player, state, this.saveTools.get());
+               best = slot == player.getInventory().getSelectedSlot() ? -1 : slot;
             } else if (this.weapons.get()
                && client.hitResult.getType() == Type.ENTITY
                && ((EntityHitResult)client.hitResult).getEntity() instanceof LivingEntity) {
-               double bestDamage = isWeapon(player.getMainHandItem()) ? 1.0 : 0.0;
-
-               for (int ix = 0; ix < 9; ix++) {
-                  ItemStack stack = player.getInventory().getItem(ix);
-                  if (isWeapon(stack)) {
-                     double damage = ((ItemAttributeModifiers)stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY))
-                        .modifiers()
-                        .stream()
-                        .filter(entry -> entry.attribute().is(Attributes.ATTACK_DAMAGE))
-                        .mapToDouble(entry -> entry.modifier().amount())
-                        .sum();
-                     if (damage > bestDamage) {
-                        bestDamage = damage;
-                        best = ix;
-                     }
-                  }
+               // Measured against the weapon already held, so a better held weapon is never swapped for a worse one.
+               ItemStack held = player.getMainHandItem();
+               double current = isWeapon(held) ? attackDamage(held) : 0.0;
+               for (int i = 0; i < 9; i++) {
+                  ItemStack stack = player.getInventory().getItem(i);
+                  this.damage[i] = isWeapon(stack) ? attackDamage(stack) : Double.NaN;
                }
+
+               best = PlayerMath.bestAbove(this.damage, current, 0.0);
             }
 
             if (best >= 0 && best != player.getInventory().getSelectedSlot() && Hands.claimMainHand()) {
