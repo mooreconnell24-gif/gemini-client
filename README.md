@@ -44,87 +44,94 @@ Everything runs locally. There is no account system, API key, cloud service or t
 
 ## What's new in 3.3.0
 
-**A new look everywhere.** Every Gemini surface now shares one dark-glass theme: rounded panels, thin accent borders and smooth motion that runs at the same speed whatever your frame rate.
+**Menus and screens**
 
-- **Home screen.** Gemini replaces the title screen with its own: a drifting particle background with mouse parallax, the logo with a version badge, glass buttons (Singleplayer, Multiplayer, Realms, ClickGUI, WindowGUI, Presets & Configs, Options, Quit), the sandbox switch, and a status bar with FPS, the active profile, key-bind conflicts and mixin health. "Vanilla menu" in the footer switches back to the normal title screen, and the vanilla screen has a "Gemini menu" button to return.
-- **Pause dock.** The Esc menu gets one-click buttons for ClickGUI, WindowGUI, the HUD editor, the config manager, a key-bind report (with the number of conflicts), quick search, this guide and Panic.
-- **Window menu dashboard.** The sidebar has the categories (with active-module counts) plus three pages: **Presets & Configs** (load, save, overwrite, delete, export and import profiles, and the built-in presets), **Keybinds** (every bound key, conflicts in red, clashes with vanilla controls in amber, and one-click Rebind / Clear / Toggle-Hold), and **Baritone** (live engine, task, owner, goal, progress and ETA, Pause/Resume/Cancel, and quick starts for Auto Goto, Auto Mine Bot, Follow Bot, Auto Tunnel, Auto Highway and Auto Explore). It can be opened from the title screen to configure Gemini before loading a world.
-- **Panel menu.** Opens and closes with a fade, scrolls with inertia, and panels snap to the grid and to each other. Module rows have animated switches and description tooltips; right-click opens settings, middle-click binds a key. Search covers setting names (and says which one matched); arrow keys and Enter work through the results.
-- **Setting controls.** A full colour picker (saturation/brightness square, hue and alpha sliders, hex input, copy/paste, Static/Rainbow/Pulse), number sliders with Shift for fine control and double-click to type a value, and a list editor with icons, fuzzy search and category filters.
-- **HUD editor.** Centre guides, snapping to other widgets' edges, centres and equal gaps, and arrow-key nudging (Shift for 10px).
-- **Toasts** slide in, stack and close up smoothly, show a countdown, and are colour-coded by what they are about. They can be switched off or moved to any corner.
+- **Title screen.** Gemini replaces the title screen with its own: Singleplayer, Multiplayer, Realms, Gemini (opens the module menu), Options and Quit, with small links for quick search, the in-game guide and presets. The sandbox switch is in the bottom-right corner. "Vanilla menu" in the bottom-left corner switches back to the normal title screen; its "Gemini menu" button switches back again. The bottom line only shows something when it matters: the active profile, key-bind conflicts, or game hooks that failed to load.
+- **Pause menu.** Module menu, Edit HUD and Guide buttons in the bottom-left corner (above the Game Menu title on small windows), plus a Panic link. A "key conflicts" link appears only while two actions share a key.
+- **Window menu.** The sidebar lists the categories with the number of modules switched on, plus three pages: **Presets & Configs** (load, save, overwrite, delete, export and import profiles; built-in presets), **Keybinds** (every bound key; conflicts in red, clashes with vanilla controls in amber; Rebind, Clear and Toggle/Hold buttons) and **Baritone** (current task, goal, progress and ETA; Pause, Resume and Cancel; quick starts for the bot modules). It also opens from the title screen, so you can set Gemini up before loading a world.
+- **Panel menu.** Panels snap to the grid and to each other. Right-click a module for its settings, middle-click to bind a key. Search also matches setting names and says which one matched; the arrow keys and Enter move through the results.
+- **Setting controls.** Colour picker with a saturation/brightness square, hue and opacity sliders, hex input, copy and paste, and Static/Rainbow/Pulse. Hold Shift on a slider for fine steps, double-click it to type a value. Lists have icons, search and category filters.
+- **HUD editor.** Widgets snap to the screen centre, to other widgets' edges and centres, and to equal gaps. Arrow keys nudge the selected widget by 1 px (Shift: 10 px).
+- **Notifications** stack in a corner of your choice (HUD > Toast Position) and can be switched off (HUD > Toasts).
 
-**Find anything, share everything**
+**Look**
 
-- **Quick search** (`Ctrl+K`, or `K` in game; rebind it in Controls). Type to search every module, setting name, command and page. **Enter** toggles a module, **Shift+Enter** opens it in the window menu, **Tab** cycles between all results, modules, commands and pages. It also opens from the title screen and the pause dock, and works before a world is loaded (modules can then be configured but not switched on).
-- **Share codes.** "Copy share code" in Presets & Configs, or `.config share <name>`, puts your settings on the clipboard as one line starting with `gemini:`. "Paste share code", or `.config import code`, shows what it would change (modules switched on and off, key binds, settings) before you save or apply it. Damaged and oversized codes are refused with a reason.
-- **Key-bind warnings.** Binding a key that a module or a vanilla control already uses shows a warning toast, wherever the bind was made: the panel menu, the window menu, `.bind`, the menu key, or a profile or import being loaded. The first time you enter a world each session, one toast sums up any existing conflicts.
-- **In-game guide.** What's new, the controls of both menus, every command and an About page. It opens by itself once after an update; afterwards from the title screen, the pause dock, the window menu, `.help` and `.changelog`.
+- One calm default look: flat dark panels, thin borders, no glow, gradients or pulsing. Glass Glow and Particles in the ClickGUI settings are now off by default.
+- **Watermark** shows "Gemini", the version and FPS on one line. Ping is shown only on a real connection, never in single player. Speed is off by default. Styles are now called Card, Compact and Text (were Nextgen Card, LiquidBounce Pill and Minimal).
+- **ArrayList** uses the theme accent by default, without outline. The "Astolfo" colour mode is now called "Pink-Blue Wave".
+- The default menu theme is now called "Blue" (was "LiquidBounce"), and "Neon" is now "Purple".
+
+**Find and share**
+
+- **Quick search** (`Ctrl+K`, or `K` in game; rebind it in Controls). Finds modules, settings, commands and pages. **Enter** toggles a module, **Shift+Enter** opens it in the window menu, **Tab** switches between all results, modules, commands and pages. It works before a world is loaded; modules can then be set up but not switched on.
+- **Share codes.** "Copy share code" in Presets & Configs, or `.config share <name>`, copies your settings as one line starting with `gemini:`. "Paste share code", or `.config import code`, lists what would change before you save or apply it. Damaged or oversized codes are refused with a reason.
+- **Key-bind warnings.** Binding a key that a module or a vanilla control already uses shows a warning, wherever the bind was made. The first time you enter a world each session, one notification lists any existing conflicts.
+- **In-game guide.** What's new, the controls of both menus, every command, and an About page. It opens by itself once after an update; afterwards from the title screen, the pause menu, the window menu, `.help` and `.changelog`.
 
 **Aim and targeting**
 
-- **Who to target first, everywhere.** Every module that picks a target (KillAura, AimAssist, TriggerBot, Bow Aimbot, Silly Aimbot, AutoCrystal, Anchor/Bed Aura, Auto Trap, Web Aura, Hole Filler, Auto Web Fill, Auto City, Hole Push, Hit Crystal, Shield Breaker, Auto Rod, Backtrack, Keep Range, Target Strafe, Auto Block, Flamethrower and Follow Bot) has the same settings: **Priority** (Closest, Lowest Health, Highest Health, Closest To Crosshair, Most Armor, Least Armor, Most Dangerous), **Prefer** (Players First / Mobs First / Any), **Stick To Target**, and filters for players, hostiles, passives and invisible mobs. The placing auras fall back to the next enemy when nothing can be done to the first.
-- **Target box** around the current target in all of them: outline, fill or both, any colour or coloured by health, optionally through walls. KillAura's old Highlight became this box. Target HUD shows whoever KillAura, Shield Breaker, TriggerBot or the aimbots are targeting.
-- **Bow Aimbot** (was ProjectileAimbot; `.projectileaimbot` still finds it, and your settings carry over). An exact arc solver for bows, crossbows and tridents using the game's real drag and gravity, leads moving targets and accounts for your own movement, Low/High/Auto arc, **Aim Point** (Head, Chest, Feet, or Auto: the highest point it can actually hit), **Wall Check** (skips targets it can't reach), a drawn **trajectory** with impact marker, and optional **Auto Release** / **Auto Charge**.
-- **Silly Aimbot** (new). Your arrows, tridents and optionally snowballs, eggs and ender pearls home in on the target, steering around blocks and mobs in the way (a look-ahead check, then a small 3D path search when a wall is in the way). Speed, turn rate, look-ahead, max time and retarget are adjustable, and the homing path is drawn. It works because it steers the projectiles inside your own single-player world.
-- KillAura's Target Mode **Switch** now cycles through targets in priority order; **Single** holds one.
+- Every module that picks a target (KillAura, AimAssist, TriggerBot, Bow Aimbot, Silly Aimbot, AutoCrystal, Anchor and Bed Aura, Auto Trap, Web Aura, Hole Filler, Auto Web Fill, Auto City, Hole Push, Hit Crystal, Shield Breaker, Auto Rod, Backtrack, Keep Range, Target Strafe, Auto Block, Flamethrower and Follow Bot) has the same settings: **Priority** (Closest, Lowest Health, Highest Health, Closest To Crosshair, Most Armor, Least Armor, Most Dangerous), **Prefer** (Any, Players First, Mobs First), **Stick To Target**, and filters for players, hostiles, passives and invisible mobs. The placing auras move on to the next target when nothing can be done to the first.
+- **Target Box** draws an outline, a fill or both around the current target, in a fixed colour or coloured by health, optionally through walls. It replaces KillAura's Highlight. Target HUD follows whichever of KillAura, Shield Breaker, TriggerBot or the aimbots has a target.
+- **Bow Aimbot** (was ProjectileAimbot; `.projectileaimbot` still works and your settings carry over). Aims bows, crossbows and tridents using the game's drag and gravity, leads moving targets and accounts for your own movement. Settings: Low, High or Auto arc; **Aim Point** (Head, Chest, Feet, or Auto: the highest point it can hit); **Wall Check** (skips targets it cannot reach); a drawn trajectory with an impact marker; **Auto Release** and **Auto Charge**.
+- **Silly Aimbot** (new). Your arrows and tridents, and optionally snowballs, eggs and ender pearls, steer toward the target and around blocks and mobs in the way. Speed, turn rate, look-ahead, maximum time and retargeting are adjustable, and the path is drawn. It only works in your own single-player world, because it moves the projectiles on the integrated server.
+- KillAura's Target Mode **Switch** cycles through targets in priority order; **Single** stays on one.
 
 **HUD**
 
-- **ArrayList** is now a widget you can drag like the others, with width/name/category sorting, category, rainbow, Astolfo, wave and gradient colours, a side bar, a frosted background and slide-in/out animations. Your old list settings are carried over.
-- **TargetHUD** has three styles (Modern Glass, Compact, Neon) with the target's face or model, an animated health bar with absorption, distance, totem pops, armour durability and a Winning/Even/Losing estimate.
-- **Profiler**: Performance and AntiLag can show a live breakdown of the heaviest modules in microseconds. It costs nothing while off.
+- **ArrayList** is now a HUD widget you can move like the others. Sort by width, name or category; colour by accent, theme gradient, category, rainbow, pink-blue wave, wave or a fixed gradient; optional side bar, background and slide animations. Your old list settings carry over.
+- **Target HUD** has three styles and shows the target's face or model, health with absorption, distance, totem pops, armour durability and who is ahead in the fight.
+- **Profiler.** Performance and AntiLag can list the modules that take the most time per frame, in microseconds. It does nothing while switched off.
 
-**Fixes from a module audit**
+**Fixes**
 
-- Switching a bot module off cancelled whatever Baritone task was running, even one started by another module. Each module now stops only its own task, and switches itself off when its task ends.
-- Timer and Tick Freeze could leave the world fast or frozen after leaving it or opening it to LAN. The clock is now always restored, and two modules no longer undo each other's change.
-- AutoTotem and Offhand kept the offhand reserved at low health with no totem left, which blocked other offhand modules. AutoPot and AutoExp held your aim every tick even with nothing to throw.
-- Flight could leave survival flight on after a game-mode switch; AutoBlock forced right-click up while you held it; AutoWalk could leave sprint held; Freecam kept the old dimension's position.
-- Module suffixes printed "0,55" on systems that use a decimal comma.
-- Many render modules and HUD widgets allocated objects every frame; most of that is gone.
-- Placing modules now check that your aim really hits the face before placing (**Raycast Check**, on by default), can turn smoothly (**Aim Speed**), and fade out the blocks they place. Scaffold gains a **Sprint Jump** tower mode.
-- The self-test now also checks that every setting survives a save and load.
-- **Player:** Middle Click Extra's Golden Apple never actually ate the apple; Exp Thrower's Look Down left your camera pointing at the floor; Auto Mend took armour off and never put it back; Auto Tool swapped a better held weapon for a worse one; Auto Armor retried cursed armour forever; modules that click in the inventory could drop the item on your cursor into the wrong slot; Anti Void and Clutch could teleport you to a safe spot remembered from another world; Hotbar Sorter and Inventory Cleaner cut eating or bow draws short.
-- **World:** Auto Sign could crash in a packet loop; Collisions changed collisions for every mob and the server's pathfinding, not just you; World Rules' Fire Spread used a rule that no longer exists; Nuker, Vein Miner, Auto Farm, Packet Mine and Fucker kept mining the previous world's block after a world change, and Packet Mine double-mined while you held attack; Lawn Mower could never break cobwebs; Mob Sweeper's All Mobs killed armour stands and pets (new **Spare Pets**, on by default); Home and Death Coords could teleport you to coordinates from another save; Locate's Nether teleport landed on the bedrock roof; Stronghold Finder now really triangulates from two eye throws (new **Pin Estimate**); Auto Build Bot no longer cancels other modules' pathing and gives up properly.
-- **Render and misc:** Panic switched off the Aim settings for good; Presets' Disable Others missed most modules; AutoGG said GG when a target merely walked away; Flag Check counted joins, respawns and teleports as setbacks; Zoom stepped at 20 Hz and never eased out; Performance, Fullbright, No Bob and No Hurt Cam could save their temporary video settings to your options file; Logoff Spot marked players who just walked away; Pearl Tracker re-simulated every pearl every frame; Name Protect stripped chat colours. **Crosshair** and **Block Selection** can now replace the vanilla crosshair and block outline instead of drawing on top of them (**Hide Vanilla**).
+- Switching a bot module off cancelled any Baritone task, even one started by another module. Each module now stops only its own task, and switches itself off when its task ends.
+- Timer and Tick Freeze could leave the world fast or frozen after leaving it or opening it to LAN. The tick rate is now always restored, and the two modules no longer undo each other.
+- AutoTotem and Offhand kept the offhand reserved at low health with no totem left, blocking other offhand modules. AutoPot and AutoExp held your aim with nothing to throw.
+- Flight could leave survival flight on after a game-mode change; AutoBlock released right-click while you held it; AutoWalk could leave sprint held; Freecam kept the previous dimension's position.
+- Module suffixes showed "0,55" on systems that use a decimal comma.
+- Many render modules and HUD widgets created new objects every frame; most of that is gone.
+- Placing modules check that your aim hits the block face before placing (**Raycast Check**, on by default), can turn gradually (**Aim Speed**), and fade out the blocks they place. Scaffold has a **Sprint Jump** tower mode.
+- The self-test also checks that every setting survives a save and load.
+- **Player:** Middle Click Extra's Golden Apple did not eat the apple; Exp Thrower's Look Down left the camera facing the floor; Auto Mend did not put armour back on; Auto Tool swapped a better weapon for a worse one; Auto Armor retried cursed armour forever; inventory-clicking modules could drop the cursor item into the wrong slot; Anti Void and Clutch could use a safe spot from another world; Hotbar Sorter and Inventory Cleaner interrupted eating and bow draws.
+- **World:** Auto Sign could crash in a packet loop; Collisions changed collisions for every mob and for server pathfinding; World Rules' Fire Spread used a game rule that no longer exists; Nuker, Vein Miner, Auto Farm, Packet Mine and Fucker kept mining the previous world's block after a world change, and Packet Mine mined twice while attack was held; Lawn Mower could not break cobwebs; Mob Sweeper's All Mobs killed armour stands and pets (new **Spare Pets**, on by default); Home and Death Coords could teleport you to coordinates from another save; Locate's Nether teleport landed on the bedrock roof; Stronghold Finder triangulates from two eye throws (new **Pin Estimate**); Auto Build Bot no longer cancels other modules' pathing.
+- **Render and misc:** Panic switched off the Aim settings permanently; Presets' Disable Others missed most modules; AutoGG triggered when a target walked away; Flag Check counted joins, respawns and teleports as setbacks; Zoom moved in 20 Hz steps; Performance, Fullbright, No Bob and No Hurt Cam could save their temporary video settings to your options file; Logoff Spot marked players who walked away; Pearl Tracker re-simulated every pearl every frame; Name Protect removed chat colours. **Crosshair** and **Block Selection** can replace the vanilla crosshair and block outline (**Hide Vanilla**).
 
 **New modules**
 
 | Module | What it does |
 |---|---|
-| Auto City | Mines the surround block of a target in a hole, optionally pre-placing a crystal |
-| Hit Crystal | After a sword hit: obsidian, crystal, detonate |
-| Hole Push | Piston plus redstone to push a target out of its hole |
-| Auto Web Fill | Predicts a target's path and webs ahead of it |
-| Elytra Recast | Re-opens the elytra as you land so you keep bouncing |
-| Silent Pearl | Throws a pearl from anywhere in your inventory and puts your slot back |
-| Auto Regear | Places a shulker, refills to set counts, mines it back up |
+| Auto City | Mines the surround block of a target in a hole, optionally placing a crystal first |
+| Hit Crystal | After a sword hit: places obsidian and a crystal, then detonates it |
+| Hole Push | Pushes a target out of its hole with a piston and redstone |
+| Auto Web Fill | Places webs where a target is about to walk |
+| Elytra Recast | Reopens the elytra when you land so you keep gliding |
+| Silent Pearl | Throws a pearl from anywhere in your inventory and switches back |
+| Auto Regear | Places a shulker box, refills items to set counts, then mines the box |
 | Multi Task | Attack or mine while eating or using an item |
-| Chams | See entities through walls in Flat, Textured (outline), Wireframe or Pulse |
+| Chams | Shows entities through walls: Flat, Textured (outline), Wireframe or Pulse |
 | Break ESP | Progress boxes and percentages on blocks being mined |
-| View Model | Move, scale and rotate the items in your hands |
-| Pop Chams | A fading ghost where someone popped a totem |
-| Totem Pop Counter | Counts pops per player (chat, toast, Nametags, TargetHUD) |
-| Stash Finder | Finds dense storage clusters, logs them, toasts and pins a waypoint |
+| View Model | Moves, scales and rotates the items in your hands |
+| Pop Chams | Shows a fading copy of a player where they popped a totem |
+| Totem Pop Counter | Counts totem pops per player (chat, notification, Nametags, Target HUD) |
+| Stash Finder | Finds dense groups of storage blocks, logs them and adds a waypoint |
 | Auto Build Bot | Builds a nether portal, wither, wall, platform, pillar or bridge from your inventory |
-| Silly Aimbot | Your arrows and tridents steer around blocks and mobs and home in on the target |
-| Day Info | HUD: day number, clock, moon phase and a countdown to night or morning |
-| Spawn Info | HUD: world spawn and your bed or anchor, with distance and heading (Nether-aware) |
+| Silly Aimbot | Steers your arrows and tridents around obstacles toward the target |
+| Day Info | HUD: day number, time, moon phase and time until night or morning |
+| Spawn Info | HUD: world spawn and your bed or anchor, with distance and direction (Nether-aware) |
 | Session Stats | HUD: blocks mined and placed, kills, deaths, damage, crafts and XP this session, optionally per hour |
-| Weather Forecast | HUD: exact time until rain or a thunderstorm starts or stops |
+| Weather Forecast | HUD: time until rain or a thunderstorm starts or stops |
 | Mob Caps | HUD: mobs counted against each spawn cap |
-| Ender Chest Preview | HUD: your ender chest contents without opening one |
-| Coords Copier | Copies your position (plain, comma, `/tp` or `/execute`) to the clipboard |
-| Screenshot Helper | Hides the HUD, takes one screenshot or a burst, then restores it |
-| Quick Move | Shift + drag across container slots to move every stack you pass over |
+| Ender Chest Preview | HUD: your ender chest contents |
+| Coords Copier | Copies your position (plain, comma-separated, `/tp` or `/execute`) to the clipboard |
+| Screenshot Helper | Hides the HUD, takes one screenshot or a burst, then shows it again |
+| Quick Move | Shift and drag across container slots to move every stack you pass over |
 | Craft Repeat | Repeats the last recipe-book craft until ingredients or a batch limit run out |
-| Biome Border | Draws fences where the biome changes |
-| Harvest ESP | Highlights ripe crops, nether wart, cocoa, berries and melon/pumpkin fruit |
+| Biome Border | Draws a fence where the biome changes |
+| Harvest ESP | Highlights ripe crops, nether wart, cocoa, berries, melons and pumpkins |
 
-**Upgraded:** Fast Fall's *Ledges* mode (ReverseStep) gains a smooth pull, a *Holes Only* filter and an optional timer boost.
+Fast Fall's *Ledges* mode (formerly ReverseStep) has a smooth pull, a *Holes Only* filter and an optional timer boost.
 
-**Colours** now have saturation, brightness, opacity and a Rainbow/Pulse mode. `.<module> <setting> #RRGGBB` sets one by hex. Configs from 3.2.0 are upgraded automatically.
+**Colours** have saturation, brightness, opacity and a Rainbow or Pulse mode. `.<module> <setting> #RRGGBB` sets one by hex code. Configs from 3.2.0 are upgraded automatically.
 
 <details>
 <summary>What was new in 3.2.0</summary>
