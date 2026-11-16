@@ -229,12 +229,11 @@ public final class ClickGuiScreen extends Screen {
          GeminiMark.draw(graphics, 14, 9, 34, accent, pulse);
       }
 
-      this.text(graphics, "GEMINI", 56, 11, Glass.TEXT);
-      this.text(graphics, "NEXTGEN", 56 + this.font.width("GEMINI ") + 2, 11, accent);
+      this.text(graphics, "Gemini", 56, 11, Glass.TEXT);
       int enabled = Gemini.getInstance().modules().getEnabledModules().size();
       int total = Gemini.getInstance().modules().getModules().size();
       String meta = this.hudEditMode
-         ? "v" + Gemini.VERSION + "  ·  HUD EDIT MODE  ·  drag to move, arrows nudge 1px (Shift 10px), Edit HUD to exit"
+         ? "v" + Gemini.VERSION + "  ·  Editing the HUD: drag to move, arrow keys nudge 1px (Shift: 10px), Edit HUD to finish"
          : "v" + Gemini.VERSION + "  ·  " + Minecraft.getInstance().getFps() + " FPS  ·  " + enabled + "/" + total + " modules active";
       this.text(graphics, meta, 56, 22, this.hudEditMode ? accentB : Glass.TEXT_FAINT);
       this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);

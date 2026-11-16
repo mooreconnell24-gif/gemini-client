@@ -19,9 +19,9 @@ public final class ClickGuiModule extends Module {
       new ModeSetting(
          "Theme",
          "Accent colours of the menus and HUD; Custom uses the Primary and Secondary colours below",
-         "LiquidBounce",
-         "LiquidBounce",
-         "Neon",
+         "Blue",
+         "Blue",
+         "Purple",
          "Twin",
          "Aurora",
          "Ocean",
@@ -59,15 +59,15 @@ public final class ClickGuiModule extends Module {
    private final BooleanSetting categoryTint = this.addSetting(
       new BooleanSetting("Category Tint", "Blend the accent towards the colour of the category you are looking at", false)
    );
-   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Animate opening, scrolling and dropdowns", true));
-   private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glass Glow", "Draw a soft glow and gradient border around the panels", true));
+   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Animate opening, pulses, scrolling and dropdowns", true));
+   private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glass Glow", "Faint glow around the hovered panel in the panel menu", false));
    private final BooleanSetting snapGrid = this.addSetting(new BooleanSetting("Grid Snap", "Snap panels and HUD widgets to an 8-pixel grid", true));
    private final BooleanSetting floatingTooltips = this.addSetting(
       new BooleanSetting("Slide Tooltips", "Show a tooltip card next to the module under the mouse", true)
    );
    private final BooleanSetting dim = this.addSetting(new BooleanSetting("Dim", "Darken the world behind the menu", true));
    private final BooleanSetting blur = this.addSetting(new BooleanSetting("Blur", "Blur the world behind the menu (uses the vanilla menu blur)", true));
-   private final BooleanSetting particles = this.addSetting(new BooleanSetting("Particles", "Draw floating particles behind the menu", true));
+   private final BooleanSetting particles = this.addSetting(new BooleanSetting("Particles", "Draw small drifting dots behind the panel menu", false));
    private final BooleanSetting tooltips = this.addSetting(new BooleanSetting("Tooltips", "Describe the module or setting under the mouse in the footer", true));
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Menu size multiplier", 1.0, 0.5, 1.5, 0.05));
    private final BooleanSetting autoFit = this.addSetting(new BooleanSetting("Auto Fit", "Shrink the menu so every panel fits on screen", true));
@@ -180,8 +180,8 @@ public final class ClickGuiModule extends Module {
 
    public int accentColor() {
       return switch (this.theme.get()) {
-         case "LiquidBounce" -> -16748289;
-         case "Neon" -> -6467875;
+         case "Blue" -> -16748289;
+         case "Purple" -> -6467875;
          case "Ocean" -> -11683841;
          case "Ember" -> -30132;
          case "Violet" -> -4160260;
@@ -202,8 +202,8 @@ public final class ClickGuiModule extends Module {
 
    public int secondaryColor() {
       return switch (this.theme.get()) {
-         case "LiquidBounce" -> -16722689;
-         case "Neon" -> -16718337;
+         case "Blue" -> -16722689;
+         case "Purple" -> -16718337;
          case "Ocean" -> -8614657;
          case "Ember" -> -11444;
          case "Violet" -> -38187;

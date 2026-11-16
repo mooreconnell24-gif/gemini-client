@@ -243,4 +243,24 @@ class ConfigMigrationsTest {
       assertFalse(settings(on, "KillAura").has("Target Box"), "on keeps the new default box");
       assertFalse(settings(on, "KillAura").has("Highlight"));
    }
+
+   @Test
+   void styleValuesGetPlainNames() {
+      JsonObject root = config(10,
+         "HUD", module(true, -1, "Watermark Style", "\"LiquidBounce Pill\""),
+         "ArrayList", module(true, -1, "Colors", "\"Astolfo\""),
+         "ClickGUI", module(true, -1, "Theme", "\"Neon\""));
+      ConfigMigrations.migrate(root);
+      assertEquals("Compact", settings(root, "HUD").get("Watermark Style").getAsString());
+      assertEquals("Pink-Blue Wave", settings(root, "ArrayList").get("Colors").getAsString());
+      assertEquals("Purple", settings(root, "ClickGUI").get("Theme").getAsString());
+   }
+
+   @Test
+   void oldHudListSettingsStillReachThePlainNames() {
+      // A 3.2.0 config: v9 moves the list to the ArrayList widget, then v11 renames the colour mode.
+      JsonObject root = config(8, "HUD", module(true, -1, "Watermark Style", "\"Nextgen Card\""));
+      ConfigMigrations.migrate(root);
+      assertEquals("Card", settings(root, "HUD").get("Watermark Style").getAsString());
+   }
 }

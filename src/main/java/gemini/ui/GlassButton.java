@@ -12,14 +12,17 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Util;
 
 /**
- * A vanilla button drawn as a Gemini glass card. Being a real {@link Button} it keeps vanilla focus handling
- * (Tab, arrow keys, Enter/Space), narration, tooltips and click sounds; only the look is replaced: the card
- * widens slightly and gains an accent glow while hovered or focused, flashes briefly when pressed, and fades to
- * {@link Theme#DISABLED_OPACITY} when inactive. Everything, the switch and the badge included, follows the
- * button's alpha, so the button fades with whatever contains it. The label is ellipsized to the card.
+ * A vanilla button drawn in Gemini's flat style, matching the buttons of the window menu. Being a real
+ * {@link Button} it keeps vanilla focus handling (Tab, arrow keys, Enter/Space), narration, tooltips and click
+ * sounds; only the look is replaced: a flat rounded card that lightens and gains a thin accent outline while
+ * hovered or focused, and fades to {@link Theme#DISABLED_OPACITY} when inactive. Everything, the switch and the
+ * badge included, follows the button's alpha, so the button fades with whatever contains it. The label is
+ * ellipsized to the card.
  *
  * <p>With a {@code switchState} the button is drawn as a labelled on/off switch instead. With a
- * {@link #badge(IntSupplier) badge} a count pill is shown on the right while the count is above zero.
+ * {@link #badge(IntSupplier, int) badge} a count pill is shown on the right while the count is above zero.
+ * {@link #plain()} drops the card altogether for small secondary links: only the label is drawn, dim, and it
+ * brightens while hovered or focused.
  */
 public class GlassButton extends Button {
    private final BooleanSupplier switchState;
@@ -31,7 +34,8 @@ public class GlassButton extends Button {
    private float knob = Float.NaN;
    private long lastFrame;
    private long pressedAt;
-   private int expand = 3;
+   private int expand;
+   private boolean plain;
    private IntSupplier badge;
    private int badgeColor = Glass.ERROR;
 
@@ -48,6 +52,12 @@ public class GlassButton extends Button {
    /** How many pixels the card grows on each side while hovered; 0 for buttons packed tightly in a row. */
    public GlassButton expand(int pixels) {
       this.expand = Math.max(0, pixels);
+      return this;
+   }
+
+   /** Draws only the label, without a card: for small secondary actions that should not compete with the main buttons. */
+   public GlassButton plain() {
+      this.plain = true;
       return this;
    }
 
@@ -98,44 +108,49 @@ public class GlassButton extends Button {
          return;
       }
 
-      float emphasis = this.active ? Theme.emphasis(this.hover, this.pressedAt == 0L ? -1L : now - this.pressedAt) : 0.0F;
+      Font font = Minecraft.getInstance().font;
       int grow = Math.round(this.expand * this.hover);
       int x1 = this.getX() - grow;
       int x2 = this.getRight() + grow;
       int y1 = this.getY();
       int y2 = this.getBottom();
       int accent = Glass.accent();
-      Glass.panel(g, x1, y1, x2, y2, Theme.RADIUS, Glass.surface(emphasis > 0.5F ? 2 : 0), accent, opacity, emphasis);
-      // Accent tick on the left edge that lengthens with the hover animation.
-      int tick = Math.max(1, Math.round((y2 - y1 - 8) * (0.35F + 0.65F * this.hover) / 2.0F));
-      int middle = (y1 + y2) / 2;
-      g.fill(x1 + 3, middle - tick, x1 + 4, middle + tick, Glass.fade(Glass.lerp(accent, Glass.accent2(), this.hover), opacity * (0.45F + 0.55F * this.hover)));
-      Font font = Minecraft.getInstance().font;
-      int color = Glass.fade(Theme.labelColor(this.active, this.hover), opacity);
-      int textY = y1 + (y2 - y1 - Theme.FONT_HEIGHT) / 2;
-      int right = x2 - Theme.SPACE_M;
+      if (!this.plain) {
+         float press = this.pressedAt == 0L || now - this.pressedAt >= Theme.PRESS_MS ? 0.0F : 1.0F - (float)(now - this.pressedAt) / Theme.PRESS_MS;
+         int fill = Glass.lerp(Glass.surface(1), Glass.surface(3), Math.min(1.0F, this.hover * 0.8F + press * 0.4F));
+         Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, 235), opacity));
+         // A faint edge at rest; the accent outline only marks the hovered or focused button.
+         int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, 18), Glass.withAlpha(accent, 120), this.hover);
+         Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(edge, opacity));
+      }
+
+      int color = Glass.fade(this.plain ? Glass.lerp(Glass.TEXT_FAINT, Glass.TEXT, this.active ? this.hover : 0.0F) : Theme.labelColor(this.active, this.hover), opacity);
+      int textY = y1 + (y2 - y1 - Theme.FONT_HEIGHT) / 2 + (this.plain ? 0 : 1);
+      int pad = this.plain ? Theme.SPACE_XS : Theme.SPACE_M;
+      int right = x2 - pad;
       int count = this.badge == null ? 0 : this.badge.getAsInt();
       if (count > 0) {
          String text = count > 99 ? "99+" : Integer.toString(count);
          int bw = font.width(text) + 6;
          int by = y1 + (y2 - y1 - 10) / 2;
-         Glass.roundRect(g, right - bw, by, right, by + 10, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(this.badgeColor, 190), opacity));
+         Glass.roundRect(g, right - bw, by, right, by + 10, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(this.badgeColor, 150), opacity));
          g.text(font, text, right - bw + 3, by + 1, Glass.fade(Glass.TEXT, opacity), false);
          right -= bw + Theme.SPACE_S;
       }
 
       if (this.switchState == null) {
-         int room = right - (x1 + Theme.SPACE_L);
-         String shown = this.fit(font, room);
+         int left = x1 + pad;
+         String shown = this.fit(font, right - left);
          int width = shown == this.label ? this.labelWidth() : font.width(shown);
-         int centre = count > 0 ? (x1 + Theme.SPACE_L + right) / 2 : (x1 + x2) / 2;
+         int centre = count > 0 ? (left + right) / 2 : (x1 + x2) / 2;
          g.text(font, shown, centre - width / 2, textY, color, false);
       } else {
          boolean on = this.switchState.getAsBoolean();
          this.knob = Glass.approach(this.knob, on ? 1.0F : 0.0F, 12.0F, delta);
          int switchX = right - 18;
-         g.text(font, this.fit(font, switchX - Theme.SPACE_S - (x1 + 9)), x1 + 9, textY, color, false);
-         Glass.toggle(g, switchX, y1 + (y2 - y1 - 10) / 2, this.knob, on ? Glass.OK : accent, opacity);
+         int left = x1 + pad;
+         g.text(font, this.fit(font, switchX - Theme.SPACE_S - left), left, textY, color, false);
+         Glass.toggle(g, switchX, y1 + (y2 - y1 - 10) / 2, this.knob, accent, opacity);
       }
    }
 

@@ -223,12 +223,12 @@ public final class HelpScreen extends Screen {
       int y1 = l.panelY();
       int x2 = x1 + l.panelWidth();
       int y2 = y1 + l.panelHeight();
-      Glass.panel(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.surface(0), Glass.accent(), a, 0.2F);
+      Glass.panel(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.surface(0), Glass.accent(), a, 0.0F);
       Glass.gradientBar(g, x1 + Theme.RADIUS_LARGE, y1, x2 - Theme.RADIUS_LARGE, y1 + 1, Glass.fade(Glass.accent(), a), Glass.fade(Glass.accent2(), a));
       String version = "dev".equals(Gemini.VERSION) ? "dev build" : "v" + Gemini.VERSION;
       int versionWidth = this.font.width(version);
       Controls.text(g, this.font, Controls.fit(this.font, "Gemini guide", l.panelWidth() - versionWidth - 3 * Theme.SPACE_L - 8), x1 + Theme.SPACE_L, y1 + 8, Glass.TEXT, a);
-      chip(g, x2 - Theme.SPACE_L - versionWidth - 8, y1 + 6, version, Glass.accent2(), a);
+      Controls.text(g, this.font, version, x2 - Theme.SPACE_L - versionWidth, y1 + 8, Glass.TEXT_FAINT, a);
       this.extractTabs(g, mouseX, mouseY, a);
       this.extractDocument(g, a);
       if (this.tab == Tab.WHATS_NEW || this.tab == Tab.COMMANDS) {
@@ -237,12 +237,6 @@ public final class HelpScreen extends Screen {
       }
 
       super.extractRenderState(g, mouseX, mouseY, partialTick);
-   }
-
-   private static void chip(GuiGraphicsExtractor g, int x, int y, String text, int color, float opacity) {
-      int w = Minecraft.getInstance().font.width(text) + 8;
-      Glass.roundRect(g, x, y, x + w, y + 11, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(color, 48), opacity));
-      Controls.text(g, Minecraft.getInstance().font, text, x + 4, y + 2, color, opacity);
    }
 
    private void extractTabs(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {

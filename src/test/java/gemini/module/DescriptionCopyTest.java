@@ -89,13 +89,13 @@ class DescriptionCopyTest {
       String checked = text;
       for (String word : exempt) {
          if (!word.isBlank()) {
-            checked = checked.replaceAll("(?<![\\w-])" + Pattern.quote(word) + "(?![\\w-])", " ");
+            checked = checked.replaceAll("(?<![\\w])" + Pattern.quote(word) + "(?![\\w])", " ");
          }
       }
 
       String lower = checked.toLowerCase(Locale.ROOT);
       for (String word : BANNED) {
-         if (Pattern.compile("(?<![\\w-])" + Pattern.quote(word) + "(?![\\w-])").matcher(lower).find()) {
+         if (Pattern.compile("(?<![\\w])" + Pattern.quote(word) + "(?![\\w])").matcher(lower).find()) {
             return "\"" + word + "\"";
          }
       }

@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
  * {@code modules} object and must tolerate anything in it: configs are hand-edited.
  */
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 10;
+   public static final int CURRENT_VERSION = 11;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -31,7 +31,8 @@ public final class ConfigMigrations {
       new Step(7, ConfigMigrations::toV7),
       new Step(8, ConfigMigrations::toV8),
       new Step(9, ConfigMigrations::toV9),
-      new Step(10, ConfigMigrations::toV10)
+      new Step(10, ConfigMigrations::toV10),
+      new Step(11, ConfigMigrations::toV11)
    );
    /** The HUD module's module-list settings that moved to the ArrayList widget in version 9. */
    static final List<String> OLD_LIST_SETTINGS = List.of(
@@ -84,6 +85,16 @@ public final class ConfigMigrations {
     * options move over (renamed where the widget names them differently), and the old settings leave the HUD module.
     * A config that already has an ArrayList widget keeps it as it is, so nobody ends up with two lists.
     */
+   /** Plain names for style values: the watermark styles, the ArrayList "Astolfo" colours and two menu themes. */
+   private static void toV11(JsonObject modules, List<String> notes) {
+      remapMode(modules, "HUD", "Watermark Style", Set.of("Nextgen Card"), "Card", notes);
+      remapMode(modules, "HUD", "Watermark Style", Set.of("LiquidBounce Pill"), "Compact", notes);
+      remapMode(modules, "HUD", "Watermark Style", Set.of("Minimal"), "Text", notes);
+      remapMode(modules, "ArrayList", "Colors", Set.of("Astolfo"), "Pink-Blue Wave", notes);
+      remapMode(modules, "ClickGUI", "Theme", Set.of("LiquidBounce"), "Blue", notes);
+      remapMode(modules, "ClickGUI", "Theme", Set.of("Neon"), "Purple", notes);
+   }
+
    /**
     * ProjectileAimbot became "Bow Aimbot" (its key, switch and settings move over unless a Bow Aimbot entry already
     * exists), and KillAura's Priority takes the shared targeting modes: Distance → Closest, Health → Lowest Health,

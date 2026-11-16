@@ -40,7 +40,16 @@ public final class ArrayListHud extends HudWidget {
    );
    private final ModeSetting colors = this.addSetting(
       new ModeSetting(
-         "Colors", "How the rows are coloured", "Rainbow", "Theme Gradient", "Accent", "Category", "Rainbow", "Astolfo", "Wave", "Static Gradient"
+         "Colors",
+         "How the rows are coloured: the theme accent, a gradient between the two theme colours, per category, or a moving colour",
+         "Accent",
+         "Theme Gradient",
+         "Accent",
+         "Category",
+         "Rainbow",
+         "Pink-Blue Wave",
+         "Wave",
+         "Static Gradient"
       )
    );
    private final ColorSetting gradientStart = this.addSetting(
@@ -51,20 +60,20 @@ public final class ArrayListHud extends HudWidget {
    );
    private final NumberSetting colorSpeed = this.addSetting(
       new NumberSetting("Color Speed", "How fast cycling colours change", 1.0, 0.1, 4.0, 0.1)
-         .showIf(() -> this.colors.is("Rainbow") || this.colors.is("Astolfo") || this.colors.is("Wave"))
+         .showIf(this::movingColors)
    );
    private final NumberSetting colorSpread = this.addSetting(
       new NumberSetting("Color Spread", "How far the colour shifts from one row to the next", 0.05, 0.0, 0.25, 0.01)
-         .showIf(() -> this.colors.is("Rainbow") || this.colors.is("Astolfo") || this.colors.is("Wave"))
+         .showIf(this::movingColors)
    );
    private final ModeSetting sideBar = this.addSetting(
       new ModeSetting("Side Bar", "Coloured bar beside the rows; Auto puts it on the screen edge the list is anchored to", "Auto", "Auto", "Left", "Right", "None")
    );
-   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Opacity of the background behind the rows", 0.65, 0.05, 1.0, 0.05));
+   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Opacity of the background behind the rows", 0.55, 0.05, 1.0, 0.05));
    private final BooleanSetting blur = this.addSetting(
       new BooleanSetting("Blur", "Use a denser background with a light sheen behind the rows (the world behind is not actually blurred)", false)
    );
-   private final BooleanSetting outline = this.addSetting(new BooleanSetting("Outline", "Thin coloured line along the inner edge of the list", true));
+   private final BooleanSetting outline = this.addSetting(new BooleanSetting("Outline", "Thin coloured line along the inner edge of the list", false));
    private final BooleanSetting showInfo = this.addSetting(new BooleanSetting("Show Info", "Show a module's mode or status after its name", true));
    private final ModeSetting tagStyle = this.addSetting(
       new ModeSetting("Tag Style", "How the info after the name is written", "Plain", "Plain", "Brackets [Info]", "Dot · Info", "Angle <Info>").showIf(this.showInfo::get)
@@ -110,6 +119,11 @@ public final class ArrayListHud extends HudWidget {
    protected boolean hasBackground() {
       // The rows draw their own tint; the widget card would box the whole list in.
       return false;
+   }
+
+   /** The colour modes that change over time, which the speed and spread settings apply to. */
+   private boolean movingColors() {
+      return this.colors.is("Rainbow") || this.colors.is("Pink-Blue Wave") || this.colors.is("Wave");
    }
 
    private boolean rowBackground() {
@@ -224,8 +238,6 @@ public final class ArrayListHud extends HudWidget {
                if (frosted) {
                   g.fill(left, top, right, bottomY, Glass.withAlpha(0xFFFFFF, Math.round(16.0F * anim)));
                   g.fill(left, top, right, top + 1, Glass.withAlpha(0xFFFFFF, Math.round(22.0F * anim)));
-               } else {
-                  g.fill(left, top, right, Math.min(bottomY, top + 3), Glass.withAlpha(color, Math.round(14.0F * anim)));
                }
             }
 
