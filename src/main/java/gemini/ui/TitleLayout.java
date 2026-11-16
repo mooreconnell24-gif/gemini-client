@@ -3,7 +3,7 @@ package gemini.ui;
 /**
  * Where everything on {@link GeminiTitleScreen} goes for a given GUI size. Pure arithmetic, so it can be tested
  * without a running game: the navigation buttons use one column when the screen is tall enough and two columns
- * of four otherwise, and always stay between the header and the footer row.
+ * of five otherwise, and always stay between the header and the footer row.
  */
 public record TitleLayout(
    int width,
@@ -19,7 +19,7 @@ public record TitleLayout(
    int footerY,
    int statusY
 ) {
-   public static final int BUTTONS = 8;
+   public static final int BUTTONS = 10;
    public static final int STATUS_HEIGHT = 16;
    public static final int FOOTER_HEIGHT = 16;
    private static final int COLUMN_GAP = 6;
@@ -33,8 +33,8 @@ public record TitleLayout(
       int top = headerY + logoSize + (compact ? 8 : 16);
       int bottom = footerY - 6;
       int available = Math.max(0, bottom - top);
-      int buttonHeight = 20;
-      int gap = 4;
+      int buttonHeight = Theme.BUTTON_HEIGHT;
+      int gap = Theme.SPACE_S;
       int columns = 1;
       int rows = BUTTONS;
       if (available < rows * buttonHeight + (rows - 1) * gap) {
@@ -42,7 +42,7 @@ public record TitleLayout(
          rows = BUTTONS / 2;
          if (available < rows * buttonHeight + (rows - 1) * gap) {
             // Very short windows: squeeze the rows rather than run into the footer.
-            gap = 2;
+            gap = Theme.SPACE_XS;
             buttonHeight = Math.max(10, (available - (rows - 1) * gap) / rows);
          }
       }

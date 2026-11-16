@@ -322,13 +322,14 @@ public abstract class DashboardPage {
          default -> Glass.surface(3);
       };
       int fill = !enabled ? Glass.withAlpha(Glass.surface(2), 200) : Glass.withAlpha(base, tone == TONE_NEUTRAL ? (over ? 255 : 230) : (over ? 170 : 105));
-      Glass.roundRect(g, x, y, x + w, y + h, 3, this.c(fill));
+      Glass.roundRect(g, x, y, x + w, y + h, gemini.ui.Theme.RADIUS_SMALL, this.c(fill));
       if (enabled && over) {
-         Glass.roundOutline(g, x, y, x + w, y + h, 3, this.c(Glass.lerp(base, 0xFFFFFFFF, 0.4F), 170));
+         Glass.roundOutline(g, x, y, x + w, y + h, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.lerp(base, 0xFFFFFFFF, 0.4F), 170));
       }
 
       String shown = Controls.fit(this.font(), label, w - 6);
-      int color = !enabled ? Glass.TEXT_FAINT : (over ? Glass.TEXT : Glass.lerp(Glass.TEXT, Glass.TEXT_DIM, 0.25F));
+      // The same hover/disabled label rule as GlassButton and the panel rows.
+      int color = gemini.ui.Theme.labelColor(enabled, over ? 1.0F : 0.6F);
       this.text(g, shown, x + (w - this.font().width(shown)) / 2, y + (h - 8) / 2 + 1, color);
       Click action = enabled ? click : (b, mx, my, d) -> this.host.notice(disabledReason);
       if (clip) {
@@ -352,7 +353,7 @@ public abstract class DashboardPage {
    /** A small pill with text, e.g. a key name or a status; returns its width. */
    protected int chip(GuiGraphicsExtractor g, int x, int y, String label, int color, int textColor) {
       int w = this.font().width(label) + 8;
-      Glass.roundRect(g, x, y, x + w, y + 11, 3, this.c(color));
+      Glass.roundRect(g, x, y, x + w, y + 11, gemini.ui.Theme.RADIUS_SMALL, this.c(color));
       this.text(g, label, x + 4, y + 2, textColor);
       return w;
    }

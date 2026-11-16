@@ -46,6 +46,8 @@ public final class HudOverlay {
    private static final long TOAST_IN_MS = 360L;
    private static final long TOAST_OUT_MS = 260L;
    private static final int MAX_TOASTS = 5;
+   /** Widest a toast grows before its text is ellipsized. */
+   private static final int TOAST_MAX_W = 280;
    private static final ArrayDeque<HudOverlay.Toast> TOASTS = new ArrayDeque<>();
    private final ModuleManager modules;
    private long lastFrameMs = Util.getMillis();
@@ -222,7 +224,12 @@ public final class HudOverlay {
             }
 
             if (toast.cardW == 0) {
-               toast.cardW = Math.max(140, Math.max(font.width(toast.title) + font.width(toast.severity.badge) + 44, font.width(toast.body) + 34));
+               int natural = Math.max(font.width(toast.title) + font.width(toast.severity.badge) + 44, font.width(toast.body) + 34);
+               // Never wider than the screen (minus a margin) or a comfortable reading width; longer text is cut with "..".
+               toast.cardW = Math.max(Math.min(140, width - 12), Math.min(natural, Math.min(TOAST_MAX_W, width - 12)));
+               int badgeW = font.width(toast.severity.badge) + 8;
+               toast.shownTitle = Theme.fit(toast.title, toast.cardW - 26 - badgeW - 9, font::width);
+               toast.shownBody = Theme.fit(toast.body, toast.cardW - 26 - 6, font::width);
             }
 
             float slide = toastSlide(age, toast.durationMs);
@@ -245,15 +252,18 @@ public final class HudOverlay {
       float glow = urgent ? 0.3F + 0.4F * Glass.pulse(900L) : 0.0F;
       Glass.panel(g, x, y, x + cardW, y + TOAST_H, Glass.RADIUS, this.surface, status, visible, glow);
       int textAlpha = Math.round(255.0F * visible);
-      Glass.roundRect(g, x + 5, y + 5, x + 21, y + 21, 3, Glass.withAlpha(status, Math.round(60.0F * visible)));
-      Glass.roundOutline(g, x + 5, y + 5, x + 21, y + 21, 3, Glass.withAlpha(status, Math.round(170.0F * visible)));
-      g.centeredText(font, toast.severity.glyph, x + 13, y + 9, Glass.withAlpha(status, textAlpha));
+      Glass.roundRect(g, x + 5, y + 5, x + 21, y + 21, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(60.0F * visible)));
+      Glass.roundOutline(g, x + 5, y + 5, x + 21, y + 21, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(170.0F * visible)));
       int badgeW = font.width(toast.severity.badge) + 8;
       int pillX = x + cardW - badgeW - 5;
-      Glass.roundRect(g, pillX, y + 4, pillX + badgeW, y + 13, 3, Glass.withAlpha(status, Math.round(48.0F * visible)));
-      g.text(font, toast.severity.badge, pillX + 4, y + 5, Glass.withAlpha(status, textAlpha), false);
-      g.text(font, toast.title, x + 26, y + 5, Glass.withAlpha(Glass.TEXT, textAlpha), false);
-      g.text(font, toast.body, x + 26, y + 15, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
+      Glass.roundRect(g, pillX, y + 4, pillX + badgeW, y + 13, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(48.0F * visible)));
+      if (textAlpha >= 10) {
+         // The font treats a near-zero alpha as opaque, so text is skipped while the card is all but invisible.
+         g.centeredText(font, toast.severity.glyph, x + 13, y + 9, Glass.withAlpha(status, textAlpha));
+         g.text(font, toast.severity.badge, pillX + 4, y + 5, Glass.withAlpha(status, textAlpha), false);
+         g.text(font, toast.shownTitle, x + 26, y + 5, Glass.withAlpha(Glass.TEXT, textAlpha), false);
+         g.text(font, toast.shownBody, x + 26, y + 15, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
+      }
       float progress = 1.0F - Mth.clamp((float)age / toast.durationMs, 0.0F, 1.0F);
       int barW = Math.round((cardW - 2 * Glass.RADIUS) * progress);
       if (barW > 0) {
@@ -321,8 +331,7 @@ public final class HudOverlay {
          int textX = hasLogo ? 28 : 8;
          int boxW = textX + Math.max(font.width("GEMINI NEXTGEN"), font.width(metaLine)) + 10;
          int boxH = 25;
-         Glass.panel(graphics, 4, 4, 4 + boxW, 4 + boxH, Glass.RADIUS, this.surface, accent, 1.0F, 0.15F);
-         Glass.gradientBar(graphics, 4 + Glass.RADIUS, 4, 4 + boxW - Glass.RADIUS, 6, accent, accent2);
+         Glass.hudCard(graphics, 4, 4, 4 + boxW, 4 + boxH, this.surface, accent, accent2, 1.0F);
          if (hasLogo) {
             GeminiMark.draw(graphics, 6, 7, 18, accent, 1.0F);
          }
@@ -552,6 +561,9 @@ public final class HudOverlay {
       /** Animated vertical position; NaN until first drawn. */
       float stackY = Float.NaN;
       int cardW;
+      /** Title and body ellipsized to the card, worked out once with the width. */
+      String shownTitle;
+      String shownBody;
 
       Toast(String title, String body, Severity severity, long createdAt, long durationMs) {
          this.title = title;

@@ -42,6 +42,44 @@ public final class KeybindConflicts {
       return conflicts;
    }
 
+   /**
+    * Keys that conflict in {@code after} in a way they did not in {@code before}: a key that was clean and now has
+    * several users, or a conflicting key that gained a user. Used after a config or profile load to announce only
+    * the clashes that load brought in, not the ones the player already lived with.
+    */
+   public static Map<Integer, List<String>> introduced(Map<String, Integer> before, Map<String, Integer> after) {
+      Map<Integer, List<String>> was = find(before);
+      Map<Integer, List<String>> now = find(after);
+      Map<Integer, List<String>> fresh = new LinkedHashMap<>();
+      for (Entry<Integer, List<String>> entry : now.entrySet()) {
+         List<String> previous = was.get(entry.getKey());
+         if (previous == null || !previous.containsAll(entry.getValue())) {
+            fresh.put(entry.getKey(), entry.getValue());
+         }
+      }
+
+      return fresh;
+   }
+
+   /**
+    * How many keys conflict with at least one module among their users. Vanilla controls in the snapshot carry
+    * {@code controlsSuffix}; two vanilla controls sharing a key are vanilla's business and are not counted. This
+    * is the one number the title status bar, the pause dock, the dashboard badge and the session toast all show.
+    */
+   public static int moduleConflictCount(Map<String, Integer> snapshot, String controlsSuffix) {
+      int count = 0;
+      for (List<String> names : find(snapshot).values()) {
+         for (String name : names) {
+            if (controlsSuffix == null || controlsSuffix.isEmpty() || !name.endsWith(controlsSuffix)) {
+               count++;
+               break;
+            }
+         }
+      }
+
+      return count;
+   }
+
    public static List<String> others(Map<String, Integer> bindings, String self, int key) {
       List<String> clashes = new ArrayList<>();
       if (isBound(key)) {

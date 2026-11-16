@@ -927,6 +927,10 @@ public final class ClickGuiScreen extends Screen {
             KeyMapping.resetMapping();
             this.minecraft.options.save();
             Gemini.getInstance().config().save();
+            String clash = gemini.input.BindWarnings.afterMenuKey(Gemini.getInstance().modules());
+            if (clash != null) {
+               this.flash(clash);
+            }
          }
 
          this.bindingMenu = false;
@@ -935,18 +939,24 @@ public final class ClickGuiScreen extends Screen {
          if (key != Keys.ESCAPE) {
             if (key != Keys.DELETE && key != Keys.BACKSPACE) {
                this.bindingModule.setKeybind(key);
-               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.bindingModule, key);
+               String clash = gemini.input.BindWarnings.afterBind(Gemini.getInstance().modules(), this.bindingModule, key);
                if (clash != null) {
                   this.flash(clash);
                }
             } else {
                this.bindingModule.setKeybind(-1);
+               gemini.input.BindWarnings.invalidate();
             }
 
             Gemini.getInstance().config().save();
          }
 
          this.bindingModule = null;
+         return true;
+      }
+
+      if (GeminiKeys.opensPalette(event) && this.draggingWidget == null) {
+         gemini.ui.palette.PaletteScreen.open(this.minecraft);
          return true;
       }
 

@@ -257,11 +257,8 @@ public abstract class HudWidget extends Module {
             hud.graphics.pose().scale(s, s);
             if (this.hasBackground()) {
                // The shared card: dark glass, rounded corners, a thin accent border and an accent-to-secondary top line.
-               Glass.panel(hud.graphics, 0, 0, w, h, Glass.RADIUS, hud.surface, hud.accent, 0.94F, 0.0F);
-               Glass.roundOutline(hud.graphics, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(hud.accent, 96));
-               if (w > 2 * Glass.RADIUS + 2) {
-                  Glass.gradientBar(hud.graphics, Glass.RADIUS, 0, w - Glass.RADIUS, 1, Glass.withAlpha(hud.accent, 200), Glass.withAlpha(hud.accent2, 200));
-               }
+               // One border, not the panel's plus a second one on top (that doubled the border's alpha).
+               Glass.hudCard(hud.graphics, 0, 0, w, h, hud.surface, hud.accent, hud.accent2, 1.0F);
             }
 
             this.paint(hud, w, h);

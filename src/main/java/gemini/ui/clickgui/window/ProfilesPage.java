@@ -1,6 +1,5 @@
 package gemini.ui.clickgui.window;
 
-import com.google.gson.JsonObject;
 import gemini.config.ConfigManager;
 import gemini.config.JsonFiles;
 import gemini.config.ProfileBundle;
@@ -36,6 +35,9 @@ public final class ProfilesPage extends DashboardPage {
    private String confirmKey;
    private long confirmUntil;
    private String selected;
+   /** A share code or pasted profile waiting for the player to save or apply it, with what it would change. */
+   private ConfigManager.ImportPreview pending;
+   private String pendingSource;
 
    public ProfilesPage(Host host) {
       super(host);
@@ -229,21 +231,68 @@ public final class ProfilesPage extends DashboardPage {
          return;
       }
 
+      this.previewClipboard(id);
+   }
+
+   /**
+    * Reads a share code or profile JSON from the clipboard and shows what it would change; nothing is stored or
+    * applied until Save or Apply is pressed on the preview.
+    */
+   private void previewClipboard(String fallbackName) {
+      ConfigManager config = config();
+      if (config == null) {
+         return;
+      }
+
       String text = Controls.clipboard();
       if (text.isBlank()) {
-         this.report("Import failed", "the clipboard is empty", HudOverlay.Severity.ERROR);
+         this.report("Import failed", "the clipboard is empty; copy a share code (gemini:...) first", HudOverlay.Severity.ERROR);
          return;
       }
 
       try {
-         JsonObject document = JsonFiles.parse(text);
-         int modules = config.importProfile(id, document);
-         this.selected = id;
-         this.report("Imported " + id, modules + " modules; press Load to apply", HudOverlay.Severity.SUCCESS);
+         ConfigManager.ImportPreview preview = config.previewImport(text);
+         this.pending = preview;
+         this.pendingSource = gemini.config.ShareCode.looksLikeCode(text) ? "share code" : "pasted profile";
+         String name = preview.suggestedName() != null ? preview.suggestedName() : fallbackName;
+         this.shareName.setText(name == null ? "imported" : name);
+         this.host.notice("Preview ready: " + preview.diff().summary());
+      } catch (ProfileBundle.FormatException e) {
+         this.pending = null;
+         this.report("Import refused", e.getMessage(), HudOverlay.Severity.ERROR);
+      }
+   }
+
+   private void copyShareCode() {
+      ConfigManager config = config();
+      String id = this.shareId();
+      if (config != null && id != null) {
+         String code = config.shareCode(id);
+         Controls.setClipboard(code);
+         this.report("Share code copied", code.length() + " characters · paste it with Paste share code or .config import code", HudOverlay.Severity.SUCCESS);
+      }
+   }
+
+   private void commitPending(boolean apply) {
+      ConfigManager config = config();
+      ConfigManager.ImportPreview preview = this.pending;
+      String id = this.shareId();
+      if (config == null || preview == null || id == null) {
+         return;
+      }
+
+      if (config.profiles().contains(id) && !this.confirmed("import:" + id)) {
+         this.host.notice("A profile named " + id + " exists. Click again to replace it");
+         return;
+      }
+
+      try {
+         String stored = apply ? config.applyImport(id, preview) : config.storeImport(id, preview);
+         this.selected = stored;
+         this.pending = null;
+         this.report(apply ? "Imported and applied" : "Imported " + stored, apply ? stored : "press Load to apply it", HudOverlay.Severity.SUCCESS);
       } catch (ProfileBundle.FormatException e) {
          this.report("Import failed", e.getMessage(), HudOverlay.Severity.ERROR);
-      } catch (RuntimeException e) {
-         this.report("Import failed", "the clipboard does not hold a Gemini profile", HudOverlay.Severity.ERROR);
       }
 
       this.refreshSoon();
@@ -344,7 +393,7 @@ public final class ProfilesPage extends DashboardPage {
    private int contentHeight(int inner) {
       int save = 44;
       int profiles = 22 + Math.max(1, this.entries.size()) * (ROW_H + 3);
-      int share = 62 + (this.exports.isEmpty() ? 0 : 14 + this.exports.size() * 16);
+      int share = 80 + this.previewHeight() + (this.exports.isEmpty() ? 0 : 14 + this.exports.size() * 16);
       Presets presets = presets();
       int presetRows = 0;
       if (presets != null && setting(presets, "Preset") instanceof ModeSetting pack) {
@@ -452,8 +501,8 @@ public final class ProfilesPage extends DashboardPage {
    }
 
    private int drawShare(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY) {
-      int h = 62 + (this.exports.isEmpty() ? 0 : 14 + this.exports.size() * 16);
-      this.section(g, x, y, w, h, "Export & import", "share your settings as a file or text");
+      int h = 80 + this.previewHeight() + (this.exports.isEmpty() ? 0 : 14 + this.exports.size() * 16);
+      this.section(g, x, y, w, h, "Export & import", "share your settings as a code, a file or text");
       int fy = y + 22;
       this.text(g, "Name", x + 8, fy + 3, Glass.TEXT_DIM);
       this.field(g, this.shareName, x + 38, fy, w - 46, "Export or import name...", mouseX, mouseY, true);
@@ -465,9 +514,21 @@ public final class ProfilesPage extends DashboardPage {
       bx += this.button(g, bx, by, this.buttonWidth(labels[1]), 14, labels[1], mouseX, mouseY, TONE_NEUTRAL, null,
          "Copies your current settings as text to paste anywhere", true, (b, mx, my, d) -> this.exportClipboard()) + 4;
       this.button(g, bx, by, this.buttonWidth(labels[2]), 14, labels[2], mouseX, mouseY, TONE_NEUTRAL, null,
-         "Stores a profile copied from someone else under the name above; Load applies it", true, (b, mx, my, d) -> this.importClipboard());
+         "Reads profile JSON copied from someone else and previews it before saving", true, (b, mx, my, d) -> this.importClipboard());
+      int cy = by + 18;
+      String[] codeLabels = {"Copy share code", "Paste share code"};
+      int cx = x + 8;
+      cx += this.button(g, cx, cy, this.buttonWidth(codeLabels[0]), 14, codeLabels[0], mouseX, mouseY, TONE_ACCENT, null,
+         "Copies your settings as one line starting with gemini: (no waypoints, home or panel layout)", true, (b, mx, my, d) -> this.copyShareCode()) + 4;
+      this.button(g, cx, cy, this.buttonWidth(codeLabels[1]), 14, codeLabels[1], mouseX, mouseY, TONE_NEUTRAL, null,
+         "Reads a share code from the clipboard and shows what it would change before you save or apply it", true,
+         (b, mx, my, d) -> this.previewClipboard(ConfigManager.profileId(this.shareName.text())));
+      if (this.pending != null) {
+         this.drawPreview(g, x + 6, cy + 20, w - 12, mouseX, mouseY);
+      }
+
       if (!this.exports.isEmpty()) {
-         int ry = y + 62;
+         int ry = y + 80 + this.previewHeight();
          this.text(g, "Files in gemini_exports", x + 8, ry, Glass.TEXT_FAINT);
          ry += 12;
          for (String file : this.exports) {
@@ -481,6 +542,74 @@ public final class ProfilesPage extends DashboardPage {
       }
 
       return y + h;
+   }
+
+   private static final int PREVIEW_LINE = 11;
+
+   /** Lines of the import preview below its title (0 when there is no pending import). */
+   private int previewLines() {
+      if (this.pending == null) {
+         return 0;
+      }
+
+      gemini.config.ProfileDiff diff = this.pending.diff();
+      int lines = 1;
+      lines += diff.switchedOn().isEmpty() ? 0 : 1;
+      lines += diff.switchedOff().isEmpty() ? 0 : 1;
+      lines += diff.rebound().isEmpty() ? 0 : 1;
+      lines += diff.unknown().isEmpty() ? 0 : 1;
+      return lines;
+   }
+
+   private int previewHeight() {
+      return this.pending == null ? 0 : 18 + this.previewLines() * PREVIEW_LINE + 22;
+   }
+
+   private void drawPreview(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY) {
+      gemini.config.ProfileDiff diff = this.pending.diff();
+      int h = this.previewHeight() - 4;
+      Glass.roundRect(g, x, y, x + w, y + h, Glass.RADIUS, this.c(Glass.withAlpha(Glass.surface(3), 235)));
+      Glass.roundOutline(g, x, y, x + w, y + h, Glass.RADIUS, this.c(Glass.withAlpha(Glass.INFO, 150)));
+      String id = ConfigManager.profileId(this.shareName.text());
+      this.textFit(g, "Preview of the " + this.pendingSource + (id == null ? "" : " · saves as " + id), x + 6, y + 5, w - 12, Glass.INFO);
+      int ly = y + 18;
+      this.textFit(g, (diff.empty() ? "" : "Loading it changes: ") + diff.summary(), x + 6, ly, w - 12, Glass.TEXT);
+      ly += PREVIEW_LINE;
+      if (!diff.switchedOn().isEmpty()) {
+         this.textFit(g, "On: " + gemini.config.ProfileDiff.names(diff.switchedOn(), 12), x + 10, ly, w - 16, Glass.OK);
+         ly += PREVIEW_LINE;
+      }
+
+      if (!diff.switchedOff().isEmpty()) {
+         this.textFit(g, "Off: " + gemini.config.ProfileDiff.names(diff.switchedOff(), 12), x + 10, ly, w - 16, Glass.TEXT_DIM);
+         ly += PREVIEW_LINE;
+      }
+
+      if (!diff.rebound().isEmpty()) {
+         this.textFit(g, "Key binds: " + gemini.config.ProfileDiff.names(diff.rebound(), 12), x + 10, ly, w - 16, Glass.TEXT_DIM);
+         ly += PREVIEW_LINE;
+      }
+
+      if (!diff.unknown().isEmpty()) {
+         this.textFit(g, "Skipped (not in this build): " + gemini.config.ProfileDiff.names(diff.unknown(), 8), x + 10, ly, w - 16, Glass.WARN);
+         ly += PREVIEW_LINE;
+      }
+
+      int by = ly + 3;
+      boolean replace = id != null && this.entries.stream().anyMatch(e -> e.name().equals(id));
+      String saveLabel = this.confirming("import:" + id) ? "Replace?" : "Save as profile";
+      String applyLabel = this.confirming("import:" + id) ? "Replace & apply?" : "Save & apply";
+      String noName = id == null ? "Type a name for the profile above first" : null;
+      int bx = x + 6;
+      bx += this.button(g, bx, by, this.buttonWidth(saveLabel), 14, saveLabel, mouseX, mouseY, TONE_NEUTRAL, noName,
+         replace ? "Replaces the saved profile " + id + "; Load applies it later" : "Stores it as a profile; Load applies it later", true,
+         (b, mx, my, d) -> this.commitPending(false)) + 4;
+      bx += this.button(g, bx, by, this.buttonWidth(applyLabel), 14, applyLabel, mouseX, mouseY, TONE_ACCENT, noName,
+         "Stores it and applies it now (your waypoints, home and panel layout are kept)", true, (b, mx, my, d) -> this.commitPending(true)) + 4;
+      this.button(g, bx, by, this.buttonWidth("Discard"), 14, "Discard", mouseX, mouseY, TONE_DANGER, null, "Forget this import", true, (b, mx, my, d) -> {
+         this.pending = null;
+         this.host.notice("Import discarded");
+      });
    }
 
    /** How many rows the preset buttons wrap onto at this width. */
