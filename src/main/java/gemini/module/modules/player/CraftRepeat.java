@@ -31,9 +31,9 @@ public final class CraftRepeat extends Module {
       new BooleanSetting("Full Stacks", "Fill the grid with as many sets of ingredients as fit, like shift-clicking the recipe", true)
    );
    private final NumberSetting limit = this.addSetting(
-      new NumberSetting("Batch Limit", "Stop after this many batches (0: until the ingredients run out)", 0.0, 0.0, 64.0, 1.0)
+      new NumberSetting("Batch Limit", "Stop after this many batches (0 = until the ingredients run out)", 0.0, 0.0, 64.0, 1.0)
    );
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between the module's own clicks", 1.0, 0.0, 10.0, 1.0));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between clicks", 1.0, 0.0, 10.0, 1.0));
    private final CraftCycle cycle = new CraftCycle();
    private final InfoText infoText = new InfoText();
    private RecipeDisplayId recipe;
@@ -41,7 +41,7 @@ public final class CraftRepeat extends Module {
    private boolean sending;
 
    public CraftRepeat() {
-      super("Craft Repeat", "Repeat the last recipe-book recipe until the ingredients run out, taking each result for you.", Category.PLAYER);
+      super("Craft Repeat", "Crafts the last recipe-book recipe again and again until the ingredients run out, taking each result for you.", Category.PLAYER);
    }
 
    @Override

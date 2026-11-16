@@ -9,11 +9,11 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class NoSlowModule extends Module {
    private final NumberSetting strength = this.addSetting(
-      new NumberSetting("Strength", "How much of the item-use slowdown is removed (%)", 100.0, 10.0, 100.0, 5.0)
+      new NumberSetting("Strength", "How much of the slowdown is removed (percent)", 100.0, 10.0, 100.0, 5.0)
    );
 
    public NoSlowModule() {
-      super("NoSlow", "Remove the slowdown from eating, drinking and blocking.", Category.MOVEMENT);
+      super("NoSlow", "Removes the slowdown from eating, drinking and blocking.", Category.MOVEMENT);
    }
 
    @Override

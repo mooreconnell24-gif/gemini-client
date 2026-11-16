@@ -18,14 +18,14 @@ import net.minecraft.world.effect.MobEffects;
 
 public final class PotionSpoof extends Module {
    private final Map<Holder<MobEffect>, BooleanSetting> effects = new LinkedHashMap<>();
-   private final NumberSetting level = this.addSetting(new NumberSetting("Level", "Strength of the faked effects", 1.0, 1.0, 5.0, 1.0));
+   private final NumberSetting level = this.addSetting(new NumberSetting("Level", "Strength of the effects", 1.0, 1.0, 5.0, 1.0));
 
    public PotionSpoof() {
-      super("Potion Spoof", "Apply helpful potion effects on your client.", Category.PLAYER);
+      super("Potion Spoof", "Gives you helpful potion effects that only your game sees.", Category.PLAYER);
       this.add("Night Vision", "See in the dark", MobEffects.NIGHT_VISION, true);
-      this.add("Water Breathing", "Show the underwater breathing effect", MobEffects.WATER_BREATHING, false);
-      this.add("Fire Resistance", "Show the fire resistance effect", MobEffects.FIRE_RESISTANCE, false);
-      this.add("Conduit Power", "Clear underwater vision", MobEffects.CONDUIT_POWER, false);
+      this.add("Water Breathing", "Breathe under water (only your game sees it)", MobEffects.WATER_BREATHING, false);
+      this.add("Fire Resistance", "Show the fire resistance effect (only your game sees it)", MobEffects.FIRE_RESISTANCE, false);
+      this.add("Conduit Power", "See clearly under water", MobEffects.CONDUIT_POWER, false);
       this.add("Dolphins Grace", "Swim quickly", MobEffects.DOLPHINS_GRACE, false);
       this.add("Haste", "Mine faster on the client", MobEffects.HASTE, false);
       this.add("Speed", "Move faster on the client", MobEffects.SPEED, false);

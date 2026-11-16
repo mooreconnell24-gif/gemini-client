@@ -13,19 +13,19 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 public final class EntityCulling extends Module {
    public static EntityCulling instance;
    private final BooleanSetting wallCull = this.addSetting(
-      new BooleanSetting("Cull Behind Walls", "Hide vanilla nametags for entities behind walls", true)
+      new BooleanSetting("Cull Behind Walls", "Hide vanilla name tags of entities behind walls", true)
    );
    private final NumberSetting maxDistance = this.addSetting(
-      new NumberSetting("Nametag Distance", "Vanilla nametags farther than this many blocks are hidden", 28.0, 6.0, 64.0, 2.0)
+      new NumberSetting("Nametag Distance", "Hide vanilla name tags farther away than this, in blocks", 28.0, 6.0, 64.0, 2.0)
    );
    private final BooleanSetting hideArmorStands = this.addSetting(
-      new BooleanSetting("Hide Armor Stand Tags", "Suppress hologram and armor stand nametag clutter", true)
+      new BooleanSetting("Hide Armor Stand Tags", "Hide the name tags of armour stands and holograms", true)
    );
 
    private final InfoText infoText = new InfoText();
 
    public EntityCulling() {
-      super("EntityCulling", "Cull occluded and distant nametags for higher FPS.", Category.RENDER);
+      super("EntityCulling", "Hides vanilla name tags behind walls and far away.", Category.RENDER);
       instance = this;
    }
 

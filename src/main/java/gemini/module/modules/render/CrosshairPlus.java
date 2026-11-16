@@ -10,17 +10,17 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 
 public final class CrosshairPlus extends Module {
-   private final NumberSetting gap = this.addSetting(new NumberSetting("Gap", "Center gap in pixels", 3.0, 1.0, 10.0, 1.0));
-   private final NumberSetting length = this.addSetting(new NumberSetting("Length", "Arm length in pixels", 5.0, 2.0, 14.0, 1.0));
-   private final BooleanSetting dynamic = this.addSetting(new BooleanSetting("Dynamic", "Expand when moving or swinging", true));
+   private final NumberSetting gap = this.addSetting(new NumberSetting("Gap", "Gap in the centre, in pixels", 3.0, 1.0, 10.0, 1.0));
+   private final NumberSetting length = this.addSetting(new NumberSetting("Length", "Arm length, in pixels", 5.0, 2.0, 14.0, 1.0));
+   private final BooleanSetting dynamic = this.addSetting(new BooleanSetting("Dynamic", "Widen while moving or swinging", true));
    private final BooleanSetting hideVanilla = this.addSetting(
-      new BooleanSetting("Hide Vanilla", "Hide the vanilla crosshair while this one is drawn, instead of drawing on top of it", true)
+      new BooleanSetting("Hide Vanilla", "Hide the vanilla crosshair while this one is drawn", true)
    );
    /** Read by the wrapped vanilla crosshair element every frame; written on the client thread. */
    private static volatile boolean replacingVanilla;
 
    public CrosshairPlus() {
-      super("Crosshair", "Dynamic neon crosshair with movement expansion.", Category.RENDER);
+      super("Crosshair", "Draws a custom crosshair that widens while you move or swing.", Category.RENDER);
    }
 
    /** Whether the vanilla crosshair should be skipped this frame. */

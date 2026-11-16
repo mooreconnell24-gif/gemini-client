@@ -11,12 +11,12 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class JumpEffect extends Module {
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ring accent hue", 198));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ring colour", 198));
    private final ArrayDeque<JumpEffect.Ring> rings = new ArrayDeque<>();
    private boolean wasOnGround = true;
 
    public JumpEffect() {
-      super("JumpEffect", "Render expanding neon ground rings when jumping.", Category.RENDER);
+      super("JumpEffect", "Draws expanding rings on the ground when you jump.", Category.RENDER);
    }
 
    @Override

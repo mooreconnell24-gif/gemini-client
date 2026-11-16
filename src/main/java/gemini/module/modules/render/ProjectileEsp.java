@@ -20,9 +20,9 @@ import net.minecraft.world.phys.Vec3;
 
 public final class ProjectileEsp extends Module {
    private static final int PATH_STEPS = 40;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest projectile to draw", 48.0, 8.0, 128.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest projectile shown, in blocks", 48.0, 8.0, 128.0, 4.0));
    private final BooleanSetting arrows = this.addSetting(new BooleanSetting("Arrows", "Arrows and tridents fired by anything but you", true));
-   private final BooleanSetting fireballs = this.addSetting(new BooleanSetting("Fireballs", "Ghast and blaze fire", true));
+   private final BooleanSetting fireballs = this.addSetting(new BooleanSetting("Fireballs", "Ghast and blaze fireballs", true));
    private final BooleanSetting explosives = this.addSetting(new BooleanSetting("Explosives", "Primed TNT and falling anvils", true));
    private final BooleanSetting other = this.addSetting(new BooleanSetting("Other", "Pearls, potions, snowballs and the rest thrown by anything but you", true));
    private final BooleanSetting path = this.addSetting(
@@ -32,7 +32,7 @@ public final class ProjectileEsp extends Module {
    private final MutableBlockPos cursor = new MutableBlockPos();
 
    public ProjectileEsp() {
-      super("Projectile ESP", "Highlight arrows, fireballs, primed TNT, falling anvils and thrown items, with their path.", Category.RENDER);
+      super("Projectile ESP", "Highlights arrows, fireballs, primed TNT, falling anvils and thrown items, with their paths.", Category.RENDER);
    }
 
    @Override

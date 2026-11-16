@@ -13,15 +13,15 @@ import net.minecraft.world.phys.Vec3;
 
 public final class Phase extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Walk keeps you grounded", "Walk", "Walk", "Full")
+      new ModeSetting("Mode", "Walk lets you move sideways and sink with Sneak; Full also lets you rise with Jump", "Walk", "Walk", "Full")
    );
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Movement speed while phasing", 0.2, 0.05, 1.0, 0.01));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Movement speed while passing through blocks", 0.2, 0.05, 1.0, 0.01));
    private final BooleanSetting disableOnDrop = this.addSetting(
-      new BooleanSetting("Disable On Fall", "Turn off when you leave the block you phased into", false)
+      new BooleanSetting("Disable On Fall", "Turn off once there is open air around and below you", false)
    );
 
    public Phase() {
-      super("Phase", "No-clip through blocks.", Category.PLAYER);
+      super("Phase", "Lets you walk through blocks.", Category.PLAYER);
    }
 
    @Override

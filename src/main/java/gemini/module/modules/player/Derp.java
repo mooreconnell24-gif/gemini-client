@@ -11,12 +11,12 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 
 public final class Derp extends Module {
-   private final NumberSetting spinSpeed = this.addSetting(new NumberSetting("Spin Speed", "Degrees per tick to spin in packets", 35.0, 5.0, 90.0, 5.0));
-   private final BooleanSetting headless = this.addSetting(new BooleanSetting("Pitch Flip", "Oscillate pitch between -90 and 90", true));
+   private final NumberSetting spinSpeed = this.addSetting(new NumberSetting("Spin Speed", "Degrees turned per tick", 35.0, 5.0, 90.0, 5.0));
+   private final BooleanSetting headless = this.addSetting(new BooleanSetting("Pitch Flip", "Also nod your head up and down", true));
    private float yaw;
 
    public Derp() {
-      super("Derp", "Spin server-side head rotations without moving camera.", Category.PLAYER);
+      super("Derp", "Spins your head round for others to see while your camera stays still.", Category.PLAYER);
    }
 
    @Override

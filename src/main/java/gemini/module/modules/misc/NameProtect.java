@@ -12,11 +12,11 @@ import net.minecraft.network.chat.Style;
 public final class NameProtect extends Module {
    public static NameProtect instance;
    private final ListSetting alias = this.addSetting(
-      new ListSetting("Alias", "Name shown in chat in place of yours; only the first line is used", ListSetting.Kind.TEXT, "GeminiUser")
+      new ListSetting("Alias", "Name shown in chat instead of yours; only the first line is used", ListSetting.Kind.TEXT, "GeminiUser")
    );
 
    public NameProtect() {
-      super("NameProtect", "Replace your account name with an alias in every chat line.", Category.CLIENT);
+      super("NameProtect", "Replaces your account name with an alias in every chat line.", Category.CLIENT);
       instance = this;
    }
 

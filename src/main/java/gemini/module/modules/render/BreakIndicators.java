@@ -16,12 +16,12 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
 public final class BreakIndicators extends Module {
-   private final BooleanSetting percentage = this.addSetting(new BooleanSetting("Percentage", "Show mining completion percentage in 3D", true));
+   private final BooleanSetting percentage = this.addSetting(new BooleanSetting("Percentage", "Also show the mining percentage", true));
    private BlockPos miningPos;
    private float progress;
 
    public BreakIndicators() {
-      super("BreakIndicators", "Show a 3D progress box and % on mined blocks.", Category.RENDER);
+      super("BreakIndicators", "Shows a progress box on blocks being mined.", Category.RENDER);
    }
 
    @Override

@@ -13,7 +13,7 @@ public final class AutoTunnel extends Module {
    private final NumberSetting length = this.addSetting(new NumberSetting("Length", "Blocks to tunnel ahead", 64.0, 4.0, 512.0, 4.0));
 
    public AutoTunnel() {
-      super("Auto Tunnel", "Dig a 1x2 tunnel and bridge gaps automatically.", Category.WORLD);
+      super("Auto Tunnel", "Digs a 1x2 tunnel in the direction you face, placing blocks over gaps in the floor.", Category.WORLD);
    }
 
    @Override

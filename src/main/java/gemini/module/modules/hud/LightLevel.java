@@ -9,7 +9,7 @@ import net.minecraft.world.level.LightLayer;
 
 public final class LightLevel extends Ticked {
    public LightLevel() {
-      super("Light Level", "Light at your feet and whether monsters can spawn there.", "Top Left", 6, 166, 200);
+      super("Light Level", "Shows the light level at your feet and whether monsters can spawn there.", "Top Left", 6, 166, 200);
    }
 
    @Override

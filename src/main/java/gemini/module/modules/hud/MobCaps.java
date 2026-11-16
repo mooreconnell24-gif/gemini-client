@@ -40,7 +40,7 @@ public final class MobCaps extends Ticked {
    private int poll;
 
    public MobCaps() {
-      super("Mob Caps", "Natural spawning caps per mob kind, as the server counts them (see why a farm stops).", "Top Right", 6, 120, 250);
+      super("Mob Caps", "Shows the natural spawning cap for each kind of mob, to help work out why a farm stops.", "Top Right", 6, 120, 250);
    }
 
    /** {@code counts[i]} and {@code caps[i]} line up with {@link #SHOWN}; {@code chunks} is -1 while spawning has not run. */

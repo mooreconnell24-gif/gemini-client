@@ -18,7 +18,7 @@ public final class Tps extends Ticked {
    private volatile long lastUpdate;
 
    public Tps() {
-      super("TPS", "Server ticks per second, estimated from time updates.", "Bottom Right", 6, 42, 500);
+      super("TPS", "Shows the server's ticks per second, estimated from time updates.", "Bottom Right", 6, 42, 500);
    }
 
    @Override

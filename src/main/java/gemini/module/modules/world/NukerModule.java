@@ -20,9 +20,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public final class NukerModule extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Break radius in blocks", 4.0, 1.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Break radius, in blocks", 4.0, 1.0, 6.0, 0.5));
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Creative only: blocks started each tick", 3.0, 1.0, 12.0, 1.0));
-   private final ModeSetting shape = this.addSetting(new ModeSetting("Shape", "Which blocks count: Sphere = everything in range, Flat = your feet level and the layer below, Above = your feet level and up", "Sphere", "Sphere", "Flat", "Above"));
+   private final ModeSetting shape = this.addSetting(new ModeSetting("Shape", "Which blocks count: Sphere is everything in range, Flat is your feet level and the layer below, Above is your feet level and up", "Sphere", "Sphere", "Flat", "Above"));
    private final ModeSetting order = this.addSetting(new ModeSetting("Order", "Which block goes first: the nearest, or the highest (so nothing falls on you)", "Nearest", "Nearest", "Top Down"));
    private final BooleanSetting exposedOnly = this.addSetting(new BooleanSetting("Exposed Only", "Skip blocks fully buried inside others", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while breaking", true));
@@ -34,7 +34,7 @@ public final class NukerModule extends Module {
    private int idle;
 
    public NukerModule() {
-      super("Nuker", "Break nearby blocks around you.", Category.WORLD);
+      super("Nuker", "Breaks blocks all around you.", Category.WORLD);
    }
 
    @Override

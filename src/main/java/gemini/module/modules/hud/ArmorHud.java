@@ -14,13 +14,13 @@ import net.minecraft.world.item.ItemStack;
 public final class ArmorHud extends HudWidget {
    private static final EquipmentSlot[] SLOTS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
    private final ModeSetting layout = this.addSetting(
-      new ModeSetting("Layout", "Stack the pieces in a row or a column", "Horizontal", "Horizontal", "Vertical")
+      new ModeSetting("Layout", "Show the pieces in a row or a column", "Horizontal", "Horizontal", "Vertical")
    );
    private final BooleanSetting percent = this.addSetting(new BooleanSetting("Percent", "Show remaining durability as a percentage", true));
    private final BooleanSetting hands = this.addSetting(new BooleanSetting("Hands", "Include the items in both hands", false));
 
    public ArmorHud() {
-      super("Armor", "Your armor pieces with their durability.", "Bottom Center", 0, 58);
+      super("Armor", "Shows your armour pieces with their durability.", "Bottom Center", 0, 58);
    }
 
    private List<ItemStack> stacks(LocalPlayer player) {

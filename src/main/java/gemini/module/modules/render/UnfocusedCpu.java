@@ -12,7 +12,7 @@ public final class UnfocusedCpu extends Module {
    );
 
    public UnfocusedCpu() {
-      super("Unfocused CPU", "Save power by limiting the frame rate when you tab out.", Category.RENDER);
+      super("Unfocused CPU", "Limits the frame rate while the game window is not focused, to save power.", Category.RENDER);
       instance = this;
    }
 

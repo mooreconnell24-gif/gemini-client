@@ -16,16 +16,16 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class AimAssist extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max target distance", 4.5, 2.0, 6.0, 0.1));
-   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view cone", 90.0, 15.0, 180.0, 5.0));
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Smooth Speed", "Camera assist speed in deg/tick", 14.0, 2.0, 45.0, 1.0));
-   private final BooleanSetting weaponOnly = this.addSetting(new BooleanSetting("Weapon Only", "Only assist while holding a weapon", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to aim at, in blocks", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Only aim at targets within this many degrees of your crosshair", 90.0, 15.0, 180.0, 5.0));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Smooth Speed", "Most the camera turns per tick, in degrees", 14.0, 2.0, 45.0, 1.0));
+   private final BooleanSetting weaponOnly = this.addSetting(new BooleanSetting("Weapon Only", "Only aim while holding a weapon", true));
    private final Targeting targeting = Targeting.builder(this).build();
    private final Predicate<LivingEntity> inFov = this::inFov;
    private LocalPlayer scanPlayer;
 
    public AimAssist() {
-      super("AimAssist", "Smoothly guide your crosshair toward nearby targets.", Category.COMBAT);
+      super("AimAssist", "Turns your camera gradually towards the nearest valid target.", Category.COMBAT);
    }
 
    @Override

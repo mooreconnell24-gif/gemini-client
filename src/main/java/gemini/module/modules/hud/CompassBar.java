@@ -7,11 +7,11 @@ import net.minecraft.util.Mth;
 
 public final class CompassBar extends HudWidget {
    private static final String[] NAMES = new String[]{"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
-   private final NumberSetting width = this.addSetting(new NumberSetting("Width", "Pixel width of the strip", 200.0, 100.0, 400.0, 10.0));
-   private final NumberSetting span = this.addSetting(new NumberSetting("Span", "Degrees visible at once", 140.0, 60.0, 270.0, 10.0));
+   private final NumberSetting width = this.addSetting(new NumberSetting("Width", "Width of the strip, in pixels", 200.0, 100.0, 400.0, 10.0));
+   private final NumberSetting span = this.addSetting(new NumberSetting("Span", "Degrees shown across the strip", 140.0, 60.0, 270.0, 10.0));
 
    public CompassBar() {
-      super("Compass", "A heading strip with cardinal directions.", "Top Center", 0, 6);
+      super("Compass", "Shows a compass strip with the direction you are facing.", "Top Center", 0, 6);
    }
 
    @Override

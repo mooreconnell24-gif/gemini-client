@@ -8,7 +8,7 @@ public final class NoHurtCamModule extends Module {
    private double previous = 1.0;
 
    public NoHurtCamModule() {
-      super("NoHurtCam", "Disable the hurt camera tilt.", Category.RENDER);
+      super("NoHurtCam", "Turns off the camera shake when you get hurt.", Category.RENDER);
    }
 
    @Override

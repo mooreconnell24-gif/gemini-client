@@ -11,7 +11,7 @@ public final class Welcome extends Ticked {
    );
 
    public Welcome() {
-      super("Welcome", "A greeting with your name.", "Top Center", 0, 28, 1000);
+      super("Welcome", "Shows a greeting with your name.", "Top Center", 0, 28, 1000);
    }
 
    @Override

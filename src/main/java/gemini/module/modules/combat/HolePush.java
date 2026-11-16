@@ -39,17 +39,17 @@ public final class HolePush extends Module {
    private static final Predicate<ItemStack> PISTON = stack -> stack.is(Items.PISTON) || stack.is(Items.STICKY_PISTON);
    /** A plan that has not pushed after this many ticks is dropped and worked out again. */
    private static final int PLAN_TIMEOUT = 40;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block you will place", 4.5, 2.0, 6.0, 0.1));
-   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy search distance", 5.5, 2.0, 8.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block to place, in blocks", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Farthest enemy to look for, in blocks", 5.5, 2.0, 8.0, 0.5));
    private final ModeSetting power = this.addSetting(
-      new ModeSetting("Power", "What powers the piston: a redstone block, or a redstone torch standing beside it", "Redstone Block", "Redstone Block", "Torch")
+      new ModeSetting("Power", "What powers the piston: a redstone block, or a redstone torch beside it", "Redstone Block", "Redstone Block", "Torch")
    );
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Step Delay", "Ticks between piston and power", 1.0, 0.0, 6.0, 1.0));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Step Delay", "Ticks between placing the piston and powering it", 1.0, 0.0, 6.0, 1.0));
    private final BooleanSetting silentAim = this.addSetting(
-      new BooleanSetting("Silent Aim", "Turn in packets only; off turns the camera too (the piston needs the turn either way)", true)
+      new BooleanSetting("Silent Aim", "Turn without moving your camera (the piston needs the turn either way)", true)
    );
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Plan", "Show the piston, power and destination blocks", true));
-   private final BooleanSetting autoDisable = this.addSetting(new BooleanSetting("Auto Disable", "Switch off after one push", true));
+   private final BooleanSetting autoDisable = this.addSetting(new BooleanSetting("Auto Disable", "Turn off after one push", true));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 200).build();
    private Plan plan;
    private Step step = Step.IDLE;
@@ -57,7 +57,7 @@ public final class HolePush extends Module {
    private int age;
 
    public HolePush() {
-      super("Hole Push", "Push the enemy in a hole that Priority picks out of it with a powered piston (the next one if no piston fits around it).", Category.COMBAT);
+      super("Hole Push", "Pushes an enemy out of its hole with a powered piston.", Category.COMBAT);
    }
 
    @Override

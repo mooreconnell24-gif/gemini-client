@@ -63,22 +63,22 @@ public final class Chams extends Module {
    /** Cubes are grown by this many model pixels so the flat boxes do not z-fight with the textured model. */
    private static final float INFLATE = 0.3F;
    public static Chams instance;
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How entities are drawn (see the module description)", "Flat", "Flat", "Textured", "Wireframe", "Pulse"));
-   private final ColorSetting visibleColor = this.addSetting(new ColorSetting("Visible Color", "Tint and overlay while the entity is in plain sight", 190));
-   private final ColorSetting occludedColor = this.addSetting(new ColorSetting("Occluded Color", "Silhouette while terrain hides the entity", 300));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How entities are drawn", "Flat", "Flat", "Textured", "Wireframe", "Pulse"));
+   private final ColorSetting visibleColor = this.addSetting(new ColorSetting("Visible Color", "Colour while the entity is in plain sight", 190));
+   private final ColorSetting occludedColor = this.addSetting(new ColorSetting("Occluded Color", "Colour while terrain hides the entity", 300));
    private final NumberSetting tint = this.addSetting(new NumberSetting("Tint Strength", "How strongly the visible colour tints the real model (0 = untouched)", 0.6, 0.0, 1.0, 0.05));
    private final NumberSetting fillOpacity = this.addSetting(
       new NumberSetting("Fill Opacity", "Opacity of the flat boxes", 110.0, 10.0, 255.0, 5.0).showIf(() -> this.mode.is("Flat") || this.mode.is("Pulse"))
    );
    private final NumberSetting lineWidth = this.addSetting(new NumberSetting("Line Width", "Edge thickness in Wireframe", 1.5, 0.5, 5.0, 0.5).showIf(() -> this.mode.is("Wireframe")));
    private final NumberSetting pulseSpeed = this.addSetting(new NumberSetting("Pulse Period", "Seconds per pulse", 1.6, 0.3, 5.0, 0.1).showIf(() -> this.mode.is("Pulse")));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest entity drawn", 64.0, 8.0, 256.0, 4.0));
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Other players (and the Fake Player dummy)", true));
-   private final BooleanSetting hostiles = this.addSetting(new BooleanSetting("Hostiles", "Hostile mobs", true));
-   private final BooleanSetting passives = this.addSetting(new BooleanSetting("Passives", "Animals and other passive mobs", false));
-   private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Dropped items (bounding box / outline)", false));
-   private final BooleanSetting crystals = this.addSetting(new BooleanSetting("Crystals", "End crystals (bounding box / outline)", true));
-   private final BooleanSetting self = this.addSetting(new BooleanSetting("Self", "Yourself in third person", false));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest entity drawn, in blocks", 64.0, 8.0, 256.0, 4.0));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Draw other players (and the Fake Player dummy)", true));
+   private final BooleanSetting hostiles = this.addSetting(new BooleanSetting("Hostiles", "Draw hostile mobs", true));
+   private final BooleanSetting passives = this.addSetting(new BooleanSetting("Passives", "Draw animals and other passive mobs", false));
+   private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Draw dropped items as boxes", false));
+   private final BooleanSetting crystals = this.addSetting(new BooleanSetting("Crystals", "Draw end crystals as boxes", true));
+   private final BooleanSetting self = this.addSetting(new BooleanSetting("Self", "Draw yourself in third person", false));
    /** Ids of entities whose line of sight was blocked at the last check; written and read on the client thread. */
    private final IntOpenHashSet occluded = new IntOpenHashSet();
    private final Vector3f scratch = new Vector3f();
@@ -88,7 +88,7 @@ public final class Chams extends Module {
    public Chams() {
       super(
          "Chams",
-         "See entities through walls in two colours. Flat/Wireframe draw the posed model cubes (on top of walls when hidden), Textured tints the real model and uses the glow outline through walls, Pulse breathes. Hidden-or-not is a per-entity line-of-sight test.",
+         "Draws entities in two colours, one when in sight and one when hidden behind walls. Flat and Wireframe draw the model's boxes, Textured tints the real model, and Pulse fades in and out.",
          Category.RENDER
       );
       instance = this;

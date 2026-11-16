@@ -23,8 +23,8 @@ public final class GiveList extends Module {
    private final InfoText infoText = new InfoText();
 
    public GiveList() {
-      super("Give List", "Give yourself your own list of items in one click.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Give", "Hand out every item in the list", this::give));
+      super("Give List", "Gives you your own list of items in one click.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Give", "Give every item in the list", this::give));
    }
 
    @Override

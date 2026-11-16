@@ -7,8 +7,8 @@ import gemini.module.setting.BooleanSetting;
 import net.minecraft.network.protocol.Packet;
 
 public final class PacketLogger extends Module {
-   private final BooleanSetting outgoing = this.addSetting(new BooleanSetting("Outgoing", "Log packets sent to the server", true));
-   private final BooleanSetting incoming = this.addSetting(new BooleanSetting("Incoming", "Log packets received from the server", false));
+   private final BooleanSetting outgoing = this.addSetting(new BooleanSetting("Outgoing", "Log packets you send", true));
+   private final BooleanSetting incoming = this.addSetting(new BooleanSetting("Incoming", "Log packets you receive", false));
    private final BooleanSetting skipNoise = this.addSetting(
       new BooleanSetting("Skip Noise", "Hide movement, keep-alive and other packets sent every tick", true)
    );
@@ -17,7 +17,7 @@ public final class PacketLogger extends Module {
    private long lastTime;
 
    public PacketLogger() {
-      super("PacketLogger", "Log outgoing and incoming network packets in chat.", Category.CLIENT);
+      super("PacketLogger", "Writes the network packets you send and receive in chat.", Category.CLIENT);
    }
 
    @Override

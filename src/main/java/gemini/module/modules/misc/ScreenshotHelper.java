@@ -32,7 +32,7 @@ public final class ScreenshotHelper extends Module {
    private int taken;
 
    public ScreenshotHelper() {
-      super("Screenshot Helper", "Take clean screenshots (no HUD, hand or overlays) with one key, singly or in a burst.", Category.CLIENT);
+      super("Screenshot Helper", "Takes screenshots without the HUD, hand or overlays with one key, one at a time or in a burst.", Category.CLIENT);
    }
 
    @Override

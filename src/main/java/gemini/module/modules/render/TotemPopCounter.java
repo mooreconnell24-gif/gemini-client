@@ -32,7 +32,7 @@ public final class TotemPopCounter extends Module {
    private final InfoText infoText = new InfoText();
 
    public TotemPopCounter() {
-      super("Totem Pop Counter", "Counts Totem of Undying pops per entity, announces them, and shows the counts on Nametags and TargetHUD.", Category.RENDER);
+      super("Totem Pop Counter", "Counts totem pops for each entity, announces them and shows the counts on Nametags and TargetHUD.", Category.RENDER);
       TotemPops.setPolicy(this::policy);
       TotemPops.addListener(new TotemPops.Listener() {
          @Override

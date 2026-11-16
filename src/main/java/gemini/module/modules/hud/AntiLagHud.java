@@ -13,7 +13,7 @@ import java.util.List;
 
 public final class AntiLagHud extends Ticked {
    private final BooleanSetting profiler = this.addSetting(
-      new BooleanSetting("Module Profiler", "List the heaviest modules live, in microseconds per tick or frame averaged over a second", false)
+      new BooleanSetting("Module Profiler", "List the slowest modules, in microseconds per tick or frame averaged over a second", false)
    );
    private final NumberSetting rows = this.addSetting(new NumberSetting("Profiler Rows", "Modules listed per hook", 4.0, 1.0, 12.0, 1.0).showIf(this.profiler::get));
    private final ModeSetting hook = this.addSetting(
@@ -22,7 +22,7 @@ public final class AntiLagHud extends Ticked {
 
    public AntiLagHud() {
       super(
-         "AntiLag Status", "Live telemetry showing FPS stability, memory usage, total lag particles/sounds blocked by AntiLag and, optionally, the heaviest modules.", "Top Right", 6, 40, 200
+         "AntiLag Status", "Shows whether AntiLag is on, your FPS, memory use, how many particles and sounds AntiLag has blocked and, optionally, the slowest modules.", "Top Right", 6, 40, 200
       );
    }
 

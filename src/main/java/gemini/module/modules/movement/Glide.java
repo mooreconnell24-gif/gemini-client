@@ -17,7 +17,7 @@ public final class Glide extends Module {
    private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall Damage", "Reset fall distance while gliding", true));
 
    public Glide() {
-      super("Glide", "Fall slowly, like a feather.", Category.MOVEMENT);
+      super("Glide", "Slows your fall.", Category.MOVEMENT);
    }
 
    @Override

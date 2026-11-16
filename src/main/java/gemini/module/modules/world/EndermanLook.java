@@ -15,12 +15,12 @@ import net.minecraft.world.phys.Vec3;
 
 public final class EndermanLook extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Look Away avoids Endermen; Look At aggros them", "Look Away", "Look Away", "Look At")
+      new ModeSetting("Mode", "Look Away keeps endermen calm; Look At provokes them", "Look Away", "Look Away", "Look At")
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far away Endermen matter", 32.0, 4.0, 64.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest enderman to react to, in blocks", 32.0, 4.0, 64.0, 1.0));
 
    public EndermanLook() {
-      super("Enderman Look", "Look away from Endermen so they stay calm.", Category.WORLD);
+      super("Enderman Look", "Turns your view away from endermen so they do not get angry, or towards them to provoke them.", Category.WORLD);
    }
 
    @Override

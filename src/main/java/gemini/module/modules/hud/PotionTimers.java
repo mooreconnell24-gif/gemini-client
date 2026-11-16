@@ -11,7 +11,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 
 public final class PotionTimers extends Ticked {
    public PotionTimers() {
-      super("Potion Timers", "Active status effects with their remaining time.", "Right Center", 6, 0, 250);
+      super("Potion Timers", "Shows your active effects with their remaining time.", "Right Center", 6, 0, 250);
    }
 
    @Override

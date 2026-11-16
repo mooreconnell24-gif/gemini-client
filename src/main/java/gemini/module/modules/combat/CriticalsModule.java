@@ -11,11 +11,11 @@ import net.minecraft.world.phys.Vec3;
 
 public final class CriticalsModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Packet crits every hit; Hop and Mini jump on hit so your next swing lands while falling", "Packet", "Packet", "Hop", "Mini")
+      new ModeSetting("Mode", "Packet makes every hit a critical; Hop and Mini jump on the hit so your next swing lands while falling", "Packet", "Packet", "Hop", "Mini")
    );
 
    public CriticalsModule() {
-      super("Criticals", "Force critical hits when attacking.", Category.COMBAT);
+      super("Criticals", "Makes your melee hits land as critical hits.", Category.COMBAT);
    }
 
    @Override

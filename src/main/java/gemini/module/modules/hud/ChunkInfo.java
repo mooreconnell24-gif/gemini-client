@@ -7,7 +7,7 @@ import net.minecraft.util.Mth;
 
 public final class ChunkInfo extends Ticked {
    public ChunkInfo() {
-      super("Chunk Info", "Chunk and region coordinates.", "Top Left", 6, 220, 250);
+      super("Chunk Info", "Shows your chunk and region coordinates.", "Top Left", 6, 220, 250);
    }
 
    @Override

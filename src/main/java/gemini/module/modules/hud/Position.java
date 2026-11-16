@@ -12,12 +12,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 
 public final class Position extends Ticked {
-   private final BooleanSetting decimals = this.addSetting(new BooleanSetting("Decimals", "Show fractional coordinates", false));
+   private final BooleanSetting decimals = this.addSetting(new BooleanSetting("Decimals", "Show coordinates with decimals", false));
    private final BooleanSetting nether = this.addSetting(new BooleanSetting("Nether Coords", "Also show the matching Nether or Overworld position", true));
    private final BooleanSetting dimension = this.addSetting(new BooleanSetting("Dimension", "Show the dimension name", false));
 
    public Position() {
-      super("Position", "Your coordinates, with the Nether or Overworld equivalent.", "Top Left", 6, 34, 100);
+      super("Position", "Shows your coordinates, with the matching Nether or Overworld position.", "Top Left", 6, 34, 100);
    }
 
    @Override

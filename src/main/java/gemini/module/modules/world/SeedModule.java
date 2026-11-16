@@ -8,7 +8,7 @@ import net.minecraft.server.MinecraftServer;
 
 public final class SeedModule extends Module {
    public SeedModule() {
-      super("Seed", "Show the world seed in chat.", Category.WORLD);
+      super("Seed", "Shows the world seed in chat.", Category.WORLD);
    }
 
    @Override

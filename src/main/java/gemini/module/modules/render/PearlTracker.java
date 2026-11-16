@@ -23,15 +23,15 @@ import net.minecraft.world.phys.Vec3;
  * moves once a tick) and kept per pearl; a frame only draws the stored points.
  */
 public final class PearlTracker extends Module {
-   private final BooleanSetting trajectory = this.addSetting(new BooleanSetting("Flight Path", "Draw predicted landing arc for thrown pearls", true));
-   private final BooleanSetting landingBox = this.addSetting(new BooleanSetting("Landing Box", "Highlight predicted impact spot in 3D", true));
-   private final BooleanSetting labels = this.addSetting(new BooleanSetting("Owner Label", "Display thrower name and impact countdown", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Pearl tracker accent hue", 285));
+   private final BooleanSetting trajectory = this.addSetting(new BooleanSetting("Flight Path", "Draw the predicted flight path of thrown pearls", true));
+   private final BooleanSetting landingBox = this.addSetting(new BooleanSetting("Landing Box", "Highlight where each pearl will land", true));
+   private final BooleanSetting labels = this.addSetting(new BooleanSetting("Owner Label", "Show who threw it and how long until it lands", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Path and box colour", 285));
    private final Int2ObjectOpenHashMap<Track> tracks = new Int2ObjectOpenHashMap<>();
    private int tickStamp;
 
    public PearlTracker() {
-      super("PearlTracker", "Track Ender Pearl arcs, owners, and landing spots.", Category.RENDER);
+      super("PearlTracker", "Shows where thrown ender pearls will land and who threw them.", Category.RENDER);
    }
 
    /** One pearl's predicted flight. */

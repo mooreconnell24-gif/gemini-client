@@ -14,11 +14,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class SuperKnockback extends Module {
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Sprint reset method on hit", "Packet", "Packet", "WTap", "StopStart"));
-   private final BooleanSetting onlyMoving = this.addSetting(new BooleanSetting("Only Moving", "Require forward movement", true));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "How the sprint is restarted on the hit", "Packet", "Packet", "WTap", "StopStart"));
+   private final BooleanSetting onlyMoving = this.addSetting(new BooleanSetting("Only Moving", "Only while you are pressing a movement key", true));
 
    public SuperKnockback() {
-      super("SuperKnockback", "Reset sprint state on hit for maximum knockback.", Category.COMBAT);
+      super("SuperKnockback", "Restarts your sprint on each hit so the hit deals sprint knockback.", Category.COMBAT);
    }
 
    @Override

@@ -14,13 +14,13 @@ public final class SpeedModule extends Module {
       new ModeSetting("Mode", "How the speed boost is applied", "LowHop", "Strict", "Ground", "Bhop", "LowHop", "Strafe", "YPort")
    );
    private final NumberSetting multiplier = this.addSetting(new NumberSetting("Multiplier", "Horizontal speed multiplier", 1.25, 1.05, 4.0, 0.05));
-   private final BooleanSetting inAir = this.addSetting(new BooleanSetting("Air Boost", "Maintain speed boost while airborne", true));
-   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Pause", "Pause boost briefly after server lagback", true));
-   private final BooleanSetting sneakStops = this.addSetting(new BooleanSetting("Pause Sneak", "Disable speed boost while sneaking", true));
+   private final BooleanSetting inAir = this.addSetting(new BooleanSetting("Air Boost", "Keep the boost while in the air", true));
+   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Pause", "Pause the boost briefly after the game pulls you back", true));
+   private final BooleanSetting sneakStops = this.addSetting(new BooleanSetting("Pause Sneak", "Turn the boost off while sneaking", true));
    private boolean shortenedHop;
 
    public SpeedModule() {
-      super("Speed", "Move faster on foot.", Category.MOVEMENT);
+      super("Speed", "Makes you move faster on foot.", Category.MOVEMENT);
    }
 
    @Override

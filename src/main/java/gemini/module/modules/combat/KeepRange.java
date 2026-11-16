@@ -15,17 +15,17 @@ import net.minecraft.world.entity.LivingEntity;
 
 public final class KeepRange extends Module {
    private final NumberSetting minDistance = this.addSetting(
-      new NumberSetting("Min Distance", "Back up if target is closer than this", 2.6, 1.5, 4.0, 0.1)
+      new NumberSetting("Min Distance", "Back away when the target is closer than this, in blocks", 2.6, 1.5, 4.0, 0.1)
    );
-   private final NumberSetting maxDistance = this.addSetting(new NumberSetting("Max Distance", "Max engagement distance", 3.6, 2.5, 5.5, 0.1));
+   private final NumberSetting maxDistance = this.addSetting(new NumberSetting("Max Distance", "Farthest target to keep away from, in blocks", 3.6, 2.5, 5.5, 0.1));
    private final BooleanSetting onlyDuringCooldown = this.addSetting(
-      new BooleanSetting("Wait Cooldown", "Only back up while attack is recharging", true)
+      new BooleanSetting("Wait Cooldown", "Only back away while your attack is recharging", true)
    );
    private final Targeting targeting = Targeting.builder(this).build();
    private boolean backingUp;
 
    public KeepRange() {
-      super("KeepRange", "Keep optimal melee spacing from your combat target.", Category.COMBAT);
+      super("KeepRange", "Walks you backwards when your target gets closer than the set distance.", Category.COMBAT);
    }
 
    @Override

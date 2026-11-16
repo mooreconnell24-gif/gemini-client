@@ -8,7 +8,7 @@ public final class PortalMenu extends Module {
    public static PortalMenu instance;
 
    public PortalMenu() {
-      super("PortalMenu", "Allow opening GUIs and chat inside Nether portals.", Category.PLAYER);
+      super("PortalMenu", "Lets you open your inventory and chat while standing in a Nether portal.", Category.PLAYER);
       instance = this;
    }
 

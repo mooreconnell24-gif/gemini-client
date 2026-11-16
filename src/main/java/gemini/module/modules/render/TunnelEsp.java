@@ -20,10 +20,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 public final class TunnelEsp extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Blocks around you to scan", 24.0, 8.0, 48.0, 4.0));
-   private final NumberSetting below = this.addSetting(new NumberSetting("Depth", "Blocks below your feet to scan", 12.0, 0.0, 48.0, 2.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to scan, in blocks", 24.0, 8.0, 48.0, 4.0));
+   private final NumberSetting below = this.addSetting(new NumberSetting("Depth", "How far below your feet to scan, in blocks", 12.0, 0.0, 48.0, 2.0));
    private final NumberSetting interval = this.addSetting(new NumberSetting("Scan Interval", "Ticks between scans", 20.0, 5.0, 100.0, 5.0));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 200));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 200));
    private final BooleanSetting fill = this.addSetting(new BooleanSetting("Fill", "Fill the highlighted blocks", true));
    private final List<BlockPos> found = new ArrayList<>();
    private int wait;
@@ -31,7 +31,7 @@ public final class TunnelEsp extends Module {
    private final List<BlockPos> building = new ArrayList<>();
 
    public TunnelEsp() {
-      super("Tunnel ESP", "Highlight 1x2 tunnels dug by players.", Category.RENDER);
+      super("Tunnel ESP", "Highlights 1x2 tunnels dug by players.", Category.RENDER);
    }
 
    private final InfoText infoText = new InfoText();

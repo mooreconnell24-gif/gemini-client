@@ -10,7 +10,7 @@ public final class TimerModule extends Module {
    private int applied = -1;
 
    public TimerModule() {
-      super("Timer", "Speed up or slow down the game clock.", Category.WORLD);
+      super("Timer", "Speeds up or slows down the game clock.", Category.WORLD);
    }
 
    @Override

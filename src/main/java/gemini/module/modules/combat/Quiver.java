@@ -11,10 +11,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.BowItem;
 
 public final class Quiver extends Module {
-   private final NumberSetting charge = this.addSetting(new NumberSetting("Charge Ticks", "Ticks to draw bow upward", 4.0, 3.0, 10.0, 1.0));
+   private final NumberSetting charge = this.addSetting(new NumberSetting("Charge Ticks", "Ticks to draw the bow before releasing", 4.0, 3.0, 10.0, 1.0));
 
    public Quiver() {
-      super("Quiver", "Shoot beneficial tipped arrows upward to buff yourself.", Category.COMBAT);
+      super("Quiver", "Looks straight up while you draw a bow and releases it early so the arrow falls on you, then turns off.", Category.COMBAT);
    }
 
    @Override

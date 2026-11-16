@@ -19,14 +19,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 
 public final class AutoPot extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw potion at or below this health", 10.0, 1.0, 20.0, 0.5));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw a potion at or below this health", 10.0, 1.0, 20.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between throws", 10.0, 1.0, 60.0, 1.0));
-   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets only", true));
-   private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Use only healing/regen potions", true));
+   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Look down without moving your camera", true));
+   private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Only use healing and regeneration potions", true));
    private int wait;
 
    public AutoPot() {
-      super("Auto Pot", "Splash healing potions at your feet when low on HP.", Category.COMBAT);
+      super("Auto Pot", "Throws healing splash potions at your feet when your health is low.", Category.COMBAT);
    }
 
    @Override

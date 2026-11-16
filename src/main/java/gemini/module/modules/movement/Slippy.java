@@ -9,12 +9,12 @@ import gemini.module.setting.NumberSetting;
 public final class Slippy extends Module {
    public static Slippy instance;
    private final NumberSetting friction = this.addSetting(
-      new NumberSetting("Friction", "Block friction", 0.98, 0.6, 1.0, 0.01)
+      new NumberSetting("Friction", "How slippery blocks are (vanilla ice is 0.98)", 0.98, 0.6, 1.0, 0.01)
    );
    private final ListSetting ignored = this.addSetting(new ListSetting("Ignored Blocks", "Blocks that keep their normal friction", ListSetting.Kind.BLOCK));
 
    public Slippy() {
-      super("Slippy", "Make every block as slippery as ice.", Category.MOVEMENT);
+      super("Slippy", "Makes blocks as slippery as ice.", Category.MOVEMENT);
       instance = this;
    }
 

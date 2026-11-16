@@ -9,14 +9,14 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 
 public final class BoatFly extends LinearFlightModuleBase {
-   private final NumberSetting horizontal = this.addSetting(new NumberSetting("Horizontal Speed", "Speed in blocks per tick", 1.0, 0.1, 4.0, 0.1));
+   private final NumberSetting horizontal = this.addSetting(new NumberSetting("Horizontal Speed", "Flight speed, in blocks per tick", 1.0, 0.1, 4.0, 0.1));
    private final NumberSetting vertical = this.addSetting(
       new NumberSetting("Vertical Speed", "Climb and descent speed with Jump and Sneak", 0.5, 0.1, 2.0, 0.1)
    );
    private AbstractBoat flying;
 
    public BoatFly() {
-      super("Boat Fly", "Fly while sitting in a boat.", Category.MOVEMENT);
+      super("Boat Fly", "Lets your boat fly while you sit in it.", Category.MOVEMENT);
    }
 
    private void release() {

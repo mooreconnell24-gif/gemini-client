@@ -42,7 +42,7 @@ import org.joml.Vector2f;
 public final class TargetHud extends HudWidget {
    private static final EquipmentSlot[] ARMOR = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
    private static final long ATTACK_MEMORY_MS = 6000L;
-   private final BooleanSetting showGear = this.addSetting(new BooleanSetting("Show Gear", "Show the target's held item and armour with durability bars (Modern Glass and Neon)", true));
+   private final BooleanSetting showGear = this.addSetting(new BooleanSetting("Show Gear", "Show the target's held item and armour with durability bars (Modern Glass and Neon styles)", true));
    private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Look of the card", "Modern Glass", "Modern Glass", "Compact", "Neon"));
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target shown, in blocks", 6.0, 3.0, 24.0, 0.5));
    private final BooleanSetting prediction = this.addSetting(
@@ -69,7 +69,7 @@ public final class TargetHud extends HudWidget {
    private final Vector2f screen = new Vector2f();
 
    public TargetHud() {
-      super("TargetHUD", "Target card with face or model, animated health and absorption, distance, totem pops, armour and a fight estimate.", "Bottom Center", 90, 68);
+      super("TargetHUD", "Shows a card for your current target with its health, distance, totem pops, armour and who is likely to win.", "Bottom Center", 90, 68);
    }
 
    @Override

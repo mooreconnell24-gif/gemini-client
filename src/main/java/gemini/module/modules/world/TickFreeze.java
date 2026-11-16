@@ -14,7 +14,7 @@ public final class TickFreeze extends Module {
    );
 
    public TickFreeze() {
-      super("Tick Freeze", "Freeze mobs, redstone and time while you keep moving.", Category.WORLD);
+      super("Tick Freeze", "Freezes mobs, redstone and time while you keep moving.", Category.WORLD);
       this.addSetting(new ActionSetting("Step", "Advance the frozen world by Step Ticks", this::step));
    }
 

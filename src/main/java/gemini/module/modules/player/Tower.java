@@ -12,13 +12,13 @@ import net.minecraft.core.BlockPos;
 
 public final class Tower extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Vanilla jumps normally; Fast pops you up on every placement", "Fast", "Vanilla", "Fast")
+      new ModeSetting("Mode", "Vanilla jumps normally; Fast pushes you up after every placement", "Fast", "Vanilla", "Fast")
    );
-   private final BooleanSetting requireJump = this.addSetting(new BooleanSetting("Hold Jump", "Only tower while jump is held", true));
+   private final BooleanSetting requireJump = this.addSetting(new BooleanSetting("Hold Jump", "Only build while Jump is held", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your arm on each placement", true));
 
    public Tower() {
-      super("Tower", "Build straight up by jumping and placing blocks.", Category.PLAYER);
+      super("Tower", "Builds straight up under you while you jump.", Category.PLAYER);
    }
 
    @Override

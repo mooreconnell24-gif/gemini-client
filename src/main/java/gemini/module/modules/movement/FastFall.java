@@ -31,30 +31,30 @@ public final class FastFall extends Module {
    private static final int MAX_PULL_TICKS = 60;
    private final ModeSetting when = this.addSetting(
       new ModeSetting(
-         "When", "Falling speeds up any fall; Ledges snaps down the moment you walk off an edge (the old ReverseStep); Both does either", "Falling", "Falling", "Ledges", "Both"
+         "When", "Falling speeds up any fall; Ledges pulls you down as you walk off an edge; Both does either", "Falling", "Falling", "Ledges", "Both"
       )
    );
    private final NumberSetting speed = this.addSetting(
-      new NumberSetting("Fall Speed", "Downward speed in blocks per tick", 1.0, 0.3, 4.0, 0.1).showIf(() -> !this.when.is("Ledges"))
+      new NumberSetting("Fall Speed", "Downward speed, in blocks per tick", 1.0, 0.3, 4.0, 0.1).showIf(() -> !this.when.is("Ledges"))
    );
    private final BooleanSetting onlySafe = this.addSetting(
-      new BooleanSetting("Only When Safe", "Only speed up when the whole fall stays under three blocks", true).showIf(() -> !this.when.is("Ledges"))
+      new BooleanSetting("Only When Safe", "Only speed up when the fall is less than three blocks", true).showIf(() -> !this.when.is("Ledges"))
    );
    private final NumberSetting ledgeHeight = this.addSetting(
       new NumberSetting("Ledge Height", "Largest drop to pull down, in blocks", 3.0, 1.0, 5.0, 0.5).showIf(() -> !this.when.is("Falling"))
    );
    private final NumberSetting ledgeSpeed = this.addSetting(
-      new NumberSetting("Ledge Speed", "Downward speed while pulling down a ledge", 1.0, 0.2, 3.0, 0.1).showIf(() -> !this.when.is("Falling"))
+      new NumberSetting("Ledge Speed", "Downward speed when pulled off a ledge, in blocks per tick", 1.0, 0.2, 3.0, 0.1).showIf(() -> !this.when.is("Falling"))
    );
    private final ModeSetting pull = this.addSetting(
-      new ModeSetting("Pull", "Instant jumps straight to Ledge Speed; Smooth builds up to it over a few ticks", "Instant", "Instant", "Smooth")
+      new ModeSetting("Pull", "Instant goes straight to Ledge Speed; Smooth builds up to it over a few ticks", "Instant", "Instant", "Smooth")
          .showIf(() -> !this.when.is("Falling"))
    );
    private final BooleanSetting holesOnly = this.addSetting(
       new BooleanSetting("Holes Only", "Only pull down when the landing spot is a safe hole", false).showIf(() -> !this.when.is("Falling"))
    );
    private final BooleanSetting timer = this.addSetting(
-      new BooleanSetting("Timer Boost", "Run the game clock faster while a ledge pull is descending", false).showIf(() -> !this.when.is("Falling"))
+      new BooleanSetting("Timer Boost", "Speed up the game clock while being pulled down a ledge", false).showIf(() -> !this.when.is("Falling"))
    );
    private final NumberSetting timerRate = this.addSetting(
       new NumberSetting("Timer Rate", "Game ticks per second during the pull (20 is normal)", 40.0, 25.0, 100.0, 5.0)
@@ -66,7 +66,7 @@ public final class FastFall extends Module {
    private boolean timerApplied;
 
    public FastFall() {
-      super("Fast Fall", "Drop to the ground faster, in any fall or just off ledges.", Category.MOVEMENT);
+      super("Fast Fall", "Makes you fall faster, in any fall or only when you step off a ledge.", Category.MOVEMENT);
    }
 
    /** The module this absorbed stays findable by its old name. */

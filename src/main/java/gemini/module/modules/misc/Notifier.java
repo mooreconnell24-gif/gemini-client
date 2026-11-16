@@ -22,17 +22,17 @@ import net.minecraft.world.entity.player.Player;
 
 public final class Notifier extends Module {
    private final BooleanSetting visualRange = this.addSetting(
-      new BooleanSetting("Visual Range", "Alert when players enter or leave render distance", true).onChange(this::forgetRange)
+      new BooleanSetting("Visual Range", "Tell you when players come into or leave render distance", true).onChange(this::forgetRange)
    );
    private final BooleanSetting totemPops = this.addSetting(
-      new BooleanSetting("Totem Pops", "Alert when a player pops a Totem of Undying (left to Totem Pop Counter while that announces it)", true)
+      new BooleanSetting("Totem Pops", "Tell you when a player pops a totem of undying (left to Totem Pop Counter while that is announcing them)", true)
    );
    /** Players in range at the last tick, with the name to report when they leave. */
    private final Map<UUID, String> seenPlayers = new HashMap<>();
    private final Set<UUID> current = new HashSet<>();
 
    public Notifier() {
-      super("Notifier", "Alert on totem pops and visual range changes.", Category.CLIENT);
+      super("Notifier", "Tells you when players pop totems or come into or leave view.", Category.CLIENT);
       // Pops come from the shared tracker, so the count shown here matches Nametags and TargetHUD.
       TotemPops.addListener(new TotemPops.Listener() {
          @Override

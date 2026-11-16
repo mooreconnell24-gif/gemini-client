@@ -29,11 +29,11 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class BreakEsp extends Module {
    private static final float FADE_SECONDS = 0.45F;
-   private final ModeSetting growth = this.addSetting(new ModeSetting("Box", "Grow from the centre as the block breaks, or shrink toward it", "Grow", "Grow", "Shrink"));
+   private final ModeSetting growth = this.addSetting(new ModeSetting("Box", "Grow from the centre as the block breaks, or shrink towards it", "Grow", "Grow", "Shrink"));
    private final ColorSetting startColor = this.addSetting(new ColorSetting("Start Color", "Colour at the first crack", 0));
    private final ColorSetting doneColor = this.addSetting(new ColorSetting("Done Color", "Colour as the block is about to break", 120));
    private final NumberSetting fillOpacity = this.addSetting(new NumberSetting("Fill Opacity", "Opacity of the box faces", 60.0, 0.0, 200.0, 5.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block shown", 48.0, 8.0, 160.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block shown, in blocks", 48.0, 8.0, 160.0, 4.0));
    private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Show who is breaking it and how far along", true));
    private final BooleanSetting self = this.addSetting(new BooleanSetting("Self", "Also show the block you are mining", true));
    private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw on top of terrain", true));
@@ -44,7 +44,7 @@ public final class BreakEsp extends Module {
    private final InfoText infoText = new InfoText();
 
    public BreakEsp() {
-      super("Break ESP", "Progress boxes on blocks being mined, with the breaker's name and percentage.", Category.RENDER);
+      super("Break ESP", "Shows a growing box on blocks being mined, with who is mining them and how far along they are.", Category.RENDER);
    }
 
    private static final class Entry {

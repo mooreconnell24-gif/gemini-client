@@ -11,7 +11,7 @@ public final class FpsGraph extends HudWidget {
    private long lastSampleMs;
 
    public FpsGraph() {
-      super("FPS Graph", "Live sparkline graph of your framerate with min, max, and current FPS.", "Bottom Left", 6, 86);
+      super("FPS Graph", "Shows a graph of recent frame rate with the lowest, highest and current FPS.", "Bottom Left", 6, 86);
    }
 
    @Override

@@ -12,12 +12,12 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class NoWeb extends Module {
    private static volatile NoWeb instance;
-   private final BooleanSetting webs = this.addSetting(new BooleanSetting("Cobwebs", "Walk through cobwebs at full speed", true));
-   private final BooleanSetting berries = this.addSetting(new BooleanSetting("Berry Bushes", "Walk through sweet berry bushes at full speed", true));
-   private final BooleanSetting snow = this.addSetting(new BooleanSetting("Powder Snow", "Walk through powder snow at full speed", true));
+   private final BooleanSetting webs = this.addSetting(new BooleanSetting("Cobwebs", "Move through cobwebs at full speed", true));
+   private final BooleanSetting berries = this.addSetting(new BooleanSetting("Berry Bushes", "Move through sweet berry bushes at full speed", true));
+   private final BooleanSetting snow = this.addSetting(new BooleanSetting("Powder Snow", "Move through powder snow at full speed", true));
 
    public NoWeb() {
-      super("NoWeb", "Prevent cobwebs, berries, and snow from slowing you.", Category.MOVEMENT);
+      super("NoWeb", "Stops cobwebs, berry bushes and powder snow from slowing you down.", Category.MOVEMENT);
       instance = this;
    }
 

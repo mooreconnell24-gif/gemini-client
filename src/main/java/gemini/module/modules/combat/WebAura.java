@@ -16,12 +16,12 @@ import net.minecraft.world.level.block.Blocks;
 
 public final class WebAura extends PlacementModuleBase {
    private static final Predicate<ItemStack> COBWEB = stack -> stack.getItem() instanceof BlockItem item && item.getBlock() == Blocks.COBWEB;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Enemy Range", "Target distance for cobwebs", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Enemy Range", "Farthest enemy to look for, in blocks", 4.5, 2.0, 6.0, 0.5));
 
    private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
 
    public WebAura() {
-      super("WebAura", "Place cobwebs at the feet of the enemy Priority picks to stall its movement.", Category.COMBAT, 1, 2, 4.5);
+      super("WebAura", "Places cobwebs at the chosen enemy's feet to slow it down.", Category.COMBAT, 1, 2, 4.5);
    }
 
    @Override

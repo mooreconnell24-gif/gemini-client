@@ -27,7 +27,7 @@ import net.minecraft.world.item.Item;
 public final class QuickMove extends Module {
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Clicks Per Tick", "Most slots moved in one tick", 6.0, 1.0, 20.0, 1.0));
    private final BooleanSetting sameItem = this.addSetting(
-      new BooleanSetting("Same Item Only", "Only move slots holding the same item as the first one moved by the drag", false)
+      new BooleanSetting("Same Item Only", "Only move slots holding the same item as the first slot dragged over", false)
    );
    private final BooleanSetting hotbar = this.addSetting(new BooleanSetting("Include Hotbar", "Also move items out of hotbar slots you drag over", true));
    private int[] slotX = new int[64];
@@ -43,7 +43,7 @@ public final class QuickMove extends Module {
    private int menuId = -1;
 
    public QuickMove() {
-      super("Quick Move", "Hold Shift and drag across slots to shift-click every one you pass over.", Category.PLAYER);
+      super("Quick Move", "Shift-clicks every slot you drag across while holding Shift.", Category.PLAYER);
    }
 
    @Override

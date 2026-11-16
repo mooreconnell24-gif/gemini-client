@@ -15,7 +15,7 @@ public final class BlockIn extends PlacementModuleBase {
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
 
    public BlockIn() {
-      super("BlockIn", "Rapidly build a full 1x2 protective shell around yourself.", Category.WORLD, 0, 4, 4.5);
+      super("BlockIn", "Places blocks on all sides of you and above your head.", Category.WORLD, 0, 4, 4.5);
    }
 
    @Override

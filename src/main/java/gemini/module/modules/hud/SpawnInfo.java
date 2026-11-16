@@ -28,14 +28,14 @@ public final class SpawnInfo extends Ticked {
    private final BooleanSetting respawn = this.addSetting(new BooleanSetting("Respawn Point", "Show your bed or respawn anchor, and whether it still works", true));
    private final BooleanSetting coordinates = this.addSetting(new BooleanSetting("Coordinates", "Show the block coordinates of each point", true));
    private final BooleanSetting distance = this.addSetting(
-      new BooleanSetting("Distance", "Show how far away each point is (across the Nether link when it is in the other dimension)", true)
+      new BooleanSetting("Distance", "Show how far away each point is (through the Nether when it is in the other dimension)", true)
    );
    private final BooleanSetting heading = this.addSetting(new BooleanSetting("Heading", "Show the compass direction to each point", true));
    private volatile Respawn point;
    private int poll;
 
    public SpawnInfo() {
-      super("Spawn Info", "World spawn and your bed or anchor: coordinates, distance, direction and whether it still works.", "Top Left", 6, 170, 250);
+      super("Spawn Info", "Shows the world spawn and your bed or anchor, with coordinates, distance, direction and whether it still works.", "Top Left", 6, 170, 250);
    }
 
    /** The respawn point as the server sees it. {@code kind} is Bed, Anchor, Missing (block gone or unloaded) or Spot. */

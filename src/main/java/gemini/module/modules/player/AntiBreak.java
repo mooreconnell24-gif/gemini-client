@@ -18,11 +18,11 @@ public final class AntiBreak extends Module {
       new NumberSetting("Durability", "Protect items with this many uses left or fewer", 10.0, 1.0, 100.0, 1.0)
    );
    private final BooleanSetting tools = this.addSetting(new BooleanSetting("Held Items", "Move a nearly broken held item out of the hotbar", true));
-   private final BooleanSetting armor = this.addSetting(new BooleanSetting("Armor", "Take off armor that is about to break", true));
-   private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say which item was saved", true));
+   private final BooleanSetting armor = this.addSetting(new BooleanSetting("Armor", "Take off armour that is about to break", true));
+   private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say in chat which item was saved", true));
 
    public AntiBreak() {
-      super("Anti Break", "Stop using items that are one hit from breaking.", Category.PLAYER);
+      super("Anti Break", "Moves held items and armour that are about to break out of use before they do.", Category.PLAYER);
    }
 
    @Override

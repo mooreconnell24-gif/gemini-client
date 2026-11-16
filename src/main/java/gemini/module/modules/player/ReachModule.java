@@ -9,14 +9,14 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public final class ReachModule extends Module {
-   private final NumberSetting blocks = this.addSetting(new NumberSetting("Blocks", "Block interaction reach", 6.0, 4.5, 10.0, 0.1));
+   private final NumberSetting blocks = this.addSetting(new NumberSetting("Blocks", "Block reach, in blocks", 6.0, 4.5, 10.0, 0.1));
    private final BooleanSetting entityReach = this.addSetting(new BooleanSetting("Entity Reach", "Also extend attack reach", true));
    private final NumberSetting entities = this.addSetting(
-      new NumberSetting("Entities", "Entity attack reach", 4.0, 3.0, 8.0, 0.1).showIf(this.entityReach::get)
+      new NumberSetting("Entities", "Attack reach, in blocks", 4.0, 3.0, 8.0, 0.1).showIf(this.entityReach::get)
    );
 
    public ReachModule() {
-      super("Reach", "Interact and attack from farther away.", Category.PLAYER);
+      super("Reach", "Lets you reach blocks and entities from farther away.", Category.PLAYER);
    }
 
    @Override

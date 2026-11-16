@@ -9,11 +9,11 @@ import java.util.Locale;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class Speedometer extends Ticked {
-   private final ModeSetting unit = this.addSetting(new ModeSetting("Unit", "How speed is displayed", "Blocks/s", "Blocks/s", "km/h", "Blocks/tick"));
+   private final ModeSetting unit = this.addSetting(new ModeSetting("Unit", "Unit the speed is shown in", "Blocks/s", "Blocks/s", "km/h", "Blocks/tick"));
    private final BooleanSetting vertical = this.addSetting(new BooleanSetting("Vertical", "Include vertical speed", false));
 
    public Speedometer() {
-      super("Speedometer", "How fast you are moving.", "Bottom Right", 6, 60, 100);
+      super("Speedometer", "Shows how fast you are moving.", "Bottom Right", 6, 60, 100);
    }
 
    @Override

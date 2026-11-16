@@ -26,7 +26,7 @@ public final class LogoffSpot extends Module {
    private int tickStamp;
 
    public LogoffSpot() {
-      super("LogoffSpot", "Mark 3D positions where nearby players log out.", Category.RENDER);
+      super("LogoffSpot", "Marks where nearby players left the game.", Category.RENDER);
    }
 
    @Override

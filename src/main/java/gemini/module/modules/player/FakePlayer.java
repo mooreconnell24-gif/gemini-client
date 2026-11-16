@@ -23,13 +23,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public final class FakePlayer extends Module {
    private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Starting health of the dummy", 20.0, 1.0, 40.0, 1.0));
-   private final BooleanSetting copyGear = this.addSetting(new BooleanSetting("Copy Gear", "Wear the same armor and items as you", true));
+   private final BooleanSetting copyGear = this.addSetting(new BooleanSetting("Copy Gear", "Give the dummy the same armour and items as you", true));
    private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glowing", "Give the dummy a glowing outline", false));
    private static int nextClientId = -1000000;
    private RemotePlayer dummy;
 
    public FakePlayer() {
-      super("Fake Player", "Spawn a dummy player next to you to test combat.", Category.PLAYER);
+      super("Fake Player", "Spawns a dummy player next to you to practise combat on.", Category.PLAYER);
    }
 
    @Override

@@ -9,10 +9,10 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class AutoWalkModule extends Module {
    private final BooleanSetting sprint = this.addSetting(new BooleanSetting("Sprint", "Sprint while walking", true));
-   private final BooleanSetting jump = this.addSetting(new BooleanSetting("Auto Jump", "Hop over obstacles in the way", true));
+   private final BooleanSetting jump = this.addSetting(new BooleanSetting("Auto Jump", "Jump over blocks in the way", true));
 
    public AutoWalkModule() {
-      super("AutoWalk", "Walk forward automatically.", Category.MOVEMENT);
+      super("AutoWalk", "Walks forward without you holding the key.", Category.MOVEMENT);
    }
 
    @Override

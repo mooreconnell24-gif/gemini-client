@@ -19,16 +19,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 
 public final class BetterTooltips extends Module {
-   private final BooleanSetting durability = this.addSetting(new BooleanSetting("Durability", "Exact remaining uses and percentage", true));
-   private final BooleanSetting food = this.addSetting(new BooleanSetting("Food", "Hunger and saturation values", true));
-   private final BooleanSetting storage = this.addSetting(new BooleanSetting("Storage", "Item totals inside containers", true));
-   private final BooleanSetting itemId = this.addSetting(new BooleanSetting("Item Id", "The registry id of the item", false));
+   private final BooleanSetting durability = this.addSetting(new BooleanSetting("Durability", "Show exact remaining uses and percentage", true));
+   private final BooleanSetting food = this.addSetting(new BooleanSetting("Food", "Show hunger and saturation values", true));
+   private final BooleanSetting storage = this.addSetting(new BooleanSetting("Storage", "Show item totals inside containers", true));
+   private final BooleanSetting itemId = this.addSetting(new BooleanSetting("Item Id", "Show the item's id", false));
    private final NumberSetting storageLines = this.addSetting(
-      new NumberSetting("Storage Lines", "Most item types listed", 6.0, 1.0, 27.0, 1.0).showIf(this.storage::get)
+      new NumberSetting("Storage Lines", "Most item types listed for a container", 6.0, 1.0, 27.0, 1.0).showIf(this.storage::get)
    );
 
    public BetterTooltips() {
-      super("Better Tooltips", "Add durability, food and container details to item tooltips.", Category.RENDER);
+      super("Better Tooltips", "Adds durability, food and container details to item tooltips.", Category.RENDER);
       ItemTooltipCallback.EVENT.register((ItemTooltipCallback)(stack, context, flag, lines) -> {
          if (this.isEnabled()) {
             this.decorate(stack, lines);

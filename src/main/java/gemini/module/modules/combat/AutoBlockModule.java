@@ -39,30 +39,30 @@ public final class AutoBlockModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Timed blocks before hits; Range blocks in reach; Smart blocks swings",
+         "Smart blocks when an attacker swings; Timed blocks just before an attacker's next hit is ready; Range blocks whenever an attacker is in reach",
          "Smart",
          "Timed",
          "Range",
          "Smart"
       )
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far attackers are watched", 4.0, 2.5, 6.0, 0.1));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest attacker to watch, in blocks", 4.0, 2.5, 6.0, 0.1));
    private final NumberSetting hold = this.addSetting(
-      new NumberSetting("Hold Ticks", "Extra ticks to hold shield after blocking a hit", 4.0, 0.0, 20.0, 1.0)
+      new NumberSetting("Hold Ticks", "Extra ticks to keep the shield up after a hit is blocked", 4.0, 0.0, 20.0, 1.0)
    );
    private final NumberSetting lead = this.addSetting(
-      new NumberSetting("Lead Ticks", "Extra lead ticks before raising the shield", 1.0, 0.0, 5.0, 1.0).showIf(() -> this.mode.is("Timed"))
+      new NumberSetting("Lead Ticks", "Ticks before an attacker's hit is ready to raise the shield", 1.0, 0.0, 5.0, 1.0).showIf(() -> this.mode.is("Timed"))
    );
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Block melee from players", true));
-   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Block melee from hostile mobs", true));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Block melee hits from players", true));
+   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Block melee hits from hostile mobs", true));
    private final BooleanSetting projectiles = this.addSetting(new BooleanSetting("Projectiles", "Block arrows that are about to hit you", true));
    private final BooleanSetting swap = this.addSetting(
-      new BooleanSetting("Swap Shield", "Auto-equip a shield into your offhand when needed", true)
+      new BooleanSetting("Swap Shield", "Move a shield into your offhand when one is needed", true)
    );
-   private final BooleanSetting look = this.addSetting(new BooleanSetting("Face Threat", "Turn toward the attacker so the shield's 90° arc covers the hit", true));
-   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Face the attacker in packets only", true).showIf(this.look::get));
+   private final BooleanSetting look = this.addSetting(new BooleanSetting("Face Threat", "Turn towards the attacker so the shield's 90° arc covers the hit", true));
+   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Face the attacker without moving your camera", true).showIf(this.look::get));
    private final BooleanSetting workInGui = this.addSetting(new BooleanSetting("In Screens", "Keep blocking while a screen is open", false));
-   private final BooleanSetting pauseBaritone = this.addSetting(new BooleanSetting("Pause Baritone", "Stop Baritone pathing while the shield is up", true));
+   private final BooleanSetting pauseBaritone = this.addSetting(new BooleanSetting("Pause Baritone", "Pause Baritone pathing while the shield is up", true));
    // Which attacker to face when several swing at once; the box marks it. Players/Hostile above are its filters.
    private final Targeting targeting = Targeting.builder(this)
       .filters(this.players::get, this.hostile::get, () -> false, () -> true)
@@ -82,7 +82,7 @@ public final class AutoBlockModule extends Module {
    }
 
    public AutoBlockModule() {
-      super("Auto Block", "Auto-raise your shield right before incoming hits.", Category.COMBAT);
+      super("Auto Block", "Raises your shield just before an attack would hit you.", Category.COMBAT);
       this.sinceAttack.defaultReturnValue(-1);
    }
 

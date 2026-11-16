@@ -22,10 +22,10 @@ public final class ItemCounter extends HudWidget {
          "minecraft:golden_apple"
       )
    );
-   private final BooleanSetting hideZero = this.addSetting(new BooleanSetting("Hide Zero", "Skip items you have none of", false));
+   private final BooleanSetting hideZero = this.addSetting(new BooleanSetting("Hide Zero", "Leave out items you have none of", false));
 
    public ItemCounter() {
-      super("Item Counter", "Counts of the items you pick, with icons.", "Top Center", 0, 90);
+      super("Item Counter", "Shows how many of the chosen items you carry, with icons.", "Top Center", 0, 90);
    }
 
    private List<Item> rows(LocalPlayer player) {

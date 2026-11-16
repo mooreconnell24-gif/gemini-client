@@ -16,7 +16,7 @@ public final class DayInfo extends Ticked {
    private final BooleanSetting clock = this.addSetting(new BooleanSetting("Clock", "Show the day number and the in-game time", true));
    private final BooleanSetting moon = this.addSetting(new BooleanSetting("Moon Phase", "Show tonight's moon phase", true));
    private final BooleanSetting slime = this.addSetting(
-      new BooleanSetting("Slime Chance", "Add the swamp slime spawn chance the moon phase gives tonight", false).showIf(this.moon::get)
+      new BooleanSetting("Slime Chance", "Show the swamp slime spawn chance tonight's moon phase gives", false).showIf(this.moon::get)
    );
    private final BooleanSetting countdown = this.addSetting(
       new BooleanSetting("Countdown", "Real time until night falls (beds work, monsters stop burning) or until morning", true)
@@ -25,7 +25,7 @@ public final class DayInfo extends Ticked {
    private long lastMoved;
 
    public DayInfo() {
-      super("Day Info", "Day number, moon phase, slime chance and a countdown to night or morning.", "Top Left", 6, 136, 250);
+      super("Day Info", "Shows the day number, moon phase, slime chance and time until night or morning.", "Top Left", 6, 136, 250);
    }
 
    @Override

@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class SelfTrap extends PlacementModuleBase {
    public SelfTrap() {
-      super("SelfTrap", "Encase your upper body and head in obsidian.", Category.COMBAT, 1, 3, 4.5);
+      super("SelfTrap", "Surrounds your head with obsidian on all four sides and above.", Category.COMBAT, 1, 3, 4.5);
    }
 
    @Override

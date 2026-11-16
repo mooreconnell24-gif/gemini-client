@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class ChinaHat extends Module {
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hat accent hue", 205));
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Hat brim radius", 0.65, 0.3, 1.2, 0.05));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hat colour", 205));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Brim radius, in blocks", 0.65, 0.3, 1.2, 0.05));
 
    public ChinaHat() {
-      super("ChinaHat", "Render a 3D neon cone hat above your head.", Category.RENDER);
+      super("ChinaHat", "Draws a cone-shaped hat above your head in third person.", Category.RENDER);
    }
 
    @Override

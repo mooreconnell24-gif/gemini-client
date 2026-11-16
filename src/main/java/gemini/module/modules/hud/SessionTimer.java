@@ -14,7 +14,7 @@ public final class SessionTimer extends Ticked {
    private double travelled;
 
    public SessionTimer() {
-      super("Session Timer", "How long you have been playing and how far you walked.", "Bottom Right", 6, 96, 250);
+      super("Session Timer", "Shows how long you have been playing and how far you have travelled.", "Bottom Right", 6, 96, 250);
    }
 
    @Override

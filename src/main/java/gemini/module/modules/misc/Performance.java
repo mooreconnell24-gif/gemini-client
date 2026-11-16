@@ -23,7 +23,7 @@ public final class Performance extends Module {
       new NumberSetting("Simulation Distance", "Chunks around you that keep ticking (mobs, crops, redstone) while this is on", 6.0, 5.0, 32.0, 1.0).onChange(this::apply)
    );
    private final NumberSetting entityDistance = this.addSetting(
-      new NumberSetting("Entity Distance", "Entity render distance in percent", 50.0, 50.0, 500.0, 25.0).onChange(this::apply)
+      new NumberSetting("Entity Distance", "Entity render distance (percent)", 50.0, 50.0, 500.0, 25.0).onChange(this::apply)
    );
    private final BooleanSetting noClouds = this.addSetting(new BooleanSetting("No Clouds", "Turn clouds off", true).onChange(this::apply));
    private final BooleanSetting noShadows = this.addSetting(new BooleanSetting("No Entity Shadows", "Turn entity shadows off", true).onChange(this::apply));
@@ -31,12 +31,12 @@ public final class Performance extends Module {
       new BooleanSetting("Minimal Particles", "Show as few particles as possible", true).onChange(this::apply)
    );
    private final BooleanSetting noSmoothLighting = this.addSetting(
-      new BooleanSetting("No Smooth Lighting", "Turn ambient occlusion off", false).onChange(this::apply)
+      new BooleanSetting("No Smooth Lighting", "Turn smooth lighting off", false).onChange(this::apply)
    );
-   private final BooleanSetting noBiomeBlend = this.addSetting(new BooleanSetting("No Biome Blend", "Sharp biome colour borders", true).onChange(this::apply));
+   private final BooleanSetting noBiomeBlend = this.addSetting(new BooleanSetting("No Biome Blend", "Turn biome colour blending off", true).onChange(this::apply));
    private final BooleanSetting noVsync = this.addSetting(new BooleanSetting("No VSync", "Turn vertical sync off", false).onChange(this::apply));
    private final BooleanSetting profiler = this.addSetting(
-      new BooleanSetting("Profiler", "Show a live breakdown of the heaviest modules (microseconds per tick or frame, averaged over a second)", false)
+      new BooleanSetting("Profiler", "List the slowest modules (microseconds per tick or frame, averaged over a second)", false)
    );
    private final NumberSetting profilerRows = this.addSetting(
       new NumberSetting("Profiler Rows", "Modules listed per hook", 5.0, 1.0, 12.0, 1.0).showIf(this.profiler::get)
@@ -60,7 +60,7 @@ public final class Performance extends Module {
    private final InfoText infoText = new InfoText();
 
    public Performance() {
-      super("Performance", "FPS mode: low render distance, no clouds, shadows or particles, all restored when switched off.", Category.CLIENT);
+      super("Performance", "Lowers render distance and turns off clouds, shadows and particles for higher FPS, restoring everything when turned off.", Category.CLIENT);
    }
 
    @Override

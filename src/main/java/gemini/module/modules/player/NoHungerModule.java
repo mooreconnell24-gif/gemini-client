@@ -6,7 +6,7 @@ import gemini.util.AttributeBoost;
 
 public final class NoHungerModule extends Module {
    public NoHungerModule() {
-      super("NoHunger", "Keep your hunger and saturation full.", Category.PLAYER);
+      super("NoHunger", "Keeps your food and saturation full.", Category.PLAYER);
    }
 
    @Override

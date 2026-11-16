@@ -26,15 +26,15 @@ import net.minecraft.world.phys.Vec3;
 public final class WaypointsModule extends Module {
    private static final double LABEL_RANGE = 96.0;
    private final List<WaypointsModule.Waypoint> waypoints = new ArrayList<>();
-   private final BooleanSetting beacons = this.addSetting(new BooleanSetting("3D Beacons", "Draw a marker and a beam at every pin in the world", true));
-   private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Show each pin's name and distance in the world", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Beacon and label colour", 190));
+   private final BooleanSetting beacons = this.addSetting(new BooleanSetting("3D Beacons", "Draw a marker and a beam at every waypoint in the world", true));
+   private final BooleanSetting labels = this.addSetting(new BooleanSetting("Labels", "Show each waypoint's name and distance in the world", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Beam and label colour", 190));
    private final InfoText infoText = new InfoText();
 
    public WaypointsModule() {
-      super("Waypoints", "Pin locations and see how far away they are.", Category.WORLD);
+      super("Waypoints", "Saves named locations and shows how far away they are.", Category.WORLD);
       this.addSetting(new ActionSetting("Drop pin", "Save your current position (or use .waypoints add <name>)", this::dropPin));
-      this.addSetting(new ActionSetting("Clear", "Remove every pin in this world", this::clear));
+      this.addSetting(new ActionSetting("Clear", "Remove every waypoint in this world", this::clear));
    }
 
    public List<WaypointsModule.Waypoint> waypoints() {

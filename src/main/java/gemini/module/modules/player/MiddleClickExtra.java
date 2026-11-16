@@ -17,7 +17,7 @@ public final class MiddleClickExtra extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Action",
-         "What a middle click uses from your offhand or hotbar: throw a pearl, fire a rocket, throw an XP bottle or eat a golden apple",
+         "What a middle click does: throw a pearl, fire a rocket, throw an experience bottle or eat a golden apple",
          "Ender Pearl",
          "Ender Pearl",
          "Firework",
@@ -34,7 +34,7 @@ public final class MiddleClickExtra extends Module {
    private int restoreSlot = -1;
 
    public MiddleClickExtra() {
-      super("Middle Click Extra", "Give the middle mouse button a useful job.", Category.PLAYER);
+      super("Middle Click Extra", "Uses an item from your offhand or hotbar when you middle-click.", Category.PLAYER);
    }
 
    @Override

@@ -20,7 +20,7 @@ public final class MultiTask extends Module {
    );
 
    public MultiTask() {
-      super("Multi Task", "Keep eating or using an item while you mine and attack with the main hand.", Category.PLAYER);
+      super("Multi Task", "Lets you keep eating or using an item while you mine and attack.", Category.PLAYER);
       instance = this;
    }
 

@@ -30,7 +30,7 @@ public final class VeinMiner extends Module {
       new ModeSetting("Targets", "Which blocks count as a vein: ores (each ore type separately), logs, both, or any block of the same kind you broke", "Ores", "Ores", "Logs", "Ores And Logs", "Same Block")
    );
    private final NumberSetting maxBlocks = this.addSetting(new NumberSetting("Max Blocks", "Most blocks mined after the one you broke", 32.0, 2.0, 128.0, 1.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block (from your eyes) that is added to the vein", 4.5, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block from your eyes to add to the vein, in blocks", 4.5, 2.0, 6.0, 0.5));
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Creative only: blocks broken each tick", 4.0, 1.0, 16.0, 1.0));
    private final BooleanSetting diagonals = this.addSetting(new BooleanSetting("Diagonals", "Follow veins that only touch at corners", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while mining", true));
@@ -41,7 +41,7 @@ public final class VeinMiner extends Module {
    private int stuck;
 
    public VeinMiner() {
-      super("Vein Miner", "Mine a whole ore vein or tree after breaking one.", Category.WORLD);
+      super("Vein Miner", "Mines the rest of an ore vein or tree when you break one block of it.", Category.WORLD);
    }
 
    @Override

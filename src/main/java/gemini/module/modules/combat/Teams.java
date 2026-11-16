@@ -9,11 +9,11 @@ import net.minecraft.world.entity.player.Player;
 
 public final class Teams extends Module {
    public static Teams instance;
-   private final BooleanSetting scoreboardTeam = this.addSetting(new BooleanSetting("Scoreboard Team", "Check vanilla scoreboard team", true));
-   private final BooleanSetting nameColor = this.addSetting(new BooleanSetting("Name Prefix", "Check matching display name color", true));
+   private final BooleanSetting scoreboardTeam = this.addSetting(new BooleanSetting("Scoreboard Team", "Treat players on your scoreboard team as teammates", true));
+   private final BooleanSetting nameColor = this.addSetting(new BooleanSetting("Name Prefix", "Treat players whose name colour matches yours as teammates", true));
 
    public Teams() {
-      super("Teams", "Skip teammates by scoreboard team or name color.", Category.COMBAT);
+      super("Teams", "Stops combat modules from targeting players on your team.", Category.COMBAT);
       instance = this;
    }
 

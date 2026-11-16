@@ -9,12 +9,12 @@ import net.minecraft.network.protocol.Packet;
 
 public final class LagNotifier extends Ticked {
    private final NumberSetting threshold = this.addSetting(
-      new NumberSetting("Threshold", "Seconds without a packet before the warning shows", 1.0, 0.5, 10.0, 0.5)
+      new NumberSetting("Threshold", "Seconds without data before the warning shows", 1.0, 0.5, 10.0, 0.5)
    );
    private volatile long lastPacket = System.currentTimeMillis();
 
    public LagNotifier() {
-      super("Lag Notifier", "Warns when the server stops sending data.", "Top Center", 0, 56, 100);
+      super("Lag Notifier", "Warns you when the server stops sending data.", "Top Center", 0, 56, 100);
    }
 
    @Override

@@ -7,7 +7,7 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class NoJumpDelayModule extends Module {
    public NoJumpDelayModule() {
-      super("NoJumpDelay", "Jump again the moment you land while holding jump.", Category.MOVEMENT);
+      super("NoJumpDelay", "Lets you jump again the moment you land while holding jump.", Category.MOVEMENT);
    }
 
    @Override

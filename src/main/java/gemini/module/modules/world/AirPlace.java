@@ -19,7 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class AirPlace extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far ahead the block is placed (capped at your block reach + 1, which is 5.5 in survival)", 5.0, 2.0, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far ahead the block is placed, in blocks (capped at your reach + 1, which is 5.5 in survival)", 5.0, 2.0, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between blocks while the button is held", 3.0, 0.0, 10.0, 1.0));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand when placing", true));
    private final BooleanSetting preview = this.addSetting(new BooleanSetting("Preview", "Outline the spot the block will go", true));
@@ -28,7 +28,7 @@ public final class AirPlace extends Module {
    private int cooldown;
 
    public AirPlace() {
-      super("Air Place", "Place the block in your hand anywhere you aim.", Category.WORLD);
+      super("Air Place", "Places the block in your hand where you aim, even with nothing to place it against.", Category.WORLD);
    }
 
    private BlockPos target(LocalPlayer player, float partialTick) {

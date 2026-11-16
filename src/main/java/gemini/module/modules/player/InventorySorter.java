@@ -29,7 +29,7 @@ public final class InventorySorter extends Module {
    private final InfoText infoText = new InfoText();
 
    public InventorySorter() {
-      super("Inventory Sorter", "Tidy your inventory into sorted, merged stacks.", Category.PLAYER);
+      super("Inventory Sorter", "Sorts your inventory and merges partial stacks.", Category.PLAYER);
    }
 
    @Override

@@ -11,12 +11,12 @@ import java.util.Locale;
 
 public final class Gamemode extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Gamemode to apply", "Creative", "Survival", "Creative", "Adventure", "Spectator")
+      new ModeSetting("Mode", "Game mode to switch to", "Creative", "Survival", "Creative", "Adventure", "Spectator")
    );
 
    public Gamemode() {
-      super("Gamemode", "Switch survival, creative, adventure or spectator.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Apply", "Switch to the selected gamemode", this::apply));
+      super("Gamemode", "Switches your game mode to survival, creative, adventure or spectator.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Apply", "Switch to the selected game mode", this::apply));
    }
 
    @Override

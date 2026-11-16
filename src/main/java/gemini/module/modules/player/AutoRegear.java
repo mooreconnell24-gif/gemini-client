@@ -74,7 +74,7 @@ public final class AutoRegear extends Module {
    private final NumberSetting obsidian = this.addSetting(new NumberSetting("Obsidian", "Obsidian to carry", 64.0, 0.0, 320.0, 16.0));
    private final NumberSetting pearls = this.addSetting(new NumberSetting("Pearls", "Ender pearls to carry", 16.0, 0.0, 64.0, 4.0));
    private final NumberSetting xpBottles = this.addSetting(new NumberSetting("XP Bottles", "Bottles o' enchanting to carry", 64.0, 0.0, 320.0, 16.0));
-   private final NumberSetting food = this.addSetting(new NumberSetting("Food", "Other food to carry (any food that is not a golden apple)", 32.0, 0.0, 128.0, 8.0));
+   private final NumberSetting food = this.addSetting(new NumberSetting("Food", "Other food to carry (anything that is not a golden apple)", 32.0, 0.0, 128.0, 8.0));
    private final ListSetting extraItems = this.addSetting(
       new ListSetting("Extra Items", "Other items to refill, each up to Extra Count", ListSetting.Kind.ITEM)
    );
@@ -86,8 +86,8 @@ public final class AutoRegear extends Module {
    );
    private final BooleanSetting mineBack = this.addSetting(new BooleanSetting("Mine Back", "Break the shulker box and pick it up again afterwards", true));
    private final NumberSetting clickDelay = this.addSetting(new NumberSetting("Click Delay", "Ticks between item moves", 1.0, 0.0, 5.0, 1.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Place Range", "How far away the box may be put down", 3.5, 2.0, 4.5, 0.1));
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Face the box in packets only while placing, opening and mining", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Place Range", "Farthest spot to place the box, in blocks", 3.5, 2.0, 4.5, 0.1));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Face the box without moving your camera while placing, opening and mining it", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand when placing and mining", true));
    /** Item id per hotbar slot, null for a slot that was empty when the picture was taken. */
    private final String[] savedHotbar = new String[9];
@@ -109,7 +109,7 @@ public final class AutoRegear extends Module {
    private final Set<Integer> triedHotbar = new HashSet<>();
 
    public AutoRegear() {
-      super("Auto Regear", "Place a shulker box, restock from it and pick it back up.", Category.PLAYER);
+      super("Auto Regear", "Places a shulker box, restocks your inventory from it and picks it back up.", Category.PLAYER);
       this.addSetting(
          new ActionSetting("Save Hotbar", "Remember the hotbar as it is now for Match Hotbar", this::saveHotbar).showIf(this.matchHotbar::get)
       );

@@ -8,7 +8,7 @@ public final class CinematicCamera extends Module {
    private boolean previous;
 
    public CinematicCamera() {
-      super("Cinematic Camera", "Smooth, eased camera movement for recording.", Category.RENDER);
+      super("Cinematic Camera", "Turns on the vanilla smooth camera, for recording.", Category.RENDER);
    }
 
    @Override

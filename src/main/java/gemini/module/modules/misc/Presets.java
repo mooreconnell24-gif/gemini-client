@@ -14,7 +14,7 @@ import java.util.Set;
 
 public final class Presets extends Module {
    private final ModeSetting pack = this.addSetting(
-      new ModeSetting("Preset", "Which bundle of modules to enable", "LiquidBounce", "LiquidBounce", "Performance", "PvP", "Explore", "Build", "Travel")
+      new ModeSetting("Preset", "Which group of modules to turn on", "LiquidBounce", "LiquidBounce", "Performance", "PvP", "Explore", "Build", "Travel")
    );
    private final BooleanSetting disableOthers = this.addSetting(new BooleanSetting("Disable Others", "First turn off the modules the other presets use that this one does not", false));
 
@@ -32,7 +32,7 @@ public final class Presets extends Module {
 
    public Presets() {
       super(
-         "Presets", "One-click module bundles for PvP, FPS, and travel.", Category.CLIENT
+         "Presets", "Turns on a ready-made group of modules for PvP, performance, exploring, building or travel.", Category.CLIENT
       );
    }
 

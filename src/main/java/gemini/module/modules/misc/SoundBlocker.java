@@ -19,7 +19,7 @@ public final class SoundBlocker extends Module {
    private volatile String[] needles = new String[0];
 
    public SoundBlocker() {
-      super("Sound Blocker", "Mute annoying sounds by name.", Category.CLIENT);
+      super("Sound Blocker", "Mutes the sounds you list.", Category.CLIENT);
       instance = this;
       this.rebuild();
    }

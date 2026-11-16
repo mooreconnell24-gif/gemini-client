@@ -41,23 +41,23 @@ import net.minecraft.world.phys.Vec3;
 public final class AutoCity extends Module {
    private final InfoText progressText = new InfoText();
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block you will mine", 4.5, 2.0, 6.0, 0.1));
-   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy search distance", 6.0, 2.0, 10.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block to mine, in blocks", 4.5, 2.0, 6.0, 0.1));
+   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Farthest enemy to look for, in blocks", 6.0, 2.0, 10.0, 0.5));
    private final BooleanSetting autoTool = this.addSetting(
-      new BooleanSetting("Auto Tool", "Hold the fastest hotbar tool while mining and put your slot back afterwards", true)
+      new BooleanSetting("Auto Tool", "Hold the fastest hotbar tool while mining and switch back afterwards", true)
    );
    private final BooleanSetting crystal = this.addSetting(
-      new BooleanSetting("Pre-place Crystal", "Put a crystal beside the block just before it breaks, or in the gap once it has", true)
+      new BooleanSetting("Pre-place Crystal", "Place a crystal beside the block just before it breaks, or in the gap once it has", true)
    );
    private final NumberSetting crystalAt = this.addSetting(
-      new NumberSetting("Pre-place At", "Break progress (percent) at which the crystal goes down", 85.0, 50.0, 100.0, 5.0).showIf(this.crystal::get)
+      new NumberSetting("Pre-place At", "Mining progress (percent) at which the crystal is placed", 85.0, 50.0, 100.0, 5.0).showIf(this.crystal::get)
    );
    private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Rotate", "Face the block while mining it", true));
    private final BooleanSetting silentAim = this.addSetting(
-      new BooleanSetting("Silent Aim", "Face it in packets only, leaving the camera alone", true).showIf(this.rotate::get)
+      new BooleanSetting("Silent Aim", "Face the block without moving your camera", true).showIf(this.rotate::get)
    );
-   private final BooleanSetting autoDisable = this.addSetting(new BooleanSetting("Auto Disable", "Switch off once one block has been broken", true));
-   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the block being mined and how far along it is", true));
+   private final BooleanSetting autoDisable = this.addSetting(new BooleanSetting("Auto Disable", "Turn off once one block has been broken", true));
+   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the block being mined and its progress", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 10).showIf(this.render::get));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true, this.render::get);
    private final Targeting targeting = Targeting.builder(this).box("Outline", 10).build();
@@ -73,7 +73,7 @@ public final class AutoCity extends Module {
    public AutoCity() {
       super(
          "Auto City",
-         "Mine open the surround of the enemy in a hole that Priority picks (the next one if none of its blocks can be mined), with an optional crystal pre-place.",
+         "Mines a block of the surround of an enemy standing in a hole, optionally placing a crystal beside it first.",
          Category.COMBAT
       );
    }

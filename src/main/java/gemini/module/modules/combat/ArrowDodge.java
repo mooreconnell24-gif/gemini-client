@@ -17,13 +17,13 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
 
 public final class ArrowDodge extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max arrow detection range", 24.0, 6.0, 48.0, 1.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest arrow to watch, in blocks", 24.0, 6.0, 48.0, 1.0));
    private final NumberSetting lookahead = this.addSetting(new NumberSetting("Lookahead", "Ticks of arrow flight to predict", 14.0, 4.0, 40.0, 1.0));
-   private final NumberSetting strength = this.addSetting(new NumberSetting("Dodge Speed", "Horizontal dodge velocity", 0.55, 0.2, 1.5, 0.05));
+   private final NumberSetting strength = this.addSetting(new NumberSetting("Dodge Speed", "Sideways speed of the dodge", 0.55, 0.2, 1.5, 0.05));
    private final BooleanSetting inAir = this.addSetting(new BooleanSetting("While Airborne", "Also dodge while jumping or falling", true));
 
    public ArrowDodge() {
-      super("Arrow Dodge", "Sidestep incoming arrows automatically.", Category.COMBAT);
+      super("Arrow Dodge", "Steps sideways out of the path of arrows flying at you.", Category.COMBAT);
    }
 
    @Override

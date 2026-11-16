@@ -8,7 +8,7 @@ import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 
 public final class XCarry extends Module {
    public XCarry() {
-      super("XCarry", "Store items in the 2x2 crafting grid.", Category.PLAYER);
+      super("XCarry", "Lets you keep items in the 2x2 crafting grid of your inventory.", Category.PLAYER);
    }
 
    @Override

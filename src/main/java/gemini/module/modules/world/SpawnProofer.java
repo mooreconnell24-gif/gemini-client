@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
 public final class SpawnProofer extends Module {
    private final PlaceSettings placing = new PlaceSettings(this, 3, 1, 4.0);
    private final NumberSetting maxLight = this.addSetting(
-      new NumberSetting("Max Light", "Maximum block light level treated as monster-spawnable", 0.0, 0.0, 14.0, 1.0)
+      new NumberSetting("Max Light", "Highest block light level treated as one monsters can spawn at", 0.0, 0.0, 14.0, 1.0)
    );
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
@@ -39,7 +39,7 @@ public final class SpawnProofer extends Module {
    private int tick;
 
    public SpawnProofer() {
-      super("Spawn Proofer", "Cover dark floor around you with torches or buttons.", Category.WORLD);
+      super("Spawn Proofer", "Covers dark floor around you with blocks mobs cannot spawn on, such as torches or buttons.", Category.WORLD);
    }
 
    @Override

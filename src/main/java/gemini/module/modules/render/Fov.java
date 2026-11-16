@@ -8,11 +8,11 @@ import net.minecraft.client.Minecraft;
 
 public final class Fov extends Module {
    public static Fov instance;
-   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view in degrees", 100.0, 30.0, 160.0, 1.0));
-   private final BooleanSetting keepEffects = this.addSetting(new BooleanSetting("Keep Effects", "Still widen the view while sprinting or hasted", false));
+   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view, in degrees", 100.0, 30.0, 160.0, 1.0));
+   private final BooleanSetting keepEffects = this.addSetting(new BooleanSetting("Keep Effects", "Still widen the view while sprinting or under Speed", false));
 
    public Fov() {
-      super("FOV", "Set a field of view beyond the vanilla slider.", Category.RENDER);
+      super("FOV", "Sets a field of view outside the range of the vanilla slider.", Category.RENDER);
       instance = this;
    }
 

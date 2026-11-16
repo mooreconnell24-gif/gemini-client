@@ -18,16 +18,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class TargetStrafe extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Orbit distance around target", 2.6, 1.0, 5.0, 0.2));
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Orbit speed multiplier", 1.05, 0.5, 2.0, 0.05));
-   private final BooleanSetting holdJump = this.addSetting(new BooleanSetting("Require Jump", "Only orbit while holding Jump", true));
-   private final BooleanSetting renderRing = this.addSetting(new BooleanSetting("Render Ring", "Draw the 3D orbit ring around the target", true));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Distance from the target while circling, in blocks", 2.6, 1.0, 5.0, 0.2));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Circling speed multiplier", 1.05, 0.5, 2.0, 0.05));
+   private final BooleanSetting holdJump = this.addSetting(new BooleanSetting("Require Jump", "Only circle while holding Jump", true));
+   private final BooleanSetting renderRing = this.addSetting(new BooleanSetting("Render Ring", "Draw the circle around the target", true));
    private final Targeting targeting = Targeting.builder(this).build();
    private int dir = 1;
    private LivingEntity activeTarget;
 
    public TargetStrafe() {
-      super("TargetStrafe", "Orbit smoothly around active combat targets.", Category.MOVEMENT);
+      super("TargetStrafe", "Circles around your combat target.", Category.MOVEMENT);
    }
 
    @Override

@@ -12,10 +12,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
 public final class HoleSnap extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Max distance to pull into a safe hole", 4.0, 1.5, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest hole to pull into, in blocks", 4.0, 1.5, 6.0, 0.5));
 
    public HoleSnap() {
-      super("HoleSnap", "Snap smoothly into nearby Bedrock/Obsidian holes.", Category.MOVEMENT);
+      super("HoleSnap", "Pulls you into the nearest safe hole.", Category.MOVEMENT);
    }
 
    @Override

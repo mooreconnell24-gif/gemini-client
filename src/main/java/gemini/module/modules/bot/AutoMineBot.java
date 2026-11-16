@@ -13,7 +13,7 @@ public final class AutoMineBot extends Module {
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
          "Target Blocks",
-         "Ores or blocks for Baritone to locate and mine",
+         "Ores or blocks for Baritone to find and mine",
          ListSetting.Kind.BLOCK,
          "minecraft:diamond_ore",
          "minecraft:deepslate_diamond_ore",
@@ -24,7 +24,7 @@ public final class AutoMineBot extends Module {
    );
 
    public AutoMineBot() {
-      super("Auto Mine Bot", "Pathfind and mine target ores via Baritone.", Category.WORLD);
+      super("Auto Mine Bot", "Finds and mines the ores or blocks you choose, using Baritone.", Category.WORLD);
    }
 
    @Override

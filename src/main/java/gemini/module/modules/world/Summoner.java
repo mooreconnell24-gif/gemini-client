@@ -19,7 +19,7 @@ public final class Summoner extends Module {
    private final ModeSetting mob = this.addSetting(
       new ModeSetting(
          "Mob",
-         "What to summon",
+         "Mob to summon",
          "Zombie",
          "Zombie",
          "Skeleton",
@@ -42,10 +42,10 @@ public final class Summoner extends Module {
       )
    );
    private final NumberSetting count = this.addSetting(new NumberSetting("Count", "How many to summon at once", 1.0, 1.0, 16.0, 1.0));
-   private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Blocks in front of you", 4.0, 2.0, 24.0, 1.0));
+   private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Distance in front of you, in blocks", 4.0, 2.0, 24.0, 1.0));
 
    public Summoner() {
-      super("Summoner", "Summon a chosen mob in front of you to practise against.", Category.WORLD);
+      super("Summoner", "Summons a chosen mob in front of you to practise against.", Category.WORLD);
       this.addSetting(new ActionSetting("Summon", "Summon the selected mob now", this::summon));
    }
 
