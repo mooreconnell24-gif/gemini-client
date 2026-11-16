@@ -169,10 +169,13 @@ public final class BaritonePage extends DashboardPage {
       }
    }
 
-   /** Stops the engine and switches off the bot modules that were driving it, so none of them restarts it. */
+   /**
+    * Stops the engine and switches off every bot module, so none of them restarts a task. Auto Highway walks and
+    * builds without Baritone, so it is switched off here too rather than left running behind a "cancelled" notice.
+    */
    private void cancel() {
       for (Module module : this.botModules()) {
-         if (module.isEnabled() && !(module instanceof AutoHighway)) {
+         if (module.isEnabled()) {
             module.setEnabled(false, false);
          }
       }
