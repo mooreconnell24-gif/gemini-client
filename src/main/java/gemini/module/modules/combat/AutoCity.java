@@ -2,6 +2,7 @@ package gemini.module.modules.combat;
 
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.NumberSetting;
@@ -15,7 +16,6 @@ import gemini.util.Hands;
 import gemini.util.Holes;
 import gemini.util.RotationManager;
 import gemini.util.Swing;
-import gemini.util.Targets;
 import gemini.util.Tools;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +58,7 @@ public final class AutoCity extends Module {
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the block being mined and how far along it is", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 10).showIf(this.render::get));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true, this.render::get);
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 10).build();
    private LivingEntity target;
    private BlockPos cityPos;
    private Direction cityDir;
@@ -68,7 +69,11 @@ public final class AutoCity extends Module {
    private boolean crystalPlaced;
 
    public AutoCity() {
-      super("Auto City", "Mine open the surround of an enemy in a hole, with an optional crystal pre-place.", Category.COMBAT);
+      super(
+         "Auto City",
+         "Mine open the surround of the enemy in a hole that Priority picks (the next one if none of its blocks can be mined), with an optional crystal pre-place.",
+         Category.COMBAT
+      );
    }
 
    @Override
@@ -87,6 +92,7 @@ public final class AutoCity extends Module {
       this.stopBreaking(client);
       this.restoreSlot(client.player);
       this.reset();
+      this.targeting.clear();
    }
 
    @Override
@@ -94,6 +100,7 @@ public final class AutoCity extends Module {
       this.breaking = false;
       this.restoreSlot = -1;
       this.reset();
+      this.targeting.clear();
    }
 
    private void reset() {
@@ -175,19 +182,27 @@ public final class AutoCity extends Module {
       return true;
    }
 
+   /**
+    * Goes for the enemy in a hole that Priority picks; when none of its surround blocks can be mined from here,
+    * the next one by priority is tried.
+    */
    private void pick(Minecraft client, LocalPlayer player) {
       Level level = client.level;
-      LivingEntity enemy = Targets.nearest(
-         player,
-         client.level.entitiesForRendering(),
-         LivingEntity.class,
-         this.targetRange.get(),
-         living -> Targets.isCandidate(player, living, true, true, false, true) && surrounded(level, living.blockPosition())
+      LivingEntity enemy = TargetFallback.first(
+         exclude -> this.targeting
+            .pick(player, client.level.entitiesForRendering(), this.targetRange.get(), living -> exclude.test(living) && surrounded(level, living.blockPosition())),
+         candidate -> this.planCity(level, player, candidate),
+         TargetFallback.TRIES
       );
       if (enemy == null) {
-         return;
+         this.targeting.clear();
+      } else {
+         this.targeting.setTarget(enemy);
       }
+   }
 
+   /** Chooses the surround block of {@code enemy} to mine; false (and nothing chosen) when none can be. */
+   private boolean planCity(Level level, LocalPlayer player, LivingEntity enemy) {
       BlockPos feet = enemy.blockPosition();
       List<CityPlanner.Candidate> candidates = new ArrayList<>(4);
       for (int i = 0; i < SIDES.length; i++) {
@@ -207,13 +222,16 @@ public final class AutoCity extends Module {
       }
 
       CityPlanner.Candidate best = CityPlanner.best(candidates);
-      if (best != null) {
-         this.target = enemy;
-         this.cityDir = SIDES[best.id()];
-         this.cityPos = feet.relative(this.cityDir);
-         this.progress = 0.0F;
-         this.crystalPlaced = false;
+      if (best == null) {
+         return false;
       }
+
+      this.target = enemy;
+      this.cityDir = SIDES[best.id()];
+      this.cityPos = feet.relative(this.cityDir);
+      this.progress = 0.0F;
+      this.crystalPlaced = false;
+      return true;
    }
 
    private static int heldBreakTicks(LocalPlayer player, Level level, BlockPos pos, BlockState state) {
@@ -294,6 +312,7 @@ public final class AutoCity extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       BlockPos pos = this.cityPos;
       if (!this.render.get() || pos == null) {
          return;

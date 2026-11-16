@@ -1,12 +1,12 @@
 package gemini.module.modules.combat;
 
 import gemini.util.InfoText;
-import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.ModeSetting;
@@ -66,19 +66,40 @@ public final class AutoCrystal extends Module {
    private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim in packets without moving camera", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight active crystal base and damage", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 280).showIf(this.render::get));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 0).build();
    private int placeTimer;
    private int breakTimer;
    private BlockPos renderPos;
    private float renderDamage;
+   private Entity plannedCrystal;
+   private BlockPos plannedBase;
+   private boolean plannedSupport;
 
    public AutoCrystal() {
-      super("AutoCrystal", "Predictive End Crystal placement and detonation.", Category.COMBAT);
+      super(
+         "AutoCrystal",
+         "Predictive End Crystal placement and detonation. Crystals are worked out for the enemy Priority picks; if none can hurt it enough, the next enemy by priority is tried.",
+         Category.COMBAT
+      );
    }
 
    @Override
    public void onDisable() {
+      this.forget();
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.forget();
+   }
+
+   private void forget() {
       this.renderPos = null;
       this.renderDamage = 0.0F;
+      this.plannedCrystal = null;
+      this.plannedBase = null;
+      this.plannedSupport = false;
+      this.targeting.clear();
    }
 
    private final InfoText infoText = new InfoText();
@@ -91,72 +112,112 @@ public final class AutoCrystal extends Module {
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && client.gui.screen() == null) {
-         LocalPlayer player = client.player;
-         ClientLevel level = client.level;
-         LivingEntity target = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.targetRange.get(), true);
-         if (target == null) {
+      if (!ClientState.ready(client) || client.gui.screen() != null) {
+         this.renderPos = null;
+         return;
+      }
+
+      LocalPlayer player = client.player;
+      ClientLevel level = client.level;
+      boolean breakDue = this.breakTimer <= 0;
+      if (!breakDue) {
+         this.breakTimer--;
+      }
+
+      boolean placeDue = this.placeTimer <= 0;
+      if (!placeDue) {
+         this.placeTimer--;
+      }
+
+      if (!breakDue && !placeDue) {
+         // Nothing is searched this tick: keep the enemy the last search settled on.
+         if (this.targeting.target() == null) {
             this.renderPos = null;
-         } else {
-            if (this.breakTimer > 0) {
-               this.breakTimer--;
-            } else {
-               Entity bestCrystal = this.findBestCrystal(level, player, target);
-               if (bestCrystal != null) {
-                  float[] rot = RotationManager.toward(player, bestCrystal);
-                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
-                     client.gameMode.attack(player, bestCrystal);
-                     Swing.attack(player, InteractionHand.MAIN_HAND);
-                     this.breakTimer = this.breakDelay.intValue();
-                  }
-               }
+         }
+
+         return;
+      }
+
+      // The priority target first; if no crystal can hurt it enough, the next one by priority.
+      LivingEntity target = TargetFallback.first(
+         exclude -> this.targeting.pick(player, level.entitiesForRendering(), this.targetRange.get(), exclude),
+         candidate -> this.plan(level, player, candidate, breakDue, placeDue),
+         TargetFallback.TRIES
+      );
+      if (target == null) {
+         this.targeting.clear();
+         this.renderPos = null;
+         return;
+      }
+
+      this.targeting.setTarget(target);
+      Entity bestCrystal = this.plannedCrystal;
+      if (breakDue && bestCrystal != null) {
+         float[] rot = RotationManager.toward(player, bestCrystal);
+         if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
+            client.gameMode.attack(player, bestCrystal);
+            Swing.attack(player, InteractionHand.MAIN_HAND);
+            this.breakTimer = this.breakDelay.intValue();
+         }
+      }
+
+      if (placeDue) {
+         BlockPos bestBase = this.plannedBase;
+         if (bestBase != null && this.plannedSupport
+            && !BlockPlacer.place(client, bestBase, stack -> stack.is(Items.OBSIDIAN), true, !this.autoSwitch.is("Normal"), true)) {
+            bestBase = null;
+         }
+
+         this.renderPos = bestBase;
+         if (bestBase != null) {
+            InteractionHand hand = player.getOffhandItem().is(Items.END_CRYSTAL) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+            int crystalSlot = Inventories.findHotbar(player, stack -> stack.is(Items.END_CRYSTAL));
+            if (hand == InteractionHand.MAIN_HAND
+               && !player.getMainHandItem().is(Items.END_CRYSTAL)
+               && (this.autoSwitch.is("None") || crystalSlot < 0 || !Hands.claimMainHand())) {
+               return;
             }
 
-            if (this.placeTimer > 0) {
-               this.placeTimer--;
-            } else {
-               BlockPos bestBase = this.findBestBase(level, player, target, false);
-               if (bestBase == null && this.supportPlace.get()) {
-                  BlockPos support = this.findBestBase(level, player, target, true);
-                  if (support != null && BlockPlacer.place(client, support, stack -> stack.is(Items.OBSIDIAN), true, !this.autoSwitch.is("Normal"), true)) {
-                     bestBase = support;
-                  }
+            Vec3 hitVec = Vec3.atCenterOf(bestBase).add(0.0, 0.5, 0.0);
+            float[] rot = RotationManager.toward(player, hitVec);
+            if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
+               int prev = player.getInventory().getSelectedSlot();
+               boolean swapped = false;
+               if (hand == InteractionHand.MAIN_HAND && !player.getMainHandItem().is(Items.END_CRYSTAL)) {
+                  player.getInventory().setSelectedSlot(crystalSlot);
+                  swapped = true;
                }
 
-               this.renderPos = bestBase;
-               if (bestBase != null) {
-                  InteractionHand hand = player.getOffhandItem().is(Items.END_CRYSTAL) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-                  int crystalSlot = Inventories.findHotbar(player, stack -> stack.is(Items.END_CRYSTAL));
-                  if (hand == InteractionHand.MAIN_HAND
-                     && !player.getMainHandItem().is(Items.END_CRYSTAL)
-                     && (this.autoSwitch.is("None") || crystalSlot < 0 || !Hands.claimMainHand())) {
-                     return;
-                  }
-
-                  Vec3 hitVec = Vec3.atCenterOf(bestBase).add(0.0, 0.5, 0.0);
-                  float[] rot = RotationManager.toward(player, hitVec);
-                  if (RotationManager.request(player, rot, 95.0F, this.silentRotate.get(), ActionPriority.COMBAT)) {
-                     int prev = player.getInventory().getSelectedSlot();
-                     boolean swapped = false;
-                     if (hand == InteractionHand.MAIN_HAND && !player.getMainHandItem().is(Items.END_CRYSTAL)) {
-                        player.getInventory().setSelectedSlot(crystalSlot);
-                        swapped = true;
-                     }
-
-                     client.gameMode.useItemOn(player, hand, new BlockHitResult(hitVec, Direction.UP, bestBase, false));
-                     Swing.interact(player, hand);
-                     if (swapped && this.autoSwitch.is("Silent")) {
-                        player.getInventory().setSelectedSlot(prev);
-                     }
-
-                     this.placeTimer = this.placeDelay.intValue();
-                  }
+               client.gameMode.useItemOn(player, hand, new BlockHitResult(hitVec, Direction.UP, bestBase, false));
+               Swing.interact(player, hand);
+               if (swapped && this.autoSwitch.is("Silent")) {
+                  player.getInventory().setSelectedSlot(prev);
                }
+
+               this.placeTimer = this.placeDelay.intValue();
             }
          }
-      } else {
-         this.renderPos = null;
       }
+   }
+
+   /**
+    * Works out, for one candidate enemy, the crystal to break (when breaking is due) and the base to place on
+    * (when placing is due), remembering both for the tick. Whether anything was found decides if this enemy is
+    * the one the module goes for.
+    */
+   private boolean plan(ClientLevel level, LocalPlayer player, LivingEntity target, boolean breakDue, boolean placeDue) {
+      this.plannedCrystal = breakDue ? this.findBestCrystal(level, player, target) : null;
+      this.plannedBase = null;
+      this.plannedSupport = false;
+      if (placeDue) {
+         this.plannedBase = this.findBestBase(level, player, target, false);
+         if (this.plannedBase == null && this.supportPlace.get()) {
+            this.plannedBase = this.findBestBase(level, player, target, true);
+            this.plannedSupport = this.plannedBase != null;
+         }
+      }
+
+      return this.plannedCrystal != null || this.plannedBase != null;
    }
 
    private Entity findBestCrystal(ClientLevel level, LocalPlayer player, LivingEntity target) {
@@ -259,6 +320,7 @@ public final class AutoCrystal extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       if (this.render.get() && this.renderPos != null) {
          int argb = this.color.argb();
          Render3D.block(this.renderPos, argb, true, true, 1.8F, 65, true);

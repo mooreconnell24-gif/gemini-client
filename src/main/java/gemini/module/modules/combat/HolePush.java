@@ -2,6 +2,7 @@ package gemini.module.modules.combat;
 
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -11,7 +12,6 @@ import gemini.util.BlockPlacer;
 import gemini.util.ClientState;
 import gemini.util.Holes;
 import gemini.util.RotationManager;
-import gemini.util.Targets;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -50,13 +50,14 @@ public final class HolePush extends Module {
    );
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render Plan", "Show the piston, power and destination blocks", true));
    private final BooleanSetting autoDisable = this.addSetting(new BooleanSetting("Auto Disable", "Switch off after one push", true));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 200).build();
    private Plan plan;
    private Step step = Step.IDLE;
    private int wait;
    private int age;
 
    public HolePush() {
-      super("Hole Push", "Push an enemy out of its hole with a powered piston.", Category.COMBAT);
+      super("Hole Push", "Push the enemy in a hole that Priority picks out of it with a powered piston (the next one if no piston fits around it).", Category.COMBAT);
    }
 
    @Override
@@ -75,6 +76,7 @@ public final class HolePush extends Module {
    }
 
    private void reset() {
+      this.targeting.clear();
       this.plan = null;
       this.step = Step.IDLE;
       this.wait = 0;
@@ -195,18 +197,25 @@ public final class HolePush extends Module {
       return state.getCollisionShape(level, pos).isEmpty() && state.getFluidState().isEmpty();
    }
 
+   /** The plan for the enemy in a hole that Priority picks, or for the next one by priority when no piston fits around it. */
    private Plan makePlan(Minecraft client, Level level, LocalPlayer player) {
-      LivingEntity enemy = Targets.nearest(
-         player,
-         client.level.entitiesForRendering(),
-         LivingEntity.class,
-         this.targetRange.get(),
-         living -> Targets.isCandidate(player, living, true, true, false, true) && Holes.isHole(level, living.blockPosition())
+      Plan[] made = new Plan[1];
+      LivingEntity enemy = TargetFallback.first(
+         exclude -> this.targeting
+            .pick(player, client.level.entitiesForRendering(), this.targetRange.get(), living -> exclude.test(living) && Holes.isHole(level, living.blockPosition())),
+         candidate -> (made[0] = this.planFor(level, player, candidate)) != null,
+         TargetFallback.TRIES
       );
       if (enemy == null) {
+         this.targeting.clear();
          return null;
       }
 
+      this.targeting.setTarget(enemy);
+      return made[0];
+   }
+
+   private Plan planFor(Level level, LocalPlayer player, LivingEntity enemy) {
       BlockPos feet = enemy.blockPosition();
       BlockPos head = feet.above();
       Plan best = null;
@@ -267,6 +276,7 @@ public final class HolePush extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       Plan current = this.plan;
       if (!this.render.get() || current == null) {
          return;
