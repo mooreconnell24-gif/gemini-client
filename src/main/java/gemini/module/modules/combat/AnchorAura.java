@@ -1,11 +1,11 @@
 package gemini.module.modules.combat;
 
-import gemini.util.Targets;
 import gemini.util.Inventories;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.BlockPlacer;
 import gemini.util.Damage;
@@ -26,44 +26,73 @@ public final class AnchorAura extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Target and placement range", 4.5, 2.0, 6.0, 0.5));
    private final NumberSetting maxSelf = this.addSetting(new NumberSetting("Max Self Damage", "Max allowed self explosion damage", 9.0, 2.0, 18.0, 1.0));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between anchor actions", 2.0, 0.0, 10.0, 1.0));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 30).build();
    private int wait;
 
    public AnchorAura() {
-      super("AnchorAura", "Place, charge, and detonate Respawn Anchors on enemies.", Category.COMBAT);
+      super("AnchorAura", "Place, charge, and detonate Respawn Anchors on the enemy Priority picks, skipping enemies whose anchor would hurt you too much.", Category.COMBAT);
+   }
+
+   @Override
+   public void onDisable() {
+      this.targeting.clear();
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.targeting.clear();
+   }
+
+   @Override
+   public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && client.gui.screen() == null && client.level.dimension() != Level.NETHER && this.wait-- <= 0) {
-         this.wait = this.delay.intValue();
-         LocalPlayer player = client.player;
-         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.range.get(), true);
-         if (enemy != null) {
-            BlockPos targetPos = enemy.blockPosition().above(2);
-            if (!BlockPlacer.inReach(player, targetPos, this.range.get())) {
-               targetPos = enemy.blockPosition().above();
-            }
-
-            float selfDmg = Damage.crystal(player, Vec3.atCenterOf(targetPos));
-            if (selfDmg > this.maxSelf.floatValue() || selfDmg + 1.5F >= Damage.health(player)) {
-               return;
-            }
-
-            BlockState state = client.level.getBlockState(targetPos);
-            BlockPos finalPos = targetPos;
-            if (state.is(Blocks.RESPAWN_ANCHOR)) {
-               RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, ActionPriority.COMBAT);
-               int charges = (Integer)state.getValue(RespawnAnchorBlock.CHARGE);
-               if (charges == 0) {
-                  Inventories.withHotbarItem(player, s -> s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
-               } else {
-                  Inventories.withHotbarItem(player, s -> !s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
-               }
-            } else if (BlockPlacer.replaceable(client.level, finalPos)) {
-               BlockPlacer.place(client, finalPos, s -> s.is(Items.RESPAWN_ANCHOR), true, true, true);
-            }
-         }
+      if (!ClientState.ready(client) || client.gui.screen() != null || client.level.dimension() == Level.NETHER) {
+         this.targeting.clear();
+         return;
       }
+
+      if (this.wait-- > 0) {
+         return;
+      }
+
+      this.wait = this.delay.intValue();
+      LocalPlayer player = client.player;
+      LivingEntity enemy = this.targeting.pick(player, client.level.entitiesForRendering(), this.range.get(), living -> this.anchorSpot(player, living) != null);
+      if (enemy == null) {
+         return;
+      }
+
+      BlockPos finalPos = this.anchorSpot(player, enemy);
+      BlockState state = client.level.getBlockState(finalPos);
+      if (state.is(Blocks.RESPAWN_ANCHOR)) {
+         RotationManager.request(player, RotationManager.toward(player, finalPos), 90.0F, true, ActionPriority.COMBAT);
+         int charges = (Integer)state.getValue(RespawnAnchorBlock.CHARGE);
+         if (charges == 0) {
+            Inventories.withHotbarItem(player, s -> s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
+         } else {
+            Inventories.withHotbarItem(player, s -> !s.is(Items.GLOWSTONE), () -> CombatHelpers.click(client, player, finalPos, Direction.UP));
+         }
+      } else if (BlockPlacer.replaceable(client.level, finalPos)) {
+         BlockPlacer.place(client, finalPos, s -> s.is(Items.RESPAWN_ANCHOR), true, true, true);
+      }
+   }
+
+   /**
+    * Where the anchor goes for {@code enemy}: two blocks above its feet, or one when that is out of reach. Null
+    * when the blast there would deal more than Max Self Damage or leave you within 1.5 health of dying.
+    */
+   private BlockPos anchorSpot(LocalPlayer player, LivingEntity enemy) {
+      BlockPos pos = enemy.blockPosition().above(2);
+      if (!BlockPlacer.inReach(player, pos, this.range.get())) {
+         pos = enemy.blockPosition().above();
+      }
+
+      float selfDmg = Damage.crystal(player, Vec3.atCenterOf(pos));
+      return selfDmg > this.maxSelf.floatValue() || selfDmg + 1.5F >= Damage.health(player) ? null : pos;
    }
 }
