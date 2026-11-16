@@ -41,7 +41,7 @@ public final class CustomText extends Ticked {
       } else {
          LocalPlayer player = hud.client.player;
          Map<String, String> values = new HashMap<>();
-         values.put("{version}", "1.0.0");
+         values.put("{version}", gemini.Gemini.VERSION);
          values.put("{fps}", Integer.toString(hud.client.getFps()));
          values.put("{x}", Integer.toString(Mth.floor(player.getX())));
          values.put("{y}", Integer.toString(Mth.floor(player.getY())));
@@ -59,7 +59,8 @@ public final class CustomText extends Ticked {
          values.put("{server}", server == null ? "Single-player" : server.ip);
          values.put("{online}", hud.client.getConnection() == null ? "0" : Integer.toString(hud.client.getConnection().getOnlinePlayers().size()));
          PlayerInfo info = hud.client.getConnection() == null ? null : hud.client.getConnection().getPlayerInfo(player.getUUID());
-         values.put("{ping}", info == null ? "0" : Integer.toString(info.getLatency()));
+         // Ping is only real on a remote connection; in single player it is always zero, so it stays empty.
+         values.put("{ping}", info == null || hud.client.isLocalServer() ? "" : Integer.toString(info.getLatency()));
          List<TextHudWidget.Line> lines = new ArrayList<>();
 
          for (String entry : this.entries.get()) {

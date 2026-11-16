@@ -115,6 +115,12 @@ public final class ArrayListHud extends HudWidget {
       this.loadState(true, this.getKeybind());
    }
 
+   /** The list sits nearly flush with the screen edge, as it always has. */
+   @Override
+   protected int flowInset() {
+      return 2;
+   }
+
    @Override
    protected boolean hasBackground() {
       // The rows draw their own tint; the widget card would box the whole list in.

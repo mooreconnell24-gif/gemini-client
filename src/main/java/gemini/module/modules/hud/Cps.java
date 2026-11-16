@@ -16,8 +16,22 @@ public final class Cps extends Ticked {
       super("CPS", "Shows your clicks per second for both mouse buttons.", "Bottom Right", 6, 114, 100);
    }
 
+   /**
+    * Sampled every frame rather than every tick: a quick click (pressed and released within one 50 ms tick) never
+    * shows up in a once-a-tick check, so the tick-based count read low.
+    */
+   @Override
+   public void onRenderHud(HudContext hud) {
+      this.sample();
+      super.onRenderHud(hud);
+   }
+
    @Override
    public void onTick() {
+      this.sample();
+   }
+
+   private void sample() {
       Minecraft client = Minecraft.getInstance();
       long now = System.currentTimeMillis();
       boolean l = client.mouseHandler.isLeftPressed();

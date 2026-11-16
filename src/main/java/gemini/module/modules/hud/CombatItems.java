@@ -9,13 +9,23 @@ import net.minecraft.world.item.Items;
 public final class CombatItems extends HudWidget {
    private static final Item[] ITEMS = new Item[]{Items.TOTEM_OF_UNDYING, Items.END_CRYSTAL, Items.ENCHANTED_GOLDEN_APPLE, Items.EXPERIENCE_BOTTLE};
 
+   /** Drawn only, so built once instead of every frame. */
+   private static final ItemStack[] ICONS = new ItemStack[ITEMS.length];
+
+   static {
+      for (int i = 0; i < ITEMS.length; i++) {
+         ICONS[i] = new ItemStack(ITEMS[i]);
+      }
+   }
+
    public CombatItems() {
       super("Combat Items", "Shows how many totems, crystals, golden apples and experience bottles you carry.", "Bottom Center", -90, 68);
    }
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      return 8 + ITEMS.length * 24;
+      // 6 on each side of the icons
+      return 6 + ITEMS.length * 24 - 8 + 6;
    }
 
    @Override
@@ -29,7 +39,7 @@ public final class CombatItems extends HudWidget {
          Item item = ITEMS[i];
          int count = HudHelpers.count(hud.client.player, item);
          int x = 6 + i * 24;
-         hud.graphics.item(new ItemStack(item), x, 2);
+         hud.graphics.item(ICONS[i], x, 2);
          String label = Integer.toString(count);
          hud.graphics.text(hud.font, label, x + 8 - hud.font.width(label) / 2, 18, count > 0 ? -1511689 : -6641995, hud.shadow);
       }

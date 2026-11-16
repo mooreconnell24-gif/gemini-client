@@ -132,7 +132,7 @@ public final class SessionStats extends Ticked {
    @Override
    protected List<TextHudWidget.Line> build(HudContext hud) {
       if (!this.tally.primed()) {
-         return List.of(new TextHudWidget.Line("Session stats: reading...", Glass.TEXT_FAINT));
+         return List.of();
       }
 
       long now = System.currentTimeMillis();
@@ -141,7 +141,7 @@ public final class SessionStats extends Ticked {
       this.add(lines, this.placed.get(), "Placed", PLACED, now, false);
       this.add(lines, this.kills.get(), "Kills", KILLS, now, false);
       this.add(lines, this.deaths.get(), "Deaths", DEATHS, now, false);
-      if (this.damage.get()) {
+      if (this.damage.get() && (this.tally.gained(DEALT) > 0L || this.tally.gained(TAKEN) > 0L)) {
          // Both damage statistics count tenths of a health point; two points make a heart.
          String dealt = InfoText.format(this.tally.gained(DEALT) / 20.0, 1);
          String taken = InfoText.format(this.tally.gained(TAKEN) / 20.0, 1);
@@ -154,7 +154,8 @@ public final class SessionStats extends Ticked {
    }
 
    private void add(List<TextHudWidget.Line> lines, boolean shown, String label, int index, long now, boolean accent) {
-      if (!shown) {
+      // A counter still at zero says nothing yet; its line appears with the first block, kill or point.
+      if (!shown || this.tally.gained(index) <= 0L) {
          return;
       }
 

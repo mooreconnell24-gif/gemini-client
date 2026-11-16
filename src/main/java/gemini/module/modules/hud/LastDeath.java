@@ -16,6 +16,14 @@ public final class LastDeath extends Ticked {
       super("Last Death", "Shows where you last died and how far away that is.", "Top Left", 6, 184, 500);
    }
 
+   /** Switched on again means a new world was joined (leaving one switches widgets off): its deaths start fresh. */
+   @Override
+   public void onEnable() {
+      this.position = null;
+      this.dimension = "";
+      this.dead = false;
+   }
+
    @Override
    public void onTick() {
       LocalPlayer player = Minecraft.getInstance().player;

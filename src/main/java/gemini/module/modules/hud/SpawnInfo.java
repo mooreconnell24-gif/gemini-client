@@ -119,9 +119,8 @@ public final class SpawnInfo extends Ticked {
 
       if (this.respawn.get()) {
          Respawn bed = this.point;
-         if (bed == null) {
-            lines.add(new TextHudWidget.Line("Bed: none (world spawn)", Glass.TEXT_FAINT));
-         } else {
+         // No bed or anchor: you respawn at the world spawn, which the line above already shows.
+         if (bed != null) {
             String label = switch (bed.kind()) {
                case "Anchor" -> "Anchor " + bed.charges() + "/" + RespawnAnchorBlock.MAX_CHARGES;
                case "Missing" -> "Bed missing";

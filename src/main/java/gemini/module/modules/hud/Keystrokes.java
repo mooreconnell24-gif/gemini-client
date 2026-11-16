@@ -29,7 +29,7 @@ public final class Keystrokes extends HudWidget {
 
    private void key(HudContext hud, int idx, int x, int y, int width, int height, String label, boolean down) {
       float target = down ? 1.0F : 0.0F;
-      this.keyAnims[idx] = Mth.lerp(0.28F, this.keyAnims[idx], target);
+      this.keyAnims[idx] = gemini.ui.Glass.approach(this.keyAnims[idx], target, 18.0F, hud.delta);
       float a = this.keyAnims[idx];
       int bg = HudOverlay.lerp(-14011324, hud.accent, a);
       hud.graphics.fill(x, y, x + width, y + height, GeminiMark.withAlpha(bg, 195));

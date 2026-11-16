@@ -38,6 +38,11 @@ public final class KeybindList extends HudWidget {
 
    @Override
    protected int widgetWidth(HudContext hud) {
+      // Nothing bound (or, with Only Active, nothing on): no card instead of a "None bound" placeholder.
+      if (this.boundModules().isEmpty()) {
+         return 0;
+      }
+
       int max = hud.font.width("Keybinds") + 28;
 
       for (Module m : this.boundModules()) {
@@ -51,7 +56,7 @@ public final class KeybindList extends HudWidget {
    @Override
    protected int widgetHeight(HudContext hud) {
       List<Module> list = this.boundModules();
-      return 18 + Math.max(1, list.size()) * 11;
+      return list.isEmpty() ? 0 : 18 + list.size() * 11;
    }
 
    @Override

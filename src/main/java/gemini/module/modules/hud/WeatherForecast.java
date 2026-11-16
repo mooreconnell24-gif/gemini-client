@@ -94,27 +94,29 @@ public final class WeatherForecast extends Ticked {
          return lines;
       }
 
+      if (s.clear() > 0) {
+         lines.add(new TextHudWidget.Line("Kept clear for " + this.time(s.clear()), Glass.TEXT_DIM));
+      }
+
       if (this.rain.get()) {
-         if (s.clear() > 0) {
-            lines.add(new TextHudWidget.Line("Clear for " + this.time(s.clear()) + " (/weather)", Glass.TEXT_DIM));
-         } else {
-            int flip = WeatherClock.rainFlipIn(s.clear(), s.rainTime());
-            if (flip != WeatherClock.NONE) {
-               lines.add(new TextHudWidget.Line((s.raining() ? "Rain stops in " : "Rain in ") + this.time(flip), Glass.TEXT_DIM));
-            }
+         int flip = WeatherClock.rainFlipIn(s.clear(), s.rainTime());
+         if (flip != WeatherClock.NONE) {
+            lines.add(new TextHudWidget.Line((s.raining() ? "Rain stops in " : "Rain in ") + this.time(flip), Glass.TEXT_DIM));
          }
       }
 
       if (this.storm.get()) {
          int ends = WeatherClock.stormEndsIn(s.clear(), s.raining(), s.rainTime(), s.thundering(), s.thunderTime());
          int starts = WeatherClock.stormIn(s.clear(), s.raining(), s.rainTime(), s.thundering(), s.thunderTime());
+         int maybe = WeatherClock.stormMaybeIn(s.clear(), s.raining(), s.rainTime(), s.thundering(), s.thunderTime());
          if (ends != WeatherClock.NONE) {
             lines.add(new TextHudWidget.Line("Storm ends in " + this.time(ends), Glass.WARN));
          } else if (starts > 0) {
             lines.add(new TextHudWidget.Line("Storm in " + this.time(starts), Glass.WARN));
-         } else if (starts == WeatherClock.NONE) {
-            lines.add(new TextHudWidget.Line("No storm due", Glass.TEXT_FAINT));
+         } else if (maybe > 0) {
+            lines.add(new TextHudWidget.Line("Storm possible in " + this.time(maybe), Glass.TEXT_DIM));
          }
+         // no line when the timers rule a storm out: nothing to forecast
       }
 
       return lines;

@@ -11,6 +11,8 @@ import net.minecraft.world.item.Items;
 
 public final class Cooldowns extends HudWidget {
    private static final Item[] TRACKED = new Item[]{Items.ENDER_PEARL, Items.WIND_CHARGE, Items.GOLDEN_APPLE, Items.CHORUS_FRUIT, Items.SHIELD};
+   /** One stack per tracked item, built once: the cooldown lookup and the icon only read it. */
+   private static final ItemStack[] STACKS = java.util.Arrays.stream(TRACKED).map(ItemStack::new).toArray(ItemStack[]::new);
 
    public Cooldowns() {
       super("Cooldowns", "Shows the cooldowns of ender pearls, wind charges, golden apples, chorus fruit and shields as bars.", "Top Center", -95, 42);
@@ -21,8 +23,7 @@ public final class Cooldowns extends HudWidget {
       if (player == null) {
          return out;
       } else {
-         for (Item item : TRACKED) {
-            ItemStack stack = new ItemStack(item);
+         for (ItemStack stack : STACKS) {
             if (player.getCooldowns().isOnCooldown(stack)) {
                out.add(stack);
             }

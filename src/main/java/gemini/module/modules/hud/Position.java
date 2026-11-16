@@ -18,6 +18,8 @@ public final class Position extends Ticked {
 
    public Position() {
       super("Position", "Shows your coordinates, with the matching Nether or Overworld position.", "Top Left", 6, 34, 100);
+      // One of the two widgets on for a fresh install (with the ArrayList): coordinates are what people look for first.
+      this.loadState(true, this.getKeybind());
    }
 
    @Override

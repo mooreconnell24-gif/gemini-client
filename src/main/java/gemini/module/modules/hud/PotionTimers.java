@@ -29,7 +29,9 @@ public final class PotionTimers extends Ticked {
                name = name + " " + HudHelpers.roman(effect.getAmplifier() + 1);
             }
 
-            String time = effect.isInfiniteDuration() ? "inf" : HudHelpers.ticksToClock(effect.getDuration());
+            // Formatted the way the inventory does it: "∞" for infinite, and real seconds at the current tick rate.
+            float tickRate = hud.client.level == null ? 20.0F : hud.client.level.tickRateManager().tickrate();
+            String time = net.minecraft.world.effect.MobEffectUtil.formatDuration(effect, 1.0F, tickRate).getString();
             MobEffectCategory category = ((MobEffect)effect.getEffect().value()).getCategory();
             int color = category == MobEffectCategory.HARMFUL ? -1548963 : (category == MobEffectCategory.BENEFICIAL ? -11086174 : -1511689);
             lines.add(new TextHudWidget.Line(name + "  " + time, color));

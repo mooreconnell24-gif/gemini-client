@@ -40,6 +40,6 @@ public final class SessionTimer extends Ticked {
       String time = String.format(Locale.ROOT, "%02d:%02d:%02d", seconds / 3600L, seconds / 60L % 60L, seconds % 60L);
       return !this.distance.get()
          ? List.of(new TextHudWidget.Line("Session " + time, -1511689))
-         : List.of(new TextHudWidget.Line("Session " + time, -1511689), new TextHudWidget.Line(Math.round(this.travelled) + " blocks walked", -6641995));
+         : List.of(new TextHudWidget.Line("Session " + time, -1511689), new TextHudWidget.Line(Math.round(this.travelled) + " blocks travelled", -6641995));
    }
 }

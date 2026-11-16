@@ -1,6 +1,9 @@
 package gemini.ui;
 
 import gemini.Gemini;
+import gemini.module.HudFlow;
+import gemini.module.HudWidget;
+import gemini.module.Module;
 import gemini.module.ModuleManager;
 import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.render.CoordinatesModule;
@@ -30,6 +33,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
 
 /**
  * Gemini's in-game overlay: the watermark, the small built-in text panels (waypoints, coordinates, ESP tags,
@@ -73,6 +78,12 @@ public final class HudOverlay {
    private final List<String> espLines = new ArrayList<>();
    private final IntList espColors = new IntList();
    private final List<String> storageLines = new ArrayList<>();
+   /** Automatic layout of the widgets the user has not moved; refilled every frame. */
+   private final HudFlow flow = new HudFlow();
+   private HudWidget[] widgets;
+   /** Sidebar scoreboard size in GUI pixels, worked out once a tick (0 when none is shown). */
+   private int sidebarW;
+   private int sidebarRows;
 
    public HudOverlay(ModuleManager modules) {
       this.modules = modules;
@@ -190,6 +201,13 @@ public final class HudOverlay {
                graphics.pose().popMatrix();
             }
 
+            int watermarkRight = 0;
+            if (hud == null || hud.watermark()) {
+               // Generous estimate of the watermark card: logo, the name and the stats line plus padding.
+               float size = hud == null ? 1.0F : hud.watermarkSize();
+               watermarkRight = Math.round((44 + client.font.width("Gemini") + this.metaLineWidth) * size);
+            }
+
             this.refreshPanels(client);
             this.drawWaypoints(graphics, client, accent, topLeftY, shadow);
             this.drawCoordinates(graphics, client, width, height, shadow);
@@ -202,7 +220,9 @@ public final class HudOverlay {
                this.context = ctx;
             }
 
-            this.modules.renderHud(ctx.update(graphics, client, width, height, accent, accent2, this.surface, shadow, partial, delta));
+            ctx.update(graphics, client, width, height, accent, accent2, this.surface, shadow, partial, delta);
+            this.layoutWidgets(ctx, client, scale, watermarkRight, topLeftY);
+            this.modules.renderHud(ctx);
             if (hud == null || hud.toasts()) {
                this.drawToasts(graphics, client.font, width, height, delta, hud == null || hud.toastsRight(), hud == null || hud.toastsBottom());
             }
@@ -333,6 +353,168 @@ public final class HudOverlay {
       return 4 + boxH + 6;
    }
 
+   /**
+    * Fills the automatic layout with everything already on screen (the vanilla HUD, the watermark, Gemini's text
+    * panels) and lets {@link HudWidget#arrange} place the widgets around it. Vanilla areas are measured in GUI pixels
+    * and converted to the HUD's own scale.
+    */
+   private void layoutWidgets(HudContext ctx, Minecraft client, float scale, int watermarkRight, int topLeftY) {
+      HudWidget[] list = this.widgets;
+      if (list == null) {
+         List<HudWidget> found = new ArrayList<>();
+         for (Module module : this.modules.getModules()) {
+            if (module instanceof HudWidget widget) {
+               found.add(widget);
+            }
+         }
+
+         list = found.toArray(new HudWidget[0]);
+         this.widgets = list;
+      }
+
+      HudFlow flow = this.flow;
+      flow.begin(ctx.width, ctx.height);
+      if (watermarkRight > 0) {
+         flow.reserve(0, 0, watermarkRight + 2, topLeftY);
+      }
+
+      this.reservePanels(flow, client.font, ctx.width, ctx.height, topLeftY);
+      this.reserveVanilla(flow, client, scale, Math.round(ctx.width * scale), Math.round(ctx.height * scale));
+      HudWidget.arrange(ctx, list, flow);
+   }
+
+   /** Reserves a rectangle given in GUI pixels, converted to HUD pixels (rounded outward). */
+   private static void reserveGui(HudFlow flow, float scale, int x, int y, int w, int h) {
+      int x0 = Mth.floor(x / scale);
+      int y0 = Mth.floor(y / scale);
+      flow.reserve(x0, y0, Mth.ceil((x + w) / scale) - x0, Mth.ceil((y + h) / scale) - y0);
+   }
+
+   /** The parts of the vanilla HUD a widget must not cover: hotbar and status bars, chat, boss bars, effect icons, scoreboard. */
+   private void reserveVanilla(HudFlow flow, Minecraft client, float scale, int guiW, int guiH) {
+      LocalPlayer player = client.player;
+      int cx = guiW / 2;
+      // Hotbar with the offhand slot and attack indicator either side, XP bar, hearts, armour, food, air, the
+      // selected item's name (59 above the bottom) and the action bar line.
+      int top = guiH - 70;
+      if (player != null) {
+         float maxHealth = Math.max(player.getMaxHealth(), player.getHealth());
+         int hearts = Mth.ceil((maxHealth + player.getAbsorptionAmount()) / 2.0F);
+         int rows = Math.max(1, Mth.ceil(hearts / 10.0F));
+         int rowHeight = Math.max(10 - (rows - 2), 3);
+         int armorTop = guiH - 39 - (rows - 1) * rowHeight - 10;
+         top = Math.min(top, armorTop - 2);
+      }
+
+      reserveGui(flow, scale, cx - 122, top, 244, guiH - top);
+      // Chat: drawn 40 above the bottom, as wide and tall as the chat options say, in the chat's own scale.
+      double chatScale = client.options.chatScale().get();
+      if (chatScale > 0.0) {
+         int chatW = Mth.ceil(net.minecraft.client.gui.components.ChatComponent.getWidth(client.options.chatWidth().get()) * chatScale) + 12;
+         int chatH = Mth.ceil(net.minecraft.client.gui.components.ChatComponent.getHeight(client.options.chatHeightUnfocused().get()) * chatScale);
+         reserveGui(flow, scale, 0, guiH - 40 - chatH - 2, chatW, chatH + 40 + 2);
+      }
+
+      int bosses = BossBars.count(client);
+      if (bosses > 0) {
+         // 12 from the top, one bar every 19 pixels, never past a third of the screen.
+         int bottom = Math.min(12 + 19 * (bosses - 1) + 5, guiH / 3) + 2;
+         reserveGui(flow, scale, cx - 100, 0, 200, bottom);
+      }
+
+      if (player != null && !player.getActiveEffects().isEmpty()) {
+         int good = 0;
+         int bad = 0;
+         for (net.minecraft.world.effect.MobEffectInstance effect : player.getActiveEffects()) {
+            if (effect.showIcon()) {
+               if (effect.getEffect().value().isBeneficial()) {
+                  good++;
+               } else {
+                  bad++;
+               }
+            }
+         }
+
+         int columns = Math.max(good, bad);
+         if (columns > 0) {
+            // Beneficial icons in a row at y 1, the others at y 27, 25 pixels apart from the right edge.
+            reserveGui(flow, scale, guiW - columns * 25 - 1, 0, columns * 25 + 1, bad > 0 ? 52 : 26);
+         }
+      }
+
+      if (this.sidebarRows > 0) {
+         // Vanilla puts the sidebar's last row a third of its height below the middle, the title above the first.
+         int listH = this.sidebarRows * 9;
+         int bottom = guiH / 2 + listH / 3;
+         reserveGui(flow, scale, guiW - this.sidebarW - 4, bottom - listH - 11, this.sidebarW + 4, listH + 13);
+      }
+   }
+
+   /** Gemini's own text panels (waypoints, coordinates, ESP list, storage list), measured where they are drawn. */
+   private void reservePanels(HudFlow flow, Font font, int width, int height, int topLeftY) {
+      if (!this.waypointLines.isEmpty()) {
+         flow.reserve(0, topLeftY, maxWidth(font, this.waypointLines) + 6, 2 + this.waypointLines.size() * LINE);
+      }
+
+      if (!this.coordLines.isEmpty()) {
+         int w = maxWidth(font, this.coordLines) + 6;
+         int h = this.coordLines.size() * LINE;
+         int y = this.coordsBottom ? height - 6 - h - 10 : 38;
+         flow.reserve(this.coordsRight ? width - w : 0, y, w, h);
+      }
+
+      if (!this.espLines.isEmpty()) {
+         flow.reserve(width / 2 + 88, 22, Math.max(font.width("ESP"), maxWidth(font, this.espLines)) + 4, 12 + this.espLines.size() * LINE);
+      }
+
+      if (!this.storageLines.isEmpty()) {
+         int y = height / 2 - 40;
+         int rows = Math.min(this.storageLines.size() + 1, Math.max(1, (height - 40 - y) / LINE + 1));
+         int w = Math.max(font.width("Storage"), maxWidth(font, this.storageLines)) + 8;
+         flow.reserve(width - w, y, w, rows * LINE);
+      }
+   }
+
+   private static int maxWidth(Font font, List<String> lines) {
+      int widest = 0;
+      for (int i = 0; i < lines.size(); i++) {
+         widest = Math.max(widest, font.width(lines.get(i)));
+      }
+
+      return widest;
+   }
+
+   /** Measures the sidebar scoreboard once a tick: rows shown (at most 15) and the widest line. */
+   private void measureSidebar(Minecraft client) {
+      this.sidebarRows = 0;
+      this.sidebarW = 0;
+      if (client.level == null) {
+         return;
+      }
+
+      Objective objective = client.level.getScoreboard().getDisplayObjective(DisplaySlot.SIDEBAR);
+      if (objective == null) {
+         return;
+      }
+
+      Font font = client.font;
+      int widest = font.width(objective.getDisplayName());
+      int rows = 0;
+      for (net.minecraft.world.scores.PlayerScoreEntry entry : client.level.getScoreboard().listPlayerScores(objective)) {
+         if (entry.isHidden()) {
+            continue;
+         }
+
+         widest = Math.max(widest, font.width(entry.ownerName()) + 12 + font.width(Integer.toString(entry.value())));
+         if (++rows >= 15) {
+            break;
+         }
+      }
+
+      this.sidebarRows = rows;
+      this.sidebarW = widest + 4;
+   }
+
    /** Linear blend of two opaque colours (alpha forced to 255). Kept for the callers outside the HUD. */
    public static int lerp(int from, int to, float t) {
       int r = Math.round(Mth.lerp(t, from >> 16 & 0xFF, to >> 16 & 0xFF));
@@ -350,6 +532,7 @@ public final class HudOverlay {
       }
 
       this.panelTick = tick;
+      this.measureSidebar(client);
       this.waypointLines.clear();
       this.coordLines.clear();
       this.coordColors.clear();
