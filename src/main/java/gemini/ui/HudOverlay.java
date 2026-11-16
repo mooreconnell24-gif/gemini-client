@@ -41,13 +41,15 @@ import net.minecraft.world.level.Level;
  */
 public final class HudOverlay {
    private static final int LINE = 11;
-   private static final int TOAST_H = 27;
+   private static final int TOAST_H = 26;
    private static final int TOAST_GAP = 5;
-   private static final long TOAST_IN_MS = 360L;
-   private static final long TOAST_OUT_MS = 260L;
+   private static final long TOAST_IN_MS = 240L;
+   private static final long TOAST_OUT_MS = 220L;
    private static final int MAX_TOASTS = 5;
    /** Widest a toast grows before its text is ellipsized. */
    private static final int TOAST_MAX_W = 280;
+   /** Left edge of a toast's text, past the status bar. */
+   private static final int TOAST_TEXT_X = 10;
    private static final ArrayDeque<HudOverlay.Toast> TOASTS = new ArrayDeque<>();
    private final ModuleManager modules;
    private long lastFrameMs = Util.getMillis();
@@ -56,8 +58,7 @@ public final class HudOverlay {
    private HudContext context;
    /** The watermark's texts only change once a tick, so they are rebuilt per tick instead of per frame. */
    private String metaLineCache;
-   private String minimalLine;
-   private String pillLine;
+   private int metaLineWidth;
    private int metaLineTick = -1;
    private String metaLineStyle;
    private final List<String> metaParts = new ArrayList<>();
@@ -77,14 +78,17 @@ public final class HudOverlay {
       this.modules = modules;
    }
 
-   /** What a toast is about; picks its colour, badge and icon glyph. */
+   /**
+    * What a toast is about; picks the colour of the small bar on its left edge. {@code badge} and {@code glyph}
+    * are a short name and a one-character symbol for the kind, for callers that describe a toast in text.
+    */
    public enum Severity {
       INFO("INFO", Glass.INFO, "i"),
       SUCCESS("OK", Glass.OK, "✔"),
       WARNING("WARN", Glass.WARN, "!"),
       ERROR("ALERT", Glass.ERROR, "✖"),
       ENABLED("ON", Glass.OK, "+"),
-      DISABLED("OFF", Glass.ERROR, "-");
+      DISABLED("OFF", Glass.TEXT_FAINT, "-");
 
       public final String badge;
       public final int color;
@@ -140,14 +144,14 @@ public final class HudOverlay {
       }
    }
 
-   /** How far a toast is slid onto the screen: ease-out-back on the way in (overshoots past 1), ease-in on the way out. */
+   /** How far a toast is slid onto the screen (0..1): ease-out on the way in, ease-in on the way out. */
    static float toastSlide(long age, long duration) {
       if (age < 0L) {
          return 0.0F;
       }
 
       if (age < TOAST_IN_MS) {
-         return Glass.easeOutBack((float)age / TOAST_IN_MS);
+         return Glass.easeOutCubic((float)age / TOAST_IN_MS);
       }
 
       long left = duration - age;
@@ -179,7 +183,7 @@ public final class HudOverlay {
             int height = Math.round(graphics.guiHeight() / scale);
             int topLeftY = 4;
             if (hud == null || hud.watermark()) {
-               float size = hud == null ? 0.7F : hud.watermarkSize();
+               float size = hud == null ? 1.0F : hud.watermarkSize();
                graphics.pose().pushMatrix();
                graphics.pose().scale(size, size);
                topLeftY = Math.round(this.drawWatermark(graphics, client, hud, accent, accent2, shadow) * size);
@@ -200,7 +204,7 @@ public final class HudOverlay {
 
             this.modules.renderHud(ctx.update(graphics, client, width, height, accent, accent2, this.surface, shadow, partial, delta));
             if (hud == null || hud.toasts()) {
-               this.drawToasts(graphics, client.font, width, height, accent2, delta, hud == null || hud.toastsRight(), hud == null || hud.toastsBottom());
+               this.drawToasts(graphics, client.font, width, height, delta, hud == null || hud.toastsRight(), hud == null || hud.toastsBottom());
             }
 
             graphics.pose().popMatrix();
@@ -208,7 +212,7 @@ public final class HudOverlay {
       }
    }
 
-   private void drawToasts(GuiGraphicsExtractor graphics, Font font, int width, int height, int accent2, float delta, boolean right, boolean bottom) {
+   private void drawToasts(GuiGraphicsExtractor graphics, Font font, int width, int height, float delta, boolean right, boolean bottom) {
       long now = Util.getMillis();
       // Slots are laid out from the anchored edge, newest nearest it. Each card glides toward its slot, so the stack
       // closes up smoothly when a card above or below leaves.
@@ -224,12 +228,11 @@ public final class HudOverlay {
             }
 
             if (toast.cardW == 0) {
-               int natural = Math.max(font.width(toast.title) + font.width(toast.severity.badge) + 44, font.width(toast.body) + 34);
+               int natural = Math.max(font.width(toast.title), font.width(toast.body)) + TOAST_TEXT_X + 8;
                // Never wider than the screen (minus a margin) or a comfortable reading width; longer text is cut with "..".
                toast.cardW = Math.max(Math.min(140, width - 12), Math.min(natural, Math.min(TOAST_MAX_W, width - 12)));
-               int badgeW = font.width(toast.severity.badge) + 8;
-               toast.shownTitle = Theme.fit(toast.title, toast.cardW - 26 - badgeW - 9, font::width);
-               toast.shownBody = Theme.fit(toast.body, toast.cardW - 26 - 6, font::width);
+               toast.shownTitle = Theme.fit(toast.title, toast.cardW - TOAST_TEXT_X - 8, font::width);
+               toast.shownBody = Theme.fit(toast.body, toast.cardW - TOAST_TEXT_X - 8, font::width);
             }
 
             float slide = toastSlide(age, toast.durationMs);
@@ -238,7 +241,7 @@ public final class HudOverlay {
             int cardW = toast.cardW;
             int travel = cardW + 6;
             int x = right ? width - Math.round(travel * slide) : Math.round(travel * slide) - cardW;
-            this.drawToast(graphics, font, toast, x, Math.round(toast.stackY), cardW, visible, age, accent2);
+            this.drawToast(graphics, font, toast, x, Math.round(toast.stackY), cardW, visible);
             // A leaving card hands its slot over as it slides out, so the next one starts moving at once.
             float share = toast.durationMs - age < TOAST_OUT_MS ? visible : 1.0F;
             slot += (bottom ? -1.0F : 1.0F) * (TOAST_H + TOAST_GAP) * share;
@@ -246,56 +249,50 @@ public final class HudOverlay {
       }
    }
 
-   private void drawToast(GuiGraphicsExtractor g, Font font, HudOverlay.Toast toast, int x, int y, int cardW, float visible, long age, int accent2) {
+   /**
+    * One toast: a flat card with a thin bar in the severity colour on its left edge, the title and the body. No
+    * badge, icon, countdown or pulsing; the colour bar is the only thing that tells the kinds apart.
+    */
+   private void drawToast(GuiGraphicsExtractor g, Font font, HudOverlay.Toast toast, int x, int y, int cardW, float visible) {
       int status = toast.severity.color;
-      boolean urgent = toast.severity == Severity.ERROR || toast.severity == Severity.WARNING;
-      float glow = urgent ? 0.3F + 0.4F * Glass.pulse(900L) : 0.0F;
-      Glass.panel(g, x, y, x + cardW, y + TOAST_H, Glass.RADIUS, this.surface, status, visible, glow);
+      Glass.roundRect(g, x, y, x + cardW, y + TOAST_H, Glass.RADIUS, Glass.withAlpha(this.surface, Math.round(225.0F * visible)));
+      Glass.roundOutline(g, x, y, x + cardW, y + TOAST_H, Glass.RADIUS, Glass.withAlpha(0xFFFFFF, Math.round(20.0F * visible)));
+      g.fill(x + 3, y + 4, x + 5, y + TOAST_H - 4, Glass.withAlpha(status, Math.round(220.0F * visible)));
       int textAlpha = Math.round(255.0F * visible);
-      Glass.roundRect(g, x + 5, y + 5, x + 21, y + 21, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(60.0F * visible)));
-      Glass.roundOutline(g, x + 5, y + 5, x + 21, y + 21, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(170.0F * visible)));
-      int badgeW = font.width(toast.severity.badge) + 8;
-      int pillX = x + cardW - badgeW - 5;
-      Glass.roundRect(g, pillX, y + 4, pillX + badgeW, y + 13, Theme.RADIUS_SMALL, Glass.withAlpha(status, Math.round(48.0F * visible)));
       if (textAlpha >= 10) {
          // The font treats a near-zero alpha as opaque, so text is skipped while the card is all but invisible.
-         g.centeredText(font, toast.severity.glyph, x + 13, y + 9, Glass.withAlpha(status, textAlpha));
-         g.text(font, toast.severity.badge, pillX + 4, y + 5, Glass.withAlpha(status, textAlpha), false);
-         g.text(font, toast.shownTitle, x + 26, y + 5, Glass.withAlpha(Glass.TEXT, textAlpha), false);
-         g.text(font, toast.shownBody, x + 26, y + 15, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
-      }
-      float progress = 1.0F - Mth.clamp((float)age / toast.durationMs, 0.0F, 1.0F);
-      int barW = Math.round((cardW - 2 * Glass.RADIUS) * progress);
-      if (barW > 0) {
-         int alpha = Math.round(220.0F * visible);
-         Glass.gradientBar(
-            g, x + Glass.RADIUS, y + TOAST_H - 2, x + Glass.RADIUS + barW, y + TOAST_H - 1, Glass.withAlpha(status, alpha), Glass.withAlpha(Glass.lerp(status, accent2, 0.5F), alpha)
-         );
+         g.text(font, toast.shownTitle, x + TOAST_TEXT_X, y + 5, Glass.withAlpha(Glass.TEXT, textAlpha), false);
+         g.text(font, toast.shownBody, x + TOAST_TEXT_X, y + 15, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
       }
    }
 
+   /**
+    * The watermark in the top-left corner: "Gemini" and a few stats on one line. Returns the y just below it, for
+    * the text panels that stack under it. Styles: Card (default, optional logo), Compact (slim card, no logo) and
+    * Text (no card).
+    */
    private int drawWatermark(GuiGraphicsExtractor graphics, Minecraft client, HudModule hud, int accent, int accent2, boolean shadow) {
       Font font = client.font;
-      String wmStyle = hud == null ? "Nextgen Card" : hud.watermarkStyle();
+      String wmStyle = hud == null ? "Card" : hud.watermarkStyle();
       LocalPlayer player = client.player;
       int tick = player == null ? -1 : player.tickCount;
-      String metaLine = this.metaLineCache;
-      if (metaLine == null || tick != this.metaLineTick || !wmStyle.equals(this.metaLineStyle)) {
+      if (this.metaLineCache == null || tick != this.metaLineTick || !wmStyle.equals(this.metaLineStyle)) {
          List<String> meta = this.metaParts;
          meta.clear();
-         meta.add("v" + Gemini.VERSION);
+         meta.add(Gemini.VERSION);
          if (hud == null || hud.fps()) {
             meta.add(client.getFps() + " FPS");
          }
 
-         if ((hud == null || hud.ping()) && client.getConnection() != null && player != null) {
+         // Ping only means something on a real connection; in single player it is always zero.
+         if ((hud == null || hud.ping()) && !client.isLocalServer() && client.getConnection() != null && player != null) {
             PlayerInfo info = client.getConnection().getPlayerInfo(player.getUUID());
             if (info != null) {
-               meta.add(info.getLatency() + "ms");
+               meta.add(info.getLatency() + " ms");
             }
          }
 
-         if ((hud == null || hud.speed()) && player != null) {
+         if (hud != null && hud.speed() && player != null) {
             double dx = player.getX() - player.xo;
             double dz = player.getZ() - player.zo;
             meta.add(String.format(Locale.ROOT, "%.1f b/s", Math.hypot(dx, dz) * 20.0));
@@ -306,41 +303,34 @@ public final class HudOverlay {
             meta.add("Baritone: " + botTask);
          }
 
-         metaLine = String.join("  ·  ", meta);
-         this.metaLineCache = metaLine;
-         this.minimalLine = "GEMINI NEXTGEN  ·  " + metaLine;
-         this.pillLine = "NEXTGEN  |  " + metaLine;
+         this.metaLineCache = String.join(" \u00b7 ", meta);
+         this.metaLineWidth = font.width(this.metaLineCache);
          this.metaLineTick = tick;
          this.metaLineStyle = wmStyle;
       }
 
-      if ("Minimal".equals(wmStyle)) {
-         graphics.text(font, this.minimalLine, 6, 6, accent, shadow);
-         return 18;
-      } else if ("LiquidBounce Pill".equals(wmStyle)) {
-         String title = "GEMINI ";
-         int pillW = 14 + font.width(title) + font.width(this.pillLine);
-         int pillH = 17;
-         Glass.panel(graphics, 4, 4, 4 + pillW, 4 + pillH, 6, this.surface, accent, 1.0F, 0.0F);
-         Glass.gradientBar(graphics, 10, 4, 4 + pillW - 6, 5, accent, accent2);
-         graphics.text(font, title, 10, 8, accent, shadow);
-         graphics.text(font, this.pillLine, 10 + font.width(title), 8, -1511689, shadow);
-         return 25;
-      } else {
-         boolean hasLogo = hud == null || hud.logo();
-         int textX = hasLogo ? 28 : 8;
-         int boxW = textX + Math.max(font.width("GEMINI NEXTGEN"), font.width(metaLine)) + 10;
-         int boxH = 25;
-         Glass.hudCard(graphics, 4, 4, 4 + boxW, 4 + boxH, this.surface, accent, accent2, 1.0F);
-         if (hasLogo) {
-            GeminiMark.draw(graphics, 6, 7, 18, accent, 1.0F);
-         }
-
-         graphics.text(font, "GEMINI", textX, 8, -1, shadow);
-         graphics.text(font, "NEXTGEN", textX + font.width("GEMINI "), 8, accent2, shadow);
-         graphics.text(font, metaLine, textX, 18, -4733999, false);
-         return 35;
+      String name = "Gemini";
+      int nameWidth = font.width(name);
+      if ("Text".equals(wmStyle)) {
+         graphics.text(font, name, 4, 4, accent, shadow);
+         graphics.text(font, this.metaLineCache, 4 + nameWidth + 5, 4, Glass.TEXT_DIM, shadow);
+         return 16;
       }
+
+      boolean compact = "Compact".equals(wmStyle);
+      boolean hasLogo = !compact && (hud == null || hud.logo());
+      int boxH = compact ? 12 : 14;
+      int textX = 4 + (hasLogo ? 16 : 5);
+      int boxW = textX - 4 + nameWidth + 5 + this.metaLineWidth + 5;
+      Glass.hudCard(graphics, 4, 4, 4 + boxW, 4 + boxH, this.surface, accent, accent2, 1.0F);
+      if (hasLogo) {
+         GeminiMark.draw(graphics, 7, 6, 10, accent, 1.0F);
+      }
+
+      int textY = 4 + (boxH - 8) / 2 + 1;
+      graphics.text(font, name, textX, textY, compact ? accent : Glass.TEXT, shadow);
+      graphics.text(font, this.metaLineCache, textX + nameWidth + 5, textY, Glass.TEXT_DIM, false);
+      return 4 + boxH + 6;
    }
 
    /** Linear blend of two opaque colours (alpha forced to 255). Kept for the callers outside the HUD. */

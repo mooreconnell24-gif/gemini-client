@@ -4,9 +4,8 @@ import gemini.Gemini;
 import gemini.input.BindWarnings;
 import gemini.module.ModuleManager;
 import gemini.ui.clickgui.ClickGuiScreen;
-import gemini.ui.clickgui.WindowGuiScreen;
+import gemini.ui.clickgui.Menus;
 import gemini.ui.help.HelpScreen;
-import gemini.ui.palette.PaletteScreen;
 import gemini.util.SingleplayerGate;
 import java.util.List;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
@@ -21,15 +20,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 /**
- * The quick-action dock on the Esc menu: one-click glass buttons for both menus, the HUD layout editor, the
- * config manager, the keybind report (with a live count of conflicting keys), quick search, the guide and Panic.
+ * A small Gemini group on the Esc menu: buttons for the module menu, the HUD editor and the guide, then Panic as a
+ * plain text link, and a "key conflicts" link only while there are conflicting key binds. Everything else (presets,
+ * the key-bind report, quick search) is one click further, inside the module menu.
  *
  * <p>It is added from Fabric's screen-init hook (see {@link SandboxUi#onScreenInit}) and only where Gemini may
  * act, i.e. in a private single-player world with sandbox mode on. {@link DockLayout} keeps it clear of the
- * vanilla buttons: a column down the left edge on roomy screens, a row above the "Game Menu" title otherwise.
+ * vanilla buttons: a short stack in the bottom-left corner on roomy screens, a row above the "Game Menu" title
+ * otherwise.
  */
 public final class PauseDock {
-   private static final String[] KEYS = {"clickgui", "windowgui", "hud", "configs", "keybinds", "search", "guide", "panic"};
+   private static final String[] KEYS = {"menu", "hud", "guide", "panic", "keybinds"};
+   /** Index of the first plain text link; the entries before it are buttons. */
+   private static final int FIRST_LINK = 3;
+   private static final int PANIC = 3;
    private static final int KEYBINDS = 4;
 
    private PauseDock() {
@@ -40,42 +44,42 @@ public final class PauseDock {
          return;
       }
 
+      ModuleManager modules = Gemini.getInstance().modules();
+      int conflicts = BindWarnings.conflictCount(modules);
+      // The conflicts link only exists while something is actually wrong.
+      int count = conflicts > 0 ? KEYS.length : KEYS.length - 1;
       Font font = client.font;
-      int count = KEYS.length;
       Component[] full = new Component[count];
       Component[] brief = new Component[count];
       int[] fullWidths = new int[count];
       int[] briefWidths = new int[count];
       for (int i = 0; i < count; i++) {
-         full[i] = Component.translatable("gemini.dock." + KEYS[i]);
-         brief[i] = Component.translatable("gemini.dock." + KEYS[i] + ".short");
+         if (i == KEYBINDS) {
+            full[i] = Component.translatable(conflicts == 1 ? "gemini.dock.keybinds.one" : "gemini.dock.keybinds", conflicts);
+            brief[i] = Component.translatable("gemini.dock.keybinds.short", conflicts);
+         } else {
+            full[i] = Component.translatable("gemini.dock." + KEYS[i]);
+            brief[i] = Component.translatable("gemini.dock." + KEYS[i] + ".short");
+         }
+
          fullWidths[i] = font.width(full[i]);
          briefWidths[i] = font.width(brief[i]);
-      }
-
-      ModuleManager modules = Gemini.getInstance().modules();
-      if (BindWarnings.conflictCount(modules) > 0) {
-         // Room for the conflict badge, so the label is not squeezed by it.
-         fullWidths[KEYBINDS] += GlassButton.badgeRoom(font);
-         briefWidths[KEYBINDS] += GlassButton.badgeRoom(font);
       }
 
       DockLayout layout = DockLayout.compute(screen.width, screen.height, fullWidths, briefWidths);
       GlassButton[] buttons = new GlassButton[count];
       List<AbstractWidget> widgets = Screens.getWidgets(screen);
-      // The backdrop goes in first so the buttons are drawn on top of it.
-      widgets.add(new Backdrop(layout, buttons));
+      widgets.add(new Fader(buttons));
       for (int i = 0; i < count; i++) {
          int action = i;
          buttons[i] = new GlassButton(
-               layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), layout.shortLabels() ? brief[i] : full[i], pressed -> run(action, client, screen)
-            )
-            .expand(layout.side() ? 2 : 0);
-         buttons[i].setTooltip(Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip")));
-         if (i == KEYBINDS) {
-            buttons[i].badge(() -> BindWarnings.conflictCount(modules), Glass.ERROR);
+            layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), layout.shortLabels() ? brief[i] : full[i], pressed -> run(action, client, screen)
+         );
+         if (i >= FIRST_LINK) {
+            buttons[i].plain();
          }
 
+         buttons[i].setTooltip(Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip")));
          widgets.add(buttons[i]);
       }
    }
@@ -83,20 +87,17 @@ public final class PauseDock {
    private static void run(int action, Minecraft client, PauseScreen screen) {
       Gemini gemini = Gemini.getInstance();
       if (gemini == null || !SingleplayerGate.allowed()) {
-         // The world may have been opened to LAN, or Gemini switched off, since the dock was built.
+         // The world may have been opened to LAN, or Gemini switched off, since the group was built.
          SandboxUi.notify(client, "Gemini", SingleplayerGate.denialMessage().replaceAll("§.", ""), HudOverlay.Severity.WARNING);
          return;
       }
 
       switch (action) {
-         case 0 -> client.gui.setScreen(new ClickGuiScreen());
-         case 1 -> client.gui.setScreen(new WindowGuiScreen());
-         case 2 -> client.gui.setScreen(ClickGuiScreen.hudEditor());
-         case 3 -> GeminiTitleScreen.openConfigs(screen);
-         case 4 -> KeybindReportScreen.open(client, screen);
-         case 5 -> client.gui.setScreen(new PaletteScreen(screen));
-         case 6 -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, screen);
-         default -> panic(client, gemini.modules());
+         case 0 -> client.gui.setScreen(Menus.create());
+         case 1 -> client.gui.setScreen(ClickGuiScreen.hudEditor());
+         case 2 -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, screen);
+         case PANIC -> panic(client, gemini.modules());
+         default -> KeybindReportScreen.open(client, screen);
       }
    }
 
@@ -107,21 +108,22 @@ public final class PauseDock {
       SandboxUi.notify(
          client,
          "Panic",
-         stopped == 0 ? "No modules were running." : stopped + (stopped == 1 ? " module disabled." : " modules disabled."),
-         HudOverlay.Severity.WARNING
+         stopped == 0 ? "No modules were running." : stopped + (stopped == 1 ? " module switched off." : " modules switched off."),
+         HudOverlay.Severity.INFO
       );
    }
 
-   /** The glass card behind the buttons. It is never active, so it takes no focus, clicks or narration. */
-   private static final class Backdrop extends AbstractWidget {
-      private final DockLayout layout;
+   /**
+    * Draws nothing; it fades the group out (and hides it) if Gemini stops being allowed while the menu is open,
+    * e.g. after Open to LAN. It is never active, so it takes no focus, clicks or narration.
+    */
+   private static final class Fader extends AbstractWidget {
       private final GlassButton[] buttons;
-      private float shown;
+      private float shown = 1.0F;
       private long lastFrame;
 
-      Backdrop(DockLayout layout, GlassButton[] buttons) {
-         super(layout.panelX(), layout.panelY(), layout.panelWidth(), layout.panelHeight(), Component.empty());
-         this.layout = layout;
+      Fader(GlassButton[] buttons) {
+         super(0, 0, 0, 0, Component.empty());
          this.buttons = buttons;
          this.active = false;
       }
@@ -131,39 +133,20 @@ public final class PauseDock {
          long now = Util.getMillis();
          float delta = this.lastFrame == 0L ? 0.0F : Math.min(0.1F, (now - this.lastFrame) / 1000.0F);
          this.lastFrame = now;
-         // Gemini can stop being allowed while the menu is open (Open to LAN); the dock then fades away.
          boolean allowed = SingleplayerGate.allowed();
          this.shown = Glass.approach(this.shown, allowed ? 1.0F : 0.0F, 10.0F, delta);
          for (GlassButton button : this.buttons) {
             if (button != null) {
-               button.visible = allowed;
+               button.visible = allowed || this.shown > 0.05F;
+               button.active = allowed;
                button.setAlpha(this.shown);
             }
-         }
-
-         if (this.shown <= 0.05F) {
-            return;
-         }
-
-         Glass.panel(g, this.getX(), this.getY(), this.getRight(), this.getBottom(), this.shown, 0.0F);
-         if (this.layout.side()) {
-            Font font = Minecraft.getInstance().font;
-            g.text(font, "GEMINI", this.getX() + Theme.SPACE_M, this.getY() + 5, Glass.fade(Glass.accent2(), this.shown), false);
-            Glass.gradientBar(
-               g,
-               this.getX() + 6 + font.width("GEMINI") + 5,
-               this.getY() + 8,
-               this.getRight() - 6,
-               this.getY() + 9,
-               Glass.fade(Glass.withAlpha(Glass.accent(), 150), this.shown),
-               Glass.fade(Glass.withAlpha(Glass.accent2(), 0), this.shown)
-            );
          }
       }
 
       @Override
       protected void updateWidgetNarration(NarrationElementOutput output) {
-         // Decoration only: the buttons narrate themselves.
+         // Nothing to narrate: the buttons narrate themselves.
       }
    }
 }

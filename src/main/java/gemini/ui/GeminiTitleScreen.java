@@ -5,12 +5,11 @@ import gemini.Gemini;
 import gemini.diags.MixinReport;
 import gemini.input.BindWarnings;
 import gemini.input.GeminiKeys;
+import gemini.ui.clickgui.Menus;
+import gemini.ui.clickgui.WindowGuiScreen;
 import gemini.ui.help.HelpScreen;
 import gemini.ui.palette.PaletteScreen;
-import gemini.ui.clickgui.ClickGuiScreen;
-import gemini.ui.clickgui.WindowGuiScreen;
 import gemini.util.SingleplayerGate;
-import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
@@ -22,12 +21,13 @@ import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 
 /**
- * Gemini's home screen, shown in place of the vanilla title screen: an animated particle backdrop with mouse
- * parallax, glass navigation buttons, the sandbox switch and a live status bar.
+ * Gemini's home screen, shown in place of the vanilla title screen: the vanilla panorama, blurred and dimmed, the
+ * logo and name once, the usual main buttons plus one "Gemini" button for the module menu, a row of small links
+ * (quick search, guide, presets), the sandbox switch and a status line that stays empty unless there is something
+ * worth knowing.
  *
  * <p>The swap happens in {@link gemini.mixin.TitleScreenMixin} (every screen change goes through one method
  * there), with {@link SandboxUi#onScreenInit} as the fallback. It is controlled by the persisted
@@ -39,55 +39,30 @@ import net.minecraft.util.Util;
  * open, which means the sandbox refusal flow is exactly the vanilla-title one.
  */
 public final class GeminiTitleScreen extends Screen {
-   private static final int PARTICLES = 64;
-   private static final int STATUS_ITEMS = 5;
-   private static final int STATUS_GAP = 13;
+   private static final int MAX_STATUS = 4;
+   private static final String STATUS_SEPARATOR = "  ·  ";
    private static final long STATUS_INTERVAL_MS = 1000L;
-   private static final String VERSION_BADGE = "Gemini v" + Gemini.VERSION;
+   private static final String NAME = "Gemini";
+   private static final String VERSION = "dev".equals(Gemini.VERSION) ? "dev build" : Gemini.VERSION;
+   private static final String[] LINK_KEYS = {"search", "guide", "configs"};
    private static boolean whatsNewChecked;
-   // Particle state lives in flat arrays that are allocated once per screen; nothing is allocated per frame.
-   private final float[] particleX = new float[PARTICLES];
-   private final float[] particleY = new float[PARTICLES];
-   private final float[] velocityX = new float[PARTICLES];
-   private final float[] velocityY = new float[PARTICLES];
-   private final float[] depth = new float[PARTICLES];
-   private final float[] screenX = new float[PARTICLES];
-   private final float[] screenY = new float[PARTICLES];
-   private final String[] statusFull = new String[STATUS_ITEMS];
-   private final String[] statusShort = new String[STATUS_ITEMS];
-   private final int[] statusFullWidth = new int[STATUS_ITEMS];
-   private final int[] statusShortWidth = new int[STATUS_ITEMS];
-   private final int[] statusColor = new int[STATUS_ITEMS];
+   private final String[] statusText = new String[MAX_STATUS];
+   private final int[] statusWidth = new int[MAX_STATUS];
+   private final int[] statusColor = new int[MAX_STATUS];
    private final long openedAt = Util.getMillis();
+   private int statusCount;
    private TitleLayout layout = TitleLayout.compute(320, 240);
    private GlassButton[] geminiButtons = new GlassButton[0];
+   private String[] geminiKeys = new String[0];
    private GlassButton[] fading = new GlassButton[0];
-   private float parallaxX;
-   private float parallaxY;
    private float fade;
-   private long lastFrame;
    private long statusAt;
-   private int shownFps = -1;
    private Component credits;
    private int creditsWidth;
+   private int separatorWidth;
 
    public GeminiTitleScreen() {
       super(Component.translatable("gemini.title.screen"));
-      Random random = new Random();
-      for (int i = 0; i < PARTICLES; i++) {
-         this.particleX[i] = random.nextFloat();
-         this.particleY[i] = random.nextFloat();
-         double angle = random.nextDouble() * Math.PI * 2.0;
-         float speed = 0.006F + random.nextFloat() * 0.014F;
-         this.velocityX[i] = (float)Math.cos(angle) * speed;
-         this.velocityY[i] = (float)Math.sin(angle) * speed;
-         this.depth[i] = 0.25F + random.nextFloat() * 0.75F;
-      }
-
-      for (int i = 0; i < STATUS_ITEMS; i++) {
-         this.statusFull[i] = "";
-         this.statusShort[i] = "";
-      }
    }
 
    // ---- swapping in for the vanilla title screen ------------------------------------------------------------
@@ -113,9 +88,9 @@ public final class GeminiTitleScreen extends Screen {
    // ---- opening the menus -----------------------------------------------------------------------------------
 
    /**
-    * Opens the presets and config manager. This is the single place that decides which screen that is (the pause
-    * dock uses it too): the dashboard on its "Presets &amp; Configs" page. {@code parent} is the screen the player
-    * came from; closing the dashboard returns there.
+    * Opens the presets and config manager. This is the single place that decides which screen that is: the
+    * dashboard on its "Presets &amp; Configs" page. {@code parent} is the screen the player came from; closing the
+    * dashboard returns there.
     */
    public static void openConfigs(Screen parent) {
       Minecraft.getInstance().gui.setScreen(new WindowGuiScreen(WindowGuiScreen.Page.PROFILES, parent));
@@ -128,20 +103,16 @@ public final class GeminiTitleScreen extends Screen {
       this.layout = TitleLayout.compute(this.width, this.height);
       TitleLayout l = this.layout;
       boolean online = this.minecraft.allowsMultiplayer();
-      GlassButton singleplayer = this.nav(0, "singleplayer", () -> this.minecraft.gui.setScreen(new SelectWorldScreen(this)));
-      GlassButton multiplayer = this.nav(
+      GlassButton singleplayer = this.main(0, "singleplayer", () -> this.minecraft.gui.setScreen(new SelectWorldScreen(this)));
+      GlassButton multiplayer = this.main(
          1,
          "multiplayer",
          () -> this.minecraft.gui.setScreen(this.minecraft.options.skipMultiplayerWarning ? new JoinMultiplayerScreen(this) : new SafetyScreen(this))
       );
-      GlassButton realms = this.nav(2, "realms", () -> this.minecraft.gui.setScreen(new RealmsMainScreen(this)));
-      GlassButton clickGui = this.nav(3, "clickgui", () -> this.minecraft.gui.setScreen(new ClickGuiScreen()));
-      GlassButton windowGui = this.nav(4, "windowgui", () -> this.minecraft.gui.setScreen(new WindowGuiScreen()));
-      GlassButton configs = this.nav(5, "configs", () -> openConfigs(this));
-      GlassButton search = this.nav(6, "search", () -> this.minecraft.gui.setScreen(new PaletteScreen(this)));
-      GlassButton guide = this.nav(7, "guide", () -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, this));
-      GlassButton options = this.nav(8, "options", () -> this.minecraft.gui.setScreen(new OptionsScreen(this, this.minecraft.options)));
-      GlassButton quit = this.nav(9, "quit", this.minecraft::stop);
+      GlassButton realms = this.main(2, "realms", () -> this.minecraft.gui.setScreen(new RealmsMainScreen(this)));
+      GlassButton menu = this.main(3, "menu", () -> this.minecraft.gui.setScreen(Menus.create()));
+      GlassButton options = this.main(4, "options", () -> this.minecraft.gui.setScreen(new OptionsScreen(this, this.minecraft.options)));
+      GlassButton quit = this.main(5, "quit", this.minecraft::stop);
       if (!online) {
          multiplayer.active = false;
          realms.active = false;
@@ -150,36 +121,58 @@ public final class GeminiTitleScreen extends Screen {
          realms.setTooltip(disabled);
       }
 
+      Component[] linkLabels = new Component[LINK_KEYS.length];
+      int[] linkWidths = new int[LINK_KEYS.length];
+      for (int i = 0; i < LINK_KEYS.length; i++) {
+         linkLabels[i] = Component.translatable("gemini.title." + LINK_KEYS[i]);
+         linkWidths[i] = this.font.width(linkLabels[i]) + 2 * Theme.SPACE_XS;
+      }
+
+      int[] linkX = l.linkX(linkWidths);
+      GlassButton[] links = new GlassButton[LINK_KEYS.length];
+      for (int i = 0; i < LINK_KEYS.length; i++) {
+         int link = i;
+         links[i] = this.addRenderableWidget(
+            new GlassButton(linkX[i], l.linksY(), linkWidths[i], TitleLayout.LINK_HEIGHT, linkLabels[i], pressed -> this.openLink(link)).plain()
+         );
+         links[i].setTooltip(Tooltip.create(Component.translatable("gemini.title." + LINK_KEYS[i] + ".tooltip")));
+      }
+
+      Component vanillaLabel = Component.translatable("gemini.title.vanilla");
       GlassButton vanilla = this.addRenderableWidget(
-         new GlassButton(6, l.footerY(), Math.min(96, this.font.width(Component.translatable("gemini.title.vanilla")) + 20), TitleLayout.FOOTER_HEIGHT, Component.translatable("gemini.title.vanilla"), button -> this.openVanilla())
+         new GlassButton(4, l.footerY(), this.font.width(vanillaLabel) + 2 * Theme.SPACE_XS, TitleLayout.FOOTER_HEIGHT, vanillaLabel, button -> this.openVanilla())
+            .plain()
       );
       vanilla.setTooltip(Tooltip.create(Component.translatable("gemini.title.vanilla.tooltip")));
       Component sandboxLabel = Component.translatable("gemini.title.sandbox");
-      int switchWidth = this.font.width(sandboxLabel) + 46;
+      int switchWidth = this.font.width(sandboxLabel) + 2 * Theme.SPACE_XS + Theme.SPACE_S + 18;
       GlassButton sandbox = this.addRenderableWidget(
          new GlassButton(
-            this.width - 6 - switchWidth,
-            l.footerY(),
-            switchWidth,
-            TitleLayout.FOOTER_HEIGHT,
-            sandboxLabel,
-            button -> this.toggleSandbox(button),
-            SingleplayerGate::sandboxMode
-         )
+               this.width - 4 - switchWidth,
+               l.footerY(),
+               switchWidth,
+               TitleLayout.FOOTER_HEIGHT,
+               sandboxLabel,
+               button -> this.toggleSandbox(button),
+               SingleplayerGate::sandboxMode
+            )
+            .plain()
       );
       sandbox.setTooltip(Tooltip.create(SandboxUi.tooltip()));
-      this.geminiButtons = new GlassButton[]{clickGui, windowGui, configs, search};
-      this.fading = new GlassButton[]{singleplayer, multiplayer, realms, clickGui, windowGui, configs, search, guide, options, quit, vanilla, sandbox};
+      this.geminiButtons = new GlassButton[]{menu, links[0], links[2]};
+      this.geminiKeys = new String[]{"menu", LINK_KEYS[0], LINK_KEYS[2]};
+      this.fading = new GlassButton[]{singleplayer, multiplayer, realms, menu, options, quit, links[0], links[1], links[2], vanilla, sandbox};
       this.applySandboxState();
       this.credits = Component.translatable("title.credits");
       this.creditsWidth = this.font.width(this.credits);
-      // Leave the footer text out when it would run into the two footer buttons.
-      if (vanilla.getRight() + 8 + this.creditsWidth + 8 > sandbox.getX()) {
+      int creditsX = (this.width - this.creditsWidth) / 2;
+      // Leave the footer text out when it would run into the two footer links.
+      if (creditsX < vanilla.getRight() + 8 || creditsX + this.creditsWidth + 8 > sandbox.getX()) {
          this.credits = null;
       }
 
+      this.separatorWidth = this.font.width(STATUS_SEPARATOR);
       this.statusAt = 0L;
-      this.shownFps = -1;
       if (!whatsNewChecked) {
          // Once per game start: after an update, "What's new" opens over the home screen by itself.
          whatsNewChecked = true;
@@ -202,22 +195,31 @@ public final class GeminiTitleScreen extends Screen {
       return super.keyPressed(event);
    }
 
-   private GlassButton nav(int index, String key, Runnable action) {
+   private GlassButton main(int index, String key, Runnable action) {
       TitleLayout l = this.layout;
       GlassButton button = new GlassButton(
-         l.buttonX(index), l.buttonY(index), l.buttonWidth(), l.buttonHeight(), Component.translatable("gemini.title." + key), pressed -> action.run()
+         l.buttonX(index), l.buttonY(index), l.buttonW(index), l.buttonHeight(), Component.translatable("gemini.title." + key), pressed -> action.run()
       );
       button.setTooltip(Tooltip.create(Component.translatable("gemini.title." + key + ".tooltip")));
       return this.addRenderableWidget(button);
    }
 
-   /** ClickGUI, WindowGUI and Presets &amp; Configs are only for a switched-on Gemini; off, they explain why. */
+   private void openLink(int link) {
+      switch (link) {
+         case 0 -> this.minecraft.gui.setScreen(new PaletteScreen(this));
+         case 1 -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, this);
+         default -> openConfigs(this);
+      }
+   }
+
+   /** The module menu, quick search and presets are only for a switched-on Gemini; off, they explain why. */
    private void applySandboxState() {
       boolean on = SingleplayerGate.sandboxMode();
-      String[] keys = {"clickgui", "windowgui", "configs", "search"};
       for (int i = 0; i < this.geminiButtons.length; i++) {
          this.geminiButtons[i].active = on;
-         this.geminiButtons[i].setTooltip(Tooltip.create(Component.translatable(on ? "gemini.title." + keys[i] + ".tooltip" : "gemini.title.disabled.tooltip")));
+         this.geminiButtons[i].setTooltip(
+            Tooltip.create(Component.translatable(on ? "gemini.title." + this.geminiKeys[i] + ".tooltip" : "gemini.title.disabled.tooltip"))
+         );
       }
    }
 
@@ -250,77 +252,16 @@ public final class GeminiTitleScreen extends Screen {
 
    // ---- rendering -------------------------------------------------------------------------------------------
 
+   /** The vanilla panorama behind the menu blur, dimmed, with a still vignette toward the top and bottom edges. */
    @Override
    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-      long now = Util.getMillis();
-      float delta = this.lastFrame == 0L ? 0.0F : Math.min(0.1F, (now - this.lastFrame) / 1000.0F);
-      this.lastFrame = now;
-      this.fade = Glass.animations() ? Glass.easeOutCubic((now - this.openedAt) / 450.0F) : 1.0F;
-      float targetX = this.width <= 0 ? 0.0F : Mth.clamp((float)mouseX / this.width - 0.5F, -0.5F, 0.5F) * 2.0F;
-      float targetY = this.height <= 0 ? 0.0F : Mth.clamp((float)mouseY / this.height - 0.5F, -0.5F, 0.5F) * 2.0F;
-      this.parallaxX = Glass.approach(this.parallaxX, targetX, 4.0F, delta);
-      this.parallaxY = Glass.approach(this.parallaxY, targetY, 4.0F, delta);
-      int accent = Glass.accent();
-      int accent2 = Glass.accent2();
-      // Slow gradient: the two accents breathe in and out of a near-black base at different rates.
-      double seconds = (now % 3600000L) / 1000.0;
-      float waveA = (float)(0.5 + 0.5 * Math.sin(seconds * 0.23));
-      float waveB = (float)(0.5 + 0.5 * Math.sin(seconds * 0.17 + 2.1));
-      int base = Glass.lerp(0xFF04060A, Glass.withAlpha(Glass.surface(0), 255), 0.6F);
-      g.fillGradient(0, 0, this.width, this.height, Glass.lerp(base, accent, 0.07F + 0.09F * waveA), Glass.lerp(0xFF020306, accent2, 0.05F + 0.10F * waveB));
-      int bandY = Math.round(this.height * (0.30F + 0.25F * waveB));
-      Glass.gradientBar(g, 0, bandY, this.width, bandY + this.height / 4, Glass.withAlpha(accent, 0), Glass.withAlpha(accent2, Math.round(16.0F + 14.0F * waveA)));
-      this.extractParticles(g, delta, accent, accent2);
-   }
-
-   private void extractParticles(GuiGraphicsExtractor g, float delta, int accent, int accent2) {
-      float reach = Mth.clamp(Math.min(this.width, this.height) * 0.22F, 44.0F, 90.0F);
-      for (int i = 0; i < PARTICLES; i++) {
-         float x = this.particleX[i] + this.velocityX[i] * delta;
-         float y = this.particleY[i] + this.velocityY[i] * delta;
-         // Wrap a little outside the screen so particles drift in and out instead of popping.
-         if (x < -0.06F) {
-            x += 1.12F;
-         } else if (x > 1.06F) {
-            x -= 1.12F;
-         }
-
-         if (y < -0.06F) {
-            y += 1.12F;
-         } else if (y > 1.06F) {
-            y -= 1.12F;
-         }
-
-         this.particleX[i] = x;
-         this.particleY[i] = y;
-         // Nearer particles (larger depth) shift further against the mouse.
-         this.screenX[i] = x * this.width - this.parallaxX * this.depth[i] * 16.0F;
-         this.screenY[i] = y * this.height - this.parallaxY * this.depth[i] * 10.0F;
-      }
-
-      float reachSq = reach * reach;
-      for (int i = 0; i < PARTICLES; i++) {
-         for (int j = i + 1; j < PARTICLES; j++) {
-            float dx = this.screenX[i] - this.screenX[j];
-            float dy = this.screenY[i] - this.screenY[j];
-            float distSq = dx * dx + dy * dy;
-            if (distSq < reachSq) {
-               float closeness = 1.0F - (float)Math.sqrt(distSq) / reach;
-               int alpha = Math.round(closeness * 70.0F * this.fade);
-               if (alpha > 2) {
-                  Glass.line(g, this.screenX[i], this.screenY[i], this.screenX[j], this.screenY[j], Glass.withAlpha(accent, alpha));
-               }
-            }
-         }
-      }
-
-      for (int i = 0; i < PARTICLES; i++) {
-         int x = Math.round(this.screenX[i]);
-         int y = Math.round(this.screenY[i]);
-         int size = this.depth[i] > 0.7F ? 2 : 1;
-         int color = Glass.withAlpha(Glass.lerp(accent, accent2, this.depth[i]), Math.round((70.0F + 150.0F * this.depth[i]) * this.fade));
-         g.fill(x - size + 1, y - size + 1, x + size, y + size, color);
-      }
+      this.fade = Glass.animations() ? Glass.easeOutCubic((Util.getMillis() - this.openedAt) / 400.0F) : 1.0F;
+      this.extractPanorama(g, partialTick);
+      this.extractBlurredBackground(g);
+      g.fill(0, 0, this.width, this.height, Glass.withAlpha(Glass.surface(0), 170));
+      int band = this.height / 3;
+      g.fillGradient(0, 0, this.width, band, 0x50000000, 0x00000000);
+      g.fillGradient(0, this.height - band, this.width, this.height, 0x00000000, 0x60000000);
    }
 
    @Override
@@ -331,13 +272,14 @@ public final class GeminiTitleScreen extends Screen {
 
       this.extractHeader(g);
       if (this.credits != null && this.fade > 0.1F) {
-         g.text(this.font, this.credits, (this.width - this.creditsWidth) / 2, this.layout.footerY() + 4, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
+         g.text(this.font, this.credits, (this.width - this.creditsWidth) / 2, this.layout.footerY() + 3, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
       }
 
-      this.extractStatusBar(g);
+      this.extractStatus(g);
       super.extractRenderState(g, mouseX, mouseY, partialTick);
    }
 
+   /** The logo and the name, once, with the version in small dim text after the name. */
    private void extractHeader(GuiGraphicsExtractor g) {
       if (this.fade <= 0.1F) {
          return;
@@ -345,99 +287,94 @@ public final class GeminiTitleScreen extends Screen {
 
       TitleLayout l = this.layout;
       int logo = l.logoSize();
-      float scale = logo >= 36 ? 2.0F : 1.5F;
-      int nameWidth = Math.round(this.font.width(Gemini.NAME) * scale);
-      int badgeWidth = this.font.width(VERSION_BADGE) + 10;
-      int total = logo + 8 + Math.max(nameWidth, badgeWidth);
-      // The header floats a few pixels with the mouse, in the same direction as the far particles.
-      int x = (this.width - total) / 2 - Math.round(this.parallaxX * 4.0F);
-      int y = l.headerY() - Math.round(this.parallaxY * 2.0F);
-      GeminiMark.draw(g, x, y, logo, -1, Glass.pulse(4000L));
+      float scale = logo >= 32 ? 2.0F : 1.5F;
+      int nameWidth = Math.round(this.font.width(NAME) * scale);
+      int versionWidth = this.font.width(VERSION);
+      int total = logo + 8 + nameWidth + 6 + versionWidth;
+      int x = (this.width - total) / 2;
+      int y = l.headerY();
+      GeminiMark.draw(g, x, y, logo, -1, 1.0F);
       int textX = x + logo + 8;
+      int nameHeight = Math.round(Theme.FONT_HEIGHT * scale);
+      int nameY = y + (logo - nameHeight) / 2;
       g.pose().pushMatrix();
-      g.pose().translate(textX, y + 1);
+      g.pose().translate(textX, nameY);
       g.pose().scale(scale, scale);
-      g.text(this.font, Gemini.NAME, 0, 0, Glass.fade(Glass.TEXT, this.fade), true);
+      g.text(this.font, NAME, 0, 0, Glass.fade(Glass.TEXT, this.fade), false);
       g.pose().popMatrix();
-      int badgeY = y + logo - 12;
-      Glass.panel(g, textX, badgeY, textX + badgeWidth, badgeY + 12, Theme.RADIUS, Glass.surface(1), Glass.accent(), this.fade, 0.35F);
-      g.text(this.font, VERSION_BADGE, textX + 5, badgeY + 2, Glass.fade(Glass.lerp(Glass.TEXT_DIM, Glass.accent2(), 0.35F), this.fade), false);
+      // The version sits on the name's baseline.
+      g.text(this.font, VERSION, textX + nameWidth + 6, nameY + nameHeight - Theme.FONT_HEIGHT, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
    }
 
-   // ---- status bar ------------------------------------------------------------------------------------------
+   // ---- status line -----------------------------------------------------------------------------------------
 
-   private void setStatus(int index, String full, String brief, int color) {
-      this.statusFull[index] = full;
-      this.statusShort[index] = brief;
-      this.statusFullWidth[index] = this.font.width(full);
-      this.statusShortWidth[index] = this.font.width(brief);
-      this.statusColor[index] = color;
-   }
-
-   /** Everything but the frame rate is looked up at most once a second; the keybind scan in particular is not free. */
-   private void refreshStatus(long now) {
-      int fps = this.minecraft.getFps();
-      if (fps != this.shownFps) {
-         this.shownFps = fps;
-         this.setStatus(0, "FPS " + fps, fps + " FPS", Glass.TEXT);
+   private void addStatus(String text, int color) {
+      if (this.statusCount < MAX_STATUS) {
+         this.statusText[this.statusCount] = text;
+         this.statusWidth[this.statusCount] = this.font.width(text);
+         this.statusColor[this.statusCount] = color;
+         this.statusCount++;
       }
+   }
 
+   /**
+    * Rebuilt at most once a second (the keybind scan is not free). Only what is worth knowing is listed: that
+    * Gemini is switched off, the active profile, key-bind conflicts and game hooks that failed to load. On a normal
+    * start this is the profile, or nothing at all.
+    */
+   private void refreshStatus(long now) {
       if (this.statusAt != 0L && now - this.statusAt < STATUS_INTERVAL_MS && now >= this.statusAt) {
          return;
       }
 
       this.statusAt = now;
+      this.statusCount = 0;
       Gemini gemini = Gemini.getInstance();
-      String profile = gemini == null || gemini.config() == null ? null : gemini.config().activeProfile();
-      this.setStatus(1, "Profile: " + (profile == null ? "none" : profile), profile == null ? "No profile" : profile, Glass.TEXT_DIM);
-      int conflicts = gemini == null || gemini.modules() == null ? 0 : BindWarnings.conflictCount(gemini.modules());
-      if (conflicts == 0) {
-         this.setStatus(2, "Keybinds: No conflicts", "No conflicts", Glass.OK);
-      } else {
-         String text = conflicts + (conflicts == 1 ? " conflict" : " conflicts");
-         this.setStatus(2, "Keybinds: " + text, text, Glass.WARN);
+      boolean sandbox = SingleplayerGate.sandboxMode();
+      if (!sandbox) {
+         this.addStatus("Gemini is off; online play is allowed", Glass.TEXT_DIM);
       }
 
-      int applied = MixinReport.appliedCount();
+      String profile = gemini == null || gemini.config() == null ? null : gemini.config().activeProfile();
+      if (profile != null) {
+         this.addStatus("Profile: " + profile, Glass.TEXT_FAINT);
+      }
+
+      int conflicts = !sandbox || gemini == null || gemini.modules() == null ? 0 : BindWarnings.conflictCount(gemini.modules());
+      if (conflicts > 0) {
+         this.addStatus(conflicts + (conflicts == 1 ? " key conflict" : " key conflicts"), Glass.WARN);
+      }
+
       int failed = MixinReport.failedCount();
-      this.setStatus(
-         3, "Mixins: " + applied + " applied, " + failed + " failed", failed == 0 ? "Mixins OK" : failed + " mixins failed", failed == 0 ? Glass.OK : Glass.ERROR
-      );
-      boolean sandbox = SingleplayerGate.sandboxMode();
-      this.setStatus(4, sandbox ? "Sandbox: On (offline)" : "Sandbox: Off (Gemini dormant)", sandbox ? "Sandbox on" : "Gemini off", sandbox ? Glass.INFO : Glass.WARN);
+      if (failed > 0) {
+         this.addStatus(failed == 1 ? "A game hook failed to load; see .version" : failed + " game hooks failed to load; see .version", Glass.ERROR);
+      }
    }
 
-   private void extractStatusBar(GuiGraphicsExtractor g) {
+   private void extractStatus(GuiGraphicsExtractor g) {
       this.refreshStatus(Util.getMillis());
-      int top = this.layout.statusY();
-      g.fill(0, top, this.width, this.height, Glass.withAlpha(Glass.surface(0), Math.round(214.0F * this.fade)));
-      Glass.gradientBar(g, 0, top, this.width, top + 1, Glass.fade(Glass.withAlpha(Glass.accent(), 170), this.fade), Glass.fade(Glass.withAlpha(Glass.accent2(), 170), this.fade));
-      if (this.fade <= 0.1F) {
+      if (this.statusCount == 0 || this.fade <= 0.1F) {
          return;
       }
 
-      int room = this.width - 12;
-      int fullTotal = STATUS_GAP * (STATUS_ITEMS - 1);
-      int shortTotal = fullTotal;
-      for (int i = 0; i < STATUS_ITEMS; i++) {
-         fullTotal += this.statusFullWidth[i];
-         shortTotal += this.statusShortWidth[i];
+      int room = this.width - 8;
+      int total = this.separatorWidth * (this.statusCount - 1);
+      for (int i = 0; i < this.statusCount; i++) {
+         total += this.statusWidth[i];
       }
 
-      boolean brief = fullTotal > room;
-      int total = brief ? shortTotal : fullTotal;
-      // Even the short forms can be too wide on a very narrow window; shrink the row rather than clip it.
+      // On a very narrow window shrink the line rather than clip it.
       float scale = total > room && total > 0 ? (float)room / total : 1.0F;
       g.pose().pushMatrix();
-      g.pose().translate(6.0F, top + 4 + (1.0F - scale) * 4.0F);
+      g.pose().translate(4.0F, this.layout.statusY() + 2 + (1.0F - scale) * 4.0F);
       g.pose().scale(scale, scale);
       int x = 0;
-      for (int i = 0; i < STATUS_ITEMS; i++) {
-         g.text(this.font, brief ? this.statusShort[i] : this.statusFull[i], x, 0, Glass.fade(this.statusColor[i], this.fade), false);
-         x += brief ? this.statusShortWidth[i] : this.statusFullWidth[i];
-         if (i < STATUS_ITEMS - 1) {
-            g.fill(x + STATUS_GAP / 2, 0, x + STATUS_GAP / 2 + 1, 8, Glass.fade(Glass.withAlpha(Glass.TEXT_FAINT, 120), this.fade));
-            x += STATUS_GAP;
+      for (int i = 0; i < this.statusCount; i++) {
+         g.text(this.font, this.statusText[i], x, 0, Glass.fade(this.statusColor[i], this.fade), false);
+         x += this.statusWidth[i];
+         if (i < this.statusCount - 1) {
+            g.text(this.font, STATUS_SEPARATOR, x, 0, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
+            x += this.separatorWidth;
          }
       }
 

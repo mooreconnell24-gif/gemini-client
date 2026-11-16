@@ -2,8 +2,12 @@ package gemini.ui;
 
 /**
  * Where everything on {@link GeminiTitleScreen} goes for a given GUI size. Pure arithmetic, so it can be tested
- * without a running game: the navigation buttons use one column when the screen is tall enough and two columns
- * of five otherwise, and always stay between the header and the footer row.
+ * without a running game.
+ *
+ * <p>There are {@link #BUTTONS} main buttons: Singleplayer, Multiplayer, Realms, Gemini, Options and Quit. On a
+ * screen tall enough they form one column, with Options and Quit sharing the last row as on the vanilla title
+ * screen; otherwise two columns of three. Under them sits one row of small text links (quick search, guide,
+ * presets), and everything stays between the header and the footer row.
  */
 public record TitleLayout(
    int width,
@@ -19,27 +23,34 @@ public record TitleLayout(
    int footerY,
    int statusY
 ) {
-   public static final int BUTTONS = 10;
-   public static final int STATUS_HEIGHT = 16;
-   public static final int FOOTER_HEIGHT = 16;
+   public static final int BUTTONS = 6;
+   public static final int STATUS_HEIGHT = 12;
+   public static final int FOOTER_HEIGHT = 14;
+   public static final int LINK_HEIGHT = 12;
+   /** Space between the buttons and the row of links. */
+   public static final int LINK_GAP = 6;
+   /** Horizontal space between two links. */
+   public static final int LINK_SPACING = 14;
    private static final int COLUMN_GAP = 6;
+   private static final int ROWS_ONE_COLUMN = 5;
+   private static final int ROWS_TWO_COLUMNS = 3;
 
    public static TitleLayout compute(int width, int height) {
       boolean compact = height < 300;
-      int logoSize = compact ? 28 : 36;
-      int headerY = compact ? 8 : Math.max(14, height / 9);
+      int logoSize = compact ? 24 : 32;
+      int headerY = compact ? 8 : Math.max(14, height / 8);
       int statusY = height - STATUS_HEIGHT;
-      int footerY = statusY - 4 - FOOTER_HEIGHT;
-      int top = headerY + logoSize + (compact ? 8 : 16);
+      int footerY = statusY - 2 - FOOTER_HEIGHT;
+      int top = headerY + logoSize + (compact ? 10 : 18);
       int bottom = footerY - 6;
-      int available = Math.max(0, bottom - top);
+      int available = Math.max(0, bottom - top - LINK_GAP - LINK_HEIGHT);
       int buttonHeight = Theme.BUTTON_HEIGHT;
       int gap = Theme.SPACE_S;
       int columns = 1;
-      int rows = BUTTONS;
+      int rows = ROWS_ONE_COLUMN;
       if (available < rows * buttonHeight + (rows - 1) * gap) {
          columns = 2;
-         rows = BUTTONS / 2;
+         rows = ROWS_TWO_COLUMNS;
          if (available < rows * buttonHeight + (rows - 1) * gap) {
             // Very short windows: squeeze the rows rather than run into the footer.
             gap = Theme.SPACE_XS;
@@ -59,20 +70,66 @@ public record TitleLayout(
    }
 
    public int rows() {
-      return BUTTONS / this.columns;
+      return this.columns == 1 ? ROWS_ONE_COLUMN : ROWS_TWO_COLUMNS;
    }
 
-   /** Left edge of navigation button {@code index}; buttons fill the first column top to bottom, then the second. */
+   /** Whether main button {@code index} shares its row with its neighbour (Options and Quit in the one-column layout). */
+   private boolean halfWidth(int index) {
+      return this.columns == 1 && index >= 4;
+   }
+
+   /** Left edge of main button {@code index}. */
    public int buttonX(int index) {
-      return this.startX + (index / this.rows()) * (this.buttonWidth + COLUMN_GAP);
+      if (this.columns == 1) {
+         return index == 5 ? this.startX + this.buttonW(4) + COLUMN_GAP : this.startX;
+      }
+
+      return this.startX + (index / ROWS_TWO_COLUMNS) * (this.buttonWidth + COLUMN_GAP);
    }
 
    public int buttonY(int index) {
-      return this.startY + (index % this.rows()) * (this.buttonHeight + this.gap);
+      int row = this.columns == 1 ? Math.min(index, 4) : index % ROWS_TWO_COLUMNS;
+      return this.startY + row * (this.buttonHeight + this.gap);
    }
 
-   /** Bottom edge of the lowest navigation button. */
+   /** Width of main button {@code index}. */
+   public int buttonW(int index) {
+      if (!this.halfWidth(index)) {
+         return this.buttonWidth;
+      }
+
+      int left = (this.buttonWidth - COLUMN_GAP) / 2;
+      return index == 4 ? left : this.buttonWidth - COLUMN_GAP - left;
+   }
+
+   /** Bottom edge of the lowest main button. */
    public int buttonsBottom() {
-      return this.buttonY(this.rows() - 1) + this.buttonHeight;
+      return this.startY + this.rows() * this.buttonHeight + (this.rows() - 1) * this.gap;
+   }
+
+   /** Top of the row of text links under the buttons. */
+   public int linksY() {
+      return this.buttonsBottom() + LINK_GAP;
+   }
+
+   /**
+    * Left edges of the text links, given each link's width: one row centred under the buttons with
+    * {@link #LINK_SPACING} between links.
+    */
+   public int[] linkX(int[] widths) {
+      int total = 0;
+      for (int width : widths) {
+         total += width;
+      }
+
+      total += Math.max(0, widths.length - 1) * LINK_SPACING;
+      int[] x = new int[widths.length];
+      int cursor = (this.width - total) / 2;
+      for (int i = 0; i < widths.length; i++) {
+         x[i] = cursor;
+         cursor += widths[i] + LINK_SPACING;
+      }
+
+      return x;
    }
 }
