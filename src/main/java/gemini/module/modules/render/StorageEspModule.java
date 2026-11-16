@@ -26,11 +26,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class StorageEspModule extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Scan distance in blocks", 64.0, 8.0, 160.0, 4.0));
-   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Box + Fill: outline and faces; Outline: edges only; Glow: outline with a soft halo; Fill: faces only", "Box + Fill", "Box + Fill", "Outline", "Glow", "Fill"));
-   private final BooleanSetting boxes3D = this.addSetting(new BooleanSetting("3D Boxes", "Highlight storage blocks in 3D through walls", true));
-   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw tracer lines to storage blocks", false));
-   private final BooleanSetting labels3D = this.addSetting(new BooleanSetting("3D Labels", "Draw floating labels above storage blocks", false));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to look, in blocks", 64.0, 8.0, 160.0, 4.0));
+   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Box + Fill draws edges and faces; Outline edges only; Glow edges with a soft edge; Fill faces only", "Box + Fill", "Box + Fill", "Outline", "Glow", "Fill"));
+   private final BooleanSetting boxes3D = this.addSetting(new BooleanSetting("3D Boxes", "Highlight storage blocks through walls", true));
+   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines to storage blocks", false));
+   private final BooleanSetting labels3D = this.addSetting(new BooleanSetting("3D Labels", "Draw labels above storage blocks", false));
    private final BooleanSetting hudList = this.addSetting(new BooleanSetting("HUD List", "Also list nearby storage blocks on the HUD", true));
    private final NumberSetting maxResults = this.addSetting(
       new NumberSetting("Max HUD Entries", "Most entries in the HUD list", 10.0, 3.0, 25.0, 1.0).showIf(this.hudList::get)
@@ -40,7 +40,7 @@ public final class StorageEspModule extends Module {
    private final BooleanSetting shulkers = this.addSetting(new BooleanSetting("Shulkers", "Highlight shulker boxes", true));
    private final BooleanSetting ender = this.addSetting(new BooleanSetting("Ender Chests", "Highlight ender chests", true));
    private final BooleanSetting furnaces = this.addSetting(
-      new BooleanSetting("Furnaces & Hoppers", "Highlight furnaces, smokers, blast furnaces, and hoppers", false)
+      new BooleanSetting("Furnaces & Hoppers", "Highlight furnaces, smokers, blast furnaces and hoppers", false)
    );
    private final BooleanSetting spawners = this.addSetting(new BooleanSetting("Spawners", "Highlight mob spawners", true));
    private final List<StorageEspModule.Hit> allHits = new ArrayList<>();
@@ -49,7 +49,7 @@ public final class StorageEspModule extends Module {
    private final InfoText infoText = new InfoText();
 
    public StorageEspModule() {
-      super("StorageESP", "Highlight chests, shulkers, ender chests, barrels.", Category.RENDER);
+      super("StorageESP", "Highlights chests, barrels, shulker boxes, ender chests and other storage blocks.", Category.RENDER);
    }
 
    public List<StorageEspModule.Hit> hits() {

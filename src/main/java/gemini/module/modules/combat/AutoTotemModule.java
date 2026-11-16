@@ -13,14 +13,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class AutoTotemModule extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Only swap when at or below this HP (20 = always)", 20.0, 2.0, 20.0, 1.0));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Only swap at or below this health (20 = always)", 20.0, 2.0, 20.0, 1.0));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between swaps", 2.0, 0.0, 20.0, 1.0));
-   private final BooleanSetting replace = this.addSetting(new BooleanSetting("Replace Offhand", "Swap even if the offhand holds another item", true));
-   private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only pull totems from the hotbar", false));
+   private final BooleanSetting replace = this.addSetting(new BooleanSetting("Replace Offhand", "Swap even when the offhand holds another item", true));
+   private final BooleanSetting hotbarOnly = this.addSetting(new BooleanSetting("Hotbar Only", "Only take totems from the hotbar", false));
    private int cooldown;
 
    public AutoTotemModule() {
-      super("AutoTotem", "Keep a totem of undying in your offhand.", Category.COMBAT);
+      super("AutoTotem", "Keeps a totem of undying in your offhand.", Category.COMBAT);
    }
 
    @Override

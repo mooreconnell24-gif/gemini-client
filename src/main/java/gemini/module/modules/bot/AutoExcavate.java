@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 
 public final class AutoExcavate extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Horizontal excavation radius", 4.0, 1.0, 16.0, 1.0));
-   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "Layers downward to clear", 3.0, 1.0, 16.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Horizontal radius to dig out, in blocks", 4.0, 1.0, 16.0, 1.0));
+   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "Layers to dig downwards", 3.0, 1.0, 16.0, 1.0));
 
    public AutoExcavate() {
-      super("Auto Excavate", "Excavate a cubic area around you layer by layer.", Category.WORLD);
+      super("Auto Excavate", "Digs out the area around you layer by layer.", Category.WORLD);
    }
 
    @Override

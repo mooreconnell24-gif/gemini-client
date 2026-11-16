@@ -8,10 +8,10 @@ import java.util.List;
 import net.minecraft.world.item.ItemStack;
 
 public final class InventoryViewer extends HudWidget {
-   private final BooleanSetting hotbar = this.addSetting(new BooleanSetting("Hotbar", "Also draw the hotbar row", false));
+   private final BooleanSetting hotbar = this.addSetting(new BooleanSetting("Hotbar", "Also show the hotbar row", false));
 
    public InventoryViewer() {
-      super("Inventory Viewer", "Your inventory on screen.", "Bottom Left", 6, 6);
+      super("Inventory Viewer", "Shows the contents of your inventory on screen.", "Bottom Left", 6, 6);
    }
 
    private int rows() {

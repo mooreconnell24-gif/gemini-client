@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class HeldItem extends HudWidget {
    public HeldItem() {
-      super("Held Item", "The item in your hand with its durability.", "Bottom Center", 0, 84);
+      super("Held Item", "Shows the item in your hand with its durability.", "Bottom Center", 0, 84);
    }
 
    private String label(LocalPlayer player) {

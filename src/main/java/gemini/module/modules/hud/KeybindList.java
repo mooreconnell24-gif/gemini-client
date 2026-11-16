@@ -12,11 +12,11 @@ import java.util.List;
 
 public final class KeybindList extends HudWidget {
    private final BooleanSetting onlyActive = this.addSetting(
-      new BooleanSetting("Only Active", "Only show keybound modules that are currently active", false)
+      new BooleanSetting("Only Active", "Only show bound modules that are turned on", false)
    );
 
    public KeybindList() {
-      super("Keybinds", "LiquidBounce-style card listing your keybound modules and their live state.", "Left Center", 6, -45);
+      super("Keybinds", "Shows the modules you have bound to keys and whether each is on.", "Left Center", 6, -45);
    }
 
    private List<Module> boundModules() {

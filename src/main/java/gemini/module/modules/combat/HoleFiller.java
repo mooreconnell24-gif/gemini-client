@@ -17,13 +17,13 @@ import net.minecraft.world.item.ItemStack;
 public final class HoleFiller extends PlacementModuleBase {
    /** How far away an enemy is looked for. */
    private static final double ENEMY_RANGE = 8.0;
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Hole scan radius", 5.0, 2.0, 6.0, 1.0));
-   private final BooleanSetting smart = this.addSetting(new BooleanSetting("Smart Only", "Only fill holes close to an enemy", true));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to look for holes, in blocks", 5.0, 2.0, 6.0, 1.0));
+   private final BooleanSetting smart = this.addSetting(new BooleanSetting("Smart Only", "Only fill holes while an enemy is within 8 blocks", true));
 
    private final Targeting targeting = Targeting.builder(this).box("Outline", 120).build();
 
    public HoleFiller() {
-      super("HoleFiller", "Fill nearby safe holes before enemies can enter them; with an enemy in range, only the holes near the one Priority picks.", Category.COMBAT, 1, 3, 4.8);
+      super("HoleFiller", "Fills nearby safe holes so enemies cannot use them, only near the chosen enemy when one is in range.", Category.COMBAT, 1, 3, 4.8);
    }
 
    @Override

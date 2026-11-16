@@ -61,31 +61,31 @@ public final class Clutch extends Module {
    private static final double REACH = 4.5;
    private static final int SCAN_DEPTH = 96;
 
-   private final BooleanSetting falls = this.addSetting(new BooleanSetting("Falls", "MLG out of falls that would hurt or kill you", true));
+   private final BooleanSetting falls = this.addSetting(new BooleanSetting("Falls", "Place water to land safely from falls that would hurt or kill you", true));
    private final ModeSetting fallTrigger = this.addSetting(
-      new ModeSetting("Fall Trigger", "Lethal clutches only falls that would kill you; Any Damage clutches every fall that would hurt", "Lethal", "Lethal", "Any Damage")
+      new ModeSetting("Fall Trigger", "Lethal only acts on falls that would kill you; Any Damage acts on every fall that would hurt", "Lethal", "Lethal", "Any Damage")
          .showIf(this.falls::get)
    );
    private final NumberSetting margin = this.addSetting(
-      new NumberSetting("Margin", "Treat a fall as lethal if it would leave you with this much health (half-hearts) or less", 2.0, 0.0, 10.0, 1.0)
+      new NumberSetting("Margin", "Treat a fall as lethal if it would leave you with this much health or less (half-hearts)", 2.0, 0.0, 10.0, 1.0)
          .showIf(() -> this.falls.get() && this.fallTrigger.is("Lethal"))
    );
    private final BooleanSetting brake = this.addSetting(
-      new BooleanSetting("Brake", "Slow a very fast fall just enough that the MLG lands inside your reach", true).showIf(this.falls::get)
+      new BooleanSetting("Brake", "Slow a very fast fall just enough that the water lands within reach", true).showIf(this.falls::get)
    );
-   private final BooleanSetting scoop = this.addSetting(new BooleanSetting("Scoop", "Pick placed water back up once you are safe", true));
-   private final BooleanSetting lava = this.addSetting(new BooleanSetting("Lava", "Save yourself from falling or standing in lava", true));
+   private final BooleanSetting scoop = this.addSetting(new BooleanSetting("Scoop", "Pick the water back up once you are safe", true));
+   private final BooleanSetting lava = this.addSetting(new BooleanSetting("Lava", "Get you out of lava, whether falling into it or standing in it", true));
    private final BooleanSetting lavaGuard = this.addSetting(
-      new BooleanSetting("Lava Guard", "Stop before walking or stepping off into lava", true).showIf(this.lava::get)
+      new BooleanSetting("Lava Guard", "Stop you walking or stepping off into lava", true).showIf(this.lava::get)
    );
    private final BooleanSetting fire = this.addSetting(new BooleanSetting("Fire", "Put yourself out with water when burning", true));
    private final NumberSetting fireHealth = this.addSetting(
-      new NumberSetting("Fire Health", "Only put out fire once health (half-hearts) is at or below this", 14.0, 1.0, 20.0, 1.0).showIf(this.fire::get)
+      new NumberSetting("Fire Health", "Only put out fire at or below this health (half-hearts)", 14.0, 1.0, 20.0, 1.0).showIf(this.fire::get)
    );
-   private final BooleanSetting voidSave = this.addSetting(new BooleanSetting("Void", "Rescue yourself from falling into the void", true));
+   private final BooleanSetting voidSave = this.addSetting(new BooleanSetting("Void", "Get you out of a fall into the void", true));
    private final BooleanSetting drowning = this.addSetting(new BooleanSetting("Drowning", "Swim up when you run low on air", true));
-   private final BooleanSetting suffocation = this.addSetting(new BooleanSetting("Suffocation", "Get out of blocks you are stuck inside", true));
-   private final BooleanSetting lowHealth = this.addSetting(new BooleanSetting("Low Health", "React when health drops low from anything", true));
+   private final BooleanSetting suffocation = this.addSetting(new BooleanSetting("Suffocation", "Get you out of blocks you are stuck inside", true));
+   private final BooleanSetting lowHealth = this.addSetting(new BooleanSetting("Low Health", "React when your health drops low for any reason", true));
    private final NumberSetting health = this.addSetting(
       new NumberSetting("Health", "Low health threshold (half-hearts, absorption included)", 6.0, 1.0, 19.0, 1.0).showIf(this.lowHealth::get)
    );
@@ -95,28 +95,28 @@ public final class Clutch extends Module {
    private final BooleanSetting lastResort = this.addSetting(
       new BooleanSetting(
          "Last Resort",
-         "When no item can save you: reset fall damage, /effect fire resistance, water breathing or healing, or teleport back to the last safe spot",
+         "When no item can help: reset fall damage, give fire resistance, water breathing or healing with /effect, or teleport back to the last safe spot",
          true
       )
    );
-   private final BooleanSetting silentAim = this.addSetting(new BooleanSetting("Silent Aim", "Aim down only in packets", true));
+   private final BooleanSetting silentAim = this.addSetting(new BooleanSetting("Silent Aim", "Look down without moving your camera", true));
    private final ListSetting dangerModules = this.addSetting(
-      new ListSetting("Danger Modules", "Modules switched on during any danger", ListSetting.Kind.TEXT)
+      new ListSetting("Danger Modules", "Modules turned on during any danger", ListSetting.Kind.TEXT)
    );
    private final ListSetting fallModules = this.addSetting(
-      new ListSetting("Fall Modules", "Modules switched on during a dangerous fall or a void fall", ListSetting.Kind.TEXT)
+      new ListSetting("Fall Modules", "Modules turned on during a dangerous fall or a fall into the void", ListSetting.Kind.TEXT)
    );
    private final ListSetting lavaModules = this.addSetting(
-      new ListSetting("Lava Modules", "Modules switched on near lava or while burning", ListSetting.Kind.TEXT, "Jesus")
+      new ListSetting("Lava Modules", "Modules turned on near lava or while burning", ListSetting.Kind.TEXT, "Jesus")
    );
    private final ListSetting healthModules = this.addSetting(
-      new ListSetting("Health Modules", "Modules switched on while health is low", ListSetting.Kind.TEXT, "AutoTotem")
+      new ListSetting("Health Modules", "Modules turned on while health is low", ListSetting.Kind.TEXT, "AutoTotem")
    );
    private final BooleanSetting restore = this.addSetting(
-      new BooleanSetting("Restore Modules", "Switch the modules Clutch turned on back off once you are safe", true)
+      new BooleanSetting("Restore Modules", "Turn the modules Clutch turned on back off once you are safe", true)
    );
    private final NumberSetting restoreDelay = this.addSetting(
-      new NumberSetting("Restore Delay", "Ticks of safety before those modules are switched off again", 40.0, 0.0, 400.0, 5.0).showIf(this.restore::get)
+      new NumberSetting("Restore Delay", "Ticks of safety before those modules are turned off again", 40.0, 0.0, 400.0, 5.0).showIf(this.restore::get)
    );
    private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say in chat what saved you", true));
 
@@ -141,7 +141,7 @@ public final class Clutch extends Module {
    private final Set<Danger> dangers = EnumSet.noneOf(Danger.class);
 
    public Clutch() {
-      super("Clutch", "Saves you from lethal falls, lava, fire, the void, drowning and more, and can switch other modules on.", Category.PLAYER);
+      super("Clutch", "Gets you out of lethal falls, lava, fire, the void, drowning and suffocation, and can turn other modules on while you are in danger.", Category.PLAYER);
    }
 
    @Override

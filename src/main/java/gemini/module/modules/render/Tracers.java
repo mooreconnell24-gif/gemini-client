@@ -23,14 +23,14 @@ public final class Tracers extends Module {
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Draw lines to hostile mobs", true));
    private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Draw lines to animals and villagers", false));
    private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Draw lines to dropped items", false));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Longest distance that gets a line", 128.0, 8.0, 256.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest entity that gets a line, in blocks", 128.0, 8.0, 256.0, 4.0));
    private final ModeSetting target = this.addSetting(new ModeSetting("Target", "Which part of the entity the line ends on", "Body", "Feet", "Body", "Eyes"));
-   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "How lines are colored", "Type", "Type", "Distance", "Health", "Custom"));
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Line color", 190).showIf(() -> this.colors.is("Custom")));
+   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "How lines are coloured", "Type", "Type", "Distance", "Health", "Custom"));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Line colour", 190).showIf(() -> this.colors.is("Custom")));
    private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the lines", 1.5, 0.5, 5.0, 0.5));
 
    public Tracers() {
-      super("Tracers", "Draw lines from your crosshair to entities.", Category.RENDER);
+      super("Tracers", "Draws lines from your crosshair to entities.", Category.RENDER);
    }
 
    @Override

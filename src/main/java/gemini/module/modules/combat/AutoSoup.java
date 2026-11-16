@@ -15,13 +15,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 
 public final class AutoSoup extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat soup at or below this health", 12.0, 2.0, 19.0, 1.0));
-   private final BooleanSetting dropBowl = this.addSetting(new BooleanSetting("Drop Bowl", "Drop empty bowl after eating", true));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat stew at or below this health", 12.0, 2.0, 19.0, 1.0));
+   private final BooleanSetting dropBowl = this.addSetting(new BooleanSetting("Drop Bowl", "Drop the empty bowl after eating", true));
    private int previousSlot = -1;
    private boolean eating;
 
    public AutoSoup() {
-      super("AutoSoup", "Eat mushroom stew automatically when low on health.", Category.COMBAT);
+      super("AutoSoup", "Eats mushroom stew from your hotbar when your health is low.", Category.COMBAT);
    }
 
    @Override

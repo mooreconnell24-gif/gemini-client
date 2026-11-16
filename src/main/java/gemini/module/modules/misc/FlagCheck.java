@@ -25,7 +25,7 @@ public final class FlagCheck extends Module {
    private final InfoText infoText = new InfoText();
 
    public FlagCheck() {
-      super("FlagCheck", "Count and alert when the world snaps your position back (teleports and respawns are ignored).", Category.CLIENT);
+      super("FlagCheck", "Counts and warns you each time the game pulls you back to an earlier position, ignoring teleports and respawns.", Category.CLIENT);
    }
 
    @Override

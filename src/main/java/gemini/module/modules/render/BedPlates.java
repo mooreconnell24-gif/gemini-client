@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  */
 public final class BedPlates extends Module {
    private static final int MAX_BEDS = 12;
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Scan radius for beds, in blocks (6 up and down)", 24.0, 8.0, 48.0, 4.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to look for beds, in blocks (6 up and down)", 24.0, 8.0, 48.0, 4.0));
    private final List<BlockPos> beds = new ArrayList<>();
    /** Parallel to {@link #beds}: the block on top of each bed, and the tag built from it. */
    private final List<Block> covers = new ArrayList<>();
@@ -35,7 +35,7 @@ public final class BedPlates extends Module {
    private final MutableBlockPos above = new MutableBlockPos();
 
    public BedPlates() {
-      super("BedPlates", "Show a box and a tag naming the block that covers each nearby bed.", Category.RENDER);
+      super("BedPlates", "Shows a box and a label naming the block that covers each nearby bed.", Category.RENDER);
    }
 
    @Override

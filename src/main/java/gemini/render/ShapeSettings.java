@@ -20,16 +20,16 @@ public final class ShapeSettings {
    }
 
    public ShapeSettings(Module module, String defaultMode, boolean defaultThroughWalls, BooleanSupplier visible) {
-      this.mode = module.addSetting(new ModeSetting("Shape", "Outline only, filled faces, or both", defaultMode, "Lines", "Sides", "Both").showIf(visible));
+      this.mode = module.addSetting(new ModeSetting("Shape", "Draw outlines only, filled faces only, or both", defaultMode, "Lines", "Sides", "Both").showIf(visible));
       this.width = module.addSetting(
-         new NumberSetting("Line Width", "Thickness of outlines", 2.0, 0.5, 6.0, 0.5).showIf(() -> visible.getAsBoolean() && !this.mode.is("Sides"))
+         new NumberSetting("Line Width", "Thickness of the outlines", 2.0, 0.5, 6.0, 0.5).showIf(() -> visible.getAsBoolean() && !this.mode.is("Sides"))
       );
       this.fillOpacity = module.addSetting(
          new NumberSetting("Fill Opacity", "How solid the filled faces are", 28.0, 4.0, 160.0, 2.0)
             .showIf(() -> visible.getAsBoolean() && !this.mode.is("Lines"))
       );
       this.throughWalls = module.addSetting(
-         new BooleanSetting("Through Walls", "Draw on top of terrain so it stays visible behind", defaultThroughWalls).showIf(visible)
+         new BooleanSetting("Through Walls", "Draw on top of blocks so it stays visible behind them", defaultThroughWalls).showIf(visible)
       );
    }
 

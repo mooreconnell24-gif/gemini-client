@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class SpiderModule extends Module {
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climb speed", 0.3, 0.1, 0.8, 0.05));
-   private final BooleanSetting requireForward = this.addSetting(new BooleanSetting("Require Forward", "Only climb while pushing into the wall", true));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climbing speed, in blocks per tick", 0.3, 0.1, 0.8, 0.05));
+   private final BooleanSetting requireForward = this.addSetting(new BooleanSetting("Require Forward", "Only climb while moving into the wall", true));
 
    public SpiderModule() {
-      super("Spider", "Climb walls like a spider.", Category.MOVEMENT);
+      super("Spider", "Lets you climb up walls.", Category.MOVEMENT);
    }
 
    @Override

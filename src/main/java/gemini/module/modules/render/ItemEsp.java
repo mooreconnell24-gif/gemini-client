@@ -19,21 +19,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 public final class ItemEsp extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest item to draw", 64.0, 8.0, 256.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest item shown, in blocks", 64.0, 8.0, 256.0, 4.0));
    private final BooleanSetting boxes = this.addSetting(new BooleanSetting("Boxes", "Draw a box around each item", true));
    private final BooleanSetting names = this.addSetting(new BooleanSetting("Names", "Show item name and count", true));
    private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw a line to each item", false));
    private final ModeSetting colors = this.addSetting(
-      new ModeSetting("Colors", "Rarity tints by item rarity; Custom uses one color", "Rarity", "Rarity", "Custom")
+      new ModeSetting("Colors", "Rarity colours items by rarity; Custom uses one colour", "Rarity", "Rarity", "Custom")
    );
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Box color", 120).showIf(() -> this.colors.is("Custom")));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Box colour", 120).showIf(() -> this.colors.is("Custom")));
    private final ListSetting only = this.addSetting(new ListSetting("Only", "If not empty, only these items are shown", ListSetting.Kind.ITEM));
-   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw even when the item is hidden", true));
+   private final BooleanSetting throughWalls = this.addSetting(new BooleanSetting("Through Walls", "Draw items hidden behind blocks too", true));
 
    private final LabelCache labels = new LabelCache();
 
    public ItemEsp() {
-      super("Item ESP", "Highlight dropped items with names and stack counts.", Category.RENDER);
+      super("Item ESP", "Highlights dropped items and shows their names and stack sizes.", Category.RENDER);
    }
 
    @Override

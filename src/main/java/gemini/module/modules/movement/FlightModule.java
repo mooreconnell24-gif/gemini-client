@@ -18,21 +18,21 @@ import net.minecraft.world.phys.Vec3;
 public final class FlightModule extends LinearFlightModuleBase {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
-         "Mode", "Auto flies like creative mode in your single-player world", "Auto", "Auto", "Strict", "Packet", "Creative", "Velocity", "Glide", "Jetpack"
+         "Mode", "How you fly; Auto flies like creative mode in a single-player world", "Auto", "Auto", "Strict", "Packet", "Creative", "Velocity", "Glide", "Jetpack"
       )
    );
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal flight speed", 0.55, 0.2, 5.0, 0.1));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal flight speed, in blocks per tick", 0.55, 0.2, 5.0, 0.1));
    private final NumberSetting vertical = this.addSetting(
-      new NumberSetting("Vertical", "Vertical climb/descent speed", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
+      new NumberSetting("Vertical", "Climb and descent speed, in blocks per tick", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
    );
-   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Damp", "Smooth velocity on server position setback", true));
-   private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying", true));
+   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Damp", "Slow down after the game pulls you back to your last position", true));
+   private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying so you take no fall damage", true));
    private boolean previousFlying;
    /** True while the creative-style abilities written by this module are in place and have to be taken back. */
    private boolean abilitiesWritten;
 
    public FlightModule() {
-      super("Flight", "Fly in survival with your choice of flight style.", Category.MOVEMENT, Keys.fromGlfw('R'));
+      super("Flight", "Lets you fly in survival, in one of several flight styles.", Category.MOVEMENT, Keys.fromGlfw('R'));
    }
 
    private boolean creativeMode() {

@@ -24,12 +24,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class Flamethrower extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far a target may be", 4.5, 1.0, 6.0, 0.5));
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between ignitions", 4.0, 1.0, 40.0, 1.0));
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Burn players", true));
-   private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Burn hostile mobs", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target, in blocks", 4.5, 1.0, 6.0, 0.5));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between fires", 4.0, 1.0, 40.0, 1.0));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Set fire under players", true));
+   private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Set fire under hostile mobs", true));
    private final BooleanSetting skipBurning = this.addSetting(new BooleanSetting("Skip Burning", "Ignore targets that are already on fire", true));
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim at the fire spot in packets", true));
+   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim at the fire spot without moving your camera", true));
    private final Targeting targeting = Targeting.builder(this)
       .filters(this.players::get, this.mobs::get, () -> false, () -> true)
       .build();
@@ -37,7 +37,7 @@ public final class Flamethrower extends Module {
    private int wait;
 
    public Flamethrower() {
-      super("Flamethrower", "Ignite the ground beneath nearby enemies.", Category.WORLD);
+      super("Flamethrower", "Sets fire to the ground under nearby enemies.", Category.WORLD);
    }
 
    @Override

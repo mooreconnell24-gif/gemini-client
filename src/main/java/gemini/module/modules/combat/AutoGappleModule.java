@@ -14,14 +14,14 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 
 public final class AutoGappleModule extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat when at or below this HP", 10.0, 2.0, 20.0, 1.0));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Eat at or below this health", 10.0, 2.0, 20.0, 1.0));
    private final BooleanSetting enchanted = this.addSetting(new BooleanSetting("Enchanted", "Also eat enchanted golden apples", true));
-   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Go back to the previous hotbar slot afterwards", true));
+   private final BooleanSetting restore = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to the previous hotbar slot afterwards", true));
    private int previousSlot = -1;
    private boolean eating;
 
    public AutoGappleModule() {
-      super("AutoGapple", "Eat a golden apple when low on health.", Category.COMBAT);
+      super("AutoGapple", "Eats a golden apple when your health is low.", Category.COMBAT);
    }
 
    @Override

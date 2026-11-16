@@ -22,14 +22,14 @@ public final class AutoDrop extends Module {
          "Items", "Items the mode applies to", ListSetting.Kind.ITEM, "rotten_flesh", "spider_eye", "poisonous_potato", "pufferfish", "string", "bone"
       )
    );
-   private final BooleanSetting hotbar = this.addSetting(new BooleanSetting("Include Hotbar", "Also drop from the hotbar", false));
-   private final BooleanSetting skipNamed = this.addSetting(new BooleanSetting("Skip Named", "Never throw items you renamed on an anvil", true));
+   private final BooleanSetting hotbar = this.addSetting(new BooleanSetting("Include Hotbar", "Also drop items from the hotbar", false));
+   private final BooleanSetting skipNamed = this.addSetting(new BooleanSetting("Skip Named", "Never throw out items renamed on an anvil", true));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between drops", 2.0, 0.0, 20.0, 1.0));
-   private final NumberSetting perTick = this.addSetting(new NumberSetting("Per Tick", "How many stacks to throw in one burst", 1.0, 1.0, 9.0, 1.0));
+   private final NumberSetting perTick = this.addSetting(new NumberSetting("Per Tick", "Stacks to throw out in one go", 1.0, 1.0, 9.0, 1.0));
    private int cooldown;
 
    public AutoDrop() {
-      super("Auto Drop", "Throw unwanted items out of your inventory.", Category.PLAYER);
+      super("Auto Drop", "Throws unwanted items out of your inventory.", Category.PLAYER);
    }
 
    @Override

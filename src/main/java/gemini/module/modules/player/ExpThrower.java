@@ -21,12 +21,12 @@ public final class ExpThrower extends Module {
       new BooleanSetting("Only When Damaged", "Stop once nothing you wear or hold with Mending needs repairing", true)
    );
    private final BooleanSetting lookDown = this.addSetting(
-      new BooleanSetting("Look Down", "Aim the bottles at your feet (server-side only, the camera does not move)", true)
+      new BooleanSetting("Look Down", "Aim the bottles at your feet without moving your camera", true)
    );
    private int cooldown;
 
    public ExpThrower() {
-      super("EXP Thrower", "Throw experience bottles to mend your gear.", Category.PLAYER);
+      super("EXP Thrower", "Throws experience bottles to repair your Mending gear.", Category.PLAYER);
    }
 
    @Override

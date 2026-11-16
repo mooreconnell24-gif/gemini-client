@@ -15,7 +15,7 @@ public final class Clock extends Ticked {
    private final BooleanSetting twelveHour = this.addSetting(new BooleanSetting("12 Hour", "Use AM/PM for the real clock", false));
 
    public Clock() {
-      super("Clock", "Real time and the in-game day.", "Top Left", 6, 112, 500);
+      super("Clock", "Shows the real time and the in-game day and time.", "Top Left", 6, 112, 500);
    }
 
    @Override

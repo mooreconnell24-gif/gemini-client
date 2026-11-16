@@ -11,13 +11,13 @@ import net.minecraft.world.effect.MobEffects;
 
 public final class Fullbright extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Effect gives true fullbright; Gamma raises brightness to the slider maximum", "Effect", "Effect", "Gamma")
+      new ModeSetting("Mode", "Effect gives night vision without the effect icon; Gamma raises brightness to the slider maximum", "Effect", "Effect", "Gamma")
    );
    private double previousGamma = 0.5;
    private boolean gammaApplied;
 
    public Fullbright() {
-      super("Fullbright", "See clearly in caves and at night.", Category.RENDER, Keys.fromGlfw('B'));
+      super("Fullbright", "Lights up caves and the night so you can see.", Category.RENDER, Keys.fromGlfw('B'));
    }
 
    @Override

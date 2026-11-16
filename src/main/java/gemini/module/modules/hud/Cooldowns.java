@@ -13,7 +13,7 @@ public final class Cooldowns extends HudWidget {
    private static final Item[] TRACKED = new Item[]{Items.ENDER_PEARL, Items.WIND_CHARGE, Items.GOLDEN_APPLE, Items.CHORUS_FRUIT, Items.SHIELD};
 
    public Cooldowns() {
-      super("Cooldowns", "Live progress bars for Ender Pearl, Wind Charge, Golden Apple, Chorus Fruit, and Shield cooldowns.", "Top Center", -95, 42);
+      super("Cooldowns", "Shows the cooldowns of ender pearls, wind charges, golden apples, chorus fruit and shields as bars.", "Top Center", -95, 42);
    }
 
    private List<ItemStack> activeStacks(LocalPlayer player) {

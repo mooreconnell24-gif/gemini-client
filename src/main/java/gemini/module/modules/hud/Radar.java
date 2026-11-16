@@ -9,11 +9,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
 public final class Radar extends HudWidget {
-   private final NumberSetting size = this.addSetting(new NumberSetting("Size", "Radar box size in pixels", 76.0, 50.0, 130.0, 2.0));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Blocks shown from center", 48.0, 16.0, 128.0, 4.0));
+   private final NumberSetting size = this.addSetting(new NumberSetting("Size", "Size of the radar, in pixels", 76.0, 50.0, 130.0, 2.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Blocks shown from the centre", 48.0, 16.0, 128.0, 4.0));
 
    public Radar() {
-      super("Radar", "2D rotating entity radar showing nearby players and mobs.", "Top Left", 6, 40);
+      super("Radar", "Shows nearby players and mobs on a small map that turns with you.", "Top Left", 6, 40);
    }
 
    @Override

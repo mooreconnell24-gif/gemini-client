@@ -25,11 +25,11 @@ public final class AutoArmorModule extends Module {
    private static final int ARMOR_MENU_START = 5;
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between equip actions", 3.0, 0.0, 20.0, 1.0));
    private final BooleanSetting keepElytra = this.addSetting(new BooleanSetting("Keep Elytra", "Never swap your elytra for a chestplate", true));
-   private final BooleanSetting onlyInInventory = this.addSetting(new BooleanSetting("Only In Inventory", "Wait until your inventory screen is open", false));
+   private final BooleanSetting onlyInInventory = this.addSetting(new BooleanSetting("Only In Inventory", "Only equip while your inventory screen is open", false));
    private int cooldown;
 
    public AutoArmorModule() {
-      super("AutoArmor", "Equip the best armor from your inventory.", Category.PLAYER);
+      super("AutoArmor", "Puts on the best armour in your inventory.", Category.PLAYER);
    }
 
    @Override

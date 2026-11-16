@@ -19,9 +19,9 @@ public final class AntiVoidModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting("Mode", "Teleport returns you to the last ground you stood on; Bounce pushes you back up", "Teleport", "Teleport", "Bounce")
    );
-   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "Blocks below the world floor to start rescuing", 2.0, 0.0, 20.0, 1.0));
+   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "How far below the world floor you fall before the rescue, in blocks", 2.0, 0.0, 20.0, 1.0));
    private final NumberSetting boost = this.addSetting(
-      new NumberSetting("Boost", "Upward speed of the rescue", 0.7, 0.2, 2.0, 0.1).showIf(() -> this.mode.is("Bounce"))
+      new NumberSetting("Boost", "Upward speed of the bounce, in blocks per tick", 0.7, 0.2, 2.0, 0.1).showIf(() -> this.mode.is("Bounce"))
    );
    private boolean haveSafe;
    private ResourceKey<Level> safeDimension;
@@ -31,7 +31,7 @@ public final class AntiVoidModule extends Module {
    private int cooldown;
 
    public AntiVoidModule() {
-      super("AntiVoid", "Catch yourself before falling into the void.", Category.PLAYER);
+      super("AntiVoid", "Stops you falling into the void.", Category.PLAYER);
    }
 
    @Override

@@ -13,12 +13,12 @@ import net.minecraft.world.phys.Vec3;
 
 public final class PlayerTrails extends Module {
    private final NumberSetting length = this.addSetting(new NumberSetting("Trail Length", "Number of trail segments", 35.0, 10.0, 100.0, 5.0));
-   private final BooleanSetting rainbow = this.addSetting(new BooleanSetting("Rainbow", "Cycle neon rainbow colors along the ribbon", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ribbon color", 195).showIf(() -> !this.rainbow.get()));
+   private final BooleanSetting rainbow = this.addSetting(new BooleanSetting("Rainbow", "Colour the trail with cycling rainbow colours", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Trail colour", 195).showIf(() -> !this.rainbow.get()));
    private final ArrayDeque<Vec3> samples = new ArrayDeque<>();
 
    public PlayerTrails() {
-      super("PlayerTrails", "Render a smooth dual-ribbon neon trail behind you.", Category.RENDER);
+      super("PlayerTrails", "Draws a fading trail behind you.", Category.RENDER);
    }
 
    @Override

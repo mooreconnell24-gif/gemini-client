@@ -14,7 +14,7 @@ public final class Keystrokes extends HudWidget {
    private final float[] keyAnims = new float[7];
 
    public Keystrokes() {
-      super("Keystrokes", "WASD, jump and mouse buttons as they are pressed.", "Left Center", 6, 40);
+      super("Keystrokes", "Shows WASD, jump and the mouse buttons as you press them.", "Left Center", 6, 40);
    }
 
    @Override

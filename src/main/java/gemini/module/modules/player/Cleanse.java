@@ -20,12 +20,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 /** Removes potion effects from you in one click or key press: only the harmful ones by default, or all of them. */
 public final class Cleanse extends Module {
    private final BooleanSetting harmfulOnly = this.addSetting(
-      new BooleanSetting("Harmful Only", "Keep the good effects (speed, night vision...) and remove only the bad ones", true)
+      new BooleanSetting("Harmful Only", "Keep good effects such as speed and night vision and only remove bad ones", true)
    );
 
    public Cleanse() {
-      super("Cleanse", "Clear harmful (or all) potion effects with one click or key.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Cleanse Now", "Remove the effects right away", this::cleanse));
+      super("Cleanse", "Removes harmful (or all) potion effects from you.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Cleanse Now", "Remove the effects now", this::cleanse));
    }
 
    @Override

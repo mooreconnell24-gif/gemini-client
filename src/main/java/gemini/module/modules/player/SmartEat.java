@@ -25,7 +25,7 @@ public final class SmartEat extends Module {
    private int restoreSlot = -1;
 
    public SmartEat() {
-      super("SmartEat", "Eat Golden Apples when low on HP and food when hungry.", Category.PLAYER);
+      super("SmartEat", "Eats a golden apple when your health is low and normal food when you are hungry.", Category.PLAYER);
    }
 
    @Override

@@ -19,12 +19,12 @@ import net.minecraft.world.item.Items;
 
 public final class Enchanter extends Module {
    private final ModeSetting damage = this.addSetting(
-      new ModeSetting("Weapon Damage", "Which damage enchantment weapons get", "Sharpness", "Sharpness", "Smite", "Bane of Arthropods")
+      new ModeSetting("Weapon Damage", "Damage enchantment for weapons", "Sharpness", "Sharpness", "Smite", "Bane of Arthropods")
    );
    private final ModeSetting mining = this.addSetting(new ModeSetting("Tool Drops", "Fortune or Silk Touch on tools", "Fortune", "Fortune", "Silk Touch"));
    private final ModeSetting protection = this.addSetting(
       new ModeSetting(
-         "Armour Protection", "Which protection armour gets", "Protection", "Protection", "Blast Protection", "Fire Protection", "Projectile Protection"
+         "Armour Protection", "Protection enchantment for armour", "Protection", "Protection", "Blast Protection", "Fire Protection", "Projectile Protection"
       )
    );
    private final ModeSetting boots = this.addSetting(
@@ -35,12 +35,12 @@ public final class Enchanter extends Module {
    private final BooleanSetting mendingUnbreaking = this.addSetting(
       new BooleanSetting("Mending + Unbreaking", "Add Mending and Unbreaking III to everything that can take them", true)
    );
-   private final BooleanSetting curses = this.addSetting(new BooleanSetting("Curses", "Also add Binding and Vanishing curses", false));
+   private final BooleanSetting curses = this.addSetting(new BooleanSetting("Curses", "Also add the Binding and Vanishing curses", false));
 
    public Enchanter() {
-      super("Enchanter", "Max out the item in your hand with the best vanilla enchantments.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Enchant Held Item", "Apply the best enchantments to what you are holding", this::enchantHeld));
-      this.addSetting(new ActionSetting("Enchant Armour", "Apply the best enchantments to everything you are wearing", this::enchantArmour));
+      super("Enchanter", "Adds the best vanilla enchantments to the item in your hand or the armour you wear.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Enchant Held Item", "Enchant the item you are holding", this::enchantHeld));
+      this.addSetting(new ActionSetting("Enchant Armour", "Enchant everything you are wearing", this::enchantArmour));
       this.addSetting(
          new ActionSetting("+30 Levels", "Give yourself 30 experience levels", () -> this.run(List.of("xp add @s 30 levels"), "gave you 30 levels"))
       );

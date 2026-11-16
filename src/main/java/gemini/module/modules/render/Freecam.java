@@ -15,12 +15,12 @@ import net.minecraft.world.phys.Vec3;
 
 public final class Freecam extends Module {
    public static Freecam instance;
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Camera speed in blocks per tick", 1.0, 0.1, 5.0, 0.1));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Camera speed, in blocks per tick", 1.0, 0.1, 5.0, 0.1));
    private final NumberSetting boost = this.addSetting(
       new NumberSetting("Sprint Boost", "Speed multiplier while the sprint key is held", 2.5, 1.0, 6.0, 0.5)
    );
    private final BooleanSetting freeze = this.addSetting(new BooleanSetting("Freeze Player", "Ignore movement keys so your character stands still", true));
-   private final BooleanSetting stopOnHurt = this.addSetting(new BooleanSetting("Disable On Damage", "Return to your body when you get hit", true));
+   private final BooleanSetting stopOnHurt = this.addSetting(new BooleanSetting("Disable On Damage", "Return to your body when you get hurt", true));
    private final ClientInput frozen = new ClientInput();
    private ClientInput saved;
    private double x;
@@ -34,7 +34,7 @@ public final class Freecam extends Module {
    private boolean ready;
 
    public Freecam() {
-      super("Freecam", "Fly the camera around while your character stays put.", Category.RENDER);
+      super("Freecam", "Lets you fly the camera around while your character stays put.", Category.RENDER);
       instance = this;
    }
 

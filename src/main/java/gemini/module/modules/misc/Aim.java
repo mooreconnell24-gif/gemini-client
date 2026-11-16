@@ -21,22 +21,22 @@ import net.minecraft.world.phys.Vec3;
 public final class Aim extends Module {
    public static Aim instance;
    private final BooleanSetting spring = this.addSetting(
-      new BooleanSetting("Spring Turns", "Turns from modules accelerate and settle like a hand on a mouse instead of moving at one fixed rate", true)
+      new BooleanSetting("Spring Turns", "Turns made by modules speed up and settle like a hand on a mouse instead of moving at one fixed rate", true)
    );
    private final NumberSetting smoothness = this.addSetting(
       new NumberSetting("Snappiness", "How quickly a spring turn reaches its target", 0.6, 0.1, 1.0, 0.05).showIf(this.spring::get)
    );
    private final BooleanSetting marker = this.addSetting(
-      new BooleanSetting("Show Silent Aim", "Draw a marker in the world where silent rotations are pointing", true)
+      new BooleanSetting("Show Silent Aim", "Draw a marker where modules are aiming without moving your camera", true)
    );
    private final ColorSetting color = this.addSetting(new ColorSetting("Marker Color", "Colour of the aim marker", 196).showIf(this.marker::get));
    private final NumberSetting distance = this.addSetting(
-      new NumberSetting("Marker Distance", "How far in front of your eyes the marker floats", 2.5, 1.0, 6.0, 0.5).showIf(this.marker::get)
+      new NumberSetting("Marker Distance", "How far in front of your eyes the marker floats, in blocks", 2.5, 1.0, 6.0, 0.5).showIf(this.marker::get)
    );
    private long lastFrame;
 
    public Aim() {
-      super("Aim", "Smooth module turns and show where silent aim points.", Category.CLIENT);
+      super("Aim", "Makes module turns speed up and settle like a hand on a mouse, and shows where silent aim is pointing.", Category.CLIENT);
       instance = this;
       this.loadState(true, this.getKeybind());
    }

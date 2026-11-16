@@ -21,13 +21,13 @@ public final class AutoMend extends Module {
    /** The inventory menu's offhand slot. */
    private static final int OFFHAND_MENU_SLOT = 45;
    private final NumberSetting threshold = this.addSetting(
-      new NumberSetting("Repair Below %", "Start repairing an item under this durability", 90.0, 5.0, 100.0, 1.0)
+      new NumberSetting("Repair Below %", "Repair items below this durability (percent)", 90.0, 5.0, 100.0, 1.0)
    );
    private final BooleanSetting includeArmor = this.addSetting(
-      new BooleanSetting("Include Armor", "Also take off worn armor to mend it in the offhand, and put it back on once repaired", false)
+      new BooleanSetting("Include Armor", "Also take off worn armour to mend it in the offhand, and put it back on once repaired", false)
    );
    private final BooleanSetting restore = this.addSetting(
-      new BooleanSetting("Restore Offhand", "Put the original offhand item back when everything is repaired", true)
+      new BooleanSetting("Restore Offhand", "Put the original offhand item back once everything is repaired", true)
    );
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between swaps", 10.0, 1.0, 60.0, 1.0));
    private int originalSlot = -1;
@@ -37,7 +37,7 @@ public final class AutoMend extends Module {
    private int wait;
 
    public AutoMend() {
-      super("Auto Mend", "Swap damaged Mending gear to offhand to repair.", Category.PLAYER);
+      super("Auto Mend", "Moves damaged Mending gear into your offhand so experience repairs it.", Category.PLAYER);
    }
 
    @Override

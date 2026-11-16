@@ -42,7 +42,7 @@ public final class ClickGuiModule extends Module {
    private final ModeSetting surface = this.addSetting(
       new ModeSetting(
          "Surface",
-         "Base colour of the menu panels: Dark navy, pure black OLED, blue Slate, neutral Graphite or Plum",
+         "Base colour of the menu panels: dark navy, pure black (OLED), blue slate, neutral graphite or plum",
          "Dark",
          "Dark",
          "OLED",
@@ -52,34 +52,34 @@ public final class ClickGuiModule extends Module {
       )
    );
    private final ModeSetting layout = this.addSetting(
-      new ModeSetting("Layout", "Window is one centred window with a sidebar; Panels is the classic draggable column per category", "Window", "Window", "Panels")
+      new ModeSetting("Layout", "Window is one centred window with a sidebar; Panels is one draggable column per category", "Window", "Window", "Panels")
    );
-   private final ColorSetting primary = this.addSetting(new ColorSetting("Primary", "Custom primary accent", 212).showIf(() -> this.theme.is("Custom")));
-   private final ColorSetting secondary = this.addSetting(new ColorSetting("Secondary", "Custom secondary accent", 190).showIf(() -> this.theme.is("Custom")));
+   private final ColorSetting primary = this.addSetting(new ColorSetting("Primary", "Custom primary accent colour", 212).showIf(() -> this.theme.is("Custom")));
+   private final ColorSetting secondary = this.addSetting(new ColorSetting("Secondary", "Custom secondary accent colour", 190).showIf(() -> this.theme.is("Custom")));
    private final BooleanSetting categoryTint = this.addSetting(
-      new BooleanSetting("Category Tint", "Blend the accent toward the colour of the category you are looking at", false)
+      new BooleanSetting("Category Tint", "Blend the accent towards the colour of the category you are looking at", false)
    );
-   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Smooth open motion, pulses, scrolling, and dropdowns", true));
+   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Animate opening, pulses, scrolling and dropdowns", true));
    private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glass Glow", "Faint glow around the hovered panel in the panel menu", false));
-   private final BooleanSetting snapGrid = this.addSetting(new BooleanSetting("Grid Snap", "Snap panels and HUD widgets to an 8px alignment grid", true));
+   private final BooleanSetting snapGrid = this.addSetting(new BooleanSetting("Grid Snap", "Snap panels and HUD widgets to an 8-pixel grid", true));
    private final BooleanSetting floatingTooltips = this.addSetting(
-      new BooleanSetting("Slide Tooltips", "Slide out tooltip cards next to hovered modules", true)
+      new BooleanSetting("Slide Tooltips", "Show a tooltip card next to the module under the mouse", true)
    );
    private final BooleanSetting dim = this.addSetting(new BooleanSetting("Dim", "Darken the world behind the menu", true));
    private final BooleanSetting blur = this.addSetting(new BooleanSetting("Blur", "Blur the world behind the menu (uses the vanilla menu blur)", true));
-   private final BooleanSetting particles = this.addSetting(new BooleanSetting("Particles", "Small drifting dots behind the panel menu", false));
-   private final BooleanSetting tooltips = this.addSetting(new BooleanSetting("Tooltips", "Describe the hovered module or setting in the footer", true));
+   private final BooleanSetting particles = this.addSetting(new BooleanSetting("Particles", "Draw small drifting dots behind the panel menu", false));
+   private final BooleanSetting tooltips = this.addSetting(new BooleanSetting("Tooltips", "Describe the module or setting under the mouse in the footer", true));
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Menu size multiplier", 1.0, 0.5, 1.5, 0.05));
    private final BooleanSetting autoFit = this.addSetting(new BooleanSetting("Auto Fit", "Shrink the menu so every panel fits on screen", true));
-   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Panel glass background opacity", 0.9, 0.45, 1.0, 0.01));
+   private final NumberSetting opacity = this.addSetting(new NumberSetting("Opacity", "Opacity of the panel background", 0.9, 0.45, 1.0, 0.01));
    private final NumberSetting scrollSpeed = this.addSetting(new NumberSetting("Scroll Speed", "Rows moved per mouse-wheel notch", 2.0, 0.5, 6.0, 0.5));
    private final BooleanSetting rememberSearch = this.addSetting(new BooleanSetting("Keep Search", "Keep the search text when the menu is reopened", false));
    private final ListSetting favorites = this.addSetting(
-      new ListSetting("Favorites", "Starred modules; the star on a module card or the ★ filter show them", ListSetting.Kind.TEXT)
+      new ListSetting("Favorites", "Starred modules; the star on a module card or the ★ filter shows them", ListSetting.Kind.TEXT)
    );
 
    public ClickGuiModule() {
-      super("ClickGUI", "Look and feel of the menus: theme colours, layout, motion, scale and tooltips.", Category.CLIENT);
+      super("ClickGUI", "Sets the look of the menus: theme colours, layout, motion, scale and tooltips.", Category.CLIENT);
       this.loadState(true, this.getKeybind());
    }
 

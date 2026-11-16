@@ -16,7 +16,7 @@ import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 
 public final class DeathCoords extends Module {
-   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Drop a waypoint where you died", false));
+   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Add a waypoint where you died", false));
    private boolean announced;
    private boolean hasDeath;
    private String dimension = "minecraft:overworld";
@@ -28,7 +28,7 @@ public final class DeathCoords extends Module {
    private String infoText;
 
    public DeathCoords() {
-      super("Death Coords", "Write your death coordinates in client chat and teleport back to them.", Category.CLIENT);
+      super("Death Coords", "Writes your death coordinates in chat and lets you teleport back to them.", Category.CLIENT);
       this.addSetting(new ActionSetting("Teleport To Death", "Go back to where you last died", this::teleport));
    }
 

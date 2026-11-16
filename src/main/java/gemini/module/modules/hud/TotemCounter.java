@@ -7,7 +7,7 @@ import net.minecraft.world.item.Items;
 
 public final class TotemCounter extends HudWidget {
    public TotemCounter() {
-      super("Totem Counter", "How many Totems of Undying you are carrying.", "Bottom Center", 0, 110);
+      super("Totem Counter", "Shows how many totems of undying you are carrying.", "Bottom Center", 0, 110);
    }
 
    @Override

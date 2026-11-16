@@ -83,7 +83,7 @@ public final class StashFinder extends Module {
    private final InfoText infoText = new InfoText();
 
    public StashFinder() {
-      super("Stash Finder", "Scan loaded chunks for dense storage clusters, log and pin them. .stashfinder list | clear | rescan", Category.WORLD);
+      super("Stash Finder", "Scans loaded chunks for clusters of storage blocks, then logs and pins them (.stashfinder list | clear | rescan).", Category.WORLD);
       String[] labels = {"Chests", "Trapped Chests", "Barrels", "Shulker Boxes", "Hoppers", "Dispensers & Droppers"};
       double[] defaults = {1.0, 1.0, 1.0, 3.0, 0.5, 0.5};
       for (int i = 0; i < TYPE_COUNT; i++) {
@@ -97,14 +97,14 @@ public final class StashFinder extends Module {
 
       this.threshold = this.addSetting(new NumberSetting("Threshold", "Score a cluster needs to count as a stash", 12.0, 2.0, 200.0, 1.0));
       this.cluster = this.addSetting(new NumberSetting("Cluster Radius", "Neighbouring chunks added to each chunk's score (0 = one chunk)", 1.0, 0.0, 3.0, 1.0));
-      this.scanRadius = this.addSetting(new NumberSetting("Scan Radius", "Chunks around you that are scanned", 8.0, 2.0, 32.0, 1.0));
+      this.scanRadius = this.addSetting(new NumberSetting("Scan Radius", "How far around you chunks are scanned, in chunks", 8.0, 2.0, 32.0, 1.0));
       this.minSpawnDistance = this.addSetting(
-         new NumberSetting("Min Spawn Distance", "Ignore clusters closer than this to world spawn (Nether distances x8)", 500.0, 0.0, 20000.0, 50.0)
+         new NumberSetting("Min Spawn Distance", "Ignore clusters closer than this to world spawn, in blocks (Nether distances x8)", 500.0, 0.0, 20000.0, 50.0)
       );
-      this.log = this.addSetting(new BooleanSetting("Log To File", "Append each find to gemini_stashes.log in the config folder", true));
+      this.log = this.addSetting(new BooleanSetting("Log To File", "Add each find to gemini_stashes.log in the config folder", true));
       this.waypoint = this.addSetting(new BooleanSetting("Add Waypoint", "Pin each find in Waypoints", true));
-      this.toast = this.addSetting(new BooleanSetting("Toast", "Pop up a notification for each find", true));
-      this.render = this.addSetting(new BooleanSetting("Render", "Box found stashes in the world", true));
+      this.toast = this.addSetting(new BooleanSetting("Toast", "Show a notification for each find", true));
+      this.render = this.addSetting(new BooleanSetting("Render", "Draw a box around found stashes", true));
       this.tracers = this.addSetting(new BooleanSetting("Tracers", "Draw a line to each found stash", false).showIf(this.render::get));
       this.color = this.addSetting(new ColorSetting("Color", "Stash box colour", 45).showIf(this.render::get));
    }

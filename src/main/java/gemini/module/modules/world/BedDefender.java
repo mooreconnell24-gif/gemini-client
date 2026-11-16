@@ -16,7 +16,7 @@ public final class BedDefender extends PlacementModuleBase {
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
 
    public BedDefender() {
-      super("BedDefender", "Surround nearby beds with defensive hotbar blocks.", Category.WORLD, 1, 3, 4.5);
+      super("BedDefender", "Places blocks from your hotbar on top of and around beds near you.", Category.WORLD, 1, 3, 4.5);
    }
 
    @Override

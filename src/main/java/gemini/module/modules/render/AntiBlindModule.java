@@ -13,7 +13,7 @@ public final class AntiBlindModule extends Module {
    private final BooleanSetting nausea = this.addSetting(new BooleanSetting("Nausea", "Remove the wobble from nausea", true));
 
    public AntiBlindModule() {
-      super("AntiBlind", "Clear blindness, darkness and nausea visuals.", Category.RENDER);
+      super("AntiBlind", "Removes the screen effects of blindness, darkness and nausea.", Category.RENDER);
    }
 
    @Override

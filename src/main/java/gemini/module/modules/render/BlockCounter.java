@@ -12,7 +12,7 @@ public final class BlockCounter extends Module {
    private final InfoText text = new InfoText();
 
    public BlockCounter() {
-      super("BlockCounter", "Show how many blocks your hotbar holds in a pill under the crosshair.", Category.RENDER);
+      super("BlockCounter", "Shows how many blocks your hotbar holds, under the crosshair.", Category.RENDER);
    }
 
    @Override

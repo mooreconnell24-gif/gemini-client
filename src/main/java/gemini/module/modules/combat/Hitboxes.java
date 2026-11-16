@@ -13,13 +13,13 @@ import net.minecraft.world.entity.LivingEntity;
 
 public final class Hitboxes extends Module {
    public static Hitboxes instance;
-   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks added to target hitboxes", 0.25, 0.0, 1.5, 0.05));
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Expand player hitboxes", true));
-   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Expand hostile mob hitboxes", false));
-   private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Expand animal hitboxes", false));
+   private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Blocks added to each side of the hitbox", 0.25, 0.0, 1.5, 0.05));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Enlarge player hitboxes", true));
+   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Enlarge hostile mob hitboxes", false));
+   private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Enlarge animal hitboxes", false));
 
    public Hitboxes() {
-      super("Hitboxes", "Expand entity hitboxes for easier melee hits.", Category.COMBAT);
+      super("Hitboxes", "Makes entity hitboxes larger so melee hits connect more easily.", Category.COMBAT);
       instance = this;
    }
 

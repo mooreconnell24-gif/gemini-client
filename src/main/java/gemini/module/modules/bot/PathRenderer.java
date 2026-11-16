@@ -8,15 +8,15 @@ import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 
 public final class PathRenderer extends Module {
-   private final ColorSetting lineColor = this.addSetting(new ColorSetting("Path Color", "Color of the 3D Baritone path line", 198));
-   private final ColorSetting goalColor = this.addSetting(new ColorSetting("Goal Color", "Color of the destination box", 280));
+   private final ColorSetting lineColor = this.addSetting(new ColorSetting("Path Color", "Colour of the path line", 198));
+   private final ColorSetting goalColor = this.addSetting(new ColorSetting("Goal Color", "Colour of the goal box", 280));
    private boolean mirroredEnabled;
    private int mirroredLine;
    private int mirroredGoal;
    private boolean mirrored;
 
    public PathRenderer() {
-      super("Path Renderer", "Render 3D path lines and goal boxes for Baritone.", Category.RENDER);
+      super("Path Renderer", "Draws Baritone's planned path and its goal.", Category.RENDER);
       this.loadState(true, this.getKeybind());
    }
 

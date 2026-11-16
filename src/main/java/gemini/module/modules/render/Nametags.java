@@ -25,9 +25,9 @@ public final class Nametags extends Module {
    private final BooleanSetting mobs = this.addSetting(new BooleanSetting("Mobs", "Label hostile and passive mobs", false));
    private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Label dropped items with their stack size", false));
    private final BooleanSetting self = this.addSetting(new BooleanSetting("Yourself", "Label yourself in third person and Freecam", false));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Longest label distance", 64.0, 8.0, 128.0, 4.0));
-   private final BooleanSetting health = this.addSetting(new BooleanSetting("Health", "Show hit points", true));
-   private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show latency from the tab list", true));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest label, in blocks", 64.0, 8.0, 128.0, 4.0));
+   private final BooleanSetting health = this.addSetting(new BooleanSetting("Health", "Show health", true));
+   private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show ping from the player list", true));
    private final BooleanSetting gamemode = this.addSetting(new BooleanSetting("Gamemode", "Show the game mode letter", false));
    private final BooleanSetting pops = this.addSetting(new BooleanSetting("Totem Pops", "Add \"-N\" after the name of anything that has popped totems", true));
    private final BooleanSetting distance = this.addSetting(new BooleanSetting("Distance", "Show distance in blocks", false));
@@ -39,7 +39,7 @@ public final class Nametags extends Module {
    private final LabelCache labels = new LabelCache();
 
    public Nametags() {
-      super("Nametags", "Readable labels with health and ping above players.", Category.RENDER);
+      super("Nametags", "Shows labels with health and other details above players and other entities.", Category.RENDER);
       instance = this;
    }
 

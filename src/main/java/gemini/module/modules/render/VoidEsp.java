@@ -19,17 +19,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 
 public final class VoidEsp extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Blocks around you to scan", 32.0, 8.0, 96.0, 4.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to scan, in blocks", 32.0, 8.0, 96.0, 4.0));
    private final NumberSetting interval = this.addSetting(new NumberSetting("Scan Interval", "Ticks between scans", 20.0, 5.0, 100.0, 5.0));
    private final BooleanSetting netherRoof = this.addSetting(new BooleanSetting("Nether Roof", "Also check the top bedrock layer in the Nether", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 300));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight colour", 300));
    private final List<BlockPos> holes = new ArrayList<>();
    private int wait;
    private final AreaScan scan = new AreaScan();
    private final List<BlockPos> building = new ArrayList<>();
 
    public VoidEsp() {
-      super("Void ESP", "Highlight open holes in bedrock leading into the void.", Category.RENDER);
+      super("Void ESP", "Highlights holes in the bedrock floor that lead into the void.", Category.RENDER);
    }
 
    private final InfoText infoText = new InfoText();

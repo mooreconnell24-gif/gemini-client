@@ -11,11 +11,11 @@ import net.minecraft.world.item.BowItem;
 
 public final class BowSpam extends Module {
    private final NumberSetting charge = this.addSetting(
-      new NumberSetting("Charge", "Ticks to draw before firing (20 = full draw)", 5.0, 3.0, 20.0, 1.0)
+      new NumberSetting("Charge", "Ticks to draw before releasing (20 = full draw)", 5.0, 3.0, 20.0, 1.0)
    );
 
    public BowSpam() {
-      super("Bow Spam", "Rapidly release and redraw your bow.", Category.COMBAT);
+      super("Bow Spam", "Releases your bow as soon as it reaches the set draw, then draws it again.", Category.COMBAT);
    }
 
    @Override

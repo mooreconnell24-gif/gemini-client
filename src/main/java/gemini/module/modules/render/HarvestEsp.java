@@ -36,12 +36,12 @@ public final class HarvestEsp extends Module {
    private static final int NOT_CROP = 0;
    private static final int GROWING = 1;
    private static final int RIPE = 2;
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Chunks around you to search", 4.0, 1.0, 10.0, 1.0));
-   private final BooleanSetting crops = this.addSetting(new BooleanSetting("Crops", "Wheat, carrots, potatoes, beetroot and torchflowers", true));
-   private final BooleanSetting wart = this.addSetting(new BooleanSetting("Nether Wart", "Fully grown nether wart", true));
-   private final BooleanSetting cocoa = this.addSetting(new BooleanSetting("Cocoa", "Ripe cocoa pods", true));
-   private final BooleanSetting berries = this.addSetting(new BooleanSetting("Berries", "Sweet berry bushes and glow berry vines you can pick", true));
-   private final BooleanSetting gourds = this.addSetting(new BooleanSetting("Melons & Pumpkins", "Melons and pumpkins grown from a stem", true));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to search, in chunks", 4.0, 1.0, 10.0, 1.0));
+   private final BooleanSetting crops = this.addSetting(new BooleanSetting("Crops", "Mark wheat, carrots, potatoes, beetroot and torchflowers", true));
+   private final BooleanSetting wart = this.addSetting(new BooleanSetting("Nether Wart", "Mark fully grown nether wart", true));
+   private final BooleanSetting cocoa = this.addSetting(new BooleanSetting("Cocoa", "Mark ripe cocoa pods", true));
+   private final BooleanSetting berries = this.addSetting(new BooleanSetting("Berries", "Mark sweet berry bushes and glow berry vines you can pick", true));
+   private final BooleanSetting gourds = this.addSetting(new BooleanSetting("Melons & Pumpkins", "Mark melons and pumpkins grown from a stem", true));
    private final BooleanSetting growing = this.addSetting(new BooleanSetting("Show Growing", "Also mark crops that are not ripe yet, in their own colour", false));
    private final ColorSetting ripeColor = this.addSetting(new ColorSetting("Ripe Color", "Colour of crops ready to harvest", 110));
    private final ColorSetting growingColor = this.addSetting(new ColorSetting("Growing Color", "Colour of crops still growing", 45).showIf(this.growing::get));
@@ -58,7 +58,7 @@ public final class HarvestEsp extends Module {
    private int growingArgb;
 
    public HarvestEsp() {
-      super("Harvest ESP", "Highlight ripe crops, wart, cocoa, berries, melons and pumpkins around you.", Category.RENDER);
+      super("Harvest ESP", "Highlights ripe crops, nether wart, cocoa, berries, melons and pumpkins around you.", Category.RENDER);
       Runnable reset = this::reset;
       this.crops.onChange(reset);
       this.wart.onChange(reset);

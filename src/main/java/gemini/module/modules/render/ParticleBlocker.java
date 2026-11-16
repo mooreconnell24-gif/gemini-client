@@ -14,12 +14,12 @@ import net.minecraft.resources.Identifier;
 public final class ParticleBlocker extends Module {
    public static ParticleBlocker instance;
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Block everything, or only the listed particle types", "Listed", "Listed", "All")
+      new ModeSetting("Mode", "Hide every particle, or only the listed types", "Listed", "Listed", "All")
    );
    private final ListSetting types = this.addSetting(
       new ListSetting(
             "Particles",
-            "Particle ids to block, e.g. minecraft:explosion",
+            "Particle ids to hide, e.g. minecraft:explosion",
             ListSetting.Kind.TEXT,
             "minecraft:explosion",
             "minecraft:explosion_emitter",
@@ -30,7 +30,7 @@ public final class ParticleBlocker extends Module {
    private volatile Set<String> cache;
 
    public ParticleBlocker() {
-      super("Particles", "Hide particles you do not want to see, like explosions and smoke.", Category.RENDER);
+      super("Particles", "Hides particles you do not want to see, such as explosions and smoke.", Category.RENDER);
       instance = this;
       this.types.onChange(() -> this.cache = null);
    }

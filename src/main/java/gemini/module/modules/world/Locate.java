@@ -90,14 +90,14 @@ public final class Locate extends Module {
    private final NumberSetting radius = this.addSetting(
       new NumberSetting("Radius", "Search distance in chunks (large searches take a moment)", 100.0, 10.0, 400.0, 10.0)
    );
-   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Drop a waypoint at what was found", true));
+   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Add a waypoint at what was found", true));
    private final BooleanSetting teleport = this.addSetting(new BooleanSetting("Teleport", "Teleport to the surface above what was found", false));
    /** The integrated server a search is running on, or null when none is; a search on a server that has since stopped never reports. */
    private IntegratedServer busy;
    private String last;
 
    public Locate() {
-      super("Locate", "Find the nearest structure or biome, pin it and optionally teleport there.", Category.WORLD);
+      super("Locate", "Finds the nearest structure or biome, pins it and can teleport you there.", Category.WORLD);
       this.addSetting(new ActionSetting("Search", "Find the nearest one now", this::search));
    }
 

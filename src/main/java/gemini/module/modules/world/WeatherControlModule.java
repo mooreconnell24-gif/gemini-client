@@ -9,11 +9,11 @@ import gemini.util.SpCommands;
 
 public final class WeatherControlModule extends Module {
    private final ModeSetting weather = this.addSetting(new ModeSetting("Weather", "Weather to set", "Clear", "Clear", "Rain", "Thunder"));
-   private final BooleanSetting lock = this.addSetting(new BooleanSetting("Lock", "Stay on and set this weather again every 5 seconds; off sets it once and switches off", false));
+   private final BooleanSetting lock = this.addSetting(new BooleanSetting("Lock", "Stay on and set this weather again every 5 seconds; off sets it once and turns off", false));
    private int counter;
 
    public WeatherControlModule() {
-      super("Weather", "Set the world's weather, like /weather. This is a lasting change to the world: switching the module off does not undo it.", Category.WORLD);
+      super("Weather", "Sets the world's weather, like /weather; turning the module off does not undo it.", Category.WORLD);
    }
 
    @Override

@@ -15,10 +15,10 @@ import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.phys.EntityHitResult;
 
 public final class AutoMount extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How close a mount must be", 4.0, 1.5, 6.0, 0.5));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest mount, in blocks", 4.0, 1.5, 6.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between attempts", 10.0, 2.0, 40.0, 1.0));
-   private final BooleanSetting boats = this.addSetting(new BooleanSetting("Boats", "Mount boats and rafts", true));
-   private final BooleanSetting minecarts = this.addSetting(new BooleanSetting("Minecarts", "Mount minecarts", true));
+   private final BooleanSetting boats = this.addSetting(new BooleanSetting("Boats", "Get into boats and rafts", true));
+   private final BooleanSetting minecarts = this.addSetting(new BooleanSetting("Minecarts", "Get into minecarts", true));
    private final ListSetting animals = this.addSetting(
       new ListSetting(
          "Animals", "Rideable animals to mount", ListSetting.Kind.ENTITY, "horse", "donkey", "mule", "pig", "strider", "camel", "skeleton_horse", "llama"
@@ -27,7 +27,7 @@ public final class AutoMount extends Module {
    private int cooldown;
 
    public AutoMount() {
-      super("Auto Mount", "Auto-mount nearby boats, minecarts, and animals.", Category.PLAYER);
+      super("Auto Mount", "Gets on nearby boats, minecarts and rideable animals.", Category.PLAYER);
    }
 
    @Override

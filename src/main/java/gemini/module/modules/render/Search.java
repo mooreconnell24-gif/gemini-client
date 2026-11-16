@@ -36,13 +36,13 @@ public final class Search extends Module {
          "minecraft:deepslate_diamond_ore"
       )
    );
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Chunks around you to search", 4.0, 1.0, 12.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to search, in chunks", 4.0, 1.0, 12.0, 1.0));
    private final NumberSetting speed = this.addSetting(new NumberSetting("Scan Speed", "Chunk columns checked per tick", 4.0, 1.0, 24.0, 1.0));
    private final NumberSetting results = this.addSetting(new NumberSetting("Max Results", "Most blocks highlighted at once", 800.0, 50.0, 5000.0, 50.0));
    private final ModeSetting colors = this.addSetting(
-      new ModeSetting("Colors", "One color per block type, or a single color", "Per Block", "Per Block", "Custom")
+      new ModeSetting("Colors", "One colour per block type, or a single colour", "Per Block", "Per Block", "Custom")
    );
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight color", 200).showIf(() -> this.colors.is("Custom")));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight colour", 200).showIf(() -> this.colors.is("Custom")));
    private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw a line from your crosshair to every result", false));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true);
    private final Map<Block, Integer> palette = new HashMap<>();
@@ -52,7 +52,7 @@ public final class Search extends Module {
    private final InfoText infoText = new InfoText();
 
    public Search() {
-      super("Search", "Highlight selected blocks across loaded chunks.", Category.RENDER);
+      super("Search", "Highlights the blocks you choose across loaded chunks.", Category.RENDER);
       this.blocks.onChange(this::reset);
       this.speed.onChange(this::reset);
       this.results.onChange(this::reset);

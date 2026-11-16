@@ -19,7 +19,7 @@ public final class AntiLag extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Dynamic adapts to FPS; Aggressive culls all effects",
+         "Dynamic limits effects harder when FPS drops below Target FPS; Always limits them harder all the time; Aggressive also cuts particles to a third and mutes explosion, firework and piston sounds",
          "Dynamic",
          "Dynamic",
          "Always",
@@ -27,35 +27,35 @@ public final class AntiLag extends Module {
       )
    );
    private final NumberSetting targetFps = this.addSetting(
-      new NumberSetting("Target FPS", "FPS threshold where Dynamic culling activates", 90.0, 30.0, 240.0, 10.0)
+      new NumberSetting("Target FPS", "FPS below which Dynamic mode limits effects harder", 90.0, 30.0, 240.0, 10.0)
          .showIf(() -> this.mode.is("Dynamic"))
    );
    private final NumberSetting maxParticlesTick = this.addSetting(
-      new NumberSetting("Max Particles/Tick", "Maximum particles allowed to spawn in a single tick", 55.0, 5.0, 250.0, 5.0)
+      new NumberSetting("Max Particles/Tick", "Most particles allowed to spawn in one tick", 55.0, 5.0, 250.0, 5.0)
    );
    private final NumberSetting particleRange = this.addSetting(
-      new NumberSetting("Particle Distance", "Cull particles beyond this distance in blocks", 28.0, 8.0, 96.0, 4.0)
+      new NumberSetting("Particle Distance", "Hide particles farther away than this, in blocks", 28.0, 8.0, 96.0, 4.0)
    );
    private final BooleanSetting blockExplosions = this.addSetting(
-      new BooleanSetting("Block Explosions & Fireworks", "Block explosion emitters", true)
+      new BooleanSetting("Block Explosions & Fireworks", "Hide explosion and firework particles", true)
    );
    private final BooleanSetting blockSmoke = this.addSetting(
-      new BooleanSetting("Block Smoke & Campfires", "Block heavy campfire smoke", true)
+      new BooleanSetting("Block Smoke & Campfires", "Hide heavy campfire smoke", true)
    );
    private final BooleanSetting blockWeather = this.addSetting(
-      new BooleanSetting("Block Weather & Portals", "Block rain splash, dripping water, and portal particles", true)
+      new BooleanSetting("Block Weather & Portals", "Hide rain splashes, dripping water and portal particles", true)
    );
    private final BooleanSetting packetGuard = this.addSetting(
-      new BooleanSetting("Packet Flood Guard", "Drop server packets spawning excessive particles", true)
+      new BooleanSetting("Packet Flood Guard", "Ignore server packets that spawn huge numbers of particles", true)
    );
    private final BooleanSetting soundThrottle = this.addSetting(
-      new BooleanSetting("Sound Spam Filter", "Cap overlapping sounds per tick to prevent lag", true)
+      new BooleanSetting("Sound Spam Filter", "Limit how many sounds can start in one tick", true)
    );
    private final NumberSetting maxSoundsTick = this.addSetting(
-      new NumberSetting("Max Sounds/Tick", "Maximum sound instances started per tick", 14.0, 4.0, 40.0, 2.0).showIf(this.soundThrottle::get)
+      new NumberSetting("Max Sounds/Tick", "Most sounds started in one tick", 14.0, 4.0, 40.0, 2.0).showIf(this.soundThrottle::get)
    );
    private final BooleanSetting cullNametags = this.addSetting(
-      new BooleanSetting("Cull Distant Nametags", "Hide distant entity and armor stand nametags", true)
+      new BooleanSetting("Cull Distant Nametags", "Hide distant entity and armour stand name tags", true)
    );
    private int particlesThisTick;
    private int soundsThisTick;
@@ -65,7 +65,7 @@ public final class AntiLag extends Module {
    private String infoText = "";
 
    public AntiLag() {
-      super("AntiLag", "Boost FPS and prevent lag machines.", Category.CLIENT);
+      super("AntiLag", "Raises FPS by limiting particles and sounds, and guards against lag machines.", Category.CLIENT);
       instance = this;
    }
 

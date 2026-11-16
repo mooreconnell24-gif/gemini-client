@@ -7,7 +7,7 @@ import gemini.module.Module;
 
 public final class Panic extends Module {
    public Panic() {
-      super("Panic", "Instantly disable every module and close the menu.", Category.CLIENT);
+      super("Panic", "Turns off every module except the HUD and menu settings, stops Baritone and closes the Gemini menu.", Category.CLIENT);
    }
 
    @Override

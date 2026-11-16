@@ -14,7 +14,7 @@ public final class FreeLook extends Module {
    private boolean ready;
 
    public FreeLook() {
-      super("Free Look", "Look around freely while your character keeps facing forward.", Category.RENDER);
+      super("Free Look", "Lets you look around while your character keeps facing forwards.", Category.RENDER);
       instance = this;
       this.holdByDefault();
    }

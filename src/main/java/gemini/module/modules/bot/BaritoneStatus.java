@@ -8,7 +8,7 @@ import gemini.event.ActionPriority;
 
 public final class BaritoneStatus extends Module {
    public BaritoneStatus() {
-      super("Baritone Status", "Show current Baritone engine and task status.", Category.CLIENT);
+      super("Baritone Status", "Shows which Baritone engine is in use and what it is doing.", Category.CLIENT);
    }
 
    @Override

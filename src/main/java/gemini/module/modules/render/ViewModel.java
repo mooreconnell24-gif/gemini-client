@@ -44,7 +44,7 @@ public final class ViewModel extends Module {
    private final NumberSetting offRotY = this.angle("Off Rot Y", "Off-hand item yaw");
    private final NumberSetting offRotZ = this.angle("Off Rot Z", "Off-hand item roll");
    private final NumberSetting eatScale = this.track(
-      this.addSetting(new NumberSetting("Eat Motion", "Eating/drinking bob: 0 = still, 1 = vanilla", 1.0, 0.0, 1.0, 0.05))
+      this.addSetting(new NumberSetting("Eat Motion", "Eating and drinking bob: 0 = still, 1 = vanilla", 1.0, 0.0, 1.0, 0.05))
    );
    private final NumberSetting swingScale = this.track(
       this.addSetting(new NumberSetting("Swing Motion", "Item swing movement: 0 = no swing, 1 = vanilla", 1.0, 0.0, 1.0, 0.05))
@@ -53,7 +53,7 @@ public final class ViewModel extends Module {
    private final Matrix3f savedNormal = new Matrix3f();
 
    public ViewModel() {
-      super("View Model", "Move, rotate and scale your first-person items per hand, and damp the eat and swing motion.", Category.RENDER);
+      super("View Model", "Moves, rotates and scales the items in your hands in first person, and tones down the eating and swing motion.", Category.RENDER);
       this.addSetting(new ActionSetting("Reset", "Put every view model setting back to vanilla", this::resetAll));
       instance = this;
    }

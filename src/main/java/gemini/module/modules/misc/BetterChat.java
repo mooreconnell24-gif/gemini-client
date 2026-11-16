@@ -21,25 +21,25 @@ public final class BetterChat extends Module {
    private static final Pattern COORDINATES = Pattern.compile("(?<![\\d.])-?\\d{2,7}(?:\\.\\d+)?[ ,]+-?\\d{1,3}(?:\\.\\d+)?[ ,]+-?\\d{2,7}(?![\\d.])");
    private static final DateTimeFormatter TWENTY_FOUR = DateTimeFormatter.ofPattern("HH:mm");
    private static final DateTimeFormatter TWELVE = DateTimeFormatter.ofPattern("hh:mm a", Locale.ROOT);
-   private final BooleanSetting timestamps = this.addSetting(new BooleanSetting("Timestamps", "Prefix every chat line with the time", true));
+   private final BooleanSetting timestamps = this.addSetting(new BooleanSetting("Timestamps", "Start every chat line with the time", true));
    private final ModeSetting format = this.addSetting(
       new ModeSetting("Time Format", "How the time is written", "24 Hour", "24 Hour", "12 Hour").showIf(this.timestamps::get)
    );
    private final BooleanSetting antiSpam = this.addSetting(new BooleanSetting("Anti Spam", "Hide a line that repeats the previous one", true));
    private final NumberSetting window = this.addSetting(
-      new NumberSetting("Spam Window", "Seconds a repeat counts as spam", 10.0, 1.0, 60.0, 1.0).showIf(this.antiSpam::get)
+      new NumberSetting("Spam Window", "Seconds within which a repeat counts as spam", 10.0, 1.0, 60.0, 1.0).showIf(this.antiSpam::get)
    );
    private final ListSetting hidden = this.addSetting(
-      new ListSetting("Hidden Words", "Chat lines containing any of these are hidden", ListSetting.Kind.TEXT)
+      new ListSetting("Hidden Words", "Hide chat lines containing any of these", ListSetting.Kind.TEXT)
    );
    private final BooleanSetting protectCoordinates = this.addSetting(
-      new BooleanSetting("Coordinate Protection", "Block outgoing chat messages containing coordinates", false)
+      new BooleanSetting("Coordinate Protection", "Block chat messages you send that contain coordinates", false)
    );
    private String lastText = "";
    private long lastTime;
 
    public BetterChat() {
-      super("Better Chat", "Chat timestamps, anti-spam, and coordinate guard.", Category.CLIENT);
+      super("Better Chat", "Adds timestamps to chat, hides repeated lines and stops you sending your coordinates.", Category.CLIENT);
       instance = this;
    }
 

@@ -13,15 +13,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 
 public final class AutoFirework extends Module {
-   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Minimum ticks between rockets", 50.0, 10.0, 200.0, 5.0));
+   private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Fewest ticks between rockets", 50.0, 10.0, 200.0, 5.0));
    private final BooleanSetting onlySlow = this.addSetting(new BooleanSetting("Only When Slow", "Skip rockets while you are already fast", true));
    private final NumberSetting minSpeed = this.addSetting(
-      new NumberSetting("Min Speed", "Fire when slower than this (blocks per tick)", 1.0, 0.2, 3.0, 0.1).showIf(this.onlySlow::get)
+      new NumberSetting("Min Speed", "Use a rocket when slower than this, in blocks per tick", 1.0, 0.2, 3.0, 0.1).showIf(this.onlySlow::get)
    );
    private int cooldown;
 
    public AutoFirework() {
-      super("Auto Firework", "Use firework rockets automatically while gliding.", Category.MOVEMENT);
+      super("Auto Firework", "Uses firework rockets from your hotbar while you glide with an elytra.", Category.MOVEMENT);
    }
 
    @Override

@@ -60,28 +60,28 @@ public final class SillyAimbot extends Module {
    private static final int FINISHED_LIMIT = 512;
 
    private final BooleanSetting arrows = this.addSetting(new BooleanSetting("Arrows", "Steer arrows and spectral arrows", true));
-   private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Steer thrown tridents (until they hit, then loyalty takes over)", true));
+   private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Steer thrown tridents until they hit, after which Loyalty takes over", true));
    private final BooleanSetting snowballs = this.addSetting(new BooleanSetting("Snowballs", "Steer snowballs", false));
    private final BooleanSetting eggs = this.addSetting(new BooleanSetting("Eggs", "Steer thrown eggs", false));
    private final BooleanSetting pearls = this.addSetting(new BooleanSetting("Ender Pearls", "Steer ender pearls (you teleport to the target)", false));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far away a target may be picked, in blocks", 64.0, 8.0, 128.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to pick, in blocks", 64.0, 8.0, 128.0, 4.0));
    private final NumberSetting speed = this.addSetting(
-      new NumberSetting("Speed", "Flight speed while homing, in blocks per tick (a full bow shot starts at 3; arrow damage grows with speed)", 2.0, 0.5, 5.0, 0.1)
+      new NumberSetting("Speed", "Flight speed while steering, in blocks per tick (a full bow shot starts at 3; arrow damage grows with speed)", 2.0, 0.5, 5.0, 0.1)
    );
    private final NumberSetting turnRate = this.addSetting(
-      new NumberSetting("Turn Rate", "Most the flight direction may turn per tick, in degrees: low values give wide, smooth curves", 30.0, 5.0, 180.0, 5.0)
+      new NumberSetting("Turn Rate", "Most the flight direction may turn per tick, in degrees; low values give wide, smooth curves", 30.0, 5.0, 180.0, 5.0)
    );
    private final NumberSetting lookAhead = this.addSetting(
-      new NumberSetting("Look Ahead", "How many blocks ahead to check for blocks and entities in the way before swerving around them", 5.0, 2.0, 12.0, 0.5)
+      new NumberSetting("Look Ahead", "How far ahead to check for obstacles, in blocks", 5.0, 2.0, 12.0, 0.5)
    );
    private final NumberSetting maxTime = this.addSetting(
-      new NumberSetting("Max Time", "Seconds a projectile may home before it falls back to normal flight", 8.0, 1.0, 30.0, 0.5)
+      new NumberSetting("Max Time", "Seconds a projectile is steered before it falls back to normal flight", 8.0, 1.0, 30.0, 0.5)
    );
    private final BooleanSetting retarget = this.addSetting(
-      new BooleanSetting("Retarget", "When the target dies, send projectiles still in the air to the next target instead of letting them drop", true)
+      new BooleanSetting("Retarget", "When the target dies, send projectiles still in the air to the next target", true)
    );
-   private final BooleanSetting showPath = this.addSetting(new BooleanSetting("Show Path", "Draw the predicted path of your homing projectiles", true));
-   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Path Color", "Colour of the predicted homing path", 300).showIf(this.showPath::get));
+   private final BooleanSetting showPath = this.addSetting(new BooleanSetting("Show Path", "Draw the predicted path of steered projectiles", true));
+   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Path Color", "Colour of the predicted path", 300).showIf(this.showPath::get));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 300).build();
 
    /** Server thread only: projectile UUID to its homing state. */
@@ -96,7 +96,7 @@ public final class SillyAimbot extends Module {
    private int pathTotal;
 
    public SillyAimbot() {
-      super("Silly Aimbot", "Your arrows dodge blocks and anything in the way and fly straight to your target (single-player only).", Category.COMBAT);
+      super("Silly Aimbot", "Steers your projectiles in flight around blocks and other entities and into your target.", Category.COMBAT);
    }
 
    @Override

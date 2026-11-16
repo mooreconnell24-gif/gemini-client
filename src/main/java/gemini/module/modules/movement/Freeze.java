@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class Freeze extends Module {
    public Freeze() {
-      super("Freeze", "Freeze your character mid-air and hold back movement packets.", Category.MOVEMENT);
+      super("Freeze", "Holds your character still and stops sending your movement to the game.", Category.MOVEMENT);
    }
 
    @Override

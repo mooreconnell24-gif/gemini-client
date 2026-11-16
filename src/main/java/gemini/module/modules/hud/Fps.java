@@ -6,7 +6,7 @@ import java.util.List;
 
 public final class Fps extends Ticked {
    public Fps() {
-      super("FPS", "Frames per second.", "Bottom Right", 6, 6, 250);
+      super("FPS", "Shows frames per second.", "Bottom Right", 6, 6, 250);
    }
 
    @Override

@@ -12,7 +12,7 @@ public final class Macro extends Module {
    private final ListSetting lines;
 
    public Macro(int slot) {
-      super("Macro " + slot, "Run a list of commands with one key: /commands, .gemini commands or chat.", Category.CLIENT);
+      super("Macro " + slot, "Runs a list of commands, Gemini commands or chat messages with one key.", Category.CLIENT);
       this.lines = this.addSetting(
          new ListSetting(
             "Commands",

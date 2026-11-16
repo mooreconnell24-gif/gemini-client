@@ -30,7 +30,7 @@ public final class Collisions extends Module {
    private static final VoxelShape RAISED = Shapes.box(0.0, 0.0, 0.0, 1.0, 1.25, 1.0);
 
    public Collisions() {
-      super("Collisions", "Make dangerous blocks solid for you (not for mobs or items) so you can walk over them.", Category.WORLD);
+      super("Collisions", "Makes dangerous blocks solid for you, but not for mobs or items, so you can walk over them.", Category.WORLD);
       instance = this;
    }
 

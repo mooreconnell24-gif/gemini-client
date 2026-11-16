@@ -17,8 +17,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public final class SlimeChunks extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Chunks around you to check", 6.0, 1.0, 12.0, 1.0));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Highlight color", 120));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to check, in chunks", 6.0, 1.0, 12.0, 1.0));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Outline colour", 120));
    private long seed;
    private boolean haveSeed;
    private final MutableBlockPos mark = new MutableBlockPos();
@@ -29,7 +29,7 @@ public final class SlimeChunks extends Module {
    private long gridSeed;
 
    public SlimeChunks() {
-      super("Slime Chunks", "Outline overworld chunks where slimes can spawn.", Category.RENDER);
+      super("Slime Chunks", "Outlines Overworld chunks where slimes can spawn.", Category.RENDER);
    }
 
    @Override

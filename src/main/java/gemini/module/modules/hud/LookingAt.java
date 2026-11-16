@@ -16,7 +16,7 @@ import net.minecraft.world.phys.HitResult;
 
 public final class LookingAt extends Ticked {
    public LookingAt() {
-      super("Looking At", "The block or entity under your crosshair.", "Top Center", 0, 40, 50);
+      super("Looking At", "Shows the block or entity under your crosshair.", "Top Center", 0, 40, 50);
    }
 
    @Override

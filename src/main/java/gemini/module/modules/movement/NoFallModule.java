@@ -27,7 +27,7 @@ public final class NoFallModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Spoof marks falling moves as on-ground (safe at any speed); Packet sends an extra ground packet; MLG clutches with a water bucket",
+         "Spoof marks falling moves as on the ground (safe at any speed); Packet sends an extra on-ground update; MLG places a water bucket before you land",
          "Spoof",
          "Packet",
          "Spoof",
@@ -36,13 +36,13 @@ public final class NoFallModule extends Module {
    );
    // Vanilla starts hurting at 3 blocks, so anything above that would let damage through instead of preventing it.
    private final NumberSetting distance = this.addSetting(
-      new NumberSetting("Distance", "Start preventing damage after falling this far (vanilla hurts from 3)", 2.0, 0.5, 2.9, 0.1)
+      new NumberSetting("Distance", "Start preventing damage after falling this far, in blocks (vanilla hurts from 3)", 2.0, 0.5, 2.9, 0.1)
    );
    private boolean replacing;
    private int pickup;
 
    public NoFallModule() {
-      super("NoFall", "Cancel fall damage.", Category.MOVEMENT);
+      super("NoFall", "Prevents fall damage.", Category.MOVEMENT);
    }
 
    @Override

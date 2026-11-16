@@ -34,7 +34,7 @@ public final class LiquidFiller extends Module {
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
          "Blocks",
-         "Blocks used to cover the liquid (empty list: any plain solid block on the hotbar)",
+         "Blocks used to cover the liquid (empty list: any plain solid block in the hotbar)",
          ListSetting.Kind.BLOCK,
          "minecraft:cobblestone",
          "minecraft:dirt",
@@ -48,7 +48,7 @@ public final class LiquidFiller extends Module {
    );
 
    public LiquidFiller() {
-      super("Liquid Filler", "Fill nearby water and lava source blocks automatically.", Category.WORLD);
+      super("Liquid Filler", "Covers nearby water and lava with blocks from your hotbar.", Category.WORLD);
    }
 
    @Override

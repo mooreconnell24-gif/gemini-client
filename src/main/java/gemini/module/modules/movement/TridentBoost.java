@@ -12,7 +12,7 @@ public final class TridentBoost extends Module {
    private boolean spinning;
 
    public TridentBoost() {
-      super("Trident Boost", "Launch much farther with a riptide trident.", Category.MOVEMENT);
+      super("Trident Boost", "Makes riptide tridents launch you farther.", Category.MOVEMENT);
    }
 
    private final InfoText infoText = new InfoText();
