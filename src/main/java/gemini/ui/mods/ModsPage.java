@@ -121,7 +121,7 @@ public final class ModsPage extends DashboardPage {
 
    @Override
    public String hint() {
-      return tab == Tab.BROWSE ? "Type to search Modrinth  ·  Enter searches now" : "Changes to the mods folder take effect when Minecraft starts";
+      return tab == Tab.BROWSE ? "Type to search Modrinth  ·  Enter searches now" : "Remove moves files to mods/.gemini-trash, nothing is deleted";
    }
 
    @Override
@@ -551,7 +551,7 @@ public final class ModsPage extends DashboardPage {
       boolean done = job != null && job.done && !job.failed;
       Path packFile = done ? job.mainFile() : d.existingPack;
       if (d.type == ProjectType.MOD && (done || d.alreadyInstalled)) {
-         String state = done ? "Installed" : "Already in your mods folder";
+         String state = done ? "Installed" : "Already installed";
          this.text(g, state, x, y + 3, Glass.OK);
          return y + 16;
       }
@@ -709,7 +709,7 @@ public final class ModsPage extends DashboardPage {
             plan = DependencyPlan.resolve(best, hit.title(), forType, gv, client.lookup(forType.loader, gv), browser.installed(idx));
          }
 
-         boolean installed = idx != null && idx.projectIds().contains(hit.projectId());
+         boolean installed = forType == ProjectType.MOD && browser.installed(idx).has(project);
          Path pack = null;
          if (best != null && forType != ProjectType.MOD) {
             String name = SafeFiles.sanitizeFilename(best.primaryFile().filename(), forType.extension);
@@ -719,7 +719,10 @@ public final class ModsPage extends DashboardPage {
             }
          }
 
-         List<String> excerpt = TextExcerpt.paragraphs(project.body(), 700);
+         List<String> excerpt = new ArrayList<>(TextExcerpt.paragraphs(project.body(), 700));
+         if (!excerpt.isEmpty() && excerpt.get(0).equalsIgnoreCase(hit.title())) {
+            excerpt.remove(0);
+         }
          Modrinth.Version chosen = best;
          DependencyPlan finalPlan = plan;
          Path finalPack = pack;
@@ -760,6 +763,7 @@ public final class ModsPage extends DashboardPage {
    // ---- installed --------------------------------------------------------------------------------------------
 
    private void rescan() {
+      this.browser.folderChanged(); // files may have been added or removed outside the browser
       this.scanning = true;
       this.installedError = null;
       ModBrowser browser = this.browser;
@@ -775,6 +779,7 @@ public final class ModsPage extends DashboardPage {
 
    private void checkUpdates() {
       this.checkingUpdates = true;
+      this.browser.folderChanged();
       this.updateStatus = null;
       ModBrowser browser = this.browser;
       String gv = browser.gameVersion();
