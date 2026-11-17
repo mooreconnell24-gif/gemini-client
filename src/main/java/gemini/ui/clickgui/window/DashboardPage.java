@@ -351,13 +351,16 @@ public abstract class DashboardPage {
          default -> Widgets.raised();
       };
       // Neutral buttons are raised chips; toned ones are the same chip washed with their colour.
-      int rest = tone == TONE_NEUTRAL ? base : Theme.mix(Widgets.raised(), base, 0.42F);
+      // A destructive button stays quiet until it is pointed at: only its label carries the colour.
+      int rest = tone == TONE_NEUTRAL || tone == TONE_DANGER ? Widgets.raised() : Theme.mix(Widgets.raised(), base, 0.42F);
       int lit = tone == TONE_NEUTRAL ? Widgets.raisedHover() : Theme.mix(Widgets.raised(), base, 0.68F);
       int fill = !enabled ? Glass.withAlpha(Glass.surface(3), 150) : (over ? lit : rest);
       Glass.roundRect(g, x, y, x + w, y + h, 4, this.c(fill));
       String shown = Controls.fit(this.font(), label, w - 6);
       // The same hover/disabled label rule as GlassButton and the panel rows.
-      int color = !enabled ? Glass.textFaint() : (over || tone != TONE_NEUTRAL ? Glass.text() : Glass.lerp(Glass.textDim(), Glass.text(), 0.5F));
+      int color = !enabled
+         ? Glass.textFaint()
+         : (tone == TONE_DANGER && !over ? Theme.mix(base, Glass.text(), 0.35F) : (over || tone != TONE_NEUTRAL ? Glass.text() : Glass.lerp(Glass.textDim(), Glass.text(), 0.5F)));
       this.text(g, shown, x + (w - UiFont.width(shown)) / 2, UiFont.centerY(y, h), color);
       Click action = enabled ? click : (b, mx, my, d) -> this.host.notice(disabledReason);
       if (clip) {

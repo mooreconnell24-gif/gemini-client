@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import gemini.Gemini;
 import gemini.config.ConfigManager;
 import gemini.input.GeminiKeys;
-import gemini.input.KeybindReport;
 import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.HudWidget;
@@ -52,7 +51,7 @@ public final class ClickGuiScreen extends Screen {
    private static final int CHIP_Y = 16;
    private static final int CHIP_H = 14;
    private static final int FOOTER = 30;
-   private static final String DEFAULT_TIP = "LMB toggle   RMB settings   MMB bind   Shift+RMB favourite   Shift+drag HUD widgets";
+   private static final String DEFAULT_TIP = "Click toggles  ·  right-click opens settings  ·  middle-click binds a key  ·  Shift+right-click stars  ·  Shift+drag moves HUD widgets";
    /** The chips always shown: the filters and the two other screens. */
    private static final String[] CHIPS = {"All", "Active Only", "Keybound", "Favorites", "Edit HUD", "Window layout"};
    /** Occasional actions, behind the "More" chip so the bar stays short. */
@@ -67,6 +66,8 @@ public final class ClickGuiScreen extends Screen {
    private final List<ClickGuiScreen.Particle> particles = new ArrayList<>();
    private final List<ClickGuiScreen.Chip> chips = new ArrayList<>();
    private final Glass.Hover searchHover = new Glass.Hover();
+   /** The screen this menu was opened over; without a world its background is drawn behind the blur. */
+   private final Screen backdrop;
    private long lastFrame = Util.getMillis();
    private boolean closing;
    private String search = "";
@@ -106,6 +107,7 @@ public final class ClickGuiScreen extends Screen {
 
    public ClickGuiScreen() {
       super(Component.literal("Gemini Client"));
+      this.backdrop = Menus.backdropFor(Minecraft.getInstance().gui.screen());
       ClickGuiModule style = this.style();
       if (style != null && style.keepSearch()) {
          this.search = rememberedSearch;
@@ -156,6 +158,11 @@ public final class ClickGuiScreen extends Screen {
       }
    }
 
+   /** The screen whose background is drawn behind this menu while no world is loaded, or null. */
+   Screen backdrop() {
+      return this.backdrop;
+   }
+
    private void buildChips() {
       this.chips.clear();
       int x = GAP + 31 + UiFont.width("Gemini", FontSize.LARGE, FontWeight.BOLD) + 14;
@@ -179,6 +186,16 @@ public final class ClickGuiScreen extends Screen {
       }
    }
 
+   /** Right edge of the last chip on the bar. */
+   private int chipsRight() {
+      int right = 0;
+      for (ClickGuiScreen.Chip chip : this.chips) {
+         right = Math.max(right, chip.x + chip.w);
+      }
+
+      return right;
+   }
+
    private int addChip(String label, int x, int y) {
       int w = UiFont.width(label, FontSize.SMALL, FontWeight.MEDIUM) + 12;
       this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, CHIP_H));
@@ -190,13 +207,17 @@ public final class ClickGuiScreen extends Screen {
    }
 
    /**
-    * The backdrop: the game (or the panorama, without a world), blurred and dimmed. The dim fades with the menu;
+    * The backdrop: the game (or, without a world, the screen underneath, else the panorama), blurred and dimmed. The dim fades with the menu;
     * the ClickGUI "Blur" and "Dim" switches turn either part off.
     */
    @Override
    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
       if (this.minecraft.level == null) {
-         this.extractPanorama(graphics, partialTick);
+         if (this.backdrop != null) {
+            this.backdrop.extractBackground(graphics, -1, -1, partialTick);
+         } else {
+            this.extractPanorama(graphics, partialTick);
+         }
       }
 
       ClickGuiModule style = this.style();
@@ -253,12 +274,17 @@ public final class ClickGuiScreen extends Screen {
       }
 
       // The top bar floats like the panels: name, filters and actions on the left, search on the right.
-      Glass.shadow(graphics, GAP, BAR_TOP, this.vw - GAP, BAR_BOTTOM, 8, 14, 4, 0.36F * this.fade);
-      Glass.roundRect(graphics, GAP, BAR_TOP, this.vw - GAP, BAR_BOTTOM, 8, Glass.fade(Glass.surface(1), this.fade * (style == null ? 0.9F : style.opacity())));
-      Glass.roundOutline(graphics, GAP, BAR_TOP, this.vw - GAP, BAR_BOTTOM, 8, this.faded(Glass.text(), 18));
+      // In the HUD editor it shrinks to the chips, so it does not sit on the widgets along the top edge.
+      int barRight = this.hudEditMode ? this.chipsRight() + 8 : this.vw - GAP;
+      Glass.shadow(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, 14, 4, 0.36F * this.fade);
+      Glass.roundRect(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, Glass.fade(Glass.surface(1), this.fade * (style == null ? 0.9F : style.opacity())));
+      Glass.roundOutline(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, this.faded(Glass.text(), 18));
       GeminiMark.draw(graphics, GAP + 9, BAR_TOP + 7, 16, accent, open);
       Controls.text(graphics, "Gemini", GAP + 31, UiFont.centerY(BAR_TOP, BAR_BOTTOM - BAR_TOP, FontSize.LARGE), Glass.text(), this.fade, FontSize.LARGE, FontWeight.BOLD);
-      this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);
+      if (!this.hudEditMode) {
+         this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);
+      }
+
       this.drawChips(graphics, mouseX, mouseY, accent, accentB);
 
       this.hoveredDescription = DEFAULT_TIP;
@@ -345,7 +371,7 @@ public final class ClickGuiScreen extends Screen {
          this.hoveredDescription = "Binding " + this.bindingModule.getName() + "  ·  press a key  ·  Esc cancel  ·  Del clear";
       } else if (this.highlighted != null && !this.hudEditMode) {
          if (DEFAULT_TIP.equals(this.hoveredDescription)) {
-            this.hoveredDescription = "↑↓ move  ·  Enter toggle " + this.highlighted.getName() + "  ·  Shift+Enter or → settings  ·  Esc clear search";
+            this.hoveredDescription = "Up / Down move  ·  Enter toggles " + this.highlighted.getName() + "  ·  Shift+Enter or Right opens its settings  ·  Esc clears the search";
          }
       }
 
@@ -686,7 +712,7 @@ public final class ClickGuiScreen extends Screen {
       int button = Keys.glfwButton(event.button());
       int searchW = this.searchWidth();
       int searchX = this.vw - GAP - 6 - searchW;
-      if (mx >= searchX && mx <= searchX + searchW && my >= SEARCH_Y && my <= SEARCH_Y + SEARCH_H) {
+      if (!this.hudEditMode && mx >= searchX && mx <= searchX + searchW && my >= SEARCH_Y && my <= SEARCH_Y + SEARCH_H) {
          if (!this.search.isEmpty() && mx >= searchX + searchW - 16) {
             this.search = "";
             this.searchChanged();

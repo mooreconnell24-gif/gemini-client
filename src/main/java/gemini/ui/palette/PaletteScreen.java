@@ -416,7 +416,9 @@ public final class PaletteScreen extends Screen {
       int x2 = l.x() + l.width();
       g.pose().pushMatrix();
       g.pose().translate(0.0F, -lift);
-      Glass.roundRect(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(0), 240), a));
+      // The same window as the menus: soft shadow, rounded surface, hairline edge.
+      Glass.shadow(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, 20, 7, 0.5F * a);
+      Glass.roundRect(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(1), 245), a));
       Glass.roundOutline(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.text(), 24), a));
       this.extractField(g, x1 + Theme.SPACE_L, l.fieldY(), l.width() - 2 * Theme.SPACE_L, a, now);
       this.extractKinds(g, x1 + Theme.SPACE_L, l.kindsY(), mouseX, mouseY + lift, a);
@@ -429,11 +431,9 @@ public final class PaletteScreen extends Screen {
    private void extractField(GuiGraphicsExtractor g, int x, int y, int w, float a, long now) {
       int accent = Glass.accent();
       Glass.roundRect(g, x, y, x + w, y + PaletteLayout.FIELD_HEIGHT, Theme.RADIUS, Glass.fade(Glass.withAlpha(Glass.surface(2), 255), a));
-      // A small magnifier: ring plus handle.
-      int mx = x + 6;
-      int my = y + 5;
-      Glass.roundOutline(g, mx, my, mx + 7, my + 7, 3, Glass.fade(Glass.textFaint(), a));
-      g.fill(mx + 6, my + 6, mx + 8, my + 8, Glass.fade(Glass.textFaint(), a));
+      gemini.ui.clickgui.Icons.draw(
+         g, gemini.ui.clickgui.Icons.Icon.SEARCH, x + 5, y + (PaletteLayout.FIELD_HEIGHT - 10) / 2, 10, Glass.fade(Glass.textFaint(), a)
+      );
       int textX = x + 18;
       int room = w - 18 - Theme.SPACE_M;
       String right = SingleplayerGate.allowed() && this.minecraft.player != null ? null : "settings only";

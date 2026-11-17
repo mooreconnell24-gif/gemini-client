@@ -8,7 +8,6 @@ import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.modules.misc.ClickGuiModule;
-import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.ListSetting;
@@ -283,7 +282,14 @@ public final class CategoryPanel {
          if (control instanceof ListControl list) {
             list.setOpener(() -> {
                Minecraft client = Minecraft.getInstance();
-               client.gui.setScreen(new ListEditorScreen(client.gui.screen(), module, (ListSetting)setting));
+               try {
+                  client.gui.setScreen(new ListEditorScreen(client.gui.screen(), module, (ListSetting)setting));
+               } catch (RuntimeException e) {
+                  // block, item and entity lists need the game's registries, which only a loaded world has
+                  if (client.gui.screen() instanceof ClickGuiScreen menu) {
+                     menu.flash("This list can be edited once a world is loaded");
+                  }
+               }
             });
          }
 
@@ -484,10 +490,6 @@ public final class CategoryPanel {
 
    private int faded(int color, int alpha) {
       return Glass.withAlpha(color, Math.round(alpha * this.alpha));
-   }
-
-   private void text(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
-      Controls.text(graphics, font, text, x, y, color, this.alpha);
    }
 
    public String render(

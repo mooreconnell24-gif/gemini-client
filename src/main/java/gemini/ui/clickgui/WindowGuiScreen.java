@@ -176,8 +176,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    public WindowGuiScreen(Page page, Screen parent) {
       super(Component.literal("Gemini Client"));
       this.parent = parent;
-      Screen under = parent != null ? parent : Minecraft.getInstance().gui.screen();
-      this.backdrop = under == null || Menus.isMenu(under) || under instanceof ListEditorScreen ? null : under;
+      this.backdrop = Menus.backdropFor(parent != null ? parent : Minecraft.getInstance().gui.screen());
       this.page = page == null ? lastPage : page;
       for (int i = 0; i < this.tabHover.length; i++) {
          this.tabHover[i] = new Glass.Hover();
@@ -218,7 +217,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       float base = style == null ? 1.0F : style.scale();
       float scale = base;
       if (style == null || style.autoFit()) {
-         scale = Math.min(base, Math.min(this.width / 480.0F, this.height / 300.0F));
+         scale = Math.min(base, Math.min(this.width / 480.0F, this.height / 330.0F));
       }
 
       this.uiScale = Mth.clamp(scale, 0.45F, 2.0F);
@@ -241,6 +240,11 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          case MODS -> this.modsPage;
          default -> null;
       };
+   }
+
+   /** The screen whose background is drawn behind this menu while no world is loaded, or null. */
+   Screen backdrop() {
+      return this.backdrop;
    }
 
    private WindowGuiScreen.Card card(Module module) {
@@ -318,7 +322,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       // Glass.approach jumps straight to the target when animations are off
       this.animationProgress = Glass.approach(this.animationProgress, this.closing ? 0.0F : 1.0F, this.closing ? 20.0F : 11.0F, this.dt);
       this.open = Mth.clamp(this.animationProgress, 0.0F, 1.0F);
-      this.zoom = 0.95F + 0.05F * Glass.easeOutCubic(this.open);
+      this.zoom = this.open >= 0.999F ? 1.0F : 0.95F + 0.05F * Glass.easeOutCubic(this.open);
       if (this.minecraft.level == null) {
          if (this.backdrop != null) {
             this.backdrop.extractBackground(g, -1, -1, partialTick);
@@ -359,11 +363,10 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int bodyAlpha = Math.round(255.0F * glass);
       // One window: a soft shadow, the sidebar a shade darker than the content, a hairline edge.
       Glass.shadow(g, wx, wy, wx + ww, wy + wh, RADIUS, 22, 8, 0.55F * this.open);
+      Glass.roundRect(g, wx, wy, wx + ww, wy + wh, RADIUS, this.c(Glass.surface(1), bodyAlpha));
+      // the sidebar is the same window, shaded: one clip, so there is never a seam between the two halves
       g.enableScissor(wx, wy, wx + SIDEBAR, wy + wh);
-      Glass.roundRect(g, wx, wy, wx + SIDEBAR + RADIUS * 2, wy + wh, RADIUS, this.c(Glass.surface(0), bodyAlpha));
-      g.disableScissor();
-      g.enableScissor(wx + SIDEBAR, wy, wx + ww, wy + wh);
-      Glass.roundRect(g, wx + SIDEBAR - RADIUS * 2, wy, wx + ww, wy + wh, RADIUS, this.c(Glass.surface(1), bodyAlpha));
+      Glass.roundRect(g, wx, wy, wx + SIDEBAR + RADIUS * 2, wy + wh, RADIUS, this.c(Glass.surface(0), 215));
       g.disableScissor();
       Glass.roundOutline(g, wx, wy, wx + ww, wy + wh, RADIUS, this.c(Glass.text(), 20));
       this.drawSidebar(g, wx, wy, wh, mouseX, mouseY, accent, accent2);
@@ -403,7 +406,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
       int linksTop = y + h - 10 - 3 * LINK_ROW;
       int count = Category.values().length + PAGE_TABS.length;
-      int step = Mth.clamp((linksTop - 8 - tabsTop - 10) / count, 15, 21);
+      int step = Mth.clamp((linksTop - 8 - tabsTop - 10) / count, 13, 21);
       int th = step - 2;
       List<Object> tabs = this.tabs();
       float targetY = Float.NaN;
@@ -783,6 +786,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       g.disableScissor();
+      if (scroll > 0) {
+         // cards scrolled under the heading fade out instead of being cut off by a hard edge
+         int shade = Math.round(255.0F * Math.min(1.0F, scroll / 8.0F));
+         Glass.gradientV(g, x - 2, this.listViewTop, x + this.listW + 2, this.listViewTop + 7, this.c(Glass.surface(1), shade), this.c(Glass.surface(1), 0));
+      }
+
       Widgets.scrollbar(g, x + this.listW + 3, this.listViewTop + 2, viewH - 6, this.contentHeight, this.listScroll.value(), this.open);
    }
 
@@ -1033,7 +1042,14 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
          control.setOnChange(WindowGuiScreen::save);
          if (control instanceof ListControl list) {
-            list.setOpener(() -> this.minecraft.gui.setScreen(new ListEditorScreen(this, module, (ListSetting)setting)));
+            list.setOpener(() -> {
+               try {
+                  this.minecraft.gui.setScreen(new ListEditorScreen(this, module, (ListSetting)setting));
+               } catch (RuntimeException e) {
+                  // block, item and entity lists need the game's registries, which only a loaded world has
+                  this.showNotice("This list can be edited once a world is loaded");
+               }
+            });
          }
 
          this.controls.put(setting, control);
@@ -1413,18 +1429,18 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       } else if (!this.searchFocused && GeminiKeys.OPEN_GUI.matches(event)) {
          this.onClose();
          return true;
-      } else if (key == Keys.F && Controls.ctrlDown()) {
+      } else if (key == Keys.F && event.hasControlDown()) {
          this.showPage(Page.MODULES);
          this.searchFocused = true;
          return true;
       } else if (key == Keys.TAB) {
-         this.cycleTab(Controls.shiftDown() ? -1 : 1);
+         this.cycleTab(event.hasShiftDown() ? -1 : 1);
          return true;
       } else if (pageView != null) {
          return super.keyPressed(event);
       } else if (key == Keys.BACKSPACE) {
          if (!this.search.isEmpty()) {
-            this.search = Controls.ctrlDown() ? "" : this.search.substring(0, this.search.offsetByCodePoints(this.search.length(), -1));
+            this.search = event.hasControlDown() ? "" : this.search.substring(0, this.search.offsetByCodePoints(this.search.length(), -1));
             this.listScroll.jumpTo(0.0F);
          }
 
@@ -1435,7 +1451,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       } else if (Keys.isEnter(key)) {
          if (this.selected != null && this.shown.contains(this.selected)) {
             this.keyboardFocus = true;
-            if (Controls.shiftDown()) {
+            if (event.hasShiftDown()) {
                this.setExpanded(this.selected, this.expanded != this.selected);
             } else {
                this.toggle(this.selected);

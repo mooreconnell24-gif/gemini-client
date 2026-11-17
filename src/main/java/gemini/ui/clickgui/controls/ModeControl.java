@@ -3,7 +3,6 @@ package gemini.ui.clickgui.controls;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
-import gemini.ui.Theme;
 import gemini.ui.clickgui.Icons;
 import gemini.ui.font.FontSize;
 import gemini.ui.font.FontWeight;
@@ -237,7 +236,7 @@ public final class ModeControl extends SettingControl {
       return this.segmented ? "right-click steps back" : "click to pick  ·  right-click steps back";
    }
 
-   /** The theme switcher and other hosts restyle from this: the pill colour follows {@link Theme#current()}. */
+   /** Whether the options are currently shown side by side (they fit) rather than as a dropdown. */
    public boolean segmented() {
       return this.segmented;
    }
