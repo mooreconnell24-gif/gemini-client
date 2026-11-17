@@ -13,6 +13,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.clickgui.controls.Widgets;
 import gemini.ui.UiMath;
 import gemini.ui.clickgui.ListEditorScreen;
 import gemini.ui.clickgui.controls.TextField;
@@ -298,8 +299,8 @@ public final class BaritonePage extends DashboardPage {
       LocalPlayer player = Minecraft.getInstance().player;
       this.sampleSpeed(player, now);
       String blocked = blockedReason();
-      this.text(g, this.title(), x + 10, y + 9, Glass.text());
-      int cx = x + 14 + UiFont.width(this.title());
+      this.heading(g, x, y);
+      int cx = x + 18 + this.headingWidth();
       this.chip(g, cx, y + 7, BaritoneBridge.engineName(), Glass.withAlpha(BaritoneBridge.externalPresent() ? Glass.OK : Glass.INFO, 110), Glass.text());
       String task = BaritoneBridge.taskLabel();
       String state = blocked != null ? "No world" : (BaritoneBridge.isPaused() ? "Paused" : (task == null ? "Idle" : task));
@@ -319,7 +320,7 @@ public final class BaritonePage extends DashboardPage {
       g.enableScissor(x, top, x + w, bottom);
       int cy = top + 2 - Math.round(this.scroll);
       if (blocked != null) {
-         Glass.panel(g, x + 10, cy, x + 10 + inner, cy + 30, Glass.RADIUS, Glass.surface(1), Glass.WARN, this.host.fade(), 0.3F);
+         this.card(g, x + 10, cy, x + 10 + inner, cy + 30, Glass.WARN, 0.5F);
          this.textFit(g, blocked, x + 18, cy + 6, inner - 16, Glass.WARN);
          this.textFit(g, "Settings below can still be changed; starting, pausing and cancelling need a world.", x + 18, cy + 18, inner - 16, Glass.textFaint());
          cy += 34;
@@ -374,7 +375,7 @@ public final class BaritonePage extends DashboardPage {
       int index = Math.min(BuiltInBaritone.pathIndex(), path.size());
       float progress = BotTasks.progress(index, path.size());
       int barRight = x + w - 110;
-      Glass.bar(g, vx, y + 33, barRight, y + 37, progress, this.c(0xFF232A38), this.c(Glass.accent()), this.c(Glass.accent2()));
+      Glass.bar(g, vx, y + 33, barRight, y + 37, progress, this.c(Widgets.trackOff()), this.c(Glass.accent()), this.c(Glass.accent2()));
       String nodes = path.isEmpty() ? (BaritoneBridge.externalPathing() ? "Baritone path" : "no path") : index + " / " + path.size() + " nodes";
       this.textFit(g, nodes, barRight + 6, y + 31, x + w - barRight - 14, Glass.textDim());
       this.text(g, "ETA", lx, y + 43, Glass.textFaint());
@@ -483,7 +484,7 @@ public final class BaritonePage extends DashboardPage {
          if (setting(bot, "Guard Rails") instanceof BooleanSetting rails) {
             int ry = by + used + 2;
             this.text(g, rails.name(), x + 10, ry + 1, Glass.textDim());
-            Glass.toggle(g, x + w - 8 - 18, ry, rails.get() ? 1.0F : 0.0F, Glass.accent(), this.host.fade());
+            this.toggle(g, x + w - 8 - 20, ry, rails.get());
             this.host.hit(x + 4, ry - 2, w - 8, 14, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> {
                rails.toggle();
                save();

@@ -323,12 +323,12 @@ public final class ModsPage extends DashboardPage {
       int left = mx0 + width - itemW;
       int hgt = ModrinthUrls.Sort.values().length * 14 + 4;
       Glass.roundRect(g, left, my0, left + itemW, my0 + hgt, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.surface(3)));
-      Glass.roundOutline(g, left, my0, left + itemW, my0 + hgt, gemini.ui.Theme.RADIUS_SMALL, this.c(0xFFFFFFFF, 24));
+      Glass.roundOutline(g, left, my0, left + itemW, my0 + hgt, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.text(), 24));
       int iy = my0 + 2;
       for (ModrinthUrls.Sort s : ModrinthUrls.Sort.values()) {
          boolean over = inside(mouseX, mouseY, left, iy, itemW, 14);
          if (over) {
-            g.fill(left + 1, iy, left + itemW - 1, iy + 14, this.c(0xFFFFFFFF, 14));
+            g.fill(left + 1, iy, left + itemW - 1, iy + 14, this.c(Glass.text(), 14));
          }
 
          this.text(g, s.label, left + 6, iy + 3, s == sort ? Glass.text() : Glass.textDim());
@@ -386,7 +386,7 @@ public final class ModsPage extends DashboardPage {
       boolean over = inside(mouseX, mouseY, x, y, w, ROW - 2) && mouseY >= this.viewTop && mouseY < this.viewBottom;
       boolean chosen = this.selected != null && this.selected.projectId().equals(hit.projectId());
       if (chosen || over) {
-         Glass.roundRect(g, x, y, x + w, y + ROW - 2, gemini.ui.Theme.RADIUS_SMALL, this.c(0xFFFFFFFF, chosen ? 18 : 9));
+         Glass.roundRect(g, x, y, x + w, y + ROW - 2, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.text(), chosen ? 18 : 9));
       }
 
       this.drawIcon(g, hit.iconUrl(), hit.title(), x + 3, y + 2, ICON);
@@ -427,7 +427,7 @@ public final class ModsPage extends DashboardPage {
          return;
       }
 
-      g.fill(x - 7, top, x - 6, bottom, this.c(0xFFFFFFFF, 14));
+      g.fill(x - 7, top, x - 6, bottom, this.c(Glass.text(), 14));
       Detail d = this.detail;
       if (d == null) {
          this.textFit(g, "Pick something from the list.", x, top + 12, w, Glass.textFaint());
@@ -854,7 +854,7 @@ public final class ModsPage extends DashboardPage {
    private void drawEntry(GuiGraphicsExtractor g, InstalledMods.Entry entry, int x, int y, int w, int mouseX, int mouseY) {
       boolean over = inside(mouseX, mouseY, x, y, w, INSTALLED_ROW - 1) && mouseY >= this.viewTop && mouseY < this.viewBottom;
       if (over) {
-         Glass.roundRect(g, x, y, x + w, y + INSTALLED_ROW - 1, gemini.ui.Theme.RADIUS_SMALL, this.c(0xFFFFFFFF, 9));
+         Glass.roundRect(g, x, y, x + w, y + INSTALLED_ROW - 1, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.text(), 9));
       }
 
       // buttons from the right: Remove, Disable/Enable, Update

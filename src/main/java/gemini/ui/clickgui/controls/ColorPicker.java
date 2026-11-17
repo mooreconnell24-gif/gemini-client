@@ -4,6 +4,8 @@ import gemini.input.Keys;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -27,9 +29,9 @@ import net.minecraft.util.Util;
  */
 public final class ColorPicker extends SettingControl {
    /** Height of the collapsed row. */
-   public static final int ROW = 17;
+   public static final int ROW = 20;
    private static final int MAX_COLUMNS = 32;
-   private static final int PAD = 10;
+   private static final int PAD = Widgets.PAD;
    private static final int SQUARE_H = 56;
    private static final int BAR_H = 8;
    private static final int LINE_H = 13;
@@ -71,7 +73,7 @@ public final class ColorPicker extends SettingControl {
 
    @Override
    public int height() {
-      return ROW + this.bodyShown();
+      return this.rowHeight() + this.bodyShown();
    }
 
    private int bodyShown() {
@@ -89,7 +91,7 @@ public final class ColorPicker extends SettingControl {
    }
 
    private int squareTop() {
-      return this.y + ROW + 2;
+      return this.y + this.rowHeight() + 2;
    }
 
    private int hueTop() {
@@ -117,41 +119,43 @@ public final class ColorPicker extends SettingControl {
       this.place(x, y, w);
       this.expand = Glass.approach(this.expand, this.expanded ? 1.0F : 0.0F, 14.0F, dt);
       Font font = Controls.font();
+      int row = this.rowHeight();
       int left = this.left();
       int right = this.right();
       int accent = this.accent();
       int accent2 = this.accent2();
       boolean hasMouse = mouseX != NO_MOUSE;
-      boolean overRow = hasMouse && inside(mouseX, mouseY, x, y, x + w, y + ROW);
+      boolean overRow = hasMouse && inside(mouseX, mouseY, x, y, x + w, y + row);
       this.hover = Glass.approach(this.hover, overRow ? 1.0F : 0.0F, 16.0F, dt);
-      if (this.hover > 0.01F || this.expand > 0.01F) {
-         int tint = Math.round(18.0F * Math.max(this.hover, this.expand * 0.6F));
-         Glass.roundRect(g, x + 4, y, x + w - 4, y + this.height() - 1, 3, Glass.fade(Glass.withAlpha(0xFFFFFF, tint), this.opacity));
-      }
+      Widgets.rowHover(g, x, y, w, this.height(), Math.max(this.hover, this.expand * 0.6F), this.opacity);
 
       // collapsed row: name, hex, swatch
-      int swatchL = right - 14;
+      int swatchL = right - 16;
+      int swatchT = y + (row - 10) / 2;
       String code = this.setting.hex();
-      int codeW = UiFont.width(code);
-      int nameRoom = swatchL - 4 - left;
-      boolean showCode = nameRoom - codeW - 6 >= UiFont.width(this.setting.name()) || nameRoom - codeW - 6 > 40;
-      Controls.text(
-         g, font, Controls.fit(font, this.setting.name(), showCode ? nameRoom - codeW - 6 : nameRoom), left, y + 5, this.setting.isDefault() ? Glass.textDim() : Glass.text(), this.opacity
-      );
+      int codeW = UiFont.width(code, FontSize.SMALL, FontWeight.REGULAR);
+      int nameRoom = swatchL - 5 - left;
+      boolean showCode = nameRoom - codeW - 6 >= UiFont.width(this.setting.name());
+      int textY = UiFont.centerY(y, row);
+      Controls.text(g, font, Controls.fit(font, this.setting.name(), showCode ? nameRoom - codeW - 6 : nameRoom), left, textY, Widgets.label(this.setting.isDefault()), this.opacity);
       if (showCode) {
-         Controls.text(g, font, code, swatchL - 4 - codeW, y + 5, Glass.textFaint(), this.opacity);
+         Controls.text(g, code, swatchL - 5 - codeW, UiFont.centerY(y, row, FontSize.SMALL), Glass.textFaint(), this.opacity, FontSize.SMALL, FontWeight.REGULAR);
       }
 
-      Controls.checker(g, swatchL, y + 4, right, y + 13, 3, this.opacity);
-      g.fill(swatchL, y + 4, right, y + 13, Glass.fade(this.setting.argb(), this.opacity));
-      Glass.roundOutline(g, swatchL - 1, y + 3, right + 1, y + 14, 2, Glass.fade(Glass.withAlpha(Glass.lerp(0xFFFFFFFF, accent, this.hover), 150), this.opacity));
+      int live = this.setting.argb();
+      if (live >>> 24 < 250) {
+         Controls.checker(g, swatchL + 1, swatchT + 1, right - 1, swatchT + 9, 4, this.opacity);
+      }
+
+      Glass.roundRect(g, swatchL, swatchT, right, swatchT + 10, 3, Glass.fade(live, this.opacity));
+      Glass.roundOutline(g, swatchL, swatchT, right, swatchT + 10, 3, Glass.fade(Glass.withAlpha(Glass.lerp(Glass.text(), accent, this.expand), 60 + Math.round(90.0F * Math.max(this.hover, this.expand))), this.opacity));
 
       int shown = this.bodyShown();
       if (shown <= 0) {
          return;
       }
 
-      g.enableScissor(x, y + ROW, x + w, y + ROW + shown);
+      g.enableScissor(x, y + this.rowHeight(), x + w, y + this.rowHeight() + shown);
       float fade = this.opacity * this.expand;
       this.drawSquare(g, left, this.squareTop(), right, fade);
       this.drawHue(g, left, this.hueTop(), right, fade);
@@ -185,7 +189,7 @@ public final class ColorPicker extends SettingControl {
          g.fillGradient(sx, top, ex, top + SQUARE_H, Glass.fade(Glass.hsb(hue, saturation, 1.0F), fade), bottom);
       }
 
-      Glass.roundOutline(g, left - 1, top - 1, right + 1, top + SQUARE_H + 1, 2, Glass.fade(0x60FFFFFF, fade));
+      Glass.roundOutline(g, left - 1, top - 1, right + 1, top + SQUARE_H + 1, 2, Glass.fade(Glass.withAlpha(Glass.text(), 70), fade));
       int cx = left + Math.round(width * this.setting.saturation());
       int cy = top + Math.round(SQUARE_H * (1.0F - this.setting.brightness()));
       g.enableScissor(left - 1, top - 1, right + 1, top + SQUARE_H + 1);
@@ -222,11 +226,10 @@ public final class ColorPicker extends SettingControl {
       GuiGraphicsExtractor g, Font font, int bx, int by, int bw, String label, boolean hasMouse, int mouseX, int mouseY, boolean active, int accent, float fade
    ) {
       boolean over = hasMouse && inside(mouseX, mouseY, bx, by, bx + bw, by + LINE_H);
-      int fill = active ? Glass.withAlpha(accent, 150) : (over ? Glass.withAlpha(accent, 80) : 0xC0161C28);
+      int fill = active ? Glass.lerp(Widgets.raised(), accent, 0.55F) : (over ? Widgets.raisedHover() : Widgets.raised());
       Glass.roundRect(g, bx, by, bx + bw, by + LINE_H, 3, Glass.fade(fill, fade));
-      Glass.roundOutline(g, bx, by, bx + bw, by + LINE_H, 3, Glass.fade(Glass.withAlpha(active || over ? accent : 0xFFFFFF, active || over ? 200 : 40), fade));
       String text = Controls.fit(font, label, bw - 2);
-      Controls.text(g, font, text, bx + (bw - UiFont.width(text)) / 2, by + 3, active || over ? Glass.text() : Glass.textDim(), fade);
+      Controls.text(g, font, text, bx + (bw - UiFont.width(text)) / 2, UiFont.centerY(by, LINE_H), active || over ? Glass.text() : Glass.textDim(), fade);
    }
 
    /** Left edges of the three sync buttons plus the right end, sized by their labels. */
@@ -258,7 +261,7 @@ public final class ColorPicker extends SettingControl {
          return false;
       }
 
-      if (mouseY < this.y + ROW) {
+      if (mouseY < this.y + this.rowHeight()) {
          if (button != 0) {
             return false;
          }
@@ -385,6 +388,11 @@ public final class ColorPicker extends SettingControl {
    @Override
    public boolean charTyped(CharacterEvent event) {
       return this.hex.focused() && this.hex.charTyped(event);
+   }
+
+   @Override
+   public String hint() {
+      return "click to open the picker";
    }
 
    @Override

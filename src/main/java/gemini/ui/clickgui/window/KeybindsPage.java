@@ -85,11 +85,11 @@ public final class KeybindsPage extends DashboardPage {
          this.rebuild(now);
       }
 
-      this.text(g, this.title(), x + 10, y + 9, Glass.text());
+      this.heading(g, x, y);
       String summary = this.conflicts == 0
          ? "No conflicts"
          : this.conflicts + (this.conflicts == 1 ? " conflict" : " conflicts");
-      int sx = x + 14 + UiFont.width(this.title());
+      int sx = x + 18 + this.headingWidth();
       int sw = this.chip(g, sx, y + 7, summary, Glass.withAlpha(this.conflicts == 0 ? Glass.OK : Glass.ERROR, 120), Glass.text());
       String filter = onlyConflicts ? "Only conflicts: on" : "Only conflicts: off";
       int fw = this.buttonWidth(filter);
@@ -133,7 +133,7 @@ public final class KeybindsPage extends DashboardPage {
 
    private void drawGroup(GuiGraphicsExtractor g, KeybindGroups.Group group, int x, int y, int w, int h, int mouseX, int mouseY) {
       int border = group.modules().size() > 1 ? Glass.ERROR : (group.vanillaClash() ? Glass.WARN : Glass.accent());
-      Glass.panel(g, x, y, x + w, y + h, Glass.RADIUS, Glass.surface(1), border, this.host.fade(), group.conflict() ? 0.35F : 0.0F);
+      this.card(g, x, y, x + w, y + h, border, group.conflict() ? 0.6F : 0.0F);
       String keyName = GeminiKeys.displayName(group.key());
       int kx = x + 6 + this.chip(g, x + 6, y + 4, keyName, Glass.withAlpha(Glass.surface(3), 255), Glass.text()) + 6;
       String state;
@@ -165,7 +165,7 @@ public final class KeybindsPage extends DashboardPage {
       Module module = module(name);
       boolean over = inside(mouseX, mouseY, x, y, w, ROW_H - 1) && mouseY >= this.viewTop && mouseY < this.viewBottom;
       if (over) {
-         Glass.roundRect(g, x, y, x + w, y + ROW_H - 1, 3, this.c(0xFFFFFFFF, 10));
+         Glass.roundRect(g, x, y, x + w, y + ROW_H - 1, 3, this.c(Glass.text(), 10));
       }
 
       boolean capturing = module != null && this.host.bindingModule() == module;

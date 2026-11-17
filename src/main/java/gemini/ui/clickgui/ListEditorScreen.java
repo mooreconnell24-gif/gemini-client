@@ -6,7 +6,11 @@ import gemini.module.Module;
 import gemini.module.setting.ListSetting;
 import gemini.ui.Fuzzy;
 import gemini.ui.Glass;
+import gemini.ui.Theme;
 import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.clickgui.controls.Widgets;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -405,22 +409,24 @@ public final class ListEditorScreen extends Screen {
       float fade = this.open;
       int accent = Glass.accent();
       int accent2 = Glass.accent2();
-      graphics.fill(0, 0, this.width, this.height, Glass.withAlpha(0x050810, Math.round(190.0F * fade)));
+      graphics.fill(0, 0, this.width, this.height, Glass.withAlpha(Glass.lerp(0xFF000000, Glass.surface(0), 0.5F), Math.round(150.0F * fade)));
       int lift = Math.round((1.0F - fade) * 12.0F);
       int px = this.panelX;
       int py = this.panelY + lift;
-      Glass.panel(graphics, px, py, px + this.panelW, py + this.panelH, 6, Glass.surface(0), accent, fade, 0.35F);
-      Glass.gradientBar(graphics, px + 6, py + 24, px + this.panelW - 6, py + 25, Glass.fade(accent, fade), Glass.fade(accent2, fade));
-      Controls.text(graphics, this.font, this.module.getName() + "  ·  " + this.setting.name(), px + PAD, py + 8, Glass.text(), fade);
-      String count = this.setting.size() + " selected";
-      Controls.text(graphics, this.font, count, px + this.panelW - PAD - UiFont.width(count), py + 8, accent2, fade);
+      // The same window as the menu: soft shadow, rounded surface, hairline edge.
+      Glass.shadow(graphics, px, py, px + this.panelW, py + this.panelH, 8, 22, 8, 0.55F * fade);
+      Glass.roundRect(graphics, px, py, px + this.panelW, py + this.panelH, 8, Glass.fade(Glass.surface(1), fade));
+      Glass.roundOutline(graphics, px, py, px + this.panelW, py + this.panelH, 8, Glass.fade(Glass.withAlpha(Glass.text(), 20), fade));
+      Controls.text(graphics, this.setting.name(), px + PAD, py + 8, Glass.text(), fade, FontSize.LARGE, FontWeight.MEDIUM);
+      String count = this.module.getName() + "  ·  " + this.setting.size() + " selected";
+      Controls.text(graphics, this.font, count, px + this.panelW - PAD - UiFont.width(count), py + 10, Glass.textDim(), fade);
 
       int fieldTop = py + 30;
       int doneW = UiFont.width("Done") + 16;
       int clearW = UiFont.width("Clear") + 16;
       int fieldRight = px + this.panelW - PAD - doneW - clearW - 8;
-      Glass.roundRect(graphics, px + PAD, fieldTop, fieldRight, fieldTop + 16, 4, Glass.fade(0xE0101520, fade));
-      Glass.roundOutline(graphics, px + PAD, fieldTop, fieldRight, fieldTop + 16, 4, Glass.fade(Glass.withAlpha(accent, 200), fade));
+      Glass.roundRect(graphics, px + PAD, fieldTop, fieldRight, fieldTop + 16, 4, Glass.fade(Widgets.well(), fade));
+      Glass.roundOutline(graphics, px + PAD, fieldTop, fieldRight, fieldTop + 16, 4, Glass.fade(Glass.withAlpha(accent, 150), fade));
       boolean blink = now / 420L % 2L == 0L;
       String hint = this.setting.kind() == ListSetting.Kind.TEXT ? "Type text and press Enter to add" : "Search " + this.setting.kind().noun() + "s by id or name...";
       String query = this.search.isEmpty() ? hint : this.search + (blink ? "|" : "");
@@ -440,8 +446,7 @@ public final class ListEditorScreen extends Screen {
          boolean active = f == this.filter;
          boolean over = inside(mouseX, mouseY, b[0], b[1] + lift, b[2], CHIP_H);
          int cy = b[1] + lift;
-         Glass.roundRect(graphics, b[0], cy, b[0] + b[2], cy + CHIP_H, 4, Glass.fade(active ? Glass.withAlpha(accent2, 140) : (over ? Glass.withAlpha(accent, 90) : 0xC0161C28), fade));
-         Glass.roundOutline(graphics, b[0], cy, b[0] + b[2], cy + CHIP_H, 4, Glass.fade(Glass.withAlpha(active ? accent2 : (over ? accent : 0xFFFFFF), active || over ? 220 : 40), fade));
+         Glass.roundRect(graphics, b[0], cy, b[0] + b[2], cy + CHIP_H, 4, Glass.fade(active ? Theme.mix(Widgets.raised(), accent, 0.5F) : (over ? Widgets.raisedHover() : Widgets.raised()), fade));
          Controls.text(graphics, this.font, f.label(), b[0] + 6, cy + 3, active || over ? Glass.text() : Glass.textDim(), fade);
       }
 
@@ -466,10 +471,10 @@ public final class ListEditorScreen extends Screen {
                int y = top + row * CELL - offset;
                boolean selected = this.setting.contains(entry.id());
                boolean over = mouseX >= x && mouseX < x + CELL && mouseY >= Math.max(y, top) && mouseY < Math.min(y + CELL, bottom);
-               int fill = selected ? Glass.withAlpha(accent, 110) : (over ? 0x40FFFFFF : 0x50202838);
+               int fill = selected ? Glass.withAlpha(accent, 110) : (over ? Glass.withAlpha(Glass.text(), 0x40) : Glass.withAlpha(Glass.surface(3), 0xA0));
                Glass.roundRect(graphics, x + 1, y + 1, x + CELL - 1, y + CELL - 1, 3, Glass.fade(fill, fade));
                if (selected || over) {
-                  Glass.roundOutline(graphics, x + 1, y + 1, x + CELL - 1, y + CELL - 1, 3, Glass.fade(selected ? accent2 : 0x90FFFFFF, fade));
+                  Glass.roundOutline(graphics, x + 1, y + 1, x + CELL - 1, y + CELL - 1, 3, Glass.fade(selected ? accent2 : Glass.withAlpha(Glass.text(), 0x90), fade));
                }
 
                if (entry.icon().isEmpty()) {
@@ -495,7 +500,7 @@ public final class ListEditorScreen extends Screen {
             boolean selected = this.setting.contains(entry.id());
             boolean over = mouseX >= px + PAD && mouseX < px + this.panelW - PAD && mouseY >= Math.max(y, top) && mouseY < Math.min(y + rowH, bottom);
             if (selected || over) {
-               Glass.roundRect(graphics, px + PAD - 2, y, px + this.panelW - PAD, y + rowH - 1, 3, Glass.fade(selected ? Glass.withAlpha(accent, 90) : 0x30FFFFFF, fade));
+               Glass.roundRect(graphics, px + PAD - 2, y, px + this.panelW - PAD, y + rowH - 1, 3, Glass.fade(selected ? Glass.withAlpha(accent, 90) : Glass.withAlpha(Glass.text(), 0x30), fade));
             }
 
             int textX = px + PAD + 2;
@@ -527,7 +532,7 @@ public final class ListEditorScreen extends Screen {
          int trackH = bottom - top;
          int thumbH = Math.max(14, Math.round(trackH * ((float)trackH / this.contentHeight())));
          int thumbY = top + Math.round((trackH - thumbH) * (this.scroll / Math.max(1.0F, this.maxScroll())));
-         Glass.roundRect(graphics, px + this.panelW - 6, top, px + this.panelW - 3, bottom, 1, Glass.fade(0x40000000, fade));
+         Glass.roundRect(graphics, px + this.panelW - 6, top, px + this.panelW - 3, bottom, 1, Glass.fade(Glass.withAlpha(Widgets.well(), 0x90), fade));
          Glass.roundRect(graphics, px + this.panelW - 6, thumbY, px + this.panelW - 3, thumbY + thumbH, 1, Glass.fade(Glass.withAlpha(accent, 190), fade));
       }
 
@@ -560,10 +565,9 @@ public final class ListEditorScreen extends Screen {
 
    private void button(GuiGraphicsExtractor graphics, int x, int y, int w, String label, int mouseX, int mouseY, int accent, float fade, boolean primary) {
       boolean over = inside(mouseX, mouseY, x, y, w, 16);
-      int fill = over ? Glass.withAlpha(accent, 130) : (primary ? Glass.withAlpha(accent, 70) : 0xC0161C28);
+      int fill = primary ? Theme.mix(Widgets.raised(), accent, over ? 0.75F : 0.5F) : (over ? Widgets.raisedHover() : Widgets.raised());
       Glass.roundRect(graphics, x, y, x + w, y + 16, 4, Glass.fade(fill, fade));
-      Glass.roundOutline(graphics, x, y, x + w, y + 16, 4, Glass.fade(Glass.withAlpha(over || primary ? accent : 0xFFFFFF, over ? 240 : (primary ? 170 : 50)), fade));
-      Controls.text(graphics, this.font, label, x + (w - UiFont.width(label)) / 2, y + 4, over ? Glass.text() : Glass.textDim(), fade);
+      Controls.text(graphics, this.font, label, x + (w - UiFont.width(label)) / 2, UiFont.centerY(y, 16), over || primary ? Glass.text() : Glass.textDim(), fade);
    }
 
    // ---- input ----------------------------------------------------------------------------------------------
