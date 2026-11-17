@@ -37,13 +37,13 @@ public final class HudStyle {
    public static final int RADIUS = Theme.RADIUS;
    /** Corner radius of small inner shapes (key caps, slots). */
    public static final int RADIUS_SMALL = Theme.RADIUS_SMALL;
-   static final int SOFT_ALPHA = 118;
+   static final int SOFT_ALPHA = 150;
    static final int SOLID_ALPHA = 222;
    /** Label (secondary) text on a card, and brightened for the shadow-only look. */
-   static final int LABEL = Glass.TEXT_DIM;
+   static final int LABEL = 0xFFA9B2C4;
    static final int LABEL_BARE = 0xFFC2CAD8;
    /** Unit (tertiary) text: between dim and faint so it stays legible over a soft card on snow. */
-   static final int UNIT = 0xFF7C869A;
+   static final int UNIT = 0xFF838DA1;
    static final int UNIT_BARE = 0xFFA6AFC0;
    /** Thin bar track: a whisper of white on a card, a dark line with no card. */
    static final int TRACK = 0x2CFFFFFF;
@@ -91,7 +91,7 @@ public final class HudStyle {
    }
 
    /** Alpha of a colour for the backdrop {@code mode} at {@code opacity} (0..1); 0 for {@link #NONE}. */
-   static int cardAlpha(int mode, float opacity) {
+   public static int cardAlpha(int mode, float opacity) {
       int base = mode == SOLID ? SOLID_ALPHA : (mode == SOFT ? SOFT_ALPHA : 0);
       return Math.round(base * Mth.clamp(opacity, 0.0F, 1.0F));
    }
@@ -162,7 +162,7 @@ public final class HudStyle {
       }
 
       int m = Math.max(1, Math.min(margin, width / 2));
-      int steps = Math.min(16, m);
+      int steps = Math.min(64, m);
       int baseAlpha = color >>> 24;
       // Both fading ends in slices; the middle in one fill.
       for (int i = 0; i < steps; i++) {

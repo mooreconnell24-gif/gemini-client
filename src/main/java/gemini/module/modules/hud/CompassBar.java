@@ -64,7 +64,7 @@ public final class CompassBar extends HudWidget {
       int backdrop = this.backdrop();
       float fade = w * 0.22F;
       if (backdrop != HudStyle.NONE) {
-         int alpha = backdrop == HudStyle.SOLID ? 222 : 118;
+         int alpha = HudStyle.cardAlpha(backdrop, 1.0F);
          HudStyle.fadedStrip(g, 0, 0, w, h, Math.round(fade), Glass.withAlpha(hud.surface, alpha));
       }
 

@@ -3,14 +3,21 @@ package gemini.module.modules.hud;
 import gemini.module.HudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ListSetting;
+import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.ui.HudStyle;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+/**
+ * How many of the chosen items you carry: icon and a right-aligned count per row, red when you have none. Counted
+ * once a tick into reused lists; a frame only draws.
+ */
 public final class ItemCounter extends HudWidget {
+   private static final int ROW = 18;
    private final ListSetting watched = this.addSetting(
       new ListSetting(
          "Items",
@@ -23,45 +30,65 @@ public final class ItemCounter extends HudWidget {
       )
    );
    private final BooleanSetting hideZero = this.addSetting(new BooleanSetting("Hide Zero", "Leave out items you have none of", false));
+   private final List<ItemStack> icons = new ArrayList<>();
+   private final List<String> counts = new ArrayList<>();
+   private final List<Boolean> empty = new ArrayList<>();
+   private int countW;
+   private int builtTick = Integer.MIN_VALUE;
 
    public ItemCounter() {
       super("Item Counter", "Shows how many of the chosen items you carry, with icons.", "Top Center", 0, 90);
    }
 
-   private List<Item> rows(LocalPlayer player) {
-      List<Item> rows = new ArrayList<>();
-
-      for (Item item : this.watched.items()) {
-         if (!this.hideZero.get() || HudHelpers.count(player, item) > 0) {
-            rows.add(item);
-         }
+   private void rebuild(HudContext hud) {
+      LocalPlayer player = hud.client.player;
+      int tick = player == null ? -1 : player.tickCount;
+      if (tick == this.builtTick) {
+         return;
       }
 
-      return rows;
+      this.builtTick = tick;
+      this.icons.clear();
+      this.counts.clear();
+      this.empty.clear();
+      this.countW = 0;
+      if (player == null) {
+         return;
+      }
+
+      for (Item item : this.watched.items()) {
+         int amount = HudHelpers.count(player, item);
+         if (this.hideZero.get() && amount <= 0) {
+            continue;
+         }
+
+         String text = HudFormat.grouped(amount);
+         this.icons.add(new ItemStack(item));
+         this.counts.add(text);
+         this.empty.add(amount <= 0);
+         this.countW = Math.max(this.countW, hud.font.width(text));
+      }
    }
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      List<Item> rows = this.rows(hud.client.player);
-      return rows.isEmpty() ? 0 : 30 + hud.font.width("000x");
+      this.rebuild(hud);
+      return this.icons.isEmpty() ? 0 : 2 * HudStyle.PAD_X + 16 + 8 + Math.max(this.countW, hud.font.width("00"));
    }
 
    @Override
    protected int widgetHeight(HudContext hud) {
-      List<Item> rows = this.rows(hud.client.player);
-      return rows.isEmpty() ? 0 : 8 + rows.size() * 18 - 2;
+      return this.icons.isEmpty() ? 0 : 2 * HudStyle.PAD_Y + this.icons.size() * ROW - 2;
    }
 
    @Override
    protected void paint(HudContext hud, int w, int h) {
-      List<Item> rows = this.rows(hud.client.player);
-
-      for (int i = 0; i < rows.size(); i++) {
-         Item item = rows.get(i);
-         int amount = HudHelpers.count(hud.client.player, item);
-         int y = 4 + i * 18;
-         hud.graphics.item(new ItemStack(item), 6, y);
-         hud.graphics.text(hud.font, amount + "x", 28, y + 4, amount == 0 ? -1548963 : -1511689, hud.shadow);
+      for (int i = 0; i < this.icons.size(); i++) {
+         int y = HudStyle.PAD_Y + i * ROW;
+         hud.graphics.item(this.icons.get(i), HudStyle.PAD_X, y);
+         String text = this.counts.get(i);
+         int color = this.empty.get(i) ? Glass.ERROR : Glass.TEXT;
+         hud.graphics.text(hud.font, text, w - HudStyle.PAD_X - hud.font.width(text), y + 4, color, hud.shadow);
       }
    }
 }
