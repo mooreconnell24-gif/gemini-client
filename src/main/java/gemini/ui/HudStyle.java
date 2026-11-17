@@ -1,5 +1,7 @@
 package gemini.ui;
 
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
@@ -14,8 +16,11 @@ import net.minecraft.util.Mth;
  *    <li>{@link #SOLID}: the same shape, nearly opaque, for people who want crisp cards.</li>
  *    <li>{@link #NONE}: no panel at all; text is always drawn with a shadow and secondary text is brightened.</li>
  * </ul>
- * Type has three levels: a value is white ({@link Glass#TEXT}), its label dim ({@link #label}), its unit fainter
- * ({@link #unit}). Colour is reserved for a value crossing a threshold ({@link #level}).
+ * Type has three levels taken from the active {@link Theme}: a value is the theme's primary text, its label dim
+ * ({@link #label}), its unit fainter ({@link #unit}). Colour is reserved for a value crossing a threshold
+ * ({@link #level}). Text that is built once and kept (the rows of a text widget) cannot hold a theme colour, because
+ * the theme may change while it is kept: it holds {@link #PRIMARY}, {@link #SECONDARY} or {@link #TERTIARY} instead
+ * and the painter turns those into the live colours with {@link #themed}.
  *
  * <p>All methods are static and allocation-free; the pure ones are unit tested.
  */
@@ -28,6 +33,8 @@ public final class HudStyle {
    /** Inner padding of a card: left and right, top and bottom. */
    public static final int PAD_X = Theme.SPACE_M;
    public static final int PAD_Y = Theme.SPACE_S;
+   /** Height reserved for one line of body text inside a card (capitals plus room for descenders). */
+   public static final int TEXT_H = 8;
    /** Line pitch of text rows. */
    public static final int LINE = Theme.LINE_TIGHT;
    /** Space between a label column and its value column. */
@@ -39,16 +46,17 @@ public final class HudStyle {
    /** Corner radius of small inner shapes (key caps, slots). */
    public static final int RADIUS_SMALL = Theme.RADIUS_SMALL;
    static final int SOFT_ALPHA = 150;
-   static final int SOLID_ALPHA = 222;
-   /** Label (secondary) text on a card, and brightened for the shadow-only look. */
-   static final int LABEL = 0xFFA9B2C4;
-   static final int LABEL_BARE = 0xFFC2CAD8;
-   /** Unit (tertiary) text: between dim and faint so it stays legible over a soft card on snow. */
-   static final int UNIT = 0xFF838DA1;
-   static final int UNIT_BARE = 0xFFA6AFC0;
+   static final int SOLID_ALPHA = 228;
+   /**
+    * Placeholders for the theme's three text levels, for colours that are stored rather than used at once. They are
+    * fully transparent values no real text colour has; {@link #themed} swaps them for the live theme colours.
+    */
+   public static final int PRIMARY = 0x00000001;
+   public static final int SECONDARY = 0x00000002;
+   public static final int TERTIARY = 0x00000003;
    /** Thin bar track: a whisper of white on a card, a dark line with no card. */
-   static final int TRACK = 0x2CFFFFFF;
-   static final int TRACK_BARE = 0x70000000;
+   public static final int TRACK = 0x2CFFFFFF;
+   public static final int TRACK_BARE = 0x70000000;
 
    private HudStyle() {
    }
@@ -64,14 +72,29 @@ public final class HudStyle {
       return SOFT;
    }
 
-   /** Secondary text colour for the backdrop. */
-   public static int label(int backdrop) {
-      return backdrop == NONE ? LABEL_BARE : LABEL;
+   /**
+    * The colour to draw for a stored colour: {@link #PRIMARY}, {@link #SECONDARY} and {@link #TERTIARY} become the
+    * theme's text, label and unit colours for the backdrop; anything else is returned unchanged.
+    */
+   public static int themed(int color, int backdrop) {
+      return switch (color) {
+         case PRIMARY -> Theme.current().text;
+         case SECONDARY -> label(backdrop);
+         case TERTIARY -> unit(backdrop);
+         default -> color;
+      };
    }
 
-   /** Tertiary text colour (units, separators, hints) for the backdrop. */
+   /** Secondary text colour for the backdrop: the theme's dim text, lifted a little so it holds over a soft card on snow, and more with no card. */
+   public static int label(int backdrop) {
+      Theme.Palette theme = Theme.current();
+      return Glass.lerp(theme.textDim, theme.text, backdrop == NONE ? 0.5F : 0.2F) | 0xFF000000;
+   }
+
+   /** Tertiary text colour (units, separators, hints) for the backdrop: between the theme's faint and dim text. */
    public static int unit(int backdrop) {
-      return backdrop == NONE ? UNIT_BARE : UNIT;
+      Theme.Palette theme = Theme.current();
+      return Glass.lerp(theme.textFaint, theme.textDim, backdrop == NONE ? 0.95F : 0.5F) | 0xFF000000;
    }
 
    /** Whether text is drawn with a shadow: always without a card, otherwise as the HUD's Text Shadow switch says. */
@@ -80,15 +103,44 @@ public final class HudStyle {
    }
 
    /**
-    * Colour of a value that has a healthy range ({@code ratio} 1 = full, 0 = empty): plain white while it is fine,
-    * amber below 30 %, red below 12 %. Colour appears only when it means something.
+    * Colour of a value that has a healthy range ({@code ratio} 1 = full, 0 = empty): {@link #PRIMARY} (the theme's
+    * text, once {@link #themed}) while it is fine, amber below 30 %, red below 12 %. Colour appears only when it
+    * means something.
     */
    public static int level(float ratio) {
       if (ratio >= 0.3F) {
-         return Glass.TEXT;
+         return PRIMARY;
       }
 
-      return ratio >= 0.12F ? Glass.WARN : Glass.ERROR;
+      Theme.Palette theme = Theme.current();
+      return ratio >= 0.12F ? theme.warn : theme.error;
+   }
+
+   /**
+    * Health colour that slides smoothly from the theme's green (full) through amber (half) to red (empty), so a bar
+    * changes colour as gradually as it shrinks.
+    */
+   public static int health(float ratio) {
+      Theme.Palette theme = Theme.current();
+      float r = Mth.clamp(ratio, 0.0F, 1.0F);
+      return (r >= 0.5F ? Glass.lerp(theme.warn, theme.ok, (r - 0.5F) * 2.0F) : Glass.lerp(theme.error, theme.warn, r * 2.0F)) | 0xFF000000;
+   }
+
+   /**
+    * Colour of row {@code index} of {@code count} in a list tinted with the theme gradient: {@code from} at the top
+    * to {@code to} at the bottom. {@code wave} (any value; whole numbers are one full cycle) slides the gradient
+    * along the list and back, so with a moving wave every row drifts between the two colours.
+    */
+   public static int gradientAt(int from, int to, int index, int count, float wave) {
+      float along = count <= 1 ? 0.0F : (float)index / (count - 1);
+      if (wave != 0.0F) {
+         // a triangle wave: 0..1..0 over one cycle, offset by the row's place in the list
+         float phase = along * 0.5F + wave;
+         phase -= (float)Math.floor(phase);
+         along = phase < 0.5F ? phase * 2.0F : 2.0F - phase * 2.0F;
+      }
+
+      return Glass.lerp(from, to, along) | 0xFF000000;
    }
 
    /** Alpha of a colour for the backdrop {@code mode} at {@code opacity} (0..1); 0 for {@link #NONE}. */
@@ -97,7 +149,7 @@ public final class HudStyle {
       return Math.round(base * Mth.clamp(opacity, 0.0F, 1.0F));
    }
 
-   /** The card behind a widget: rounded, borderless, tinted with the theme {@code surface}. */
+   /** The card behind a widget: rounded, borderless, tinted with the theme {@code surface}; Solid also casts a soft shadow. */
    public static void card(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int mode, int surface, float opacity) {
       card(g, x1, y1, x2, y2, RADIUS, mode, surface, opacity);
    }
@@ -108,11 +160,12 @@ public final class HudStyle {
          return;
       }
 
-      Glass.roundRect(g, x1, y1, x2, y2, radius, Glass.withAlpha(surface, alpha));
-      if (mode == SOLID && y2 - y1 > 6) {
-         // A one-pixel lift along the top edge: reads as a surface, not as a border.
-         g.fill(x1 + radius, y1, x2 - radius, y1 + 1, Glass.withAlpha(0xFFFFFF, Math.round(14.0F * opacity)));
+      if (mode == SOLID) {
+         // A solid card is raised: a soft shadow under it. A translucent one would only show its shadow through itself.
+         Glass.shadow(g, x1, y1, x2, y2, radius, 8, 2, 0.3F * Mth.clamp(opacity, 0.0F, 1.0F));
       }
+
+      Glass.roundRect(g, x1, y1, x2, y2, radius, Glass.withAlpha(surface, alpha));
    }
 
    /** A thin bar: a quiet track with {@code fraction} (0..1) of it filled in {@code color}. Square ends; it is 1-3 px tall. */
@@ -179,22 +232,20 @@ public final class HudStyle {
    }
 
    /**
-    * A key cap: a rounded tile on the backdrop that fills with light as {@code press} goes 0 to 1, its label
-    * turning dark for contrast. {@code label} may be null (then only the cap is drawn).
+    * A key cap: a rounded tile on the backdrop that fills with the theme accent as {@code press} goes 0 to 1, its
+    * label turning to whatever reads on the accent. {@code label} may be null (then only the cap is drawn).
     */
-   public static void keycap(
-      GuiGraphicsExtractor g, net.minecraft.client.gui.Font font, int x, int y, int w, int h, String label, float press, int backdrop, int surface, boolean shadow
-   ) {
+   public static void keycap(GuiGraphicsExtractor g, int x, int y, int w, int h, String label, float press, int backdrop, int surface, int accent, boolean shadow) {
       float p = Mth.clamp(press, 0.0F, 1.0F);
-      int rest = backdrop == NONE ? Glass.withAlpha(surface, 0) : Glass.withAlpha(surface, backdrop == SOLID ? SOLID_ALPHA : SOFT_ALPHA + 20);
+      int rest = backdrop == NONE ? Glass.withAlpha(surface, 70) : Glass.withAlpha(surface, backdrop == SOLID ? SOLID_ALPHA : SOFT_ALPHA + 20);
       Glass.roundRect(g, x, y, x + w, y + h, RADIUS_SMALL, rest);
       if (p > 0.0F) {
-         Glass.roundRect(g, x, y, x + w, y + h, RADIUS_SMALL, Glass.withAlpha(0xFFF2F5FA, Math.round(225.0F * p)));
+         Glass.roundRect(g, x, y, x + w, y + h, RADIUS_SMALL, Glass.withAlpha(accent, Math.round(235.0F * p)));
       }
 
       if (label != null) {
-         int color = Glass.lerp(Glass.TEXT, 0xFF141821, p);
-         UiFont.draw(g, label, x + (w - UiFont.width(label) + 1) / 2, y + (h - 8) / 2 + 1, color, shadow && p < 0.5F);
+         int color = Glass.lerp(Theme.current().text, Theme.onColor(accent), p) | 0xFF000000;
+         UiFont.draw(g, label, x + (w - UiFont.width(label, FontSize.BODY, FontWeight.MEDIUM)) / 2, UiFont.centerY(y, h), color, FontSize.BODY, FontWeight.MEDIUM, shadow && p < 0.5F);
       }
    }
 }

@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.font.FontWeight;
+import gemini.ui.font.FontSize;
 import gemini.module.HudWidget;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
@@ -86,12 +88,12 @@ public final class CompassBar extends HudWidget {
          boolean named = degree % 45 == 0;
          boolean major = degree % 15 == 0;
          int tall = named ? 5 : (major ? 3 : 2);
-         int color = named ? Glass.TEXT : tickColor;
+         int color = named ? Glass.text() : tickColor;
          g.fill(x, TICKS_Y + 5 - tall, x + 1, TICKS_Y + 5, Glass.fade(color, visible * (named ? 1.0F : (major ? 0.8F : 0.45F))));
          if (named && visible > 0.06F) {
             String label = NAMES[degree / 45];
             boolean cardinal = degree % 90 == 0;
-            int labelColor = cardinal ? Glass.TEXT : tickColor;
+            int labelColor = cardinal ? Glass.text() : tickColor;
             UiFont.draw(g, label, x - (UiFont.width(label) - 1) / 2, LABEL_Y, Glass.fade(labelColor, visible), hud.shadow && visible > 0.6F);
          }
       }
@@ -99,9 +101,9 @@ public final class CompassBar extends HudWidget {
       // The heading, centred above a small caret that marks where you look.
       String heading = DEGREES[heading(yaw)];
       int cx = Math.round(center);
-      UiFont.draw(g, heading, cx - (UiFont.width(heading) - 1) / 2, 0, Glass.TEXT, hud.shadow);
-      g.fill(cx - 2, TICKS_Y - 3, cx + 3, TICKS_Y - 2, hud.accent2);
-      g.fill(cx - 1, TICKS_Y - 2, cx + 2, TICKS_Y - 1, hud.accent2);
-      g.fill(cx, TICKS_Y - 1, cx + 1, TICKS_Y + 5, hud.accent2);
+      UiFont.draw(g, heading, cx - (UiFont.width(heading, FontSize.BODY, FontWeight.MEDIUM) - 1) / 2, 0, hud.text, FontSize.BODY, FontWeight.MEDIUM, hud.shadow);
+      g.fill(cx - 2, TICKS_Y - 3, cx + 3, TICKS_Y - 2, hud.accent);
+      g.fill(cx - 1, TICKS_Y - 2, cx + 2, TICKS_Y - 1, hud.accent);
+      g.fill(cx, TICKS_Y - 1, cx + 1, TICKS_Y + 5, hud.accent);
    }
 }

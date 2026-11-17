@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.Glass;
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.List;
@@ -51,7 +53,7 @@ public final class LastDeath extends Ticked {
             return List.of(new TextHudWidget.Line("Died in " + HudHelpers.pretty(this.dimension), -1548963), new TextHudWidget.Line(where, -6641995));
          } else {
             double distance = Math.sqrt(this.position.distSqr(hud.client.player.blockPosition()));
-            return List.of(new TextHudWidget.Line("Died " + Math.round(distance) + "m away", -1548963), new TextHudWidget.Line(where, -6641995));
+            return List.of(new TextHudWidget.Line("Died " + Math.round(distance) + "m away", Glass.ERROR), new TextHudWidget.Line(where, HudStyle.SECONDARY));
          }
       }
    }

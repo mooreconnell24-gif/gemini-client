@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.ui.Glass;
@@ -83,25 +84,25 @@ public final class WeatherForecast extends Ticked {
       }
 
       if (!s.hasWeather()) {
-         return List.of(new TextHudWidget.Line("No weather in this dimension", Glass.TEXT_FAINT));
+         return List.of(new TextHudWidget.Line("No weather in this dimension", HudStyle.TERTIARY));
       }
 
       List<TextHudWidget.Line> lines = new ArrayList<>(3);
       String now = WeatherClock.current(s.raining(), s.thundering());
-      int nowColor = s.thundering() && s.raining() ? Glass.WARN : (s.raining() ? Glass.INFO : Glass.TEXT);
+      int nowColor = s.thundering() && s.raining() ? Glass.WARN : (s.raining() ? Glass.INFO : HudStyle.PRIMARY);
       lines.add(new TextHudWidget.Line("Weather: " + now + (s.cycle() ? "" : "  (cycle off)"), nowColor));
       if (!s.cycle()) {
          return lines;
       }
 
       if (s.clear() > 0) {
-         lines.add(new TextHudWidget.Line("Kept clear for " + this.time(s.clear()), Glass.TEXT_DIM));
+         lines.add(new TextHudWidget.Line("Kept clear for " + this.time(s.clear()), HudStyle.SECONDARY));
       }
 
       if (this.rain.get()) {
          int flip = WeatherClock.rainFlipIn(s.clear(), s.rainTime());
          if (flip != WeatherClock.NONE) {
-            lines.add(new TextHudWidget.Line((s.raining() ? "Rain stops in " : "Rain in ") + this.time(flip), Glass.TEXT_DIM));
+            lines.add(new TextHudWidget.Line((s.raining() ? "Rain stops in " : "Rain in ") + this.time(flip), HudStyle.SECONDARY));
          }
       }
 
@@ -114,7 +115,7 @@ public final class WeatherForecast extends Ticked {
          } else if (starts > 0) {
             lines.add(new TextHudWidget.Line("Storm in " + this.time(starts), Glass.WARN));
          } else if (maybe > 0) {
-            lines.add(new TextHudWidget.Line("Storm possible in " + this.time(maybe), Glass.TEXT_DIM));
+            lines.add(new TextHudWidget.Line("Storm possible in " + this.time(maybe), HudStyle.SECONDARY));
          }
          // no line when the timers rule a storm out: nothing to forecast
       }

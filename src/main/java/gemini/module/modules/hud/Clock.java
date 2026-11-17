@@ -1,8 +1,8 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +32,6 @@ public final class Clock extends Ticked {
          this.format = DateTimeFormatter.ofPattern(this.date.get() ? "EEE d MMM  " + time : time, Locale.ENGLISH);
       }
 
-      return List.of(new TextHudWidget.Line(LocalDateTime.now().format(this.format), Glass.TEXT));
+      return List.of(new TextHudWidget.Line(LocalDateTime.now().format(this.format), HudStyle.PRIMARY));
    }
 }

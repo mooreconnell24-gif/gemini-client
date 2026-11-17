@@ -138,7 +138,7 @@ public final class EnderChestPreview extends HudWidget {
             this.header = "Ender Chest  " + this.used(items) + "/" + SLOTS;
          }
 
-         UiFont.draw(hud.graphics, this.header, 5, y, Glass.TEXT, hud.shadow);
+         UiFont.draw(hud.graphics, this.header, 5, y + 1, gemini.ui.HudStyle.label(this.backdrop()), hud.shadow);
          y += 10;
       }
 
@@ -149,7 +149,7 @@ public final class EnderChestPreview extends HudWidget {
 
          for (int column = 0; column < COLUMNS; column++) {
             int x = 5 + column * CELL;
-            hud.graphics.fill(x, y, x + 16, y + 16, Glass.withAlpha(Glass.TEXT_FAINT, 40));
+            Glass.roundRect(hud.graphics, x, y, x + 16, y + 16, 2, Glass.withAlpha(0xFFFFFF, 16));
             ItemStack stack = items[row * COLUMNS + column];
             if (!stack.isEmpty()) {
                hud.graphics.item(stack, x, y);

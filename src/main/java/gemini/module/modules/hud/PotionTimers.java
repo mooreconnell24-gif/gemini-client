@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.font.FontWeight;
+import gemini.ui.font.FontSize;
 import gemini.module.HudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
@@ -24,7 +26,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 /**
  * Your active effects, one row each: the effect's icon, its name (with the level), the time left and a thin bar of
  * how much of it is left. The bar measures against the longest time seen since the effect started, so a renewed
- * effect fills it again. Harmful effects get a red bar; everything else stays neutral.
+ * effect fills it again. Harmful effects get a red bar; the others the theme accent.
  *
  * <p>The rows are rebuilt once a tick into reused arrays; a frame only draws.
  */
@@ -124,8 +126,8 @@ public final class PotionTimers extends HudWidget {
          this.times[i] = net.minecraft.world.effect.MobEffectUtil.formatDuration(effect, 1.0F, tickRate).getString();
          this.timeWidths[i] = UiFont.width(this.times[i]);
          this.fractions[i] = HudFormat.remaining(duration, seen == null ? 0 : seen);
-         this.barColors[i] = type.getCategory() == MobEffectCategory.HARMFUL ? Glass.withAlpha(Glass.ERROR, 230) : Glass.withAlpha(Glass.lerp(hud.accent, 0xFFFFFFFF, 0.45F), 220);
-         this.textW = Math.max(this.textW, UiFont.width(name) + 10 + this.timeWidths[i]);
+         this.barColors[i] = type.getCategory() == MobEffectCategory.HARMFUL ? Glass.withAlpha(hud.theme.error, 230) : Glass.withAlpha(hud.accent, 235);
+         this.textW = Math.max(this.textW, UiFont.width(name, FontSize.BODY, FontWeight.MEDIUM) + 10 + this.timeWidths[i]);
       }
    }
 
@@ -151,8 +153,8 @@ public final class PotionTimers extends HudWidget {
       for (int i = 0; i < this.count; i++) {
          int y = HudStyle.PAD_Y + i * ROW;
          g.blitSprite(RenderPipelines.GUI_TEXTURED, this.icons[i], HudStyle.PAD_X, y, ICON, ICON);
-         UiFont.draw(g, this.names[i], textX, y + 1, Glass.TEXT, hud.shadow);
-         UiFont.draw(g, this.times[i], right - this.timeWidths[i], y + 1, timeColor, hud.shadow);
+         UiFont.draw(g, this.names[i], textX, y + 2, hud.text, FontSize.BODY, FontWeight.MEDIUM, hud.shadow);
+         UiFont.draw(g, this.times[i], right - this.timeWidths[i], y + 2, timeColor, hud.shadow);
          HudStyle.bar(g, textX, y + 13, right, y + 15, this.fractions[i], this.barColors[i], backdrop, 1.0F);
       }
    }

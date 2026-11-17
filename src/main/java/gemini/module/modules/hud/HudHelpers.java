@@ -11,16 +11,6 @@ public final class HudHelpers {
    private HudHelpers() {
    }
 
-   static final int WHITE = -1511689;
-
-   static final int GREY = -6641995;
-
-   static final int GREEN = -11086174;
-
-   static final int YELLOW = -14249;
-
-   static final int RED = -1548963;
-
    static String pretty(String path) {
       StringBuilder out = new StringBuilder(path.length());
       boolean upper = true;
@@ -42,10 +32,6 @@ public final class HudHelpers {
    static String ticksToClock(int ticks) {
       int seconds = Math.max(0, ticks) / 20;
       return String.format(Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
-   }
-
-   static int ratioColor(float ratio) {
-      return ratio > 0.6F ? -11086174 : (ratio > 0.3F ? -14249 : -1548963);
    }
 
    static String roman(int number) {
