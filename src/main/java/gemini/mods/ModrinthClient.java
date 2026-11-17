@@ -85,7 +85,7 @@ public final class ModrinthClient {
    public ModrinthClient(String userAgent) {
       this.userAgent = userAgent;
       AtomicInteger count = new AtomicInteger();
-      this.pool = Executors.newFixedThreadPool(3, runnable -> {
+      this.pool = Executors.newFixedThreadPool(4, runnable -> {
          Thread thread = new Thread(runnable, "Gemini Modrinth " + count.incrementAndGet());
          thread.setDaemon(true);
          return thread;
@@ -94,8 +94,8 @@ public final class ModrinthClient {
          .connectTimeout(CONNECT_TIMEOUT)
          .followRedirects(HttpClient.Redirect.NORMAL)
          .proxy(ProxySelector.getDefault())
-         .executor(this.pool)
-         .build();
+         .build(); // its own executor: the blocking sends run on this.pool, so sharing it could starve the client
+
    }
 
    public String userAgent() {

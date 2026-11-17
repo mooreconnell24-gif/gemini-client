@@ -448,7 +448,7 @@ public final class ModsPage extends DashboardPage {
       ly += 6;
       ly = this.drawInstallSection(g, d, x, ly, w, mouseX, mouseY);
       ly += 8;
-      int restartY = d.type.needsRestart() ? bottom - 10 : bottom;
+      int restartY = d.type.needsRestart() ? bottom - 2 - this.restartLines(w).size() * 10 : bottom;
       for (String paragraph : d.excerpt) {
          for (String line : wrap(paragraph, w, 6)) {
             if (ly + 9 > restartY - 4) {
@@ -470,8 +470,17 @@ public final class ModsPage extends DashboardPage {
    /** The one line that says when mods take effect; shown wherever a mod can be installed. */
    private void drawRestartLine(GuiGraphicsExtractor g, int x, int y, int w) {
       if (type.needsRestart() || tab == Tab.INSTALLED) {
-         this.textFit(g, I18n.get("gemini.mods.restart"), x, y, w, Glass.TEXT_DIM);
+         List<String> lines = this.restartLines(w);
+         int ly = y + 8 - lines.size() * 10;
+         for (String line : lines) {
+            this.text(g, line, x, ly, Glass.TEXT_DIM);
+            ly += 10;
+         }
       }
+   }
+
+   private List<String> restartLines(int w) {
+      return wrap(I18n.get("gemini.mods.restart"), w, 2);
    }
 
    private int drawInstallSection(GuiGraphicsExtractor g, Detail d, int x, int y, int w, int mouseX, int mouseY) {
