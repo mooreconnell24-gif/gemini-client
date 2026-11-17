@@ -73,6 +73,7 @@ import gemini.module.modules.hud.FreeSlots;
 import gemini.module.modules.hud.XpInfo;
 import gemini.module.modules.hud.DayInfo;
 import gemini.module.modules.hud.EnderChestPreview;
+import gemini.module.modules.hud.NotesHud;
 import gemini.module.modules.hud.MobCaps;
 import gemini.module.modules.hud.SessionStats;
 import gemini.module.modules.hud.SpawnInfo;
@@ -121,6 +122,8 @@ import gemini.module.modules.misc.Panic;
 import gemini.module.modules.misc.Performance;
 import gemini.module.modules.misc.CoordsCopier;
 import gemini.module.modules.misc.ScreenshotHelper;
+import gemini.module.modules.misc.WorldBackup;
+import gemini.module.modules.misc.WorldNotesModule;
 import gemini.module.modules.misc.Presets;
 import gemini.module.modules.misc.SoundBlocker;
 import gemini.module.modules.movement.AirJumpModule;
@@ -307,6 +310,7 @@ import gemini.module.modules.world.Platform;
 import gemini.module.modules.world.ScaffoldModule;
 import gemini.module.modules.world.SeedModule;
 import gemini.module.modules.world.SpawnProofer;
+import gemini.module.modules.world.Measure;
 import gemini.module.modules.world.StashFinder;
 import gemini.module.modules.world.StrongholdFinder;
 import gemini.module.modules.world.TickFreeze;
@@ -721,10 +725,13 @@ public final class ModuleManager {
       this.register(new Platform());
       this.register(new Locate());
       this.register(new StashFinder());
+      this.register(new Measure());
       this.register(new AutoSave());
       this.register(new Performance());
       this.register(new CoordsCopier());
       this.register(new ScreenshotHelper());
+      this.register(new WorldBackup());
+      this.register(new WorldNotesModule());
       this.register(new CinematicCamera());
       this.register(new TotemPopCounter());
       this.register(new PopChams());
@@ -749,6 +756,7 @@ public final class ModuleManager {
       this.register(new WeatherForecast());
       this.register(new MobCaps());
       this.register(new EnderChestPreview());
+      this.register(new NotesHud());
    }
 
    public void bindConfig(ConfigManager configManager) {
