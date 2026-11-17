@@ -380,12 +380,20 @@ public abstract class HudWidget extends Module {
       this.flowSlot = -1;
    }
 
+   /** Extra scale for widgets laid out automatically, below 1 only when they would not all fit at full size. */
+   private static float fitScale = 1.0F;
+
+   /** This widget's own Scale times the shared fit scale (which never applies to widgets the user placed). */
+   private float effectiveScale() {
+      return this.isPlaced() ? this.scale.floatValue() : this.scale.floatValue() * fitScale;
+   }
+
    private int scaledW() {
-      return Mth.ceil(this.measuredW * this.scale.floatValue());
+      return Mth.ceil(this.measuredW * this.effectiveScale());
    }
 
    private int scaledH() {
-      return Mth.ceil(this.measuredH * this.scale.floatValue());
+      return Mth.ceil(this.measuredH * this.effectiveScale());
    }
 
    /** Where the saved Corner and offsets put a card of this size, kept on screen. */
@@ -419,7 +427,17 @@ public abstract class HudWidget extends Module {
     * {@code flow}, which the caller has begun for this screen size and filled with the vanilla HUD's areas.
     */
    public static void arrange(HudContext hud, HudWidget[] widgets, HudFlow flow) {
+      arrange(hud, widgets, flow, 0.0F);
+   }
+
+   /**
+    * As {@link #arrange(HudContext, HudWidget[], HudFlow)}. {@code pixelsPerUnit} is how many screen pixels one HUD
+    * pixel covers (GUI scale times HUD scale); when the automatic widgets don't all fit, they are laid out again a
+    * step smaller ({@link HudFlow#fitSteps}) instead of being drawn on top of each other.
+    */
+   public static void arrange(HudContext hud, HudWidget[] widgets, HudFlow flow, float pixelsPerUnit) {
       frame++;
+      fitScale = 1.0F;
       for (HudWidget widget : widgets) {
          if (!widget.isEnabled()) {
             continue;
@@ -432,13 +450,32 @@ public abstract class HudWidget extends Module {
          }
       }
 
-      for (HudWidget widget : widgets) {
-         if (widget.isEnabled() && widget.measuredFrame == frame && widget.measuredVisible && !widget.isPlaced()) {
-            widget.flowSlot = flow.add(HudFlow.anchor(widget.corner.get()), widget.flowOrder, widget.scaledW(), widget.scaledH(), widget.flowInset());
+      int fixed = flow.reservedCount();
+      float[] steps = pixelsPerUnit > 0.0F ? HudFlow.fitSteps(pixelsPerUnit) : FULL_SIZE_ONLY;
+      for (int step = 0; step < steps.length; step++) {
+         fitScale = steps[step];
+         flow.rewind(fixed);
+         for (HudWidget widget : widgets) {
+            widget.flowSlot = -1;
+            if (widget.isEnabled() && widget.measuredFrame == frame && widget.measuredVisible && !widget.isPlaced()) {
+               widget.flowSlot = flow.add(HudFlow.anchor(widget.corner.get()), widget.flowOrder, widget.scaledW(), widget.scaledH(), widget.flowInset());
+            }
+         }
+
+         flow.solve();
+         boolean allFit = true;
+         for (HudWidget widget : widgets) {
+            if (widget.flowSlot >= 0 && !flow.fitted(widget.flowSlot)) {
+               allFit = false;
+               break;
+            }
+         }
+
+         if (allFit) {
+            break;
          }
       }
 
-      flow.solve();
       for (HudWidget widget : widgets) {
          if (widget.flowSlot >= 0 && widget.measuredFrame == frame) {
             widget.lastX = flow.x(widget.flowSlot);
@@ -446,6 +483,8 @@ public abstract class HudWidget extends Module {
          }
       }
    }
+
+   private static final float[] FULL_SIZE_ONLY = {1.0F};
 
    @Override
    public void onRenderHud(HudContext hud) {
@@ -467,7 +506,7 @@ public abstract class HudWidget extends Module {
 
       int w = this.measuredW;
       int h = this.measuredH;
-      float s = this.scale.floatValue();
+      float s = this.effectiveScale();
       this.lastW = w * s;
       this.lastH = h * s;
       this.backdrop = this.background.get() ? hud.backdrop : HudStyle.NONE;

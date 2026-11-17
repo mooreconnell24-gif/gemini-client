@@ -232,4 +232,33 @@ class HudFlowTest {
 
       return out;
    }
+
+   @Test
+   void fitStepsKeepHudPixelsWholeScreenPixels() {
+      org.junit.jupiter.api.Assertions.assertArrayEquals(new float[]{1.0F, 2.0F / 3.0F}, HudFlow.fitSteps(3.0F), 1.0E-6F);
+      org.junit.jupiter.api.Assertions.assertArrayEquals(new float[]{1.0F, 0.75F, 0.5F}, HudFlow.fitSteps(4.0F), 1.0E-6F);
+      float[] two = HudFlow.fitSteps(2.0F);
+      org.junit.jupiter.api.Assertions.assertEquals(1.0F, two[0], 1.0E-6F);
+      org.junit.jupiter.api.Assertions.assertEquals(0.5F, two[two.length - 1], 1.0E-6F);
+      float[] odd = HudFlow.fitSteps(2.4F);
+      org.junit.jupiter.api.Assertions.assertEquals(1.0F, odd[0], 1.0E-6F);
+      for (int i = 1; i < odd.length; i++) {
+         org.junit.jupiter.api.Assertions.assertTrue(odd[i] < odd[i - 1] && odd[i] >= 0.5F);
+      }
+   }
+
+   @Test
+   void rewindDropsWidgetsAndLaterReservations() {
+      HudFlow flow = new HudFlow();
+      flow.begin(200, 100);
+      flow.reserve(0, 0, 10, 10);
+      int mark = flow.reservedCount();
+      flow.add(HudFlow.TOP_LEFT, 0, 50, 20, 2);
+      flow.solve();
+      flow.rewind(mark);
+      org.junit.jupiter.api.Assertions.assertEquals(mark, flow.reservedCount());
+      int i = flow.add(HudFlow.TOP_LEFT, 0, 50, 20, 2);
+      flow.solve();
+      org.junit.jupiter.api.Assertions.assertTrue(flow.fitted(i), "lays out again from the same reservations");
+   }
 }

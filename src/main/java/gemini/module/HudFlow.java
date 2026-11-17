@@ -137,6 +137,32 @@ public final class HudFlow {
       return this.takenCount;
    }
 
+   /** Drops the widgets added so far and every area reserved after {@code reservedCount}, to lay out again. */
+   public void rewind(int reservedCount) {
+      this.takenCount = Math.max(0, Math.min(this.takenCount, reservedCount));
+      this.itemCount = 0;
+   }
+
+   /**
+    * Scales to try, largest first, when the automatic widgets don't all fit. Each step keeps a HUD pixel a whole
+    * number of screen pixels where possible ({@code k / pixelsPerUnit}), so text stays sharp: at GUI scale 3 that is
+    * 1, 2/3; at 4 it is 1, 3/4, 2/4. Never below half size.
+    */
+   public static float[] fitSteps(float pixelsPerUnit) {
+      int whole = Math.round(pixelsPerUnit);
+      if (whole >= 2 && Math.abs(pixelsPerUnit - whole) < 1.0E-3F) {
+         int lowest = (whole + 1) / 2;
+         float[] steps = new float[whole - lowest + 1];
+         for (int k = whole, i = 0; k >= lowest; k--, i++) {
+            steps[i] = (float)k / whole;
+         }
+
+         return steps;
+      }
+
+      return new float[]{1.0F, 0.85F, 0.7F, 0.6F, 0.5F};
+   }
+
    /**
     * Adds a widget to a stack and returns its index for {@link #x}/{@link #y}. {@code inset} is its distance from the
     * screen edge at the start of the stack; lower {@code order} comes first in the stack.

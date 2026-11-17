@@ -450,7 +450,7 @@ public final class HudOverlay {
 
       this.reservePanels(flow, client.font, ctx.width, ctx.height, topLeftY);
       this.reserveVanilla(flow, client, scale, Math.round(ctx.width * scale), Math.round(ctx.height * scale));
-      HudWidget.arrange(ctx, list, flow);
+      HudWidget.arrange(ctx, list, flow, client.getWindow().getGuiScale() * scale);
    }
 
    /** Reserves a rectangle given in GUI pixels, converted to HUD pixels (rounded outward). */
