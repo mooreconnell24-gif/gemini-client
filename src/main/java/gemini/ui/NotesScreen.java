@@ -20,6 +20,9 @@ public final class NotesScreen extends Screen {
    private MultiLineEditBox box;
    private boolean filled;
    private String draft;
+   /** When the pad opened: the key that opened it can still be held and auto-repeating for a moment. */
+   private final long openedAt = net.minecraft.util.Util.getMillis();
+   private static final long KEY_REPEAT_GRACE_MS = 350L;
 
    public NotesScreen(Screen parent, String worldName) {
       super(Component.literal("Notes"));
@@ -59,6 +62,16 @@ public final class NotesScreen extends Screen {
       } else if (!this.filled) {
          this.box.active = false;
       }
+   }
+
+   /** Drops characters typed in the first moments, so holding the open key doesn't type "nnn" into the notes. */
+   @Override
+   public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
+      if (net.minecraft.util.Util.getMillis() - this.openedAt < KEY_REPEAT_GRACE_MS) {
+         return true;
+      }
+
+      return super.charTyped(event);
    }
 
    @Override
