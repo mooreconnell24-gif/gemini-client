@@ -32,6 +32,8 @@ public final class NotesScreen extends Screen {
    private static final long KEY_REPEAT_GRACE_MS = 350L;
    /** Room under the text area for its character count. */
    private static final int COUNTER = 14;
+   /** Room right of the text for the text area's scrollbar, which it draws just outside its own width. */
+   private static final int SCROLLBAR = 8;
 
    public NotesScreen(Screen parent, String worldName) {
       super(Component.literal("Notes"));
@@ -65,7 +67,7 @@ public final class NotesScreen extends Screen {
          .setTextColor(Glass.text())
          .setTextShadow(false)
          .setCursorColor(Glass.accent2())
-         .build(this.font, width, height, Component.literal("Notes"));
+         .build(this.font, width - SCROLLBAR, height, Component.literal("Notes"));
       this.box.setCharacterLimit(NotesText.MAX_CHARS);
       this.addRenderableWidget(this.box);
       this.done = this.addRenderableWidget(
@@ -89,6 +91,10 @@ public final class NotesScreen extends Screen {
          this.filled = true;
          this.box.setValue(this.draft != null ? this.draft : WorldNotes.text());
          this.box.active = true;
+         if (this.getFocused() == null) {
+            // The pad could not take the initial focus while it was still loading (an inactive widget cannot).
+            this.setFocused(this.box);
+         }
       } else if (!this.filled) {
          this.box.active = false;
       }
@@ -125,7 +131,7 @@ public final class NotesScreen extends Screen {
       // The field behind the text area, which is drawn without its own box; the edge lights up while typing.
       int fx1 = this.box.getX();
       int fy1 = this.box.getY();
-      int fx2 = this.box.getRight();
+      int fx2 = this.box.getRight() + SCROLLBAR;
       int fy2 = this.box.getBottom();
       Glass.roundRect(g, fx1, fy1, fx2, fy2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.lerp(0xFF000000, Glass.surface(0), 0.5F), 200), a));
       Glass.roundOutline(g, fx1, fy1, fx2, fy2, Theme.RADIUS_LARGE, Glass.fade(this.box.isFocused() ? Glass.withAlpha(Glass.accent(), 130) : Glass.withAlpha(0xFFFFFF, 22), a));

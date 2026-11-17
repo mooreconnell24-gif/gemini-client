@@ -77,6 +77,8 @@ public final class GeminiTitleScreen extends Screen {
    private static final float[] POINT_ALPHA = {100.0F, 170.0F, 220.0F};
    /** How much of the network is left right behind the menu column: none, so the menu sits on a clean patch. */
    private static final float CALM_FLOOR = 0.0F;
+   /** How much of the network is left behind the "what's new" card: a trace, so the card still reads as glass. */
+   private static final float CARD_FLOOR = 0.15F;
    /** Speed of the eased mouse parallax; low, so the layers glide after the mouse. */
    private static final float PARALLAX_SPEED = 1.6F;
    /** Transparent margin left of the artwork in the logo texture, in texture pixels. */
@@ -88,6 +90,8 @@ public final class GeminiTitleScreen extends Screen {
    private static float parallaxX;
    private static float parallaxY;
    private static float networkShown;
+   /** A second calm rectangle (window pixels: x1, y1, x2, y2) for the "what's new" card; empty when x2 &lt;= x1. */
+   private static final float[] CARD_ZONE = new float[4];
    private final long openedAt = Util.getMillis();
    /** Every widget with the place it has in the entrance order (see {@link TitleLayout#entrance}). */
    private final List<AbstractWidget> entering = new ArrayList<>();
@@ -442,6 +446,11 @@ public final class GeminiTitleScreen extends Screen {
       float poolY = (poolTop + poolBottom) * 0.5F;
       glow(g, poolX, poolY, l.columnWidth() * 3.0F, (poolBottom - poolTop) * 2.8F, Glass.withAlpha(Glass.accent(), 30));
       int scale = Math.max(1, this.minecraft.getWindow().getGuiScale());
+      // The card's text stays off the lines too: the network thins out behind it.
+      CARD_ZONE[0] = this.news == null ? 0.0F : this.news.getX() * scale;
+      CARD_ZONE[1] = this.news == null ? 0.0F : this.news.getY() * scale;
+      CARD_ZONE[2] = this.news == null ? 0.0F : this.news.getRight() * scale;
+      CARD_ZONE[3] = this.news == null ? 0.0F : this.news.getBottom() * scale;
       // The calm zone around the menu column, in window pixels.
       extractNetwork(
          g,
@@ -456,7 +465,7 @@ public final class GeminiTitleScreen extends Screen {
          true
       );
       if (this.news != null) {
-         // A second, smaller calm patch keeps the card's text off the lines.
+         // A soft dark patch under the card sets it off from the backdrop.
          int x1 = this.news.getX();
          int y1 = this.news.getY();
          Glass.shadow(g, x1, y1, this.news.getRight(), this.news.getBottom(), 8, 14, 0, Glass.withAlpha(base(), Math.round(150.0F * this.fade)));
@@ -526,7 +535,15 @@ public final class GeminiTitleScreen extends Screen {
       float soft = 36.0F * scale;
       int count = f.count();
       for (int i = 0; i < count; i++) {
-         SHADE[i] = calm ? NetworkField.calm(f.x(i), f.y(i), zx1, zy1, zx2, zy2, soft, CALM_FLOOR) * shown : shown;
+         float shade = shown;
+         if (calm) {
+            shade *= NetworkField.calm(f.x(i), f.y(i), zx1, zy1, zx2, zy2, soft, CALM_FLOOR);
+            if (CARD_ZONE[2] > CARD_ZONE[0]) {
+               shade *= NetworkField.calm(f.x(i), f.y(i), CARD_ZONE[0], CARD_ZONE[1], CARD_ZONE[2], CARD_ZONE[3], soft * 0.5F, CARD_FLOOR);
+            }
+         }
+
+         SHADE[i] = shade;
       }
 
       int accent = Glass.accent();
