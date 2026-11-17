@@ -107,6 +107,21 @@ class ScreenLayoutTest {
    }
 
    @Test
+   void logoIsDrawnInWholeTextureRatiosAndFitsItsRoom() {
+      for (int[] size : SIZES) {
+         for (int scale = 1; scale <= 4; scale++) {
+            TitleLayout l = TitleLayout.compute(size[0], size[1], scale, true);
+            int pixels = l.logoPixels();
+            assertTrue(pixels == 0 || pixels == 160 || pixels == 80 || pixels == 40, pixels + " window pixels at scale " + scale);
+            assertEquals(pixels == 0, l.logoSize() == 0, "room only for a drawn logo");
+            assertTrue(l.logoSize() * scale >= pixels && l.logoSize() * scale < pixels + scale, "room is the logo rounded up at scale " + scale);
+         }
+      }
+
+      assertEquals(160, TitleLayout.compute(1280 / 3, 720 / 3, 3, true).logoPixels(), "full size at 1280x720, GUI scale 3");
+   }
+
+   @Test
    void optionsAndQuitShareTheLastRow() {
       TitleLayout l = TitleLayout.compute(960, 540, 2, true);
       assertEquals(l.y(TitleLayout.OPTIONS), l.y(TitleLayout.QUIT));
