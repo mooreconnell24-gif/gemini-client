@@ -3,7 +3,6 @@ package gemini.module.modules.hud;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.List;
-import java.util.Locale;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -26,8 +25,9 @@ public final class Facing extends Ticked {
          default -> "";
       };
       return List.of(
-         new TextHudWidget.Line(HudHelpers.pretty(direction.getName()) + " (" + axis + ")", hud.accent),
-         new TextHudWidget.Line(String.format(Locale.ROOT, "Yaw %.1f  Pitch %.1f", Mth.wrapDegrees(player.getYRot()), player.getXRot()), -6641995)
+         TextHudWidget.Line.row("Facing", HudHelpers.pretty(direction.getName()), axis),
+         TextHudWidget.Line.row("Yaw", gemini.util.InfoText.format(Mth.wrapDegrees(player.getYRot()), 1), ""),
+         TextHudWidget.Line.row("Pitch", gemini.util.InfoText.format(player.getXRot(), 1), "")
       );
    }
 }

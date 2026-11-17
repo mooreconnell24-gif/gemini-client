@@ -19,6 +19,8 @@ public final class HudContext {
    /** Base panel colour of the active ClickGUI surface. */
    public int surface;
    public boolean shadow;
+   /** The HUD-wide backdrop look, one of {@link HudStyle#SOFT}, {@link HudStyle#SOLID}, {@link HudStyle#NONE}. */
+   public int backdrop = HudStyle.SOFT;
    public float partialTick;
    /** Seconds since the previous HUD frame, capped at 0.1; feed it to {@link Glass#approach}. */
    public float delta;

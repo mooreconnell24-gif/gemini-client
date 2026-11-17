@@ -6,6 +6,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.ui.HudStyle;
 import gemini.ui.clickgui.Menus;
 import gemini.util.CombatTarget;
 import gemini.util.Damage;
@@ -42,8 +43,11 @@ import org.joml.Vector2f;
 public final class TargetHud extends HudWidget {
    private static final EquipmentSlot[] ARMOR = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
    private static final long ATTACK_MEMORY_MS = 6000L;
+   /** Padding of the card and the space between the head row and the gear row. */
+   private static final int PAD = 6;
+   private static final int GEAR_GAP = 5;
    private final BooleanSetting showGear = this.addSetting(new BooleanSetting("Show Gear", "Show the target's held item and armour with durability bars (Modern Glass and Neon styles)", true));
-   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Look of the card", "Modern Glass", "Modern Glass", "Compact", "Neon"));
+   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Look of the card: Modern Glass is the standard card, Compact a single line, Neon an accent outline with a glow", "Modern Glass", "Modern Glass", "Compact", "Neon"));
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target shown, in blocks", 6.0, 3.0, 24.0, 0.5));
    private final BooleanSetting prediction = this.addSetting(
       new BooleanSetting("Prediction", "Estimate who wins from effective health (armour, absorption) and the damage per second of the held weapons", true)
@@ -59,7 +63,12 @@ public final class TargetHud extends HudWidget {
    private float ghostHealth = Float.NaN;
    private LivingEntity animatedFor;
    private String name = "";
-   private String stats = "";
+   /** Health and distance as numbers (their units are drawn faint beside them), rebuilt once a tick. */
+   private String hp = "";
+   private String distance = "";
+   private String fittedName = "";
+   private String fittedFor;
+   private int fittedWidth = -1;
    private String odds = "";
    private int oddsColor = Glass.TEXT_DIM;
    private String pops = "";
@@ -161,9 +170,10 @@ public final class TargetHud extends HudWidget {
       this.name = shown.getName().getString();
       this.letter = this.name.isEmpty() ? "?" : this.name.substring(0, 1);
       float hp = Damage.health(shown);
-      this.stats = Math.round(hp * 10.0F) / 10.0F + " HP  ·  " + Math.round(self.distanceTo(shown) * 10.0F) / 10.0F + "m";
+      this.hp = gemini.util.InfoText.format(hp, 1);
+      this.distance = gemini.util.InfoText.format(self.distanceTo(shown), 1);
       int popped = TotemPops.count(shown);
-      this.pops = popped > 0 ? "-" + popped + (popped == 1 ? " pop" : " pops") : "";
+      this.pops = popped > 0 ? popped + (popped == 1 ? " pop" : " pops") : "";
       if (shown == self) {
          this.odds = "Preview";
          this.oddsColor = Glass.TEXT_DIM;
@@ -211,12 +221,20 @@ public final class TargetHud extends HudWidget {
       return (float)(afterArmor * hitsPerSecond);
    }
 
+   private boolean compact() {
+      return this.style.is("Compact");
+   }
+
    private int cardWidth() {
-      return this.style.is("Compact") ? 132 : 164;
+      return this.compact() ? 140 : 156;
    }
 
    private boolean gearRow() {
-      return this.showGear.get() && !this.style.is("Compact");
+      return this.showGear.get() && !this.compact();
+   }
+
+   private int headSize() {
+      return this.compact() ? 16 : 24;
    }
 
    @Override
@@ -226,7 +244,8 @@ public final class TargetHud extends HudWidget {
 
    @Override
    protected int widgetHeight(HudContext hud) {
-      return this.style.is("Compact") ? 30 : (this.gearRow() ? 64 : 46);
+      int base = 2 * PAD + this.headSize();
+      return this.gearRow() ? base + GEAR_GAP + 19 : base;
    }
 
    @Override
@@ -239,6 +258,22 @@ public final class TargetHud extends HudWidget {
       }
 
       return this.target != null && this.alpha > 0.0F;
+   }
+
+   /** Text colour faded with the card; null-safe for the font, which draws near-zero alpha as opaque. */
+   private static int fadeText(int color, float a) {
+      return Glass.fade(color, a);
+   }
+
+   /**
+    * Draws a value with a faint unit after it at {@code x}, and returns the x just past the unit. Widths are measured
+    * here (no allocation); the strings are rebuilt once a tick in {@link #refresh}.
+    */
+   private static int valueUnit(GuiGraphicsExtractor g, Font font, String value, String unit, int x, int y, int valueColor, int unitColor, boolean shadow) {
+      g.text(font, value, x, y, valueColor, shadow);
+      int ux = x + font.width(value) + HudStyle.UNIT_GAP;
+      g.text(font, unit, ux, y, unitColor, shadow);
+      return ux + font.width(unit);
    }
 
    @Override
@@ -254,53 +289,95 @@ public final class TargetHud extends HudWidget {
       boolean neon = "Neon".equals(look);
       boolean compact = "Compact".equals(look);
       int accent = hud.accent;
-      if (super.hasBackground()) {
-         if (neon) {
-            Glass.glow(g, 0, 0, w, h, Glass.RADIUS, accent, a * 0.55F);
-            Glass.roundRect(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(0xFF05060A, Math.round(232.0F * a)));
-            Glass.roundOutline(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(accent, Math.round(230.0F * a)));
-         } else {
-            Glass.panel(g, 0, 0, w, h, Glass.RADIUS, hud.surface, accent, a, 0.0F);
-         }
-
-         if (shown.hurtTime > 0) {
-            Glass.roundRect(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(Glass.ERROR, Math.round(shown.hurtTime * 7.0F * a)));
-         }
+      int backdrop = this.backdrop();
+      if (neon && super.hasBackground()) {
+         Glass.glow(g, 0, 0, w, h, Glass.RADIUS, accent, a * 0.55F);
+         Glass.roundRect(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(0xFF05060A, Math.round(232.0F * a)));
+         Glass.roundOutline(g, 0, 0, w, h, Glass.RADIUS, Glass.withAlpha(accent, Math.round(230.0F * a)));
+      } else {
+         // The shared HUD card; a fight card reads over anything, so Soft gets a touch more body here.
+         HudStyle.card(g, 0, 0, w, h, backdrop, hud.surface, backdrop == HudStyle.SOFT ? Math.min(1.0F, a * 1.35F) : a);
       }
 
-      int head = compact ? 22 : 32;
-      int pad = compact ? 4 : 6;
-      this.drawHead(hud, shown, pad, pad, head, a);
-      int textX = pad + head + 6;
+      int head = this.headSize();
+      this.drawHead(hud, shown, PAD, PAD, head, a);
+      if (a < 0.05F) {
+         return;
+      }
+
       Font font = hud.font;
-      int textAlpha = Math.max(4, Math.round(255.0F * a));
-      int nameColor = neon ? accent : Glass.TEXT;
-      g.text(font, this.name, textX, pad, Glass.withAlpha(nameColor, textAlpha), hud.shadow);
-      if (this.prediction.get()) {
-         g.text(font, this.odds, w - pad - font.width(this.odds), pad, Glass.withAlpha(this.oddsColor, textAlpha), hud.shadow);
-      }
-
-      if (!compact) {
-         g.text(font, this.stats, textX, pad + 11, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
-         if (this.showPops.get() && !this.pops.isEmpty()) {
-            g.text(font, this.pops, w - pad - font.width(this.pops), pad + 11, Glass.withAlpha(Glass.WARN, textAlpha), false);
-         }
-      } else if (this.showPops.get() && !this.pops.isEmpty()) {
-         int x = textX + font.width(this.name) + 4;
-         g.text(font, this.pops, x, pad, Glass.withAlpha(Glass.WARN, textAlpha), false);
-      }
-
-      int barY = compact ? pad + 12 : pad + 24;
-      int barH = compact ? 4 : 6;
-      this.drawHealth(hud, shown, textX, barY, w - pad, barY + barH, a, neon);
+      boolean shadow = hud.shadow;
+      int textX = PAD + head + 6;
+      int right = w - PAD;
+      int label = fadeText(HudStyle.label(backdrop), a);
+      int unit = fadeText(HudStyle.unit(backdrop), a);
+      int nameColor = fadeText(neon ? accent : Glass.TEXT, a);
       if (compact) {
-         g.text(font, this.stats, textX, barY + barH + 1, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
-      } else if (this.gearRow() && a > 0.6F) {
-         this.drawGear(g, shown, pad, pad + head + 6, a);
+         // One line: name (and pops), the fight estimate and health on the right; the bar under it.
+         int hpEnd = right;
+         int hpX = hpEnd - font.width(this.hp) - HudStyle.UNIT_GAP - font.width("hp");
+         valueUnit(g, font, this.hp, "hp", hpX, PAD, fadeText(Glass.TEXT, a), unit, shadow);
+         int limit = hpX - 6;
+         if (this.prediction.get()) {
+            int ox = limit - font.width(this.odds);
+            g.text(font, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
+            limit = ox - 6;
+         }
+
+         String name = this.fitName(font, limit - textX);
+         g.text(font, name, textX, PAD, nameColor, shadow);
+         if (this.showPops.get() && !this.pops.isEmpty() && textX + font.width(name) + 4 + font.width(this.pops) <= limit) {
+            g.text(font, this.pops, textX + font.width(name) + 4, PAD, fadeText(Glass.WARN, a), shadow);
+         }
+
+         this.drawHealth(hud, shown, textX, PAD + 11, right, PAD + 14, a, neon, backdrop);
+         return;
+      }
+
+      // Name and the fight estimate.
+      int limit = right;
+      if (this.prediction.get()) {
+         int ox = right - font.width(this.odds);
+         g.text(font, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
+         limit = ox - 6;
+      }
+
+      g.text(font, this.fitName(font, limit - textX), textX, PAD, nameColor, shadow);
+      // The health bar, then health, distance and pops in one compact row.
+      this.drawHealth(hud, shown, textX, PAD + 11, right, PAD + 14, a, neon, backdrop);
+      int infoY = PAD + head - 8;
+      int x = valueUnit(g, font, this.hp, "hp", textX, infoY, fadeText(Glass.TEXT, a), unit, shadow);
+      valueUnit(g, font, this.distance, "m", x + 8, infoY, label, unit, shadow);
+      if (this.showPops.get() && !this.pops.isEmpty()) {
+         g.text(font, this.pops, right - font.width(this.pops), infoY, fadeText(Glass.WARN, a), shadow);
+      }
+
+      if (this.gearRow() && a > 0.6F) {
+         this.drawGear(g, shown, PAD, PAD + head + GEAR_GAP, a, backdrop);
       }
    }
 
-   private void drawHealth(HudContext hud, LivingEntity shown, int x1, int y1, int x2, int y2, float a, boolean neon) {
+   /** The target's name cut to {@code width}; cached for the last width so a frame does not rebuild it. */
+   private String fitName(Font font, int width) {
+      if (width != this.fittedWidth || this.fittedFor != this.name) {
+         this.fittedWidth = width;
+         this.fittedFor = this.name;
+         this.fittedName = gemini.ui.Theme.fit(this.name, width, font::width);
+      }
+
+      return this.fittedName;
+   }
+
+   /**
+    * Health colour that slides smoothly from green (full) through amber (half) to red (empty), so the bar changes
+    * colour as gradually as it shrinks.
+    */
+   static int healthColor(float ratio) {
+      float r = Mth.clamp(ratio, 0.0F, 1.0F);
+      return r >= 0.5F ? Glass.lerp(Glass.WARN, Glass.OK, (r - 0.5F) * 2.0F) : Glass.lerp(Glass.ERROR, Glass.WARN, r * 2.0F);
+   }
+
+   private void drawHealth(HudContext hud, LivingEntity shown, int x1, int y1, int x2, int y2, float a, boolean neon, int backdrop) {
       float max = Math.max(1.0F, shown.getMaxHealth());
       float health = Mth.clamp(shown.getHealth(), 0.0F, max);
       if (this.animatedFor != shown || Float.isNaN(this.shownHealth)) {
@@ -310,35 +387,36 @@ public final class TargetHud extends HudWidget {
       }
 
       this.shownHealth = Glass.approach(this.shownHealth, health, 14.0F, hud.delta);
-      // The ghost lingers on lost health and then drains slowly; healing pulls it straight up.
+      // The trail lingers on lost health and then drains slowly; healing pulls it straight up.
       this.ghostHealth = health >= this.ghostHealth ? this.shownHealth : Glass.approach(this.ghostHealth, health, 2.6F, hud.delta);
       float ratio = this.shownHealth / max;
       GuiGraphicsExtractor g = hud.graphics;
-      int track = Glass.withAlpha(0xFF1A1E28, Math.round(220.0F * a));
-      int radius = Math.min(Glass.RADIUS, (y2 - y1) / 2);
-      Glass.roundRect(g, x1, y1, x2, y2, radius, track);
       int width = x2 - x1;
-      int ghostW = Math.round(width * Mth.clamp(this.ghostHealth / max, 0.0F, 1.0F));
+      g.fill(x1, y1, x2, y2, Glass.fade(backdrop == HudStyle.NONE ? 0x70000000 : 0x2CFFFFFF, a));
+      int ghostW = HudStyle.fillWidth(width, this.ghostHealth / max);
       if (ghostW > 0) {
-         Glass.roundRect(g, x1, y1, x1 + ghostW, y2, radius, Glass.withAlpha(0xFFFFE0E0, Math.round(150.0F * a)));
+         g.fill(x1, y1, x1 + ghostW, y2, Glass.withAlpha(Glass.lerp(Glass.ERROR, 0xFFFFFFFF, 0.35F), Math.round(170.0F * a)));
       }
 
-      int from = neon ? hud.accent : HudHelpers.ratioColor(ratio);
-      int to = neon ? hud.accent2 : Glass.lerp(from, 0xFFFFFFFF, 0.25F);
-      int fill = Math.round(width * Mth.clamp(ratio, 0.0F, 1.0F));
+      int color = neon ? hud.accent : healthColor(ratio);
+      int fill = HudStyle.fillWidth(width, ratio);
       if (fill > 0) {
-         Glass.roundRect(g, x1, y1, x1 + fill, y2, radius, Glass.withAlpha(from, Math.round(255.0F * a)));
-         Glass.gradientBar(g, x1 + radius, y1, x1 + Math.max(radius, fill - radius), y2, Glass.withAlpha(from, Math.round(255.0F * a)), Glass.withAlpha(to, Math.round(255.0F * a)));
+         if (neon) {
+            Glass.gradientBar(g, x1, y1, x1 + fill, y2, Glass.withAlpha(hud.accent, Math.round(255.0F * a)), Glass.withAlpha(hud.accent2, Math.round(255.0F * a)));
+         } else {
+            g.fill(x1, y1, x1 + fill, y2, Glass.withAlpha(color, Math.round(255.0F * a)));
+         }
       }
 
       float absorption = shown.getAbsorptionAmount();
       if (absorption > 0.0F) {
-         int absW = Math.round(width * Mth.clamp(absorption / max, 0.0F, 1.0F));
-         Glass.roundRect(g, x1, y1, x1 + absW, y1 + Math.max(1, (y2 - y1) / 2), radius, Glass.withAlpha(0xFFFFC83D, Math.round(230.0F * a)));
+         // Absorption as a gold line along the top of the bar.
+         int absW = HudStyle.fillWidth(width, absorption / max);
+         g.fill(x1, y1 - 1, x1 + absW, y1, Glass.withAlpha(0xFFFFC83D, Math.round(230.0F * a)));
       }
    }
 
-   private void drawGear(GuiGraphicsExtractor g, LivingEntity shown, int x, int y, float a) {
+   private void drawGear(GuiGraphicsExtractor g, LivingEntity shown, int x, int y, float a, int backdrop) {
       int gx = x;
       ItemStack held = shown.getMainHandItem();
       if (!held.isEmpty()) {
@@ -355,8 +433,8 @@ public final class TargetHud extends HudWidget {
          g.item(stack, gx, y);
          if (stack.isDamageableItem() && stack.getMaxDamage() > 0) {
             float left = 1.0F - (float)stack.getDamageValue() / stack.getMaxDamage();
-            g.fill(gx + 1, y + 17, gx + 16, y + 19, Glass.withAlpha(0xFF101318, Math.round(220.0F * a)));
-            g.fill(gx + 1, y + 17, gx + 1 + Math.round(15.0F * left), y + 19, Glass.withAlpha(HudHelpers.ratioColor(left), Math.round(255.0F * a)));
+            int color = HudStyle.level(left);
+            HudStyle.bar(g, gx + 1, y + 17, gx + 15, y + 18, left, color == Glass.TEXT ? Glass.withAlpha(Glass.TEXT, 200) : color, backdrop, a);
          }
 
          gx += 20;
@@ -365,7 +443,6 @@ public final class TargetHud extends HudWidget {
 
    private void drawHead(HudContext hud, LivingEntity shown, int x, int y, int size, float a) {
       GuiGraphicsExtractor g = hud.graphics;
-      Glass.roundRect(g, x - 1, y - 1, x + size + 1, y + size + 1, 3, Glass.withAlpha(hud.accent, Math.round(90.0F * a)));
       if (shown instanceof AbstractClientPlayer player) {
          if (a > 0.35F) {
             PlayerFaceExtractor.extractRenderState(g, player.getSkin(), x, y, size);
@@ -374,7 +451,7 @@ public final class TargetHud extends HudWidget {
          return;
       }
 
-      Glass.roundRect(g, x, y, x + size, y + size, 3, Glass.withAlpha(0xFF101318, Math.round(220.0F * a)));
+      Glass.roundRect(g, x, y, x + size, y + size, HudStyle.RADIUS_SMALL, Glass.withAlpha(0xFF101318, Math.round(150.0F * a)));
       if (this.model3d.get() && a > 0.6F) {
          // The picture-in-picture entity renderer takes screen coordinates, not the HUD's pose, so map the box first.
          Matrix3x2f pose = g.pose();

@@ -2,7 +2,6 @@ package gemini.module.modules.hud;
 
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,26 +59,29 @@ public final class DayInfo extends Ticked {
       int phase = DayCycle.moonPhase(ticks);
       List<TextHudWidget.Line> lines = new ArrayList<>(3);
       if (this.clock.get()) {
-         lines.add(new TextHudWidget.Line("Day " + DayCycle.day(ticks) + "  " + DayCycle.clock(time) + (frozen ? "  (stopped)" : ""), Glass.TEXT));
+         lines.add(TextHudWidget.Line.row("Day " + DayCycle.day(ticks), DayCycle.clock(time), frozen ? "stopped" : ""));
       }
 
       // The moon and the bedtime countdown only matter where there is a sky and beds work.
       boolean overworld = hud.client.level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
       if (this.moon.get() && overworld) {
-         String text = DayCycle.phaseName(phase);
-         if (this.slime.get()) {
-            text = text + "  slimes " + Math.round(DayCycle.slimeChance(phase) * 100.0) + "%";
-         }
-
-         lines.add(new TextHudWidget.Line(text, phase == 0 ? Glass.WARN : Glass.TEXT_DIM));
+         String slimes = this.slime.get() ? "slimes " + Math.round(DayCycle.slimeChance(phase) * 100.0) + "%" : "";
+         lines.add(TextHudWidget.Line.row("Moon", DayCycle.phaseName(phase), slimes));
       }
 
       if (this.countdown.get() && !frozen && overworld) {
          boolean night = DayCycle.isNight(time);
          String left = DayCycle.duration(DayCycle.ticksUntilChange(time));
-         lines.add(night ? new TextHudWidget.Line("Night: sleep now, morning in " + left, Glass.INFO) : new TextHudWidget.Line("Night in " + left, Glass.TEXT_DIM));
+         // At night beds work: say so quietly after the time to morning.
+         lines.add(night ? TextHudWidget.Line.row("Morning in", left, "beds work") : TextHudWidget.Line.row("Night in", left, ""));
       }
 
       return lines;
+   }
+
+   /** Values here are words and clock times, read best left-aligned after their label. */
+   @Override
+   protected boolean alignValuesRight() {
+      return false;
    }
 }
