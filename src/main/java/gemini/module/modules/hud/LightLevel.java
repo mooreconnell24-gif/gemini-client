@@ -23,8 +23,8 @@ public final class LightLevel extends Ticked {
       int effective = Math.min(level.getMaxLocalRawBrightness(pos), 15);
       boolean spawnable = block <= blockLimit && effective <= skyLimit;
       return List.of(
-         new TextHudWidget.Line("Light " + effective + "  (sky " + sky + " / block " + block + ")", -1511689),
-         new TextHudWidget.Line(spawnable ? "Dark enough for monsters" : "Too bright for monsters", spawnable ? -1548963 : -11086174)
+         TextHudWidget.Line.row("Light", Integer.toString(effective), "sky " + sky + "  block " + block, spawnable ? gemini.ui.Glass.WARN : gemini.ui.Glass.TEXT),
+         TextHudWidget.Line.row("Monsters", spawnable ? "can spawn" : "too bright", "", spawnable ? gemini.ui.Glass.WARN : gemini.ui.Glass.TEXT)
       );
    }
 }

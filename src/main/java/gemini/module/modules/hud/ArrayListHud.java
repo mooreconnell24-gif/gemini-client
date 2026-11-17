@@ -216,7 +216,8 @@ public final class ArrayListHud extends HudWidget {
       boolean barRight = this.sideBar.is("Right") || this.sideBar.is("Auto") && horizontal == 2;
       int barW = this.barWidth();
       int rowH = this.rowHeight();
-      boolean background = this.rowBackground();
+      // The HUD-wide "None" backdrop also clears the row tint.
+      boolean background = this.rowBackground() && this.backdrop() != gemini.ui.HudStyle.NONE;
       boolean frosted = this.blur.get();
       float tint = frosted ? Math.max(0.82F, this.opacity.floatValue()) : this.opacity.floatValue();
       boolean contour = this.outline.get();
@@ -281,7 +282,10 @@ public final class ArrayListHud extends HudWidget {
                int textX = left + PAD + (barRight ? 0 : barW);
                int textY = top + Math.round((rowH - 8) / 2.0F * anim);
                int textAlpha = Math.max(8, Math.round(255.0F * anim));
-               g.text(hud.font, row.label, textX, textY, Glass.withAlpha(color, textAlpha), shadow);
+               // Theme and category colours are tuned for bars, not text: names are lifted toward white so they stay
+               // readable over a dark scene, while the side bar keeps the full colour.
+               int textColor = mode <= 2 ? Glass.lerp(color, 0xFFFFFFFF, 0.3F) : color;
+               g.text(hud.font, row.label, textX, textY, Glass.withAlpha(textColor, textAlpha), shadow);
                if (row.info != null) {
                   g.text(hud.font, row.info, textX + row.labelWidth + ArrayListLayout.INFO_GAP, textY, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), shadow);
                }

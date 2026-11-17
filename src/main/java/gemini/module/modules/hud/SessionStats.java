@@ -3,7 +3,6 @@ package gemini.module.modules.hud;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.util.AttributeBoost;
 import gemini.util.InfoText;
@@ -137,37 +136,37 @@ public final class SessionStats extends Ticked {
 
       long now = System.currentTimeMillis();
       List<TextHudWidget.Line> lines = new ArrayList<>(6);
-      this.add(lines, this.mined.get(), "Mined", MINED, now, false);
-      this.add(lines, this.placed.get(), "Placed", PLACED, now, false);
-      this.add(lines, this.kills.get(), "Kills", KILLS, now, false);
-      this.add(lines, this.deaths.get(), "Deaths", DEATHS, now, false);
+      this.add(lines, this.mined.get(), "Mined", MINED, now);
+      this.add(lines, this.placed.get(), "Placed", PLACED, now);
+      this.add(lines, this.kills.get(), "Kills", KILLS, now);
+      this.add(lines, this.deaths.get(), "Deaths", DEATHS, now);
       if (this.damage.get() && (this.tally.gained(DEALT) > 0L || this.tally.gained(TAKEN) > 0L)) {
          // Both damage statistics count tenths of a health point; two points make a heart.
-         String dealt = InfoText.format(this.tally.gained(DEALT) / 20.0, 1);
-         String taken = InfoText.format(this.tally.gained(TAKEN) / 20.0, 1);
-         lines.add(new TextHudWidget.Line("Damage " + dealt + " dealt / " + taken + " taken (hearts)", Glass.TEXT_DIM));
+         lines.add(TextHudWidget.Line.row("Dealt", InfoText.format(this.tally.gained(DEALT) / 20.0, 1), "hearts"));
+         lines.add(TextHudWidget.Line.row("Taken", InfoText.format(this.tally.gained(TAKEN) / 20.0, 1), "hearts"));
       }
 
-      this.add(lines, this.crafted.get(), "Crafted", CRAFTED, now, false);
-      this.add(lines, this.xp.get(), "XP", XP, now, true);
+      this.add(lines, this.crafted.get(), "Crafted", CRAFTED, now);
+      this.add(lines, this.xp.get(), "XP", XP, now);
       return lines;
    }
 
-   private void add(List<TextHudWidget.Line> lines, boolean shown, String label, int index, long now, boolean accent) {
+   private void add(List<TextHudWidget.Line> lines, boolean shown, String label, int index, long now) {
       // A counter still at zero says nothing yet; its line appears with the first block, kill or point.
       if (!shown || this.tally.gained(index) <= 0L) {
          return;
       }
 
-      String text = label + " " + this.tally.gained(index);
+      // Label, the count right-aligned so the digits line up, and the hourly rate as a faint unit.
+      String rate = "";
       if (this.rates.get()) {
-         double rate = this.tally.perHour(index, now);
-         if (!Double.isNaN(rate)) {
-            text = text + "  (" + Math.round(rate) + "/h)";
+         double perHour = this.tally.perHour(index, now);
+         if (!Double.isNaN(perHour)) {
+            rate = HudFormat.grouped(Math.round(perHour)) + "/h";
          }
       }
 
-      lines.add(new TextHudWidget.Line(text, accent ? Glass.INFO : Glass.TEXT));
+      lines.add(TextHudWidget.Line.row(label, HudFormat.grouped(this.tally.gained(index)), rate));
    }
 
    @Override

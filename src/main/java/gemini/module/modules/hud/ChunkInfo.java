@@ -17,8 +17,8 @@ public final class ChunkInfo extends Ticked {
       int cx = x >> 4;
       int cz = z >> 4;
       return List.of(
-         new TextHudWidget.Line("Chunk " + cx + ", " + cz + "  (" + (x & 15) + ", " + (z & 15) + ")", -1511689),
-         new TextHudWidget.Line("Region r." + (cx >> 5) + "." + (cz >> 5), -6641995)
+         TextHudWidget.Line.row("Chunk", cx + ", " + cz, "at " + (x & 15) + ", " + (z & 15)),
+         TextHudWidget.Line.row("Region", "r." + (cx >> 5) + "." + (cz >> 5), "")
       );
    }
 }

@@ -221,18 +221,17 @@ public final class Glass {
    }
 
    /**
-    * The HUD card shared by every HUD widget and the watermark: translucent surface, a faint top sheen and a thin
-    * border tinted slightly toward the accent, all faded by {@code opacity} (0..1). {@code accent2} is no longer
-    * drawn (the card used to carry a two-colour line along its top edge); the parameter stays for callers.
+    * The HUD card in its default (Soft) look: a borderless, low-alpha tint of {@code surface}, faded by
+    * {@code opacity} (0..1). {@code accent} and {@code accent2} are no longer drawn (the card used to carry an accent
+    * border); the parameters stay for callers. See {@link HudStyle} for the other looks.
     */
    public static void hudCard(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int surface, int accent, int accent2, float opacity) {
-      if (opacity <= 0.0F || x2 <= x1 || y2 <= y1) {
-         return;
-      }
+      HudStyle.card(g, x1, y1, x2, y2, HudStyle.SOFT, surface, opacity);
+   }
 
-      roundRect(g, x1, y1, x2, y2, RADIUS, withAlpha(surface, Math.round(200.0F * opacity)));
-      roundRect(g, x1 + 1, y1 + 1, x2 - 1, y1 + Math.max(2, (y2 - y1) / 3), Math.max(0, RADIUS - 1), withAlpha(0xFFFFFF, Math.round(7.0F * opacity)));
-      roundOutline(g, x1, y1, x2, y2, RADIUS, withAlpha(lerp(0xFFFFFFFF, accent, 0.4F), Math.round(34.0F * opacity)));
+   /** The HUD card in the given {@link HudStyle} backdrop ({@code SOFT}, {@code SOLID} or {@code NONE}). */
+   public static void hudCard(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int backdrop, int surface) {
+      HudStyle.card(g, x1, y1, x2, y2, backdrop, surface, 1.0F);
    }
 
    /** Soft halo around a rounded rectangle: three widening rings of falling alpha (faint even at full strength). */

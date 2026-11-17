@@ -15,6 +15,6 @@ public final class BiomeInfo extends Ticked {
    protected List<TextHudWidget.Line> build(HudContext hud) {
       Holder<Biome> biome = hud.client.level.getBiome(hud.client.player.blockPosition());
       String name = biome.unwrapKey().map(key -> HudHelpers.pretty(key.identifier().getPath())).orElse("Unknown");
-      return List.of(new TextHudWidget.Line(name, hud.accent));
+      return List.of(TextHudWidget.Line.row("Biome", name, ""));
    }
 }

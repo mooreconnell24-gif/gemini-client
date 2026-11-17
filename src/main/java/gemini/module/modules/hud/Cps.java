@@ -68,6 +68,6 @@ public final class Cps extends Ticked {
 
    @Override
    protected List<TextHudWidget.Line> build(HudContext hud) {
-      return List.of(new TextHudWidget.Line(this.leftCps() + " | " + this.rightCps() + " CPS", -1511689));
+      return List.of(TextHudWidget.Line.row("", this.leftCps() + " / " + this.rightCps(), "cps"));
    }
 }

@@ -26,6 +26,14 @@ public final class HudModule extends Module {
    private final BooleanSetting fps = this.addSetting(new BooleanSetting("FPS", "Show frames per second", true).showIf(this.watermark::get));
    private final BooleanSetting ping = this.addSetting(new BooleanSetting("Ping", "Show your latency; hidden in single player, where it is always zero", true).showIf(this.watermark::get));
    private final BooleanSetting speed = this.addSetting(new BooleanSetting("Speed", "Show your speed in blocks per second", false).showIf(this.watermark::get));
+   private final ModeSetting backdrop = this.addSetting(
+      new ModeSetting(
+         "Backdrop",
+         "Panel behind every HUD widget: Soft is a light tint, Solid a dark card, None shows only the text (always with a shadow)",
+         "Soft",
+         gemini.ui.HudStyle.BACKDROPS
+      )
+   );
    private final BooleanSetting shadow = this.addSetting(new BooleanSetting("Text Shadow", "Draw text with a shadow", true));
    private final BooleanSetting toasts = this.addSetting(
       new BooleanSetting("Toasts", "Show notifications for module toggles, warnings and finished tasks", true)
@@ -77,6 +85,11 @@ public final class HudModule extends Module {
 
    public boolean speed() {
       return this.speed.get();
+   }
+
+   /** The HUD-wide backdrop as a {@link gemini.ui.HudStyle} constant. */
+   public int backdrop() {
+      return gemini.ui.HudStyle.backdrop(this.backdrop.get());
    }
 
    public boolean shadow() {

@@ -30,7 +30,7 @@ public final class FreeSlots extends Ticked {
       }
 
       int total = Inventory.INVENTORY_SIZE;
-      int color = free <= this.warnBelow.intValue() ? -43691 : -6641995;
-      return List.of(new TextHudWidget.Line("Free slots " + free + "/" + total, color));
+      int color = free <= this.warnBelow.intValue() ? gemini.ui.Glass.ERROR : gemini.ui.Glass.TEXT;
+      return List.of(TextHudWidget.Line.row("Free slots", Integer.toString(free), "/ " + total, color));
    }
 }

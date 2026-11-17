@@ -8,6 +8,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.ui.HudStyle;
 import gemini.ui.UiMath;
 import gemini.ui.clickgui.Menus;
 import java.util.List;
@@ -52,7 +53,9 @@ public abstract class HudWidget extends Module {
    private final NumberSetting offsetY;
    private final BooleanSetting placed;
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Size of this widget", 1.0, 0.5, 2.5, 0.05));
-   private final BooleanSetting background = this.addSetting(new BooleanSetting("Background", "Dark glass panel behind the widget", true));
+   private final BooleanSetting background = this.addSetting(
+      new BooleanSetting("Background", "Draw the HUD backdrop behind this widget; its look (Soft, Solid or None) is the HUD module's Backdrop setting", true)
+   );
    private float lastX;
    private float lastY;
    private float lastW;
@@ -63,6 +66,8 @@ public abstract class HudWidget extends Module {
    private boolean measuredVisible;
    private boolean measuredPreview;
    private int flowSlot = -1;
+   /** The backdrop this frame's paint uses ({@link HudStyle}): the HUD-wide look, or none when this widget's Background is off. */
+   private int backdrop = HudStyle.SOFT;
    private static final float MAGNET = 6.0F;
    private static final float GAP = 4.0F;
    private static final float GRID = 4.0F;
@@ -147,8 +152,20 @@ public abstract class HudWidget extends Module {
 
    protected abstract void paint(HudContext var1, int var2, int var3);
 
+   /**
+    * Whether the shared card is drawn behind {@link #paint}. Widgets that draw their own shapes on the backdrop
+    * (key caps, a round radar, a fading strip) return false and use {@link #backdrop()} themselves.
+    */
    protected boolean hasBackground() {
       return this.background.get();
+   }
+
+   /**
+    * The backdrop to paint with this frame, one of {@link HudStyle#SOFT}, {@link HudStyle#SOLID} or
+    * {@link HudStyle#NONE}: the HUD-wide choice, or none when this widget's Background switch is off.
+    */
+   protected final int backdrop() {
+      return this.backdrop;
    }
 
    /** The "Corner" setting: which screen edge or corner the widget is anchored to (or stacks at, while automatic). */
@@ -453,21 +470,25 @@ public abstract class HudWidget extends Module {
       float s = this.scale.floatValue();
       this.lastW = w * s;
       this.lastH = h * s;
+      this.backdrop = this.background.get() ? hud.backdrop : HudStyle.NONE;
+      boolean shadow = hud.shadow;
+      hud.shadow = HudStyle.shadow(this.backdrop, shadow);
       hud.graphics.pose().pushMatrix();
-      hud.graphics.pose().translate(this.lastX, this.lastY);
+      // Whole pixels only: a card at a fractional position blurs its text and edges.
+      hud.graphics.pose().translate(Math.round(this.lastX), Math.round(this.lastY));
       hud.graphics.pose().scale(s, s);
       if (this.measuredPreview) {
-         Glass.hudCard(hud.graphics, 0, 0, w, h, hud.surface, hud.accent, hud.accent2, 0.6F);
-         hud.graphics.text(hud.font, this.getName(), 6, 4, Glass.TEXT_FAINT, false);
+         HudStyle.card(hud.graphics, 0, 0, w, h, HudStyle.SOFT, hud.surface, 0.8F);
+         hud.graphics.text(hud.font, this.getName(), HudStyle.PAD_X, (h - 8) / 2, Glass.TEXT_DIM, false);
       } else {
          if (this.hasBackground()) {
-            // The shared card: dark glass, rounded corners and a thin accent border.
-            Glass.hudCard(hud.graphics, 0, 0, w, h, hud.surface, hud.accent, hud.accent2, 1.0F);
+            Glass.hudCard(hud.graphics, 0, 0, w, h, this.backdrop, hud.surface);
          }
 
          this.paint(hud, w, h);
       }
 
       hud.graphics.pose().popMatrix();
+      hud.shadow = shadow;
    }
 }

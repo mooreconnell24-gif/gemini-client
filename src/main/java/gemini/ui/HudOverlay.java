@@ -47,8 +47,8 @@ import net.minecraft.world.scores.Objective;
 public final class HudOverlay {
    private static final int LINE = 11;
    /** Height of a two-line toast (title and body) and of a one-line toast (a module switched on or off). */
-   private static final int TOAST_H = 24;
-   private static final int TOAST_H_LINE = 14;
+   private static final int TOAST_H = 26;
+   private static final int TOAST_H_LINE = 16;
    private static final int TOAST_GAP = 3;
    private static final long TOAST_IN_MS = 240L;
    private static final long TOAST_OUT_MS = 220L;
@@ -56,11 +56,15 @@ public final class HudOverlay {
    /** Widest a toast grows before its text is ellipsized. */
    private static final int TOAST_MAX_W = 220;
    /** Left edge of a toast's text, past the status bar. */
-   private static final int TOAST_TEXT_X = 8;
+   private static final int TOAST_TEXT_X = 12;
+   /** Alpha of a toast's card: toasts appear over anything, so they are always a solid card. */
+   private static final int TOAST_ALPHA = 226;
    private static final ArrayDeque<HudOverlay.Toast> TOASTS = new ArrayDeque<>();
    private final ModuleManager modules;
    private long lastFrameMs = Util.getMillis();
    private int surface = -15987178;
+   /** The HUD-wide backdrop look ({@link HudStyle}) for this frame. */
+   private int backdrop = HudStyle.SOFT;
    /** One context, refilled every frame instead of allocated. */
    private HudContext context;
    /** The watermark's texts only change once a tick, so they are rebuilt per tick instead of per frame. */
@@ -215,6 +219,7 @@ public final class HudOverlay {
             int width = Math.round(graphics.guiWidth() / scale);
             int height = Math.round(graphics.guiHeight() / scale);
             int topLeftY = 4;
+            this.backdrop = hud == null ? HudStyle.SOFT : hud.backdrop();
             if (hud == null || hud.watermark()) {
                float size = hud == null ? 1.0F : hud.watermarkSize();
                graphics.pose().pushMatrix();
@@ -227,7 +232,7 @@ public final class HudOverlay {
             if (hud == null || hud.watermark()) {
                // Generous estimate of the watermark card: logo, the name and the stats line plus padding.
                float size = hud == null ? 1.0F : hud.watermarkSize();
-               watermarkRight = Math.round((44 + client.font.width("Gemini") + this.metaLineWidth) * size);
+               watermarkRight = Math.round((48 + client.font.width("Gemini") + this.metaLineWidth) * size);
             }
 
             this.refreshPanels(client);
@@ -243,6 +248,7 @@ public final class HudOverlay {
             }
 
             ctx.update(graphics, client, width, height, accent, accent2, this.surface, shadow, partial, delta);
+            ctx.backdrop = this.backdrop;
             this.layoutWidgets(ctx, client, scale, watermarkRight, topLeftY);
             this.modules.renderHud(ctx);
             if (hud == null || hud.toasts()) {
@@ -306,31 +312,31 @@ public final class HudOverlay {
       if (toggle) {
          toast.shownBody = toast.severity == Severity.ENABLED ? "on" : "off";
          int stateW = font.width(toast.shownBody);
-         toast.shownTitle = Theme.fit(toast.title, max - TOAST_TEXT_X - 6 - stateW - 4, font::width);
-         toast.cardW = TOAST_TEXT_X + font.width(toast.shownTitle) + 4 + stateW + 6;
+         toast.shownTitle = Theme.fit(toast.title, max - TOAST_TEXT_X - HudStyle.PAD_X - stateW - 6, font::width);
+         toast.cardW = TOAST_TEXT_X + font.width(toast.shownTitle) + 6 + stateW + HudStyle.PAD_X;
          toast.height = TOAST_H_LINE;
          toast.oneLine = true;
          return;
       }
 
       boolean hasBody = !toast.body.isEmpty();
-      int natural = Math.max(font.width(toast.title), hasBody ? font.width(toast.body) : 0) + TOAST_TEXT_X + 6;
-      toast.cardW = Math.max(Math.min(60, max), Math.min(natural, max));
-      toast.shownTitle = Theme.fit(toast.title, toast.cardW - TOAST_TEXT_X - 6, font::width);
-      toast.shownBody = hasBody ? Theme.fit(toast.body, toast.cardW - TOAST_TEXT_X - 6, font::width) : "";
+      int natural = Math.max(font.width(toast.title), hasBody ? font.width(toast.body) : 0) + TOAST_TEXT_X + HudStyle.PAD_X;
+      toast.cardW = Math.max(Math.min(72, max), Math.min(natural, max));
+      toast.shownTitle = Theme.fit(toast.title, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X, font::width);
+      toast.shownBody = hasBody ? Theme.fit(toast.body, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X, font::width) : "";
       toast.height = hasBody ? TOAST_H : TOAST_H_LINE;
       toast.oneLine = !hasBody;
    }
 
    /**
-    * One toast: a small flat card with a thin bar in the severity colour on its left edge and one or two lines of
-    * text. No badge, icon, countdown or pulsing; the colour bar is the only thing that tells the kinds apart.
+    * One toast, in the HUD's card language: a solid borderless card, a short rule in the severity colour on its left
+    * (the only colour on it), a white title and a dim body. No badge, icon, countdown or pulsing.
     */
    private void drawToast(GuiGraphicsExtractor g, Font font, HudOverlay.Toast toast, int x, int y, int cardW, float visible) {
       int status = toast.severity.color;
       int h = toast.height;
-      Glass.roundRect(g, x, y, x + cardW, y + h, Glass.RADIUS, Glass.withAlpha(this.surface, Math.round(215.0F * visible)));
-      g.fill(x + 3, y + 3, x + 4, y + h - 3, Glass.withAlpha(status, Math.round(230.0F * visible)));
+      Glass.roundRect(g, x, y, x + cardW, y + h, HudStyle.RADIUS, Glass.withAlpha(this.surface, Math.round(TOAST_ALPHA * visible)));
+      g.fill(x + HudStyle.PAD_X, y + 4, x + HudStyle.PAD_X + 2, y + h - 4, Glass.withAlpha(status, Math.round(235.0F * visible)));
       int textAlpha = Math.round(255.0F * visible);
       if (textAlpha >= 10) {
          // The font treats a near-zero alpha as opaque, so text is skipped while the card is all but invisible.
@@ -339,11 +345,11 @@ public final class HudOverlay {
             g.text(font, toast.shownTitle, x + TOAST_TEXT_X, ty, Glass.withAlpha(Glass.TEXT, textAlpha), false);
             if (!toast.shownBody.isEmpty()) {
                int stateColor = toast.severity == Severity.ENABLED ? Glass.OK : Glass.TEXT_DIM;
-               g.text(font, toast.shownBody, x + cardW - 6 - font.width(toast.shownBody), ty, Glass.withAlpha(stateColor, textAlpha), false);
+               g.text(font, toast.shownBody, x + cardW - HudStyle.PAD_X - font.width(toast.shownBody), ty, Glass.withAlpha(stateColor, textAlpha), false);
             }
          } else {
             g.text(font, toast.shownTitle, x + TOAST_TEXT_X, y + 4, Glass.withAlpha(Glass.TEXT, textAlpha), false);
-            g.text(font, toast.shownBody, x + TOAST_TEXT_X, y + 14, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
+            g.text(font, toast.shownBody, x + TOAST_TEXT_X, y + 4 + HudStyle.LINE, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
          }
       }
    }
@@ -362,7 +368,7 @@ public final class HudOverlay {
          List<String> meta = this.metaParts;
          meta.clear();
          if (hud == null || hud.fps()) {
-            meta.add(client.getFps() + " FPS");
+            meta.add(client.getFps() + " fps");
          }
 
          // Ping only means something on a real connection; in single player it is always zero.
@@ -393,33 +399,28 @@ public final class HudOverlay {
       String name = "Gemini";
       int nameWidth = font.width(name);
       boolean hasMeta = !this.metaLineCache.isEmpty();
-      if ("Text".equals(wmStyle)) {
-         graphics.text(font, name, 4, 4, Glass.TEXT, shadow);
-         if (hasMeta) {
-            graphics.text(font, this.metaLineCache, 4 + nameWidth + 5, 4, Glass.TEXT_DIM, shadow);
-         }
-
-         return 16;
-      }
-
-      // A small flat label: no outline, highlight or accent colour, so it does not compete with the game.
-      boolean compact = "Compact".equals(wmStyle);
-      boolean hasLogo = !compact && (hud == null || hud.logo());
-      int boxH = 12;
-      int textX = 4 + (hasLogo ? 13 : 4);
-      int boxW = textX - 4 + nameWidth + (hasMeta ? 5 + this.metaLineWidth : 0) + 4;
-      Glass.roundRect(graphics, 4, 4, 4 + boxW, 4 + boxH, Glass.RADIUS, Glass.withAlpha(this.surface, compact ? 140 : 170));
+      int backdrop = "Text".equals(wmStyle) ? HudStyle.NONE : this.backdrop;
+      boolean textShadow = HudStyle.shadow(backdrop, shadow);
+      // The same card as the widgets: borderless, the HUD's backdrop, the same padding. The name is white, the
+      // stats dim; the logo (Card style only) is the one bit of colour.
+      boolean hasLogo = "Card".equals(wmStyle) && (hud == null || hud.logo());
+      int x = 4;
+      int y = 4;
+      int boxH = 8 + 2 * HudStyle.PAD_Y;
+      int textX = x + HudStyle.PAD_X + (hasLogo ? 12 : 0);
+      int boxW = textX - x + nameWidth + (hasMeta ? 6 + this.metaLineWidth : 0) + HudStyle.PAD_X;
+      HudStyle.card(graphics, x, y, x + boxW, y + boxH, backdrop, this.surface, 1.0F);
       if (hasLogo) {
-         GeminiMark.draw(graphics, 6, 6, 8, accent, 1.0F);
+         GeminiMark.draw(graphics, x + HudStyle.PAD_X, y + HudStyle.PAD_Y, 8, accent, 1.0F);
       }
 
-      int textY = 4 + (boxH - 8) / 2 + 1;
-      graphics.text(font, name, textX, textY, Glass.TEXT, shadow);
+      int textY = y + HudStyle.PAD_Y;
+      graphics.text(font, name, textX, textY, Glass.TEXT, textShadow);
       if (hasMeta) {
-         graphics.text(font, this.metaLineCache, textX + nameWidth + 5, textY, Glass.TEXT_DIM, false);
+         graphics.text(font, this.metaLineCache, textX + nameWidth + 6, textY, HudStyle.label(backdrop), textShadow);
       }
 
-      return 4 + boxH + 6;
+      return y + boxH + 4;
    }
 
    /**
