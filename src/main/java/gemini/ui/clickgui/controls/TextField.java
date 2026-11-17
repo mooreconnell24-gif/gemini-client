@@ -145,9 +145,9 @@ public final class TextField {
     */
    public void render(GuiGraphicsExtractor g, Font font, int x, int y, int w, int h, String idleText, boolean alignRight, int accent, float opacity, float dt) {
       this.error = Math.max(0.0F, this.error - dt * 2.2F);
-      int border = Glass.lerp(this.focused ? accent : 0xFF3A4254, Glass.ERROR, this.error);
-      Glass.roundRect(g, x, y, x + w, y + h, 2, Glass.fade(Glass.lerp(0xE0101520, Glass.withAlpha(Glass.ERROR, 0xE0), this.error * 0.35F), opacity));
-      Glass.roundOutline(g, x, y, x + w, y + h, 2, Glass.fade(Glass.withAlpha(border, this.focused || this.error > 0.0F ? 230 : 120), opacity));
+      int border = Glass.lerp(this.focused ? accent : Widgets.trackOff(), Glass.ERROR, this.error);
+      Glass.roundRect(g, x, y, x + w, y + h, 3, Glass.fade(Glass.lerp(Widgets.well(), Glass.ERROR, this.error * 0.3F), opacity));
+      Glass.roundOutline(g, x, y, x + w, y + h, 3, Glass.fade(Glass.withAlpha(border, this.focused || this.error > 0.0F ? 220 : 150), opacity));
       String shown = this.focused ? this.text : (idleText == null ? "" : idleText);
       boolean caret = this.focused && !this.allSelected && Util.getMillis() / 420L % 2L == 0L;
       int room = w - 8;
@@ -157,14 +157,15 @@ public final class TextField {
 
       int textW = UiFont.width(shown);
       int tx = alignRight ? x + w - 4 - textW : x + 4;
-      int ty = y + (h - 8) / 2;
+      int cap = UiFont.capHeight(gemini.ui.font.FontSize.BODY);
+      int ty = UiFont.centerY(y, h);
       if (this.focused && this.allSelected && textW > 0) {
-         g.fill(tx - 1, ty - 1, tx + textW + 1, ty + 9, Glass.fade(Glass.withAlpha(accent, 110), opacity));
+         g.fill(tx - 1, ty - 2, tx + textW + 1, ty + cap + 2, Glass.fade(Glass.withAlpha(accent, 110), opacity));
       }
 
       Controls.text(g, font, shown, tx, ty, Glass.lerp(this.focused ? Glass.text() : Glass.textDim(), Glass.ERROR, this.error), opacity);
       if (caret) {
-         g.fill(tx + textW + 1, ty - 1, tx + textW + 2, ty + 9, Glass.fade(Glass.text(), opacity));
+         g.fill(tx + textW + 1, ty - 2, tx + textW + 2, ty + cap + 2, Glass.fade(Glass.text(), opacity));
       }
    }
 }

@@ -4,9 +4,13 @@ import gemini.Gemini;
 import gemini.module.Module;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.Theme;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.clickgui.controls.SettingControl;
 import gemini.ui.clickgui.controls.TextField;
+import gemini.ui.clickgui.controls.Widgets;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -18,7 +22,7 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.util.Mth;
 
 /**
- * One full-width page of the window menu (presets, keybinds, Baritone). The page draws into the content area the
+ * One full-width page of the window menu (presets, keybinds, Baritone, mods). The page draws into the content area the
  * screen gives it and registers its clickable areas through {@link Host#hit}, the same draw-and-hit pass the module
  * list uses, so input always matches what is on screen. All coordinates are the screen's virtual (scaled)
  * coordinates.
@@ -292,8 +296,32 @@ public abstract class DashboardPage {
       }
    }
 
+   /** The page title, in the same place and size as the Modules page's heading; returns its width. */
+   protected int heading(GuiGraphicsExtractor g, int x, int y) {
+      Controls.text(g, this.title(), x + 11, y + 7, Glass.text(), this.host.fade(), FontSize.LARGE, FontWeight.MEDIUM);
+      return this.headingWidth();
+   }
+
+   protected int headingWidth() {
+      return UiFont.width(this.title(), FontSize.LARGE, FontWeight.MEDIUM);
+   }
+
+   /** A flat rounded card like the module cards; {@code glow} (0..1) edges it in the accent. */
    protected void card(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, float glow) {
-      Glass.panel(g, x1, y1, x2, y2, Glass.RADIUS, Glass.surface(1), Glass.accent(), this.host.fade(), glow);
+      this.card(g, x1, y1, x2, y2, Glass.accent(), glow);
+   }
+
+   /** As {@link #card(GuiGraphicsExtractor, int, int, int, int, float)} with the edge in {@code edge} (a warning, say). */
+   protected void card(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int edge, float glow) {
+      Glass.roundRect(g, x1, y1, x2, y2, 6, this.c(Theme.mix(Glass.surface(2), edge, 0.08F * Mth.clamp(glow, 0.0F, 1.0F))));
+      if (glow > 0.01F) {
+         Glass.roundOutline(g, x1, y1, x2, y2, 6, this.c(edge, Math.round(150.0F * Mth.clamp(glow, 0.0F, 1.0F))));
+      }
+   }
+
+   /** The menus' on/off switch at ({@code x}, {@code y}); 20 wide, 10 tall. */
+   protected void toggle(GuiGraphicsExtractor g, int x, int y, boolean on) {
+      Widgets.toggle(g, x, y, on ? 1.0F : 0.0F, Glass.accent(), true, this.host.fade());
    }
 
    protected static boolean inside(double mx, double my, int x, int y, int w, int h) {
@@ -318,20 +346,19 @@ public abstract class DashboardPage {
       boolean over = inside(mouseX, mouseY, x, y, w, h) && (!clip || mouseY >= this.viewTop && mouseY < this.viewBottom);
       int base = switch (tone) {
          case TONE_ACCENT -> Glass.accent();
-         case TONE_OK -> Glass.OK;
-         case TONE_DANGER -> Glass.ERROR;
-         default -> Glass.surface(3);
+         case TONE_OK -> Theme.current().ok;
+         case TONE_DANGER -> Theme.current().error;
+         default -> Widgets.raised();
       };
-      int fill = !enabled ? Glass.withAlpha(Glass.surface(2), 200) : Glass.withAlpha(base, tone == TONE_NEUTRAL ? (over ? 255 : 230) : (over ? 170 : 105));
-      Glass.roundRect(g, x, y, x + w, y + h, gemini.ui.Theme.RADIUS_SMALL, this.c(fill));
-      if (enabled && over) {
-         Glass.roundOutline(g, x, y, x + w, y + h, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.lerp(base, 0xFFFFFFFF, 0.4F), 170));
-      }
-
+      // Neutral buttons are raised chips; toned ones are the same chip washed with their colour.
+      int rest = tone == TONE_NEUTRAL ? base : Theme.mix(Widgets.raised(), base, 0.42F);
+      int lit = tone == TONE_NEUTRAL ? Widgets.raisedHover() : Theme.mix(Widgets.raised(), base, 0.68F);
+      int fill = !enabled ? Glass.withAlpha(Glass.surface(3), 150) : (over ? lit : rest);
+      Glass.roundRect(g, x, y, x + w, y + h, 4, this.c(fill));
       String shown = Controls.fit(this.font(), label, w - 6);
       // The same hover/disabled label rule as GlassButton and the panel rows.
-      int color = gemini.ui.Theme.labelColor(enabled, over ? 1.0F : 0.6F);
-      this.text(g, shown, x + (w - UiFont.width(shown)) / 2, y + (h - 8) / 2 + 1, color);
+      int color = !enabled ? Glass.textFaint() : (over || tone != TONE_NEUTRAL ? Glass.text() : Glass.lerp(Glass.textDim(), Glass.text(), 0.5F));
+      this.text(g, shown, x + (w - UiFont.width(shown)) / 2, UiFont.centerY(y, h), color);
       Click action = enabled ? click : (b, mx, my, d) -> this.host.notice(disabledReason);
       if (clip) {
          this.host.hit(x, y, w, h, this.viewTop, this.viewBottom, null, action);
@@ -355,7 +382,7 @@ public abstract class DashboardPage {
    protected int chip(GuiGraphicsExtractor g, int x, int y, String label, int color, int textColor) {
       int w = UiFont.width(label) + 8;
       Glass.roundRect(g, x, y, x + w, y + 11, gemini.ui.Theme.RADIUS_SMALL, this.c(color));
-      this.text(g, label, x + 4, y + 2, textColor);
+      this.text(g, label, x + 4, UiFont.centerY(y, 11), textColor);
       return w;
    }
 
@@ -395,14 +422,7 @@ public abstract class DashboardPage {
    }
 
    protected void scrollbar(GuiGraphicsExtractor g, int x, int contentHeight) {
-      int viewH = this.viewBottom - this.viewTop;
-      if (contentHeight > viewH && viewH > 8) {
-         int thumbH = Math.max(14, Math.round(viewH * ((float)viewH / contentHeight)));
-         float max = Math.max(1, contentHeight - viewH);
-         int thumbY = this.viewTop + Math.round((viewH - thumbH) * (this.scroll / max));
-         g.fill(x, this.viewTop, x + 2, this.viewBottom, this.c(0xFFFFFFFF, 10));
-         g.fill(x, thumbY, x + 2, thumbY + thumbH, this.c(Glass.accent(), 170));
-      }
+      Widgets.scrollbar(g, x, this.viewTop, this.viewBottom - this.viewTop, contentHeight, this.scroll, this.host.fade());
    }
 
    // ---- shared ---------------------------------------------------------------------------------------------

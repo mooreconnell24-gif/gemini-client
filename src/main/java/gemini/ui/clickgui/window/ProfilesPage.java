@@ -370,7 +370,7 @@ public final class ProfilesPage extends DashboardPage {
          this.shareName.setText(active == null ? "my-settings" : active);
       }
 
-      this.text(g, this.title(), x + 10, y + 9, Glass.text());
+      this.heading(g, x, y);
       String status = active == null ? "No profile loaded or saved yet" : "Active profile: " + active;
       int statusW = UiFont.width(status);
       this.text(g, status, x + w - 10 - statusW, y + 9, active == null ? Glass.textFaint() : Glass.accent2());
@@ -646,7 +646,7 @@ public final class ProfilesPage extends DashboardPage {
          int lw = UiFont.width(label);
          int sx = x + w - 8 - 18;
          this.text(g, label, sx - 6 - lw, y + 6, Glass.textDim());
-         Glass.toggle(g, sx, y + 5, others.get() ? 1.0F : 0.0F, Glass.accent(), this.host.fade());
+         this.toggle(g, sx - 2, y + 5, others.get());
          this.host.hit(sx - 6 - lw, y + 3, lw + 24, 14, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> {
             others.toggle();
             save();

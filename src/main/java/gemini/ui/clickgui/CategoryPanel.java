@@ -18,14 +18,19 @@ import gemini.module.setting.Setting;
 import gemini.ui.Fuzzy;
 import gemini.ui.Glass;
 import gemini.ui.UiMath;
-import gemini.ui.clickgui.controls.ColorPicker;
+import gemini.ui.Theme;
 import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.clickgui.controls.ListControl;
 import gemini.ui.clickgui.controls.SettingControl;
+import gemini.ui.clickgui.controls.Widgets;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
@@ -34,14 +39,16 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 
 /**
- * One draggable column of the panel menu: a glass card with the category's modules, each row a switch that
- * unfolds into its settings.
+ * One draggable column of the panel menu: a rounded card with a header (the category's icon and name) and the
+ * category's modules underneath. A row lights up in the accent while its module is on; a left click toggles the
+ * module and a right click unfolds its settings in place, drawn with the same controls as the window menu in
+ * their compact form.
  */
 public final class CategoryPanel {
-   public static final int DEFAULT_WIDTH = 128;
-   public static final int HEADER = 22;
+   public static final int DEFAULT_WIDTH = 114;
+   public static final int HEADER = 24;
    static final int ROW = 18;
-   private static final int MIN_WIDTH = 104;
+   private static final int MIN_WIDTH = 96;
    private static final int MAX_WIDTH = 280;
    private static final int MIN_VIEW = 54;
    private static final int SNAP_GRID = 8;
@@ -52,13 +59,14 @@ public final class CategoryPanel {
    private static final int KIND_MODULE = 0;
    private static final int KIND_BIND = 1;
    private static final int KIND_SETTING = 2;
+   private static final int BIND_ROW = 18;
+   private static final int CARD_RADIUS = 6;
    public float animationProgress = 0.0F;
    private final Category category;
    private final ConfigManager.PanelState state;
    private final List<CategoryPanel.Row> rows = new ArrayList<>();
    private final List<CategoryPanel.Item> items = new ArrayList<>();
    private final IdentityHashMap<Setting<?>, SettingControl> controls = new IdentityHashMap<>();
-   private final IdentityHashMap<Setting<?>, Float> switchAnims = new IdentityHashMap<>();
    private List<CategoryPanel.Row> visible = List.of();
    private String matchedNeedle = "";
    private float scroll;
@@ -262,15 +270,23 @@ public final class CategoryPanel {
 
    // ---- setting controls -----------------------------------------------------------------------------------
 
-   private SettingControl control(Setting<?> setting) {
-      if (!(setting instanceof NumberSetting) && !(setting instanceof ColorSetting)) {
-         return null;
-      }
-
+   private SettingControl control(Module module, Setting<?> setting) {
       SettingControl control = this.controls.get(setting);
       if (control == null) {
          control = SettingControl.of(setting);
+         if (control == null) {
+            return null;
+         }
+
+         control.setCompact(true);
          control.setOnChange(CategoryPanel::save);
+         if (control instanceof ListControl list) {
+            list.setOpener(() -> {
+               Minecraft client = Minecraft.getInstance();
+               client.gui.setScreen(new ListEditorScreen(client.gui.screen(), module, (ListSetting)setting));
+            });
+         }
+
          this.controls.put(setting, control);
       }
 
@@ -376,13 +392,9 @@ public final class CategoryPanel {
       return list;
    }
 
-   private int settingHeight(Setting<?> setting) {
-      SettingControl control = this.control(setting);
-      if (control != null) {
-         return control.height();
-      }
-
-      return setting instanceof ActionSetting ? 20 : 17;
+   private int settingHeight(Module module, Setting<?> setting) {
+      SettingControl control = this.control(module, setting);
+      return control == null ? 0 : control.height();
    }
 
    private void layout(String search, int screenH) {
@@ -398,26 +410,29 @@ public final class CategoryPanel {
             int full = 0;
             List<CategoryPanel.Item> block = new ArrayList<>();
             if (row.module.isBindable()) {
-               block.add(new CategoryPanel.Item(KIND_BIND, row, null, cy + full, 17));
-               full += 17;
+               block.add(new CategoryPanel.Item(KIND_BIND, row, null, cy + full, BIND_ROW));
+               full += BIND_ROW;
             }
 
             for (Setting<?> setting : row.module.settings()) {
                if (setting.visible()) {
-                  int h = this.settingHeight(setting);
+                  int h = this.settingHeight(row.module, setting);
                   block.add(new CategoryPanel.Item(KIND_SETTING, row, setting, blockTop + full, h));
                   full += h;
                }
             }
 
+            full += 3;
             int shown = Math.round(full * Glass.easeInOut(row.expand));
+            row.blockTop = blockTop;
+            row.blockShown = shown;
             for (CategoryPanel.Item item : block) {
                item.clipTop = blockTop;
                item.clipBottom = blockTop + shown;
                this.items.add(item);
             }
 
-            cy += shown + (shown > 0 ? 2 : 0);
+            cy += shown;
          }
       }
 
@@ -506,23 +521,26 @@ public final class CategoryPanel {
       int shown = this.shownView();
       int bottom = top + HEADER + shown;
       int vpTop = top + HEADER;
-      int accent = look.accent();
-      int accent2 = look.accent2();
-      int panelAccent = Glass.lerp(this.category.accent(), accent, 0.45F);
+      // "Category Tint" leans each column's accent towards its category's colour; otherwise every column matches
+      ClickGuiModule tint = style();
+      int accent = tint == null ? look.accent() : tint.accentFor(this.category);
+      int accent2 = tint == null ? look.accent2() : tint.secondaryFor(this.category);
+      int panelAccent = accent;
       boolean overHeader = hoverable && inside(mouseX, mouseY, x, top, w, HEADER);
       boolean overPanel = hoverable && inside(mouseX, mouseY, x, top, w, bottom - top);
-      float emphasisTarget = this.drag == CategoryPanel.Drag.MOVE || this.drag == CategoryPanel.Drag.RESIZE ? 1.0F : (overHeader ? 0.7F : (overPanel ? 0.3F : 0.0F));
-      this.emphasis = Glass.approach(this.emphasis, look.glow() ? emphasisTarget : 0.0F, 12.0F, this.dt);
-      if (look.glow()) {
-         Glass.panel(graphics, x, top, x + w, bottom, Glass.RADIUS, look.body(), panelAccent, look.opacity() * this.alpha, this.emphasis);
-      } else {
-         // The default look: a flat card with a faint edge; no accent border, sheen or halo.
-         Glass.roundRect(graphics, x, top, x + w, bottom, Glass.RADIUS, this.faded(look.body(), Math.round(225.0F * look.opacity())));
-         Glass.roundOutline(graphics, x, top, x + w, bottom, Glass.RADIUS, this.faded(0xFFFFFF, 16));
+      // A panel being dragged or resized lifts a little; with "Glass Glow" on, the hovered panel does too.
+      float emphasisTarget = this.drag == CategoryPanel.Drag.MOVE || this.drag == CategoryPanel.Drag.RESIZE ? 1.0F : (look.glow() && overPanel ? (overHeader ? 0.6F : 0.3F) : 0.0F);
+      this.emphasis = Glass.approach(this.emphasis, emphasisTarget, 12.0F, this.dt);
+      float cardFade = this.alpha * look.opacity();
+      Glass.shadow(graphics, x, top, x + w, bottom, CARD_RADIUS, 14, 4, (0.36F + 0.2F * this.emphasis) * this.alpha);
+      Glass.roundRect(graphics, x, top, x + w, bottom, CARD_RADIUS, Glass.fade(Glass.surface(1), cardFade));
+      Glass.roundOutline(graphics, x, top, x + w, bottom, CARD_RADIUS, this.faded(Glass.lerp(Glass.text(), panelAccent, this.emphasis), 18 + Math.round(60.0F * this.emphasis)));
+      if (shown > 2) {
+         graphics.fill(x + 8, top + HEADER - 1, x + w - 8, top + HEADER, this.faded(Widgets.divider()));
       }
 
-      hairline(graphics, x + 6, top + HEADER - 1, x + w - 6, this.faded(0xFFFFFF, 20));
-      this.text(graphics, font, this.category.displayName(), x + 8, top + 7, Glass.text());
+      Icons.draw(graphics, Icons.named(this.category.name()), x + 8, top + (HEADER - 10) / 2, 10, this.faded(panelAccent));
+      Controls.text(graphics, this.category.displayName(), x + 23, UiFont.centerY(top, HEADER), Glass.text(), this.alpha, FontSize.BODY, FontWeight.MEDIUM);
       int activeInCat = 0;
       for (CategoryPanel.Row r : this.visible) {
          if (r.module.isEnabled()) {
@@ -531,17 +549,19 @@ public final class CategoryPanel {
       }
 
       // Only the number switched on, and only when there is one: the total is not worth a label.
-      int chevronX = x + w - 14;
+      int chevronX = x + w - 16;
       if (activeInCat > 0) {
          String count = Integer.toString(activeInCat);
-         this.text(graphics, font, count, chevronX - 6 - UiFont.width(count), top + 7, Glass.textDim());
+         Controls.text(
+            graphics, count, chevronX - 4 - UiFont.width(count, FontSize.SMALL, FontWeight.REGULAR), UiFont.centerY(top, HEADER, FontSize.SMALL), Glass.textFaint(), this.alpha,
+            FontSize.SMALL, FontWeight.REGULAR
+         );
       }
 
-      if (this.collapseAnim < 0.5F) {
-         triRight(graphics, chevronX, top + 11, 4, this.faded(Glass.textDim()));
-      } else {
-         triDown(graphics, chevronX - 2, top + 9, 4, this.faded(Glass.textFaint()));
-      }
+      Icons.draw(
+         graphics, this.collapseAnim < 0.5F ? Icons.Icon.CHEVRON_RIGHT : Icons.Icon.CHEVRON_DOWN, chevronX, top + (HEADER - 8) / 2, 8,
+         this.faded(overHeader ? Glass.textDim() : Glass.textFaint())
+      );
 
       String hovered = null;
       if (overHeader) {
@@ -564,7 +584,13 @@ public final class CategoryPanel {
                   item.row.hoveredFrame = true;
                }
 
-               String tip = this.drawModule(graphics, font, item.row, x, sy, w, over, accent, accent2, panelAccent, bindingModule);
+               if (item.row.blockShown > 0 && item.row.expand > 0.001F) {
+                  // the well the open settings sit in
+                  int wellTop = vpTop + item.row.blockTop - scrollPx;
+                  Glass.roundRect(graphics, x + 3, wellTop, x + w - 3, wellTop + item.row.blockShown - 1, 4, Glass.fade(Glass.withAlpha(Widgets.well(), 150), this.alpha));
+               }
+
+               String tip = this.drawModule(graphics, item.row, x, sy, w, over, accent, accent2, bindingModule);
                if (over) {
                   hovered = tip;
                   this.hoveredTitle = item.row.module.getName();
@@ -585,26 +611,23 @@ public final class CategoryPanel {
                   && mouseY >= Math.max(clipTop, vpTop)
                   && mouseY < Math.min(clipBottom, vpTop + shown)
                   && !this.onScrollbar(mouseX);
-               graphics.fill(x + 3, sy, x + w - 3, sy + item.h, this.faded(0x000000, 46));
                if (item.kind == KIND_BIND) {
-                  this.drawBind(graphics, font, item, x, sy, w, over, accent, accent2, bindingModule);
+                  this.drawBind(graphics, item, x + 3, sy, w - 6, over, accent, bindingModule);
                   if (over) {
                      hovered = "Click to bind  ·  right-click clears  ·  Bind Mode below picks Toggle or Hold";
                      this.hoveredTitle = item.row.module.getName() + " · Keybind";
                      this.anchor(x, sy, w);
                   }
                } else {
-                  SettingControl control = this.control(item.setting);
+                  SettingControl control = this.control(item.row.module, item.setting);
                   if (control != null) {
                      control.setOpacity(this.alpha);
                      control.setAccent(accent, accent2);
-                     control.render(graphics, x, sy, w, over ? mouseX : SettingControl.NO_MOUSE, over ? mouseY : SettingControl.NO_MOUSE, this.dt);
-                  } else {
-                     this.drawSetting(graphics, font, item.setting, x, sy, w, item.h, over, accent, accent2);
+                     control.render(graphics, x + 3, sy, w - 6, over ? mouseX : SettingControl.NO_MOUSE, over ? mouseY : SettingControl.NO_MOUSE, this.dt);
                   }
 
                   if (over) {
-                     hovered = settingTip(item.setting);
+                     hovered = settingTip(item.setting, control);
                      this.hoveredTitle = item.row.module.getName() + " · " + item.setting.name();
                      this.anchor(x, sy, w);
                   }
@@ -634,14 +657,9 @@ public final class CategoryPanel {
       this.hoveredAnchorW = w;
    }
 
-   private static String settingTip(Setting<?> setting) {
-      if (setting instanceof NumberSetting) {
-         return setting.description() + "  ·  Shift-drag = fine  ·  double-click or RMB to type  ·  MMB reset";
-      } else if (setting instanceof ColorSetting) {
-         return setting.description() + "  ·  click to open the picker  ·  RMB or MMB reset";
-      } else {
-         return setting.description();
-      }
+   private static String settingTip(Setting<?> setting, SettingControl control) {
+      String hint = control == null ? null : control.hint();
+      return (hint == null ? setting.description() : setting.description() + "  ·  " + hint) + "  ·  middle-click resets";
    }
 
    private void applyCursor(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -665,65 +683,82 @@ public final class CategoryPanel {
       return this.contentHeight > this.viewHeight && mx >= this.state.x + this.width() - 6 && mx <= this.state.x + this.width() - 2;
    }
 
-   private String drawModule(
-      GuiGraphicsExtractor graphics, Font font, CategoryPanel.Row row, int x, int y, int w, boolean over, int accent, int accent2, int panelAccent, Module bindingModule
-   ) {
+   private String drawModule(GuiGraphicsExtractor graphics, CategoryPanel.Row row, int x, int y, int w, boolean over, int accent, int accent2, Module bindingModule) {
       Module module = row.module;
       boolean blocked = !module.canActivate() && !(module instanceof ClickGuiModule);
       boolean binding = bindingModule == module;
-      // A switched-on module is told apart by its switch and its bright name; rows get no tint or bar.
+      float on = module instanceof ClickGuiModule ? 0.0F : row.enableAnim;
+      int rowL = x + 3;
+      int rowR = x + w - 3;
+      // A module that is on lights its row in the accent; hover adds a faint wash on top.
+      if (on > 0.01F) {
+         float strength = blocked ? 0.4F : 1.0F;
+         Glass.roundGradient(
+            graphics, rowL, y + 1, rowR, y + ROW - 1, 4, Glass.fade(Glass.withAlpha(accent, Math.round(96.0F * on * strength)), this.alpha),
+            Glass.fade(Glass.withAlpha(accent2, Math.round(40.0F * on * strength)), this.alpha)
+         );
+         Glass.roundRect(graphics, rowL, y + 5, rowL + 2, y + ROW - 5, 1, Glass.fade(Glass.withAlpha(accent, Math.round(255.0F * on * strength)), this.alpha));
+      }
+
       if (row.hoverAnim > 0.01F) {
-         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(0xFFFFFF, Math.round(16.0F * row.hoverAnim)));
+         Glass.roundRect(graphics, rowL, y + 1, rowR, y + ROW - 1, 4, this.faded(Glass.text(), Math.round(14.0F * row.hoverAnim)));
       }
 
-      if (module == this.highlighted) {
-         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(accent, 40));
+      if (module == this.highlighted || binding) {
+         Glass.roundOutline(graphics, rowL, y + 1, rowR, y + ROW - 1, 4, this.faded(binding ? accent : accent2, 190));
       }
 
-      if (binding) {
-         Glass.roundOutline(graphics, x + 2, y, x + w - 2, y + ROW, 3, this.faded(accent, 200));
+      // from the right: the open-settings arrow, then the key (or what the search matched), then the name
+      int right = rowR - 6;
+      if (row.expand > 0.01F || row.hoverAnim > 0.3F) {
+         Icons.draw(
+            graphics, row.expand > 0.5F ? Icons.Icon.CHEVRON_DOWN : Icons.Icon.CHEVRON_RIGHT, right - 7, y + (ROW - 8) / 2, 8,
+            this.faded(row.expand > 0.5F ? Glass.text() : Glass.textFaint(), Math.round(255.0F * Math.max(row.expand, row.hoverAnim)))
+         );
+         right -= 10;
       }
 
-      // from the right: the switch, then the key (or what the search matched), then the name
-      int switchX = x + w - 8 - 18;
-      Glass.toggle(graphics, switchX, y + 4, row.enableAnim, blocked ? Glass.textFaint() : accent, this.alpha);
-      int right = switchX - 5;
       String hint = null;
       int hintColor = Glass.textFaint();
       if (binding) {
          hint = "press a key";
          hintColor = accent;
       } else if (row.match != null && row.match.setting() != null) {
-         hint = "› " + row.match.setting();
-         hintColor = accent2;
+         hint = row.match.setting();
+         hintColor = Glass.textDim();
       } else if (module.getKeybind() != -1) {
          String key = GeminiKeys.displayName(module.getKeybind());
          if (!"NONE".equals(key)) {
-            hint = module.isHoldBind() ? key + "*" : key;
+            hint = module.isHoldBind() ? key + " hold" : key;
+            hintColor = Glass.lerp(Glass.textFaint(), Glass.text(), on * 0.5F);
          }
       }
 
-      int nameX = x + 14 + Math.round(row.hoverAnim * 2.0F);
+      int nameX = x + 11;
       ClickGuiModule style = style();
-      String name = style != null && style.isFavorite(module) ? "★ " + module.getName() : module.getName();
-      int nameW = UiFont.width(name);
+      if (style != null && style.isFavorite(module)) {
+         Icons.draw(graphics, Icons.Icon.STAR, nameX - 1, y + (ROW - 8) / 2, 8, this.faded(Glass.lerp(accent2, Glass.text(), on * 0.6F)));
+         nameX += 10;
+      }
+
+      FontWeight weight = on > 0.5F ? FontWeight.MEDIUM : FontWeight.REGULAR;
+      int nameW = UiFont.width(module.getName(), FontSize.BODY, weight);
       if (hint != null) {
-         int room = right - nameX - Math.min(nameW, 52) - 6;
+         int room = right - nameX - Math.min(nameW, 56) - 6;
          if (room >= 14) {
-            String shownHint = Controls.fit(font, hint, room);
-            this.text(graphics, font, shownHint, right - UiFont.width(shownHint), y + 5, hintColor);
-            right -= UiFont.width(shownHint) + 5;
+            String shownHint = UiFont.ellipsize(hint, room, FontSize.SMALL, FontWeight.REGULAR);
+            int hintW = UiFont.width(shownHint, FontSize.SMALL, FontWeight.REGULAR);
+            Controls.text(graphics, shownHint, right - hintW, UiFont.centerY(y, ROW, FontSize.SMALL), hintColor, this.alpha, FontSize.SMALL, FontWeight.REGULAR);
+            right -= hintW + 5;
          }
       }
 
-      if (row.expand > 0.5F) {
-         triDown(graphics, x + 9, y + 8, 3, this.faded(accent2));
-      } else {
-         triRight(graphics, x + 8, y + 9, 3, this.faded(over ? Glass.textDim() : Glass.textFaint()));
-      }
-
-      int nameColor = module.isEnabled() ? Glass.text() : (blocked ? Glass.textFaint() : (over ? Glass.text() : Glass.textDim()));
-      this.text(graphics, font, Controls.fit(font, name, Math.max(20, right - nameX)), nameX, y + 5, nameColor);
+      int idle = blocked ? Glass.textFaint() : Glass.lerp(Glass.textDim(), Glass.text(), row.hoverAnim);
+      int nameColor = Glass.lerp(idle, blocked ? Glass.textDim() : Glass.text(), on);
+      Controls.text(
+         graphics, UiFont.ellipsize(module.getName(), Math.max(20, right - nameX), FontSize.BODY, weight), nameX, UiFont.centerY(y, ROW), nameColor, this.alpha,
+         FontSize.BODY, weight
+      );
       String description = module.getDescription();
       if (row.match != null && row.match.setting() != null) {
          description = description + "  ·  matched setting: " + row.match.setting();
@@ -737,69 +772,28 @@ public final class CategoryPanel {
       return description;
    }
 
-   private void drawBind(
-      GuiGraphicsExtractor graphics, Font font, CategoryPanel.Item item, int x, int y, int w, boolean over, int accent, int accent2, Module bindingModule
-   ) {
+   private void drawBind(GuiGraphicsExtractor graphics, CategoryPanel.Item item, int x, int y, int w, boolean over, int accent, Module bindingModule) {
       Module module = item.row.module;
       boolean binding = bindingModule == module;
-      if (over) {
-         Glass.roundRect(graphics, x + 4, y, x + w - 4, y + item.h - 1, 3, this.faded(0xFFFFFF, 18));
-      }
-
-      this.text(graphics, font, "Keybind", x + 10, y + 5, Glass.textDim());
-      String key = binding ? "press a key..." : GeminiKeys.displayName(module.getKeybind());
-      if (module.isHoldBind() && !binding && !"NONE".equals(key)) {
+      Widgets.rowHover(graphics, x, y, w, item.h, over ? 1.0F : 0.0F, this.alpha);
+      Controls.text(graphics, null, "Keybind", x + Widgets.PAD, UiFont.centerY(y, item.h), Widgets.label(module.getKeybind() == -1), this.alpha);
+      String key = binding ? "Press a key" : (module.getKeybind() == -1 ? "None" : GeminiKeys.displayName(module.getKeybind()));
+      if (module.isHoldBind() && !binding && module.getKeybind() != -1) {
          key = key + " (hold)";
       }
 
-      int keyW = UiFont.width(key);
-      int right = x + w - 10;
-      if (binding) {
-         Glass.roundRect(graphics, right - keyW - 6, y + 2, right, y + 14, 3, this.faded(accent, 110));
-      }
-
-      this.text(graphics, font, key, right - keyW - 3, y + 5, binding || over ? Glass.text() : Glass.textDim());
-   }
-
-   /** Switches, mode pills, list links and action buttons; numbers and colours are {@link SettingControl}s. */
-   private void drawSetting(GuiGraphicsExtractor graphics, Font font, Setting<?> setting, int x, int y, int w, int h, boolean over, int accent, int accent2) {
-      if (over && !(setting instanceof ActionSetting)) {
-         Glass.roundRect(graphics, x + 4, y, x + w - 4, y + h - 1, 3, this.faded(0xFFFFFF, 18));
-      }
-
-      int left = x + 10;
-      int right = x + w - 10;
-      int labelColor = !setting.isDefault() && !(setting instanceof ActionSetting) ? Glass.text() : Glass.textDim();
-      if (setting instanceof BooleanSetting bool) {
-         this.text(graphics, font, Controls.fit(font, setting.name(), right - left - 24), left, y + 5, labelColor);
-         float target = bool.get() ? 1.0F : 0.0F;
-         float anim = Glass.approach(this.switchAnims.getOrDefault(setting, target), target, 18.0F, this.dt);
-         this.switchAnims.put(setting, anim);
-         Glass.toggle(graphics, right - 18, y + 4, anim, accent, this.alpha);
-      } else if (setting instanceof ModeSetting mode) {
-         String value = mode.get();
-         int valueW = UiFont.width(value);
-         this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 14), left, y + 5, labelColor);
-         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.text() : Glass.lerp(Glass.textDim(), Glass.text(), 0.5F));
-      } else if (setting instanceof ListSetting list) {
-         String value = list.size() + (list.size() == 1 ? " entry  ›" : " entries  ›");
-         int valueW = UiFont.width(value);
-         this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 8), left, y + 5, labelColor);
-         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.text() : Glass.textDim());
-      } else if (setting instanceof ActionSetting) {
-         Glass.roundRect(graphics, left - 2, y + 2, right + 2, y + h - 2, 3, this.faded(over ? 0xFF2C3444 : 0xFF202634, 230));
-         String label = Controls.fit(font, setting.name(), right - left - 8);
-         this.text(graphics, font, label, x + (w - UiFont.width(label)) / 2, y + (h - 8) / 2, over ? Glass.text() : Glass.textDim());
-      }
+      Widgets.chip(
+         graphics, key, x + w - Widgets.PAD, y + (item.h - 12) / 2, 12, binding ? accent : (over ? Widgets.raisedHover() : Widgets.raised()),
+         binding ? Theme.onColor(accent) : (module.getKeybind() == -1 ? Glass.textDim() : Glass.text()), this.alpha
+      );
    }
 
    private void drawScrollbar(GuiGraphicsExtractor graphics, int x, int vpTop, int w, int accent, int mouseX, int mouseY, boolean hoverable) {
-      int trackX = x + w - 6;
-      Glass.roundRect(graphics, trackX, vpTop + 1, trackX + 3, vpTop + this.viewHeight - 1, 1, this.faded(0x000000, 70));
+      int trackX = x + w - 5;
       int[] thumb = this.thumbBounds(vpTop);
       boolean active = this.drag == CategoryPanel.Drag.SCROLLBAR
-         || hoverable && mouseX >= trackX - 1 && mouseX <= trackX + 4 && mouseY >= thumb[0] && mouseY <= thumb[1];
-      Glass.roundRect(graphics, trackX, thumb[0], trackX + 3, thumb[1], 1, this.faded(active ? accent : 0xFFFFFF, active ? 220 : 60));
+         || hoverable && mouseX >= trackX - 2 && mouseX <= trackX + 4 && mouseY >= thumb[0] && mouseY <= thumb[1];
+      Glass.roundRect(graphics, trackX, thumb[0], trackX + 2, thumb[1], 1, this.faded(active ? accent : Glass.text(), active ? 220 : 56));
    }
 
    private int[] thumbBounds(int vpTop) {
@@ -811,7 +805,7 @@ public final class CategoryPanel {
    }
 
    private void drawGrip(GuiGraphicsExtractor graphics, int right, int bottom, int accent, boolean active) {
-      int color = this.faded(active ? accent : Glass.textFaint());
+      int color = this.faded(active ? accent : Glass.textFaint(), active ? 255 : 150);
       for (int i = 0; i < 3; i++) {
          int off = 3 + i * 3;
          graphics.fill(right - off - 1, bottom - 3, right - off, bottom - 2, color);
@@ -935,7 +929,7 @@ public final class CategoryPanel {
          } else if (button == 1) {
             ClickGuiModule style = style();
             if (Controls.shiftDown() && style != null) {
-               screen.flash(style.toggleFavorite(module) ? "★ " + module.getName() + " added to favourites" : module.getName() + " removed from favourites");
+               screen.flash(style.toggleFavorite(module) ? module.getName() + " added to favourites" : module.getName() + " removed from favourites");
             } else {
                item.row.expanded = !item.row.expanded;
             }
@@ -951,16 +945,17 @@ public final class CategoryPanel {
          }
       } else {
          Setting<?> setting = item.setting;
-         SettingControl control = this.control(setting);
+         SettingControl control = this.control(module, setting);
+         if (control == null) {
+            return;
+         }
+
          if (button == 2) {
             // middle click puts any setting back to its default
-            if (control != null) {
-               control.blur();
-            }
-
+            control.blur();
             setting.reset();
             save();
-         } else if (control != null) {
+         } else {
             this.clickedControl = control;
             if (control.mouseClicked(mx, my, button, doubled)) {
                if (control.dragging()) {
@@ -971,32 +966,6 @@ public final class CategoryPanel {
                setting.reset();
                save();
             }
-         } else if (setting instanceof ListSetting list) {
-            if (button == 0) {
-               screen.openListEditor(module, list);
-            } else {
-               setting.reset();
-               save();
-            }
-         } else if (setting instanceof BooleanSetting bool) {
-            if (button == 0) {
-               bool.toggle();
-            } else {
-               setting.reset();
-            }
-
-            save();
-         } else if (setting instanceof ModeSetting mode) {
-            if (button == 0) {
-               mode.cycle();
-            } else {
-               mode.cycleBack();
-            }
-
-            save();
-         } else if (setting instanceof ActionSetting action && button == 0) {
-            action.run();
-            save();
          }
       }
    }
@@ -1198,18 +1167,6 @@ public final class CategoryPanel {
       return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
    }
 
-   private static void triRight(GuiGraphicsExtractor graphics, int cx, int cy, int size, int color) {
-      for (int i = 0; i < size; i++) {
-         graphics.fill(cx + i, cy - (size - i - 1), cx + i + 1, cy + (size - i), color);
-      }
-   }
-
-   private static void triDown(GuiGraphicsExtractor graphics, int cx, int cy, int size, int color) {
-      for (int i = 0; i < size; i++) {
-         graphics.fill(cx - (size - i - 1), cy + i, cx + (size - i), cy + i + 1, color);
-      }
-   }
-
    private static enum Drag {
       NONE,
       MOVE,
@@ -1245,7 +1202,7 @@ public final class CategoryPanel {
    ) {
       /** The default dark surface, for callers that do not theme the panel body. */
       public Look(int accent, int accent2, float opacity, boolean animate, float open, float scrollSpeed, boolean glow, boolean snapGrid) {
-         this(accent, accent2, opacity, animate, open, scrollSpeed, glow, snapGrid, -15987178, -15329501);
+         this(accent, accent2, opacity, animate, open, scrollSpeed, glow, snapGrid, Glass.surface(1), Glass.surface(2));
       }
    }
 
@@ -1256,15 +1213,12 @@ public final class CategoryPanel {
       private float enableAnim;
       private float hoverAnim;
       private boolean hoveredFrame;
+      private int blockTop;
+      private int blockShown;
       private Fuzzy.Match match;
 
       private Row(Module module) {
          this.module = module;
       }
-   }
-
-   /** A one-pixel horizontal rule. */
-   private static void hairline(GuiGraphicsExtractor graphics, int x1, int y, int x2, int color) {
-      graphics.fill(x1, y, x2, y + 1, color);
    }
 }

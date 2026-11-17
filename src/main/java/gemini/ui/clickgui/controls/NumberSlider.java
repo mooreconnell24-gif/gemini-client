@@ -4,16 +4,17 @@ import gemini.input.Keys;
 import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.Theme;
 import gemini.ui.UiMath;
 import gemini.ui.font.UiFont;
 import java.util.OptionalDouble;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
 /**
- * Slider for a {@link NumberSetting}: a label, the value and a bar whose fill glides to the value.
+ * Slider for a {@link NumberSetting}: the name, the value in a small bubble and a thin track whose fill glides to
+ * the value. The bubble lights up in the accent while the slider is dragged.
  *
  * <ul>
  * <li>Left-drag moves the knob to the cursor. Holding Shift makes the drag relative and ten times slower, for
@@ -25,13 +26,13 @@ import net.minecraft.client.input.KeyEvent;
  * </ul>
  */
 public final class NumberSlider extends SettingControl {
-   public static final int HEIGHT = 25;
-   private static final int PAD = 10;
+   public static final int HEIGHT = 26;
+   private static final int PAD = Widgets.PAD;
    private static final int FIELD_W = 46;
    private final NumberSetting setting;
    private final TextField field = new TextField(16, c -> c >= '0' && c <= '9' || c == '.' || c == ',' || c == '-' || c == '+');
    private float shown = Float.NaN;
-   private float hover;
+   private final Glass.Hover hover = new Glass.Hover();
    private boolean dragging;
    private double dragPercent;
    private double lastMouseX;
@@ -48,7 +49,7 @@ public final class NumberSlider extends SettingControl {
 
    @Override
    public int height() {
-      return HEIGHT;
+      return this.compact ? HEIGHT - 3 : HEIGHT;
    }
 
    /** True while the value is being typed. */
@@ -59,38 +60,50 @@ public final class NumberSlider extends SettingControl {
    @Override
    public void render(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY, float dt) {
       this.place(x, y, w);
-      Font font = Controls.font();
+      int h = this.height();
       int left = x + PAD;
       int right = x + w - PAD;
       int accent = this.accent();
       int accent2 = this.accent2();
-      boolean over = mouseX != NO_MOUSE && inside(mouseX, mouseY, x, y, x + w, y + HEIGHT);
-      this.hover = Glass.approach(this.hover, over || this.dragging ? 1.0F : 0.0F, 16.0F, dt);
-      if (this.hover > 0.01F) {
-         Glass.roundRect(g, x + 4, y, x + w - 4, y + HEIGHT - 1, 3, Glass.fade(Glass.withAlpha(0xFFFFFF, Math.round(18.0F * this.hover)), this.opacity));
-      }
-
-      int labelColor = this.setting.isDefault() ? Glass.textDim() : Glass.text();
+      boolean over = mouseX != NO_MOUSE && inside(mouseX, mouseY, x, y, x + w, y + h);
+      this.hover.update(over || this.dragging, this.dragging, dt);
+      float lit = this.hover.hover;
+      Widgets.rowHover(g, x, y, w, h, lit, this.opacity);
+      int labelColor = Widgets.label(this.setting.isDefault());
+      int textY = y + (this.compact ? 3 : 4);
       if (this.field.focused()) {
-         Controls.text(g, font, Controls.fit(font, this.setting.name(), right - left - FIELD_W - 4), left, y + 3, labelColor, this.opacity);
-         this.field.render(g, font, right - FIELD_W, y + 1, FIELD_W, 11, "", true, accent2, this.opacity, dt);
+         Controls.text(g, null, UiFont.ellipsize(this.setting.name(), right - left - FIELD_W - 4), left, textY, labelColor, this.opacity);
+         this.field.render(g, null, right - FIELD_W, textY - 3, FIELD_W, 13, "", true, accent, this.opacity, dt);
       } else {
+         // the value sits in a small bubble that lights up in the accent while the slider is dragged
          String value = this.setting.display();
-         int valueW = UiFont.width(value);
-         Controls.text(g, font, Controls.fit(font, this.setting.name(), right - left - valueW - 6), left, y + 3, labelColor, this.opacity);
-         Controls.text(g, font, value, right - valueW, y + 3, Glass.lerp(accent2, 0xFFFFFFFF, this.hover * 0.4F), this.opacity);
+         float press = this.hover.press;
+         int fill = Glass.lerp(Glass.lerp(Widgets.raised(), Widgets.raisedHover(), lit), accent, press);
+         int ink = Glass.lerp(Glass.lerp(Glass.textDim(), Glass.text(), lit), Theme.onColor(accent), press);
+         int bubbleL = Widgets.chip(g, value, right, textY - 2, 11, fill, ink, this.opacity);
+         Controls.text(g, null, UiFont.ellipsize(this.setting.name(), bubbleL - left - 5), left, textY, labelColor, this.opacity);
       }
 
       float target = (float)Math.max(0.0, Math.min(1.0, this.setting.percent()));
-      this.shown = Glass.approach(this.shown, target, 18.0F, dt);
-      int trackY = y + 16;
-      Glass.bar(g, left, trackY, right, trackY + 4, this.shown, Glass.fade(0xFF232A38, this.opacity), Glass.fade(accent, this.opacity), Glass.fade(accent2, this.opacity));
+      this.shown = Float.isNaN(this.shown) ? target : Glass.approach(this.shown, target, 22.0F, dt);
+      int trackY = y + h - 7;
+      Glass.roundRect(g, left, trackY, right, trackY + 2, 1, Glass.fade(Widgets.trackOff(), this.opacity));
       int knob = left + Math.round((right - left) * this.shown);
-      if (this.hover > 0.01F) {
-         Glass.roundRect(g, knob - 4, trackY - 3, knob + 4, trackY + 7, 4, Glass.fade(Glass.withAlpha(accent2, Math.round(90.0F * this.hover)), this.opacity));
+      if (knob > left) {
+         Glass.roundGradient(g, left, trackY, Math.max(left + 2, knob), trackY + 2, 1, Glass.fade(accent, this.opacity), Glass.fade(Glass.lerp(accent, accent2, this.shown), this.opacity));
       }
 
-      Glass.roundRect(g, knob - 2, trackY - 2, knob + 2, trackY + 6, 2, Glass.fade(0xFFFFFFFF, this.opacity));
+      int cx = Math.max(left + 3, Math.min(right - 3, knob));
+      if (lit > 0.01F) {
+         Glass.roundRect(g, cx - 6, trackY - 5, cx + 6, trackY + 7, 6, Glass.fade(Glass.withAlpha(accent, Math.round(56.0F * lit)), this.opacity));
+      }
+
+      Glass.roundRect(g, cx - 3, trackY - 2, cx + 3, trackY + 4, 3, Glass.fade(Glass.lerp(Glass.text(), 0xFFFFFFFF, lit), this.opacity));
+   }
+
+   @Override
+   public String hint() {
+      return "Shift-drag = fine  ·  double-click or right-click to type";
    }
 
    @Override
@@ -101,7 +114,7 @@ public final class NumberSlider extends SettingControl {
 
       if (this.field.focused()) {
          // a press on the field keeps typing; anywhere else on the row finishes the edit
-         if (!inside(mouseX, mouseY, this.x + this.w - PAD - FIELD_W, this.y, this.x + this.w - PAD, this.y + 13)) {
+         if (!inside(mouseX, mouseY, this.x + this.w - PAD - FIELD_W, this.y, this.x + this.w - PAD, this.y + 15)) {
             this.blur();
          }
 

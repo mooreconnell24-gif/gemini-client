@@ -1,6 +1,10 @@
 package gemini.ui.clickgui.controls;
 
+import gemini.module.setting.ActionSetting;
+import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
+import gemini.module.setting.ListSetting;
+import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
@@ -36,20 +40,47 @@ public abstract class SettingControl {
    protected int y;
    protected int w;
    protected float opacity = 1.0F;
+   protected boolean compact;
    private int accent;
    private int accent2;
    private boolean customAccent;
    private Runnable onChange;
 
-   /** The control for a setting type that has one ({@link NumberSlider}, {@link ColorPicker}), otherwise null. */
+   /**
+    * The control for a setting: {@link NumberSlider}, {@link ColorPicker}, {@link ToggleControl},
+    * {@link ModeControl}, {@link ListControl} or {@link ActionControl}; null for a type that has none.
+    */
    public static SettingControl of(Setting<?> setting) {
       if (setting instanceof NumberSetting number) {
          return new NumberSlider(number);
       } else if (setting instanceof ColorSetting color) {
          return new ColorPicker(color);
+      } else if (setting instanceof BooleanSetting bool) {
+         return new ToggleControl(bool);
+      } else if (setting instanceof ModeSetting mode) {
+         return new ModeControl(mode);
+      } else if (setting instanceof ListSetting list) {
+         return new ListControl(list);
+      } else if (setting instanceof ActionSetting action) {
+         return new ActionControl(action);
       } else {
          return null;
       }
+   }
+
+   /** Compact controls are a little shorter, for the narrow columns of the panel menu. */
+   public void setCompact(boolean compact) {
+      this.compact = compact;
+   }
+
+   /** Height of a one-line control. */
+   protected final int rowHeight() {
+      return this.compact ? 17 : 20;
+   }
+
+   /** The hint a host shows for this control next to the setting's description, or null. */
+   public String hint() {
+      return null;
    }
 
    public abstract Setting<?> setting();

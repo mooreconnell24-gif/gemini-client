@@ -39,14 +39,14 @@ public final class ClickGuiModule extends Module {
       ).showIf(() -> this.theme.is("Custom"))
    );
    private final ModeSetting layout = this.addSetting(
-      new ModeSetting("Layout", "Window is one centred window with a sidebar; Panels is one draggable column per category", "Window", "Window", "Panels")
+      new ModeSetting("Layout", "Window is one centred window with a sidebar and module cards; Panels is one draggable dropdown column per category", "Window", "Window", "Panels")
    );
    private final ColorSetting primary = this.addSetting(new ColorSetting("Primary", "Custom primary accent colour", 212).showIf(() -> this.theme.is("Custom")));
    private final ColorSetting secondary = this.addSetting(new ColorSetting("Secondary", "Custom secondary accent colour", 190).showIf(() -> this.theme.is("Custom")));
    private final BooleanSetting categoryTint = this.addSetting(
       new BooleanSetting("Category Tint", "Blend the accent towards the colour of the category you are looking at", false)
    );
-   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Animate opening, pulses, scrolling and dropdowns", true));
+   private final BooleanSetting animations = this.addSetting(new BooleanSetting("Animations", "Animate the menus: opening and closing, hover, switches, scrolling and settings unfolding", true));
    private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glass Glow", "Faint glow around the hovered panel in the panel menu", false));
    private final BooleanSetting snapGrid = this.addSetting(new BooleanSetting("Grid Snap", "Snap panels and HUD widgets to an 8-pixel grid", true));
    private final BooleanSetting floatingTooltips = this.addSetting(
@@ -62,7 +62,7 @@ public final class ClickGuiModule extends Module {
    private final NumberSetting scrollSpeed = this.addSetting(new NumberSetting("Scroll Speed", "Rows moved per mouse-wheel notch", 2.0, 0.5, 6.0, 0.5));
    private final BooleanSetting rememberSearch = this.addSetting(new BooleanSetting("Keep Search", "Keep the search text when the menu is reopened", false));
    private final ListSetting favorites = this.addSetting(
-      new ListSetting("Favorites", "Starred modules; the star on a module card or the ★ filter shows them", ListSetting.Kind.TEXT)
+      new ListSetting("Favorites", "Starred modules; click the star on a module card to add one, and the star filter to list them", ListSetting.Kind.TEXT)
    );
 
    public ClickGuiModule() {
@@ -148,6 +148,14 @@ public final class ClickGuiModule extends Module {
 
    public String themeName() {
       return this.theme.get();
+   }
+
+   /** Switches to the named theme (a preset or Custom) and saves; unknown names are ignored. The menus' theme swatches call this. */
+   public void setTheme(String name) {
+      if (name != null && this.theme.modes().contains(name) && !this.theme.is(name)) {
+         this.theme.set(name);
+         this.save();
+      }
    }
 
    /** The Theme setting: the names in {@link Theme#themeNames()}, with the retired names still accepted from old configs. */

@@ -3,6 +3,8 @@ package gemini.ui.clickgui.controls;
 import com.mojang.blaze3d.platform.InputConstants;
 import gemini.input.Keys;
 import gemini.ui.Glass;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -63,6 +65,14 @@ public final class Controls {
       }
    }
 
+   /** As {@link #text(GuiGraphicsExtractor, Font, String, int, int, int, float)} in a given size and weight. */
+   public static void text(GuiGraphicsExtractor g, String text, int x, int y, int color, float opacity, FontSize size, FontWeight weight) {
+      int alpha = Math.round((color >>> 24) * Math.max(0.0F, Math.min(1.0F, opacity)));
+      if (text != null && alpha >= 10) {
+         UiFont.draw(g, text, x, y, alpha << 24 | color & 0xFFFFFF, size, weight, false);
+      }
+   }
+
    /** The text cut down with an ellipsis so it is no wider than {@code maxWidth} (see {@link UiFont#ellipsize}). */
    public static String fit(Font font, String text, int maxWidth) {
       return UiFont.ellipsize(text, maxWidth);
@@ -74,6 +84,7 @@ public final class Controls {
          return;
       }
 
+      // the usual light/dark squares: these are a picture of "transparent", not theme colours
       g.fill(x1, y1, x2, y2, Glass.fade(0xFFB8BCC6, opacity));
       int size = Math.max(2, cell);
       int dark = Glass.fade(0xFF6C7180, opacity);
