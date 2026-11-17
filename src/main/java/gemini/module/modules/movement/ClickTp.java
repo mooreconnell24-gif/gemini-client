@@ -4,7 +4,6 @@ import gemini.util.ClientState;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
-import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.MoveUtil;
@@ -23,9 +22,6 @@ public final class ClickTp extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest block you can teleport to", 60.0, 5.0, 200.0, 5.0));
    private final ModeSetting trigger = this.addSetting(
       new ModeSetting("Trigger", "What starts the teleport", "Middle Click", "Middle Click", "Sneak + Right Click")
-   );
-   private final BooleanSetting steps = this.addSetting(
-      new BooleanSetting("Step Packets", "Send the route in short hops so long teleports are accepted", true)
    );
    private boolean previous;
 
@@ -73,7 +69,7 @@ public final class ClickTp extends Module {
          if (destination == null) {
             CommandManager.feedback("§bClick TP §7there is no room to stand there.");
          } else {
-            MoveUtil.teleport(client, player, destination, this.steps.get());
+            MoveUtil.teleport(client, player, destination);
          }
       }
    }

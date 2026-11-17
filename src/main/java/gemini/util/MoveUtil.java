@@ -6,9 +6,7 @@ import com.mojang.blaze3d.platform.InputConstants.Key;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -116,25 +114,15 @@ public final class MoveUtil {
       }
    }
 
-   public static void teleport(Minecraft client, LocalPlayer player, Vec3 destination, boolean hops) {
-      ClientPacketListener connection = client.getConnection();
-      if (connection != null && hops) {
-         Vec3 position = player.position();
-         int count = (int)Math.ceil(position.distanceTo(destination) / 8.0);
-
-         // Hops are marked on-ground: the server adds up every downward hop as fall distance otherwise,
-         // so teleporting to somewhere lower would hurt (or kill) on the next step.
-         for (int i = 1; i < count; i++) {
-            Vec3 point = position.lerp(destination, (double)i / count);
-            connection.send(new Pos(point.x, point.y, point.z, true, false));
-         }
-
-         connection.send(new Pos(destination.x, destination.y, destination.z, true, false));
-      }
-
+   /**
+    * Moves the player to {@code destination}. The next regular movement packet carries the new position: the
+    * integrated server skips its "moved too quickly" check for the world's owner. Extra position packets ("hops") are
+    * not sent: since 26.x the server disconnects a client that sends more than one position per tick.
+    */
+   public static void teleport(Minecraft client, LocalPlayer player, Vec3 destination) {
       player.setPos(destination);
       player.setDeltaMovement(Vec3.ZERO);
-      player.resetFallDistance();
+      AttributeBoost.resetFall(player);
    }
 
    /**

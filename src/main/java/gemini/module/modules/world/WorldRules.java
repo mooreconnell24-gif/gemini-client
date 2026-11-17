@@ -101,11 +101,16 @@ public final class WorldRules extends Module {
    @Override
    public void onDisable() {
       if (this.restore.get() && Minecraft.getInstance().player != null) {
+         // Only the rules this module changed: the others already hold their vanilla value.
          for (WorldRules.Rule rule : this.rules) {
-            rule.send(rule.vanilla);
+            if (rule.setting.get() != rule.vanilla) {
+               rule.send(rule.vanilla);
+            }
          }
 
-         send("3", "random_tick_speed");
+         if (this.tickSpeed.intValue() != 3) {
+            send("3", "random_tick_speed");
+         }
       }
    }
 

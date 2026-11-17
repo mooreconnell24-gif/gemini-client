@@ -39,9 +39,8 @@ import org.junit.jupiter.api.Test;
 class SpCommandsSyntaxTest {
    private static final Path SOURCES = Path.of("src/main/java/gemini");
    private static final Pattern LITERAL = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"");
-   /** Command words modules use; a lowercase literal that starts with one of these and a space is a command. */
-   private static final Pattern COMMAND = Pattern.compile(
-      "^(effect|give|item|enchant|gamerule|time|weather|kill|fill|summon|execute|spawnpoint|clear|difficulty|spreadplayers|gamemode|tp|save-all) .*"
+   private static final java.util.Set<String> DEDICATED_ONLY = java.util.Set.of(
+      "save-all", "save-on", "save-off", "stop", "op", "deop", "ban", "ban-ip", "banlist", "pardon", "pardon-ip", "whitelist", "setidletimeout", "transfer"
    );
    private static Commands commands;
    private static CommandSourceStack source;
@@ -93,7 +92,10 @@ class SpCommandsSyntaxTest {
       assertTrue(problem("save-all") != null, "save-all is dedicated-server only");
    }
 
-   /** Complete command literals in every file that sends commands (templates ending in a space are covered below). */
+   /**
+    * Complete command literals in every file that sends commands (templates ending in a space are covered below).
+    * "save-all" is not a root command in single player, so it is checked by {@link #theCheckRejectsWhatTheServerRejects}.
+    */
    @Test
    void literalCommandsParse() throws IOException {
       Map<String, String> found = new LinkedHashMap<>();
@@ -107,7 +109,12 @@ class SpCommandsSyntaxTest {
             Matcher matcher = LITERAL.matcher(text);
             while (matcher.find()) {
                String literal = matcher.group(1);
-               if (COMMAND.matcher(literal).matches() && !literal.endsWith(" ") && !literal.endsWith(":") && !literal.contains("%")) {
+               int space = literal.indexOf(' ');
+               // A literal is a command when its first word is a root command of the real dispatcher.
+               // Dedicated-server-only words count too, so a module that sends one fails here instead of silently in game.
+               String word = space > 0 ? literal.substring(0, space) : literal;
+               boolean command = commands.getDispatcher().getRoot().getChild(word) != null || DEDICATED_ONLY.contains(word);
+               if (command && literal.indexOf(' ') > 0 && !literal.endsWith(" ") && !literal.endsWith(":") && !literal.contains("%")) {
                   found.put(literal, file.getFileName().toString());
                }
             }

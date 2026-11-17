@@ -9,9 +9,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.util.AttributeBoost;
 import gemini.util.MoveUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.phys.Vec3;
 
@@ -152,11 +150,9 @@ public final class FlightModule extends LinearFlightModuleBase {
       double dz = dir == null ? 0.0 : dir.z * step;
       player.setDeltaMovement(0.0, 0.0, 0.0);
       Vec3 next = player.position().add(dx, dy, dz);
+      // The regular movement packet sends this position; a second position packet in the same tick gets the
+      // player disconnected by the 26.x server.
       player.setPos(next);
-      ClientPacketListener conn = client.getConnection();
-      if (conn != null) {
-         conn.send(new Pos(next.x, next.y, next.z, false, false));
-      }
 
       if (this.noFall.get()) {
          AttributeBoost.resetFall(player);
