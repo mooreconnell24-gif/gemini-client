@@ -78,5 +78,7 @@ class ToastCurveTest {
       assertEquals(94.0F, HudOverlay.clearOf(new float[] {30.0F, 90.0F}, 1, 6.0F, 32.0F, 4.0F, 200.0F));
       // a corner that is full to past the limit is not climbed at all
       assertEquals(6.0F, HudOverlay.clearOf(new float[] {0.0F, 300.0F}, 1, 6.0F, 32.0F, 4.0F, 200.0F));
+      // nor is one that cannot be cleared within the limit half climbed
+      assertEquals(6.0F, HudOverlay.clearOf(new float[] {4.0F, 20.0F, 30.0F, 300.0F}, 2, 6.0F, 32.0F, 4.0F, 200.0F));
    }
 }

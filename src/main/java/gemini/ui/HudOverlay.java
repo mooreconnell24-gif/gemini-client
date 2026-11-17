@@ -294,9 +294,26 @@ public final class HudOverlay {
       Theme.Palette theme = Theme.current();
       // Slots are laid out from the anchored edge, newest nearest it. Each card glides toward its slot, so the stack
       // closes up smoothly when a card above or below leaves.
-      float slot = TOASTS.isEmpty() ? TOAST_MARGIN : this.toastStart(width, height, right, bottom);
+      float slot = TOAST_MARGIN;
       boolean first = true;
       synchronized (TOASTS) {
+         if (TOASTS.isEmpty()) {
+            return;
+         }
+
+         // Measure first: the stack starts past the HUD widgets that sit in the corner under its widest card.
+         int generation = UiFont.generation();
+         int widest = 0;
+         for (HudOverlay.Toast toast : TOASTS) {
+            if (toast.cardW == 0 || toast.generation != generation) {
+               toast.generation = generation;
+               measureToast(toast, width);
+            }
+
+            widest = Math.max(widest, toast.cardW);
+         }
+
+         slot = this.toastStart(width, height, widest, right, bottom);
          Iterator<HudOverlay.Toast> it = TOASTS.descendingIterator();
          while (it.hasNext()) {
             HudOverlay.Toast toast = it.next();
@@ -304,12 +321,6 @@ public final class HudOverlay {
             if (age >= toast.durationMs) {
                it.remove();
                continue;
-            }
-
-            int generation = UiFont.generation();
-            if (toast.cardW == 0 || toast.generation != generation) {
-               toast.generation = generation;
-               measureToast(toast, width);
             }
 
             float slide = toastSlide(age, toast.durationMs);
@@ -335,9 +346,9 @@ public final class HudOverlay {
 
    /**
     * How far from the anchored screen edge the notification stack starts: past any HUD widget sitting in that
-    * corner, so a notification never covers one. See {@link #clearOf}.
+    * corner under a card {@code cardW} wide, so a notification does not cover one. See {@link #clearOf}.
     */
-   private float toastStart(int width, int height, boolean right, boolean bottom) {
+   private float toastStart(int width, int height, int cardW, boolean right, boolean bottom) {
       HudWidget[] list = this.widgets;
       if (list == null) {
          return TOAST_MARGIN;
@@ -348,8 +359,8 @@ public final class HudOverlay {
          this.toastRects = new float[list.length * 4];
       }
 
-      float columnLeft = right ? width - TOAST_MAX_W - TOAST_MARGIN : 0.0F;
-      float columnRight = right ? width : TOAST_MAX_W + TOAST_MARGIN;
+      float columnLeft = right ? width - cardW - TOAST_MARGIN : 0.0F;
+      float columnRight = right ? width : cardW + TOAST_MARGIN;
       for (HudWidget widget : list) {
          if (widget.isEnabled() && widget.lastScreenW() > 0.0F && widget.lastScreenH() > 0.0F
             && widget.lastScreenX() < columnRight && widget.lastScreenX() + widget.lastScreenW() > columnLeft) {
@@ -367,8 +378,9 @@ public final class HudOverlay {
    /**
     * The first distance from a screen edge, at or after {@code start}, where a band {@code need} tall is free of the
     * {@code count} spans in {@code spans} (pairs of near and far distance from that edge), keeping {@code gap}
-    * after a span it has to pass. If that would be farther than {@code limit} (the corner is full, say with a long
-    * module list), the answer is {@code start}: better over a widget for a moment than in the middle of the screen.
+    * after a span it has to pass. It never goes farther than {@code limit}: when the corner is that full (a long
+    * module list, or a wide card on a small screen), the answer is {@code start}. A notification that has to cover
+    * something for a moment does it in its own corner, where it is expected, not somewhere up the screen.
     */
    static float clearOf(float[] spans, int count, float start, float need, float gap, float limit) {
       float edge = start;
@@ -379,13 +391,17 @@ public final class HudOverlay {
             float near = spans[i * 2];
             float far = spans[i * 2 + 1];
             if (near < edge + need && far > edge - gap) {
+               if (far + gap > limit) {
+                  return start;
+               }
+
                edge = far + gap;
                moved = true;
             }
          }
       }
 
-      return edge > limit ? start : edge;
+      return edge;
    }
 
    /**

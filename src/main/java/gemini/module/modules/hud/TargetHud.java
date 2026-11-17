@@ -271,7 +271,7 @@ public final class TargetHud extends HudWidget {
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      return this.compact() ? 168 : (this.ring() ? 132 : 158);
+      return this.compact() ? 184 : (this.ring() ? 132 : 158);
    }
 
    @Override
