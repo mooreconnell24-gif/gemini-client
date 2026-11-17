@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 
@@ -193,7 +194,7 @@ public final class HudStyle {
 
       if (label != null) {
          int color = Glass.lerp(Glass.TEXT, 0xFF141821, p);
-         g.text(font, label, x + (w - font.width(label) + 1) / 2, y + (h - 8) / 2 + 1, color, shadow && p < 0.5F);
+         UiFont.draw(g, label, x + (w - UiFont.width(label) + 1) / 2, y + (h - 8) / 2 + 1, color, shadow && p < 0.5F);
       }
    }
 }

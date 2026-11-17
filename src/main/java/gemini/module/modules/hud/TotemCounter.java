@@ -4,6 +4,7 @@ import gemini.module.HudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -19,7 +20,7 @@ public final class TotemCounter extends HudWidget {
 
    @Override
    protected int widgetWidth(HudContext hud) {
-      return 2 * HudStyle.PAD_X + 16 + 6 + hud.font.width("00");
+      return 2 * HudStyle.PAD_X + 16 + 6 + UiFont.width("00");
    }
 
    @Override
@@ -42,6 +43,6 @@ public final class TotemCounter extends HudWidget {
       hud.graphics.item(this.totem, HudStyle.PAD_X, HudStyle.PAD_Y);
       // White while you have spares, amber on your last one, red with none.
       int color = count == 0 ? Glass.ERROR : (count == 1 ? Glass.WARN : Glass.TEXT);
-      hud.graphics.text(hud.font, this.text, w - HudStyle.PAD_X - hud.font.width(this.text), HudStyle.PAD_Y + 4, color, hud.shadow);
+      UiFont.draw(hud.graphics, this.text, w - HudStyle.PAD_X - UiFont.width(this.text), HudStyle.PAD_Y + 4, color, hud.shadow);
    }
 }

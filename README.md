@@ -454,11 +454,14 @@ Gemini Client is not affiliated with Mojang, Microsoft, Fabric, LiquidBounce or 
 - **Fabric** for the mod loader and API
 - **LiquidBounce Nextgen**, **Rise** and **Meteor** for UI and feature inspiration
 - **Baritone** for pathfinding, bundled in the release jar
+- **Inter** by Rasmus Andersson and the Inter Project Authors, the typeface of the menus and HUD
 - Testers and issue reporters
 
 ## License
 
 Released under the [MIT License](LICENSE).
+
+The jar bundles the [Inter](https://rsms.me/inter/) typeface (Regular, Medium and SemiBold, subset to Latin, Greek and Cyrillic, with tabular figures), licensed under the [SIL Open Font License 1.1](src/main/resources/assets/gemini/font/inter_ofl.txt); the licence text ships inside the jar at `assets/gemini/font/inter_ofl.txt`.
 
 The jar bundles Baritone, licensed under the [LGPL-3.0](https://github.com/cabaletta/baritone/blob/master/LICENSE). The bundled build is an unofficial Minecraft 26.3 port by dysnasia ([source](https://github.com/dysnasia/baritone-26.2)) of [cabaletta/baritone](https://github.com/cabaletta/baritone), and includes [nether-pathfinder](https://github.com/babbaj/nether-pathfinder) 1.4.1.
 

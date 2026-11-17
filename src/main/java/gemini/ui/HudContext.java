@@ -16,8 +16,18 @@ public final class HudContext {
    public int height;
    public int accent;
    public int accent2;
-   /** Base panel colour of the active ClickGUI surface. */
+   /** Base panel colour of the theme (surface level 0). */
    public int surface;
+   /**
+    * The live theme colours: accent pair, surface levels, text levels and status colours. Same object as
+    * {@link Theme#current()}; {@link #accent}, {@link #accent2} and {@link #surface} above are shortcuts into it
+    * (the HUD may tint the accents per frame, so prefer the shortcuts for those).
+    */
+   public Theme.Palette theme = Theme.current();
+   /** Theme text colours: primary, secondary and tertiary. */
+   public int text;
+   public int textDim;
+   public int textFaint;
    public boolean shadow;
    /** The HUD-wide backdrop look, one of {@link HudStyle#SOFT}, {@link HudStyle#SOLID}, {@link HudStyle#NONE}. */
    public int backdrop = HudStyle.SOFT;
@@ -43,6 +53,10 @@ public final class HudContext {
       this.accent = accent;
       this.accent2 = accent2;
       this.surface = surface;
+      this.theme = Theme.current();
+      this.text = this.theme.text;
+      this.textDim = this.theme.textDim;
+      this.textFaint = this.theme.textFaint;
       this.shadow = shadow;
       this.partialTick = partialTick;
       this.delta = delta;

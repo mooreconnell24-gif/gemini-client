@@ -15,6 +15,7 @@ import gemini.mods.VersionPicker;
 import gemini.ui.Glass;
 import gemini.ui.clickgui.controls.TextField;
 import gemini.ui.clickgui.window.DashboardPage;
+import gemini.ui.font.UiFont;
 import gemini.util.ClientThread;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -209,9 +210,9 @@ public final class ModsPage extends DashboardPage {
    }
 
    private int tabLabel(GuiGraphicsExtractor g, String label, int x, int y, boolean active, int mouseX, int mouseY, Tab target) {
-      int tw = this.font().width(label);
+      int tw = UiFont.width(label);
       boolean over = inside(mouseX, mouseY, x - 2, y - 3, tw + 4, 14);
-      this.text(g, label, x, y, active ? Glass.TEXT : (over ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.5F) : Glass.TEXT_DIM));
+      this.text(g, label, x, y, active ? Glass.text() : (over ? Glass.lerp(Glass.textDim(), Glass.text(), 0.5F) : Glass.textDim()));
       if (active) {
          g.fill(x, y + 11, x + tw, y + 12, this.c(Glass.accent()));
       }
@@ -254,11 +255,11 @@ public final class ModsPage extends DashboardPage {
       int rx = x + w - 10;
       for (int i = types.size() - 1; i >= 0; i--) {
          ProjectType t = types.get(i);
-         int tw = this.font().width(t.label);
+         int tw = UiFont.width(t.label);
          rx -= tw;
          boolean active = t == type;
          boolean over = inside(mouseX, mouseY, rx - 3, y + 6, tw + 6, 14);
-         this.text(g, t.label, rx, y + 9, active ? Glass.TEXT : (over ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.5F) : Glass.TEXT_FAINT));
+         this.text(g, t.label, rx, y + 9, active ? Glass.text() : (over ? Glass.lerp(Glass.textDim(), Glass.text(), 0.5F) : Glass.textFaint()));
          if (active) {
             g.fill(rx, y + 20, rx + tw, y + 21, this.c(Glass.accent()));
          }
@@ -275,15 +276,15 @@ public final class ModsPage extends DashboardPage {
       // search field and sort
       int rowY = y + 26;
       String sortLabel = sort.label;
-      int sortW = this.font().width(sortLabel) + 18;
+      int sortW = UiFont.width(sortLabel) + 18;
       int fieldW = w - 20 - sortW - 6;
       String placeholder = "Search " + type.label.toLowerCase(Locale.ROOT) + " for " + this.browser.gameVersion() + "...";
       this.field(g, this.search, x + 10, rowY, fieldW, placeholder, mouseX, mouseY, false);
       int sx = x + 10 + fieldW + 6;
       boolean overSort = inside(mouseX, mouseY, sx, rowY, sortW, 13);
       Glass.roundRect(g, sx, rowY, sx + sortW, rowY + 13, gemini.ui.Theme.RADIUS_SMALL, this.c(overSort || this.sortOpen ? Glass.surface(3) : Glass.surface(2)));
-      this.text(g, sortLabel, sx + 5, rowY + 3, overSort ? Glass.TEXT : Glass.TEXT_DIM);
-      caret(g, sx + sortW - 10, rowY + 5, this.c(Glass.TEXT_DIM));
+      this.text(g, sortLabel, sx + 5, rowY + 3, overSort ? Glass.text() : Glass.textDim());
+      caret(g, sx + sortW - 10, rowY + 5, this.c(Glass.textDim()));
       this.host.hit(sx, rowY, sortW, 13, null, (b, mx, my, d) -> this.sortOpen = !this.sortOpen);
       if (overSort) {
          this.host.tip("Order of the results");
@@ -316,7 +317,7 @@ public final class ModsPage extends DashboardPage {
       this.host.hit(x, y, w, h, null, (b, mx, my, d) -> this.sortOpen = false);
       int itemW = width;
       for (ModrinthUrls.Sort s : ModrinthUrls.Sort.values()) {
-         itemW = Math.max(itemW, this.font().width(s.label) + 12);
+         itemW = Math.max(itemW, UiFont.width(s.label) + 12);
       }
 
       int left = mx0 + width - itemW;
@@ -330,7 +331,7 @@ public final class ModsPage extends DashboardPage {
             g.fill(left + 1, iy, left + itemW - 1, iy + 14, this.c(0xFFFFFFFF, 14));
          }
 
-         this.text(g, s.label, left + 6, iy + 3, s == sort ? Glass.TEXT : Glass.TEXT_DIM);
+         this.text(g, s.label, left + 6, iy + 3, s == sort ? Glass.text() : Glass.textDim());
          this.host.hit(left, iy, itemW, 14, null, (b, mx, my, d) -> {
             this.sortOpen = false;
             if (sort != s) {
@@ -347,7 +348,7 @@ public final class ModsPage extends DashboardPage {
       this.viewport(x, top, w + 4, bottom, contentH);
       if (this.hits.isEmpty()) {
          String message = this.loading ? "Searching Modrinth..." : (this.listError != null ? this.listError : "Nothing found for " + this.browser.gameVersion() + ".");
-         int color = this.listError != null && !this.loading ? Glass.WARN : Glass.TEXT_FAINT;
+         int color = this.listError != null && !this.loading ? Glass.WARN : Glass.textFaint();
          this.textFit(g, message, x + 4, top + 12, w - 8, color);
          if (this.listError != null && !this.loading) {
             int bw = this.buttonWidth("Try again");
@@ -370,7 +371,7 @@ public final class ModsPage extends DashboardPage {
       if (this.hasMore || this.loading) {
          if (ry <= bottom + ROW) {
             String more = this.listError != null ? this.listError : "Loading more...";
-            this.textFit(g, more, x + 6, ry + 10, w - 12, this.listError != null ? Glass.WARN : Glass.TEXT_FAINT);
+            this.textFit(g, more, x + 6, ry + 10, w - 12, this.listError != null ? Glass.WARN : Glass.textFaint());
             if (!this.loading && this.listError == null && this.hasMore) {
                this.loadMore();
             }
@@ -391,17 +392,17 @@ public final class ModsPage extends DashboardPage {
       this.drawIcon(g, hit.iconUrl(), hit.title(), x + 3, y + 2, ICON);
       int textX = x + ICON + 9;
       String downloads = compact(hit.downloads());
-      int dw = this.font().width(downloads);
-      this.text(g, downloads, x + w - 4 - dw, y + 4, Glass.TEXT_FAINT);
+      int dw = UiFont.width(downloads);
+      this.text(g, downloads, x + w - 4 - dw, y + 4, Glass.textFaint());
       int titleRoom = x + w - 10 - dw - textX;
       String title = gemini.ui.clickgui.controls.Controls.fit(this.font(), hit.title(), titleRoom);
-      this.text(g, title, textX, y + 4, Glass.TEXT);
-      int afterTitle = textX + this.font().width(title) + 5;
+      this.text(g, title, textX, y + 4, Glass.text());
+      int afterTitle = textX + UiFont.width(title) + 5;
       if (!hit.author().isEmpty() && afterTitle < x + w - 14 - dw) {
-         this.textFit(g, hit.author(), afterTitle, y + 4, x + w - 10 - dw - afterTitle, Glass.TEXT_FAINT);
+         this.textFit(g, hit.author(), afterTitle, y + 4, x + w - 10 - dw - afterTitle, Glass.textFaint());
       }
 
-      this.textFit(g, hit.description(), textX, y + 15, x + w - 4 - textX, Glass.TEXT_DIM);
+      this.textFit(g, hit.description(), textX, y + 15, x + w - 4 - textX, Glass.textDim());
       this.host.hit(x, y, w, ROW - 2, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> this.select(hit));
       if (over) {
          this.host.tip(String.format(java.util.Locale.ROOT, "%,d downloads", hit.downloads()));
@@ -418,7 +419,7 @@ public final class ModsPage extends DashboardPage {
 
       Glass.roundRect(g, x, y, x + size, y + size, gemini.ui.Theme.RADIUS_SMALL, this.c(Glass.surface(3)));
       String letter = title.isEmpty() ? "?" : title.substring(0, 1).toUpperCase(Locale.ROOT);
-      this.text(g, letter, x + (size - this.font().width(letter)) / 2, y + (size - 8) / 2, Glass.TEXT_FAINT);
+      this.text(g, letter, x + (size - UiFont.width(letter)) / 2, y + (size - 8) / 2, Glass.textFaint());
    }
 
    private void renderDetail(GuiGraphicsExtractor g, int x, int top, int w, int bottom, int mouseX, int mouseY) {
@@ -429,19 +430,19 @@ public final class ModsPage extends DashboardPage {
       g.fill(x - 7, top, x - 6, bottom, this.c(0xFFFFFFFF, 14));
       Detail d = this.detail;
       if (d == null) {
-         this.textFit(g, "Pick something from the list.", x, top + 12, w, Glass.TEXT_FAINT);
+         this.textFit(g, "Pick something from the list.", x, top + 12, w, Glass.textFaint());
          this.drawRestartLine(g, x, bottom - 10, w);
          return;
       }
 
       Modrinth.Hit hit = d.hit;
       this.drawIcon(g, hit.iconUrl(), hit.title(), x, top, 32);
-      this.textFit(g, hit.title(), x + 40, top + 4, w - 40, Glass.TEXT);
+      this.textFit(g, hit.title(), x + 40, top + 4, w - 40, Glass.text());
       String by = (hit.author().isEmpty() ? "" : "by " + hit.author() + "  ·  ") + compact(hit.downloads()) + " downloads";
-      this.textFit(g, by, x + 40, top + 17, w - 40, Glass.TEXT_FAINT);
+      this.textFit(g, by, x + 40, top + 17, w - 40, Glass.textFaint());
       int ly = top + 40;
       for (String line : wrap(hit.description(), w, 2)) {
-         this.text(g, line, x, ly, Glass.TEXT_DIM);
+         this.text(g, line, x, ly, Glass.textDim());
          ly += 11;
       }
 
@@ -455,7 +456,7 @@ public final class ModsPage extends DashboardPage {
                break;
             }
 
-            this.text(g, line, x, ly, Glass.TEXT_FAINT);
+            this.text(g, line, x, ly, Glass.textFaint());
             ly += 10;
          }
 
@@ -473,7 +474,7 @@ public final class ModsPage extends DashboardPage {
          List<String> lines = this.restartLines(w);
          int ly = y + 8 - lines.size() * 10;
          for (String line : lines) {
-            this.text(g, line, x, ly, Glass.TEXT_DIM);
+            this.text(g, line, x, ly, Glass.textDim());
             ly += 10;
          }
       }
@@ -485,7 +486,7 @@ public final class ModsPage extends DashboardPage {
 
    private int drawInstallSection(GuiGraphicsExtractor g, Detail d, int x, int y, int w, int mouseX, int mouseY) {
       if (d.loading) {
-         this.text(g, "Checking versions...", x, y, Glass.TEXT_FAINT);
+         this.text(g, "Checking versions...", x, y, Glass.textFaint());
          return y + 12;
       }
 
@@ -505,20 +506,20 @@ public final class ModsPage extends DashboardPage {
          return y + 12;
       }
 
-      this.textFit(g, "For " + gv + ": " + d.version.versionNumber() + (d.version.versionType().equals("release") ? "" : " (" + d.version.versionType() + ")"), x, y, w, Glass.TEXT_DIM);
+      this.textFit(g, "For " + gv + ": " + d.version.versionNumber() + (d.version.versionType().equals("release") ? "" : " (" + d.version.versionType() + ")"), x, y, w, Glass.textDim());
       y += 12;
       DependencyPlan plan = d.plan;
       if (plan != null) {
          List<String> added = plan.addedNames();
          if (!added.isEmpty()) {
             for (String line : wrap("Also installs " + ModInstaller.joinNames(added), w, 2)) {
-               this.text(g, line, x, y, Glass.TEXT_DIM);
+               this.text(g, line, x, y, Glass.textDim());
                y += 11;
             }
          }
 
          if (!plan.alreadyInstalled().isEmpty()) {
-            this.textFit(g, "Uses " + ModInstaller.joinNames(plan.alreadyInstalled()) + " (installed)", x, y, w, Glass.TEXT_FAINT);
+            this.textFit(g, "Uses " + ModInstaller.joinNames(plan.alreadyInstalled()) + " (installed)", x, y, w, Glass.textFaint());
             y += 11;
          }
 
@@ -535,7 +536,7 @@ public final class ModsPage extends DashboardPage {
       int bw = Math.min(w, 110);
       if (job != null && !job.done) {
          Glass.bar(g, x, y + 5, x + bw, y + 8, job.progress, this.c(Glass.surface(3)), this.c(Glass.accent()), this.c(Glass.accent()));
-         this.textFit(g, job.message + "  " + Math.round(job.progress * 100.0F) + "%", x, y + 12, w, Glass.TEXT_DIM);
+         this.textFit(g, job.message + "  " + Math.round(job.progress * 100.0F) + "%", x, y + 12, w, Glass.textDim());
          return y + 24;
       }
 
@@ -585,7 +586,7 @@ public final class ModsPage extends DashboardPage {
 
       if (!this.confirmApply) {
          this.text(g, "Downloaded", x, y + 3, Glass.OK);
-         int lw = this.font().width("Downloaded") + 10;
+         int lw = UiFont.width("Downloaded") + 10;
          this.button(g, x + lw, y, this.buttonWidth("Apply now"), 16, "Apply now", mouseX, mouseY, TONE_ACCENT, null,
             "Turn the pack on now; you stay where you are", (b, mx, my, dd) -> {
                String id = PackApplier.find(pack);
@@ -596,7 +597,7 @@ public final class ModsPage extends DashboardPage {
       }
 
       for (String line : wrap("Turn on " + d.hit.title() + "? Textures and sounds reload, which takes a few seconds.", w, 3)) {
-         this.text(g, line, x, y, Glass.TEXT_DIM);
+         this.text(g, line, x, y, Glass.textDim());
          y += 11;
       }
 
@@ -819,7 +820,7 @@ public final class ModsPage extends DashboardPage {
       this.button(g, x + w - 10 - bw, rowY, bw, 14, label, mouseX, mouseY, TONE_NEUTRAL, this.checkingUpdates ? "Already checking" : null,
          "Ask Modrinth for newer " + this.browser.gameVersion() + " versions of the mods in your folder", (b, mx, my, d) -> this.checkUpdates());
       String summary = this.updateStatus != null ? this.updateStatus : this.entries.size() + (this.entries.size() == 1 ? " file" : " files") + " in mods";
-      this.textFit(g, summary, x + 10, rowY + 3, w - 30 - bw, this.updateStatus != null && !this.updates.isEmpty() ? Glass.accent2() : Glass.TEXT_FAINT);
+      this.textFit(g, summary, x + 10, rowY + 3, w - 30 - bw, this.updateStatus != null && !this.updates.isEmpty() ? Glass.accent2() : Glass.textFaint());
       int top = rowY + 20;
       int bottom = y + h - 16;
       int contentH = this.entries.size() * INSTALLED_ROW;
@@ -827,7 +828,7 @@ public final class ModsPage extends DashboardPage {
       if (this.installedError != null) {
          this.textFit(g, this.installedError, x + 10, top + 8, w - 20, Glass.WARN);
       } else if (this.entries.isEmpty()) {
-         this.textFit(g, this.scanning ? "Reading the mods folder..." : "Your mods folder is empty.", x + 10, top + 8, w - 20, Glass.TEXT_FAINT);
+         this.textFit(g, this.scanning ? "Reading the mods folder..." : "Your mods folder is empty.", x + 10, top + 8, w - 20, Glass.textFaint());
       } else {
          if (this.confirmPath != null && now > this.confirmUntil) {
             this.confirmPath = null;
@@ -847,7 +848,7 @@ public final class ModsPage extends DashboardPage {
          this.scrollbar(g, x + w - 9, contentH);
       }
 
-      this.textFit(g, I18n.get("gemini.mods.restart"), x + 10, y + h - 12, w - 20, Glass.TEXT_DIM);
+      this.textFit(g, I18n.get("gemini.mods.restart"), x + 10, y + h - 12, w - 20, Glass.textDim());
    }
 
    private void drawEntry(GuiGraphicsExtractor g, InstalledMods.Entry entry, int x, int y, int w, int mouseX, int mouseY) {
@@ -877,9 +878,9 @@ public final class ModsPage extends DashboardPage {
       ModBrowser.Job job = this.browser.job("update:" + entry.path());
       if (job != null && !job.done) {
          String progress = Math.round(job.progress * 100.0F) + "%";
-         int pw = this.font().width(progress);
+         int pw = UiFont.width(progress);
          right -= pw + 6;
-         this.text(g, progress, right, y + 6, Glass.TEXT_DIM);
+         this.text(g, progress, right, y + 6, Glass.textDim());
       } else if (update != null && !entry.disabled() && !entry.essential()) {
          String upd = "Update to " + update.latest().versionNumber();
          int uw = Math.min(this.buttonWidth(upd), 120);
@@ -893,22 +894,22 @@ public final class ModsPage extends DashboardPage {
       int stateColor = switch (entry.state()) {
          case NEXT_START -> Glass.accent2();
          case OFF_NEXT_START -> Glass.WARN;
-         default -> Glass.TEXT_FAINT;
+         default -> Glass.textFaint();
       };
       if (job != null && job.done && job.failed) {
          state = "Update failed";
          stateColor = Glass.ERROR;
       }
 
-      int sw = this.font().width(state);
+      int sw = UiFont.width(state);
       right -= sw + 10;
       this.text(g, state, right, y + 6, stateColor);
       int nameRoom = right - 8 - (x + 6);
       String name = gemini.ui.clickgui.controls.Controls.fit(this.font(), entry.name(), nameRoom);
-      this.text(g, name, x + 6, y + 6, entry.disabled() ? Glass.TEXT_DIM : Glass.TEXT);
-      int vx = x + 6 + this.font().width(name) + 6;
+      this.text(g, name, x + 6, y + 6, entry.disabled() ? Glass.textDim() : Glass.text());
+      int vx = x + 6 + UiFont.width(name) + 6;
       if (!entry.version().isEmpty() && vx < right - 20) {
-         this.textFit(g, entry.version(), vx, y + 6, right - 8 - vx, Glass.TEXT_FAINT);
+         this.textFit(g, entry.version(), vx, y + 6, right - 8 - vx, Glass.textFaint());
       }
 
       if (over && this.host != null && mouseX < right) {
@@ -1053,7 +1054,7 @@ public final class ModsPage extends DashboardPage {
       StringBuilder line = new StringBuilder();
       for (String word : text.strip().split("\\s+")) {
          String candidate = line.isEmpty() ? word : line + " " + word;
-         if (this.font().width(candidate) <= width || line.isEmpty()) {
+         if (UiFont.width(candidate) <= width || line.isEmpty()) {
             line.setLength(0);
             line.append(candidate);
          } else {

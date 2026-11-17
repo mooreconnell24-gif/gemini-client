@@ -3,6 +3,7 @@ package gemini.module.modules.render;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import gemini.util.InfoText;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.BlockItem;
@@ -38,7 +39,7 @@ public final class BlockCounter extends Module {
 
          if (totalBlocks > 0 && !iconStack.isEmpty()) {
             String text = this.text.whole(totalBlocks, " blocks");
-            int boxW = 24 + hud.font.width(text) + 8;
+            int boxW = 24 + UiFont.width(text) + 8;
             int boxH = 20;
             int x = hud.width / 2 - boxW / 2;
             int y = hud.height / 2 + 16;
@@ -46,7 +47,7 @@ public final class BlockCounter extends Module {
             hud.graphics.fill(x, y, x + boxW, y + boxH, -871559145);
             hud.graphics.fill(x, y + boxH - 2, x + boxW, y + boxH, totalBlocks > 32 ? hud.accent2 : -43691);
             hud.graphics.item(iconStack, x + 4, y + 2);
-            hud.graphics.text(hud.font, text, x + 23, y + 6, totalBlocks > 32 ? -1 : -43691, hud.shadow);
+            UiFont.draw(hud.graphics, text, x + 23, y + 6, totalBlocks > 32 ? -1 : -43691, hud.shadow);
          }
       }
    }

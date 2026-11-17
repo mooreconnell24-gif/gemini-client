@@ -16,6 +16,7 @@ import gemini.ui.Glass;
 import gemini.ui.UiMath;
 import gemini.ui.clickgui.ListEditorScreen;
 import gemini.ui.clickgui.controls.TextField;
+import gemini.ui.font.UiFont;
 import gemini.util.BaritoneBridge;
 import gemini.util.BuiltInBaritone;
 import gemini.util.SingleplayerGate;
@@ -297,14 +298,14 @@ public final class BaritonePage extends DashboardPage {
       LocalPlayer player = Minecraft.getInstance().player;
       this.sampleSpeed(player, now);
       String blocked = blockedReason();
-      this.text(g, this.title(), x + 10, y + 9, Glass.TEXT);
-      int cx = x + 14 + this.font().width(this.title());
-      this.chip(g, cx, y + 7, BaritoneBridge.engineName(), Glass.withAlpha(BaritoneBridge.externalPresent() ? Glass.OK : Glass.INFO, 110), Glass.TEXT);
+      this.text(g, this.title(), x + 10, y + 9, Glass.text());
+      int cx = x + 14 + UiFont.width(this.title());
+      this.chip(g, cx, y + 7, BaritoneBridge.engineName(), Glass.withAlpha(BaritoneBridge.externalPresent() ? Glass.OK : Glass.INFO, 110), Glass.text());
       String task = BaritoneBridge.taskLabel();
       String state = blocked != null ? "No world" : (BaritoneBridge.isPaused() ? "Paused" : (task == null ? "Idle" : task));
-      int stateColor = blocked != null ? Glass.TEXT_FAINT : (BaritoneBridge.isPaused() ? Glass.WARN : (task == null ? Glass.TEXT_DIM : Glass.OK));
-      int sw = this.font().width(state) + 8;
-      this.chip(g, x + w - 10 - sw, y + 7, state, Glass.withAlpha(stateColor, 90), Glass.TEXT);
+      int stateColor = blocked != null ? Glass.textFaint() : (BaritoneBridge.isPaused() ? Glass.WARN : (task == null ? Glass.textDim() : Glass.OK));
+      int sw = UiFont.width(state) + 8;
+      this.chip(g, x + w - 10 - sw, y + 7, state, Glass.withAlpha(stateColor, 90), Glass.text());
       int top = y + 26;
       int bottom = y + h - 4;
       int inner = w - 24;
@@ -320,7 +321,7 @@ public final class BaritonePage extends DashboardPage {
       if (blocked != null) {
          Glass.panel(g, x + 10, cy, x + 10 + inner, cy + 30, Glass.RADIUS, Glass.surface(1), Glass.WARN, this.host.fade(), 0.3F);
          this.textFit(g, blocked, x + 18, cy + 6, inner - 16, Glass.WARN);
-         this.textFit(g, "Settings below can still be changed; starting, pausing and cancelling need a world.", x + 18, cy + 18, inner - 16, Glass.TEXT_FAINT);
+         this.textFit(g, "Settings below can still be changed; starting, pausing and cancelling need a world.", x + 18, cy + 18, inner - 16, Glass.textFaint());
          cy += 34;
       }
 
@@ -346,11 +347,11 @@ public final class BaritonePage extends DashboardPage {
       int lx = x + 8;
       int vx = x + 64;
       int vw = w - 72;
-      this.text(g, "Task", lx, y + 7, Glass.TEXT_FAINT);
+      this.text(g, "Task", lx, y + 7, Glass.textFaint());
       String owner = this.owner();
       String taskText = task == null ? "Idle" : task + (owner != null ? "  ·  by " + owner : "  ·  started by a command");
-      this.textFit(g, taskText, vx, y + 7, vw, task == null ? Glass.TEXT_DIM : Glass.TEXT);
-      this.text(g, "Goal", lx, y + 19, Glass.TEXT_FAINT);
+      this.textFit(g, taskText, vx, y + 7, vw, task == null ? Glass.textDim() : Glass.text());
+      this.text(g, "Goal", lx, y + 19, Glass.textFaint());
       BlockPos goal = BuiltInBaritone.goal();
       String external = BaritoneBridge.externalGoal();
       String goalText;
@@ -367,16 +368,16 @@ public final class BaritonePage extends DashboardPage {
          goalText = "none";
       }
 
-      this.textFit(g, goalText, vx, y + 19, vw, goal == null && external == null ? Glass.TEXT_DIM : Glass.TEXT);
-      this.text(g, "Path", lx, y + 31, Glass.TEXT_FAINT);
+      this.textFit(g, goalText, vx, y + 19, vw, goal == null && external == null ? Glass.textDim() : Glass.text());
+      this.text(g, "Path", lx, y + 31, Glass.textFaint());
       List<BlockPos> path = BuiltInBaritone.path();
       int index = Math.min(BuiltInBaritone.pathIndex(), path.size());
       float progress = BotTasks.progress(index, path.size());
       int barRight = x + w - 110;
       Glass.bar(g, vx, y + 33, barRight, y + 37, progress, this.c(0xFF232A38), this.c(Glass.accent()), this.c(Glass.accent2()));
       String nodes = path.isEmpty() ? (BaritoneBridge.externalPathing() ? "Baritone path" : "no path") : index + " / " + path.size() + " nodes";
-      this.textFit(g, nodes, barRight + 6, y + 31, x + w - barRight - 14, Glass.TEXT_DIM);
-      this.text(g, "ETA", lx, y + 43, Glass.TEXT_FAINT);
+      this.textFit(g, nodes, barRight + 6, y + 31, x + w - barRight - 14, Glass.textDim());
+      this.text(g, "ETA", lx, y + 43, Glass.textFaint());
       String eta;
       if (task == null || distance < 0.0) {
          eta = "--";
@@ -385,10 +386,10 @@ public final class BaritonePage extends DashboardPage {
       }
 
       String speedText = Double.isNaN(this.speed) || player == null ? "" : String.format(java.util.Locale.ROOT, "  ·  %.1f blocks/s", this.speed);
-      this.textFit(g, eta + speedText, vx, y + 43, vw, Glass.TEXT);
-      this.text(g, "Engine", lx, y + 55, Glass.TEXT_FAINT);
+      this.textFit(g, eta + speedText, vx, y + 43, vw, Glass.text());
+      this.text(g, "Engine", lx, y + 55, Glass.textFaint());
       String paused = BaritoneBridge.isPaused() ? "  ·  paused: " + BaritoneBridge.pauseReason() : "";
-      this.textFit(g, BaritoneBridge.engineDetail() + paused, vx, y + 55, vw, BaritoneBridge.isPaused() ? Glass.WARN : Glass.TEXT_DIM);
+      this.textFit(g, BaritoneBridge.engineDetail() + paused, vx, y + 55, vw, BaritoneBridge.isPaused() ? Glass.WARN : Glass.textDim());
       int by = y + STATUS_H - 19;
       String pause = BaritoneBridge.isPaused() ? "Resume" : "Pause";
       int bx = lx;
@@ -397,7 +398,7 @@ public final class BaritonePage extends DashboardPage {
       this.button(g, bx, by, this.buttonWidth("Cancel") + 8, 14, "Cancel", mouseX, mouseY, TONE_DANGER, blocked,
          "Stop every task and switch off the bot module driving it", true, (b, mx, my, d) -> this.cancel());
       String summary = plain(BaritoneBridge.statusSummary());
-      this.textFit(g, summary, bx + this.buttonWidth("Cancel") + 16, by + 3, x + w - (bx + this.buttonWidth("Cancel") + 24), Glass.TEXT_FAINT);
+      this.textFit(g, summary, bx + this.buttonWidth("Cancel") + 16, by + 3, x + w - (bx + this.buttonWidth("Cancel") + 24), Glass.textFaint());
    }
 
    private int botHeight(Module bot) {
@@ -431,25 +432,25 @@ public final class BaritonePage extends DashboardPage {
       int tx = x + 8;
       Glass.roundRect(g, tx, y + 9, tx + 5, y + 14, 2, this.c(on ? Glass.OK : Glass.surface(3)));
       tx += 10;
-      this.text(g, bot.getName(), tx, y + 7, on ? Glass.TEXT : Glass.TEXT_DIM);
-      tx += this.font().width(bot.getName()) + 6;
+      this.text(g, bot.getName(), tx, y + 7, on ? Glass.text() : Glass.textDim());
+      tx += UiFont.width(bot.getName()) + 6;
       if (owns) {
-         tx += this.chip(g, tx, y + 5, "owns the task", Glass.withAlpha(Glass.accent(), 140), Glass.TEXT) + 4;
+         tx += this.chip(g, tx, y + 5, "owns the task", Glass.withAlpha(Glass.accent(), 140), Glass.text()) + 4;
       } else if (on) {
          String info = plain(bot.info());
          if (info != null && !info.isEmpty()) {
-            tx += this.chip(g, tx, y + 5, info, Glass.withAlpha(Glass.surface(3), 255), Glass.TEXT_DIM) + 4;
+            tx += this.chip(g, tx, y + 5, info, Glass.withAlpha(Glass.surface(3), 255), Glass.textDim()) + 4;
          }
       }
 
-      this.textFit(g, bot.getDescription(), x + 18, y + 18, bx - x - 24, Glass.TEXT_FAINT);
+      this.textFit(g, bot.getDescription(), x + 18, y + 18, bx - x - 24, Glass.textFaint());
       int by = y + 30;
       if (bot instanceof AutoGoto) {
          this.drawGotoFields(g, x + 8, by, w - 16, mouseX, mouseY, blocked);
       } else if (bot instanceof AutoMineBot) {
          Setting<?> blocks = setting(bot, "Target Blocks");
          if (blocks instanceof ListSetting list) {
-            this.text(g, list.size() + (list.size() == 1 ? " block to mine" : " blocks to mine"), x + 10, by + 3, Glass.TEXT_DIM);
+            this.text(g, list.size() + (list.size() == 1 ? " block to mine" : " blocks to mine"), x + 10, by + 3, Glass.textDim());
             String edit = "Edit list";
             int ew = this.buttonWidth(edit);
             this.button(g, x + w - 8 - ew, by, ew, 14, edit, mouseX, mouseY, TONE_NEUTRAL, null, "Choose which ores and blocks the bot mines", true,
@@ -458,7 +459,7 @@ public final class BaritonePage extends DashboardPage {
       } else if (bot instanceof FollowBot) {
          Setting<?> target = setting(bot, "Target");
          if (target instanceof ModeSetting mode) {
-            this.text(g, "Follow", x + 10, by + 3, Glass.TEXT_DIM);
+            this.text(g, "Follow", x + 10, by + 3, Glass.textDim());
             String label = "<  " + mode.get() + "  >";
             int mw = this.buttonWidth(label);
             this.button(g, x + w - 8 - mw, by, mw, 14, label, mouseX, mouseY, TONE_ACCENT, null, "Which entities to follow (right-click goes back)", true, (b, mx, my, d) -> {
@@ -481,7 +482,7 @@ public final class BaritonePage extends DashboardPage {
          int used = width == null ? 0 : this.drawControl(g, width, x + 2, by, w - 4, mouseX, mouseY, true);
          if (setting(bot, "Guard Rails") instanceof BooleanSetting rails) {
             int ry = by + used + 2;
-            this.text(g, rails.name(), x + 10, ry + 1, Glass.TEXT_DIM);
+            this.text(g, rails.name(), x + 10, ry + 1, Glass.textDim());
             Glass.toggle(g, x + w - 8 - 18, ry, rails.get() ? 1.0F : 0.0F, Glass.accent(), this.host.fade());
             this.host.hit(x + 4, ry - 2, w - 8, 14, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> {
                rails.toggle();
@@ -497,14 +498,14 @@ public final class BaritonePage extends DashboardPage {
    private void drawGotoFields(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY, String blocked) {
       String here = "Here";
       int hw = this.buttonWidth(here);
-      int labelW = this.font().width("X") + 4;
+      int labelW = UiFont.width("X") + 4;
       int room = w - hw - 6;
       int fieldW = Math.max(30, (room - labelW * 3 - 12) / 3);
       int fx = x + 2;
       TextField[] fields = {this.gotoX, this.gotoY, this.gotoZ};
       String[] labels = {"X", "Y", "Z"};
       for (int i = 0; i < 3; i++) {
-         this.text(g, labels[i], fx, y + 3, Glass.TEXT_FAINT);
+         this.text(g, labels[i], fx, y + 3, Glass.textFaint());
          fx += labelW;
          this.field(g, fields[i], fx, y, fieldW, i == 1 ? "feet" : "0", mouseX, mouseY, true);
          fx += fieldW + 6;

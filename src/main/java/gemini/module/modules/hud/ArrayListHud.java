@@ -11,6 +11,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
+import gemini.ui.font.UiFont;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
@@ -86,7 +87,7 @@ public final class ArrayListHud extends HudWidget {
    private final NumberSetting animationSpeed = this.addSetting(
       new NumberSetting("Animation Speed", "How quickly rows slide", 14.0, 4.0, 30.0, 1.0).showIf(this.animations::get)
    );
-   private final ArrayListLayout<Module> layout = new ArrayListLayout<>(text -> Minecraft.getInstance().font.width(text), new ArrayListLayout.Decorator<>() {
+   private final ArrayListLayout<Module> layout = new ArrayListLayout<>(text -> UiFont.width(text), new ArrayListLayout.Decorator<>() {
       @Override
       public String label(Module module, String raw) {
          String base = ArrayListHud.this.showKeys.get() && module.getKeybind() > 0 ? raw + " [" + GeminiKeys.displayName(module.getKeybind()) + "]" : raw;
@@ -144,7 +145,8 @@ public final class ArrayListHud extends HudWidget {
    /** Refreshes the layout: polls the modules at most 20 times a second and advances the animations every frame. */
    private void update() {
       long now = Util.getMillis();
-      int key = (this.showKeys.get() ? 1 : 0) | (this.lowercase.get() ? 2 : 0) | (this.showInfo.get() ? 4 : 0) | this.tagStyle.modes().indexOf(this.tagStyle.get()) << 3;
+      int key = (this.showKeys.get() ? 1 : 0) | (this.lowercase.get() ? 2 : 0) | (this.showInfo.get() ? 4 : 0) | this.tagStyle.modes().indexOf(this.tagStyle.get()) << 3
+         | UiFont.generation() << 8; // a font or GUI scale change makes the measured row widths stale
       if (key != this.decorationKey) {
          this.decorationKey = key;
          this.layout.invalidate();
@@ -185,7 +187,7 @@ public final class ArrayListHud extends HudWidget {
    protected int widgetWidth(HudContext hud) {
       this.update();
       if (this.layout.size() == 0) {
-         return Menus.isMenu(hud.client.gui.screen()) ? hud.font.width(PLACEHOLDER) + 2 * PAD : 0;
+         return Menus.isMenu(hud.client.gui.screen()) ? UiFont.width(PLACEHOLDER) + 2 * PAD : 0;
       }
 
       return this.layout.maxWidth() + 2 * PAD + this.barWidth();
@@ -206,7 +208,7 @@ public final class ArrayListHud extends HudWidget {
       List<ArrayListLayout.Row<Module>> rows = this.layout.rows();
       int total = rows.size();
       if (total == 0) {
-         g.text(hud.font, PLACEHOLDER, PAD, 1, Glass.TEXT_DIM, this.textShadow.get());
+         UiFont.draw(g, PLACEHOLDER, PAD, 1, Glass.TEXT_DIM, this.textShadow.get());
          return;
       }
 
@@ -285,9 +287,9 @@ public final class ArrayListHud extends HudWidget {
                // Theme and category colours are tuned for bars, not text: names are lifted toward white so they stay
                // readable over a dark scene, while the side bar keeps the full colour.
                int textColor = mode <= 2 ? Glass.lerp(color, 0xFFFFFFFF, 0.3F) : color;
-               g.text(hud.font, row.label, textX, textY, Glass.withAlpha(textColor, textAlpha), shadow);
+               UiFont.draw(g, row.label, textX, textY, Glass.withAlpha(textColor, textAlpha), shadow);
                if (row.info != null) {
-                  g.text(hud.font, row.info, textX + row.labelWidth + ArrayListLayout.INFO_GAP, textY, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), shadow);
+                  UiFont.draw(g, row.info, textX + row.labelWidth + ArrayListLayout.INFO_GAP, textY, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), shadow);
                }
             }
          }

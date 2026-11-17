@@ -3,6 +3,7 @@ package gemini.module.modules.hud;
 import gemini.module.HudWidget;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -58,7 +59,7 @@ public final class CombatItems extends HudWidget {
          String label = this.texts[i];
          // Counts are centred under their icon; an item you have none of is dimmed rather than coloured.
          int color = count > 0 ? gemini.ui.Glass.TEXT : HudStyle.unit(backdrop);
-         hud.graphics.text(hud.font, label, x + (16 - hud.font.width(label) + 1) / 2, HudStyle.PAD_Y + 18, color, hud.shadow);
+         UiFont.draw(hud.graphics, label, x + (16 - UiFont.width(label) + 1) / 2, HudStyle.PAD_Y + 18, color, hud.shadow);
       }
    }
 }

@@ -6,6 +6,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
@@ -71,7 +72,7 @@ public final class ArmorHud extends HudWidget {
 
    /** Width of one piece's column in the horizontal layout: the icon, or the widest percentage. */
    private int cell(Font font) {
-      return this.percent.get() ? Math.max(ICON + 4, font.width("100%") + 6) : ICON + 4;
+      return this.percent.get() ? Math.max(ICON + 4, UiFont.width("100%") + 6) : ICON + 4;
    }
 
    @Override
@@ -82,7 +83,7 @@ public final class ArmorHud extends HudWidget {
       }
 
       if (this.vertical()) {
-         return 2 * HudStyle.PAD_X + ICON + (this.percent.get() ? 6 + hud.font.width("100%") : 0);
+         return 2 * HudStyle.PAD_X + ICON + (this.percent.get() ? 6 + UiFont.width("100%") : 0);
       }
 
       return 2 * HudStyle.PAD_X + this.count * this.cell(hud.font) - 4;
@@ -135,9 +136,9 @@ public final class ArmorHud extends HudWidget {
             String text = PERCENTS[Math.round(left * 100.0F)];
             if (vertical) {
                // Right-aligned in a column so the digits line up down the list.
-               g.text(font, text, w - HudStyle.PAD_X - font.width(text), y + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
+               UiFont.draw(g, text, w - HudStyle.PAD_X - UiFont.width(text), y + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
             } else {
-               g.text(font, text, x + (ICON - font.width(text) + 1) / 2, y + ICON + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
+               UiFont.draw(g, text, x + (ICON - UiFont.width(text) + 1) / 2, y + ICON + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
             }
          }
       }

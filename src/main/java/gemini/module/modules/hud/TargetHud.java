@@ -8,6 +8,7 @@ import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
 import gemini.ui.clickgui.Menus;
+import gemini.ui.font.UiFont;
 import gemini.util.CombatTarget;
 import gemini.util.Damage;
 import gemini.util.TotemPops;
@@ -270,10 +271,10 @@ public final class TargetHud extends HudWidget {
     * here (no allocation); the strings are rebuilt once a tick in {@link #refresh}.
     */
    private static int valueUnit(GuiGraphicsExtractor g, Font font, String value, String unit, int x, int y, int valueColor, int unitColor, boolean shadow) {
-      g.text(font, value, x, y, valueColor, shadow);
-      int ux = x + font.width(value) + HudStyle.UNIT_GAP;
-      g.text(font, unit, ux, y, unitColor, shadow);
-      return ux + font.width(unit);
+      UiFont.draw(g, value, x, y, valueColor, shadow);
+      int ux = x + UiFont.width(value) + HudStyle.UNIT_GAP;
+      UiFont.draw(g, unit, ux, y, unitColor, shadow);
+      return ux + UiFont.width(unit);
    }
 
    @Override
@@ -315,19 +316,19 @@ public final class TargetHud extends HudWidget {
       if (compact) {
          // One line: name (and pops), the fight estimate and health on the right; the bar under it.
          int hpEnd = right;
-         int hpX = hpEnd - font.width(this.hp) - HudStyle.UNIT_GAP - font.width("hp");
+         int hpX = hpEnd - UiFont.width(this.hp) - HudStyle.UNIT_GAP - UiFont.width("hp");
          valueUnit(g, font, this.hp, "hp", hpX, PAD, fadeText(Glass.TEXT, a), unit, shadow);
          int limit = hpX - 6;
          if (this.prediction.get()) {
-            int ox = limit - font.width(this.odds);
-            g.text(font, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
+            int ox = limit - UiFont.width(this.odds);
+            UiFont.draw(g, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
             limit = ox - 6;
          }
 
          String name = this.fitName(font, limit - textX);
-         g.text(font, name, textX, PAD, nameColor, shadow);
-         if (this.showPops.get() && !this.pops.isEmpty() && textX + font.width(name) + 4 + font.width(this.pops) <= limit) {
-            g.text(font, this.pops, textX + font.width(name) + 4, PAD, fadeText(Glass.WARN, a), shadow);
+         UiFont.draw(g, name, textX, PAD, nameColor, shadow);
+         if (this.showPops.get() && !this.pops.isEmpty() && textX + UiFont.width(name) + 4 + UiFont.width(this.pops) <= limit) {
+            UiFont.draw(g, this.pops, textX + UiFont.width(name) + 4, PAD, fadeText(Glass.WARN, a), shadow);
          }
 
          this.drawHealth(hud, shown, textX, PAD + 11, right, PAD + 14, a, neon, backdrop);
@@ -337,19 +338,19 @@ public final class TargetHud extends HudWidget {
       // Name and the fight estimate.
       int limit = right;
       if (this.prediction.get()) {
-         int ox = right - font.width(this.odds);
-         g.text(font, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
+         int ox = right - UiFont.width(this.odds);
+         UiFont.draw(g, this.odds, ox, PAD, fadeText(this.oddsColor, a), shadow);
          limit = ox - 6;
       }
 
-      g.text(font, this.fitName(font, limit - textX), textX, PAD, nameColor, shadow);
+      UiFont.draw(g, this.fitName(font, limit - textX), textX, PAD, nameColor, shadow);
       // The health bar, then health, distance and pops in one compact row.
       this.drawHealth(hud, shown, textX, PAD + 11, right, PAD + 14, a, neon, backdrop);
       int infoY = PAD + head - 8;
       int x = valueUnit(g, font, this.hp, "hp", textX, infoY, fadeText(Glass.TEXT, a), unit, shadow);
       valueUnit(g, font, this.distance, "m", x + 8, infoY, label, unit, shadow);
       if (this.showPops.get() && !this.pops.isEmpty()) {
-         g.text(font, this.pops, right - font.width(this.pops), infoY, fadeText(Glass.WARN, a), shadow);
+         UiFont.draw(g, this.pops, right - UiFont.width(this.pops), infoY, fadeText(Glass.WARN, a), shadow);
       }
 
       if (this.gearRow() && a > 0.6F) {
@@ -362,7 +363,7 @@ public final class TargetHud extends HudWidget {
       if (width != this.fittedWidth || this.fittedFor != this.name) {
          this.fittedWidth = width;
          this.fittedFor = this.name;
-         this.fittedName = gemini.ui.Theme.fit(this.name, width, font::width);
+         this.fittedName = UiFont.ellipsize(this.name, width);
       }
 
       return this.fittedName;
@@ -471,6 +472,6 @@ public final class TargetHud extends HudWidget {
          }
       }
 
-      g.centeredText(hud.font, this.letter, x + size / 2, y + (size - 8) / 2, Glass.withAlpha(Glass.TEXT, Math.round(255.0F * a)));
+      UiFont.drawCentered(g, this.letter, x + size / 2, y + (size - 8) / 2, Glass.withAlpha(Glass.TEXT, Math.round(255.0F * a)), true);
    }
 }

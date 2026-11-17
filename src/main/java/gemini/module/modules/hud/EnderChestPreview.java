@@ -5,6 +5,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import gemini.util.AttributeBoost;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.PlayerEnderChestContainer;
@@ -137,7 +138,7 @@ public final class EnderChestPreview extends HudWidget {
             this.header = "Ender Chest  " + this.used(items) + "/" + SLOTS;
          }
 
-         hud.graphics.text(hud.font, this.header, 5, y, Glass.TEXT, hud.shadow);
+         UiFont.draw(hud.graphics, this.header, 5, y, Glass.TEXT, hud.shadow);
          y += 10;
       }
 

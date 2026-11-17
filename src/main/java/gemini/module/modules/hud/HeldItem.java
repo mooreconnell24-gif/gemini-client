@@ -4,6 +4,7 @@ import gemini.ui.Glass;
 import gemini.module.HudWidget;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -56,8 +57,8 @@ public final class HeldItem extends HudWidget {
          return 0;
       }
 
-      int tail = this.value.isEmpty() ? 0 : 8 + hud.font.width(this.value) + (this.unit.isEmpty() ? 0 : HudStyle.UNIT_GAP + hud.font.width(this.unit));
-      return 2 * HudStyle.PAD_X + 16 + 6 + hud.font.width(this.name) + tail;
+      int tail = this.value.isEmpty() ? 0 : 8 + UiFont.width(this.value) + (this.unit.isEmpty() ? 0 : HudStyle.UNIT_GAP + UiFont.width(this.unit));
+      return 2 * HudStyle.PAD_X + 16 + 6 + UiFont.width(this.name) + tail;
    }
 
    @Override
@@ -75,13 +76,13 @@ public final class HeldItem extends HudWidget {
       int y = HudStyle.PAD_Y + 4;
       hud.graphics.item(stack, HudStyle.PAD_X, HudStyle.PAD_Y);
       int x = HudStyle.PAD_X + 16 + 6;
-      hud.graphics.text(hud.font, this.name, x, y, HudStyle.label(this.backdrop()), hud.shadow);
+      UiFont.draw(hud.graphics, this.name, x, y, HudStyle.label(this.backdrop()), hud.shadow);
       if (!this.value.isEmpty()) {
          int right = w - HudStyle.PAD_X;
-         int unitW = this.unit.isEmpty() ? 0 : HudStyle.UNIT_GAP + hud.font.width(this.unit);
-         hud.graphics.text(hud.font, this.value, right - unitW - hud.font.width(this.value), y, this.valueColor, hud.shadow);
+         int unitW = this.unit.isEmpty() ? 0 : HudStyle.UNIT_GAP + UiFont.width(this.unit);
+         UiFont.draw(hud.graphics, this.value, right - unitW - UiFont.width(this.value), y, this.valueColor, hud.shadow);
          if (unitW > 0) {
-            hud.graphics.text(hud.font, this.unit, right - unitW + HudStyle.UNIT_GAP, y, HudStyle.unit(this.backdrop()), hud.shadow);
+            UiFont.draw(hud.graphics, this.unit, right - unitW + HudStyle.UNIT_GAP, y, HudStyle.unit(this.backdrop()), hud.shadow);
          }
       }
    }

@@ -3,6 +3,7 @@ package gemini.module.modules.hud;
 import gemini.module.HudWidget;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import net.minecraft.util.Mth;
 
 public final class FpsGraph extends HudWidget {
@@ -51,8 +52,8 @@ public final class FpsGraph extends HudWidget {
 
       String title = currentFps + " FPS";
       String sub = "min " + min + " · max " + max;
-      hud.graphics.text(hud.font, title, 6, 4, hud.accent, hud.shadow);
-      hud.graphics.text(hud.font, sub, w - 6 - hud.font.width(sub), 4, -6641995, false);
+      UiFont.draw(hud.graphics, title, 6, 4, hud.accent, hud.shadow);
+      UiFont.draw(hud.graphics, sub, w - 6 - UiFont.width(sub), 4, -6641995, false);
       int graphTop = 15;
       int graphBottom = h - 4;
       int graphH = Math.max(8, graphBottom - graphTop);

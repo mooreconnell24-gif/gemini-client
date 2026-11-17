@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.ui.font.UiFont;
 import gemini.world.BackupNames;
 import gemini.world.WorldBackups;
 import gemini.world.WorldZip;
@@ -55,19 +56,19 @@ public final class BackupsScreen extends Screen {
       int y = this.height - 28;
       int x = this.listLeft;
       this.backUp = this.addRenderableWidget(
-         Button.builder(Component.literal("Back up now"), b -> this.backUpNow())
+         Button.builder(UiFont.literal("Back up now"), b -> this.backUpNow())
             .bounds(x, y, buttonWidth, 20)
-            .tooltip(Tooltip.create(Component.literal("Save and copy the open world into a new backup")))
+            .tooltip(UiFont.tooltip(Component.literal("Save and copy the open world into a new backup")))
             .build()
       );
       this.restore = this.addRenderableWidget(
-         Button.builder(Component.literal("Restore"), b -> this.restoreSelected())
+         Button.builder(UiFont.literal("Restore"), b -> this.restoreSelected())
             .bounds(x + (buttonWidth + gap), y, buttonWidth, 20)
-            .tooltip(Tooltip.create(Component.literal("Unpack the selected backup as a new world; the original world is not changed")))
+            .tooltip(UiFont.tooltip(Component.literal("Unpack the selected backup as a new world; the original world is not changed")))
             .build()
       );
       this.addRenderableWidget(
-         Button.builder(Component.literal("Open folder"), b -> WorldBackups.openFolder(this.selectedEntry() == null ? null : this.selectedEntry().world()))
+         Button.builder(UiFont.literal("Open folder"), b -> WorldBackups.openFolder(this.selectedEntry() == null ? null : this.selectedEntry().world()))
             .bounds(x + (buttonWidth + gap) * 2, y, buttonWidth, 20)
             .build()
       );
@@ -162,13 +163,13 @@ public final class BackupsScreen extends Screen {
    @Override
    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
       super.extractRenderState(g, mouseX, mouseY, partialTick);
-      g.centeredText(this.font, this.title, this.width / 2, 14, Glass.TEXT);
-      g.centeredText(this.font, "Restoring makes a new world. Nothing is overwritten.", this.width / 2, 27, Glass.TEXT_DIM);
+      UiFont.drawCentered(g, this.title.getString(), this.width / 2, 14, Glass.text(), true);
+      UiFont.drawCentered(g, "Restoring makes a new world. Nothing is overwritten.", this.width / 2, 27, Glass.textDim(), true);
       g.fill(this.listLeft, this.listTop - 2, this.listRight, this.listBottom + 2, 0x66000000);
       if (this.loading) {
-         g.centeredText(this.font, "Loading...", this.width / 2, this.listTop + 8, Glass.TEXT_DIM);
+         UiFont.drawCentered(g, "Loading...", this.width / 2, this.listTop + 8, Glass.textDim(), true);
       } else if (this.entries.isEmpty()) {
-         g.centeredText(this.font, "No backups yet.", this.width / 2, this.listTop + 8, Glass.TEXT_DIM);
+         UiFont.drawCentered(g, "No backups yet.", this.width / 2, this.listTop + 8, Glass.textDim(), true);
       } else {
          g.enableScissor(this.listLeft, this.listTop, this.listRight, this.listBottom);
          int first = Math.max(0, (int)(this.scroll / ROW));
@@ -189,12 +190,12 @@ public final class BackupsScreen extends Screen {
 
             boolean newWorld = !entry.world().equals(lastWorld);
             lastWorld = entry.world();
-            g.text(this.font, newWorld ? entry.world() : "", this.listLeft + 6, y + 3, Glass.TEXT, false);
+            UiFont.draw(g, newWorld ? entry.world() : "", this.listLeft + 6, y + 3, Glass.text(), false);
             String size = entry.sizeText();
-            int sizeX = this.listRight - 6 - this.font.width(size);
-            g.text(this.font, size, sizeX, y + 3, Glass.TEXT_DIM, false);
+            int sizeX = this.listRight - 6 - UiFont.width(size);
+            UiFont.draw(g, size, sizeX, y + 3, Glass.textDim(), false);
             String time = entry.shownTime();
-            g.text(this.font, time, sizeX - 12 - this.font.width(time), y + 3, Glass.TEXT_DIM, false);
+            UiFont.draw(g, time, sizeX - 12 - UiFont.width(time), y + 3, Glass.textDim(), false);
          }
 
          g.disableScissor();
@@ -204,14 +205,14 @@ public final class BackupsScreen extends Screen {
       int statusY = this.listBottom + 8;
       if (job != null && !job.finished()) {
          String label = (job.kind == WorldBackups.Kind.BACKUP ? "Backing up " : "Restoring ") + job.world + "  " + WorldZip.percent(job.progress.fraction());
-         g.text(this.font, label, this.listLeft, statusY, Glass.TEXT_DIM, false);
-         int barX = this.listLeft + this.font.width(label) + 8;
+         UiFont.draw(g, label, this.listLeft, statusY, Glass.textDim(), false);
+         int barX = this.listLeft + UiFont.width(label) + 8;
          if (barX < this.listRight - 20) {
             g.fill(barX, statusY + 3, this.listRight, statusY + 5, 0x33FFFFFF);
             g.fill(barX, statusY + 3, barX + Math.round((this.listRight - barX) * job.progress.fraction()), statusY + 5, Glass.accent());
          }
       } else if (job != null && job == this.watched) {
-         g.text(this.font, job.outcome(), this.listLeft, statusY, job.failed() ? Glass.ERROR : Glass.TEXT_DIM, false);
+         UiFont.draw(g, job.outcome(), this.listLeft, statusY, job.failed() ? Glass.ERROR : Glass.textDim(), false);
       }
    }
 

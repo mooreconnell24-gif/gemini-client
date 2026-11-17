@@ -8,6 +8,9 @@ import gemini.ui.Glass;
 import gemini.ui.GlassButton;
 import gemini.ui.Theme;
 import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
+import gemini.ui.font.UiFont;
 import gemini.util.VersionBridge;
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,7 +162,7 @@ public final class HelpScreen extends Screen {
    }
 
    private void rebuild() {
-      this.doc = DocLayout.layout(this.blocks(), this.layout.contentWidth(), this.font::width);
+      this.doc = DocLayout.layout(this.blocks(), this.layout.contentWidth(), UiFont::width);
       this.scrollTarget = Mth.clamp(this.scrollTarget, 0.0F, this.maxScroll());
       this.scroll = Mth.clamp(this.scroll, 0.0F, this.maxScroll());
    }
@@ -189,8 +192,8 @@ public final class HelpScreen extends Screen {
       int[] full = new int[tabs.length];
       int[] brief = new int[tabs.length];
       for (int i = 0; i < tabs.length; i++) {
-         full[i] = this.font.width(tabs[i].label);
-         brief[i] = this.font.width(tabs[i].brief);
+         full[i] = UiFont.width(tabs[i].label);
+         brief[i] = UiFont.width(tabs[i].brief);
       }
 
       this.layout = HelpLayout.compute(this.width, this.height, full, brief);
@@ -226,12 +229,12 @@ public final class HelpScreen extends Screen {
       // One flat card with a faint edge; the version is in the "What's new" heading, so the title is just the name.
       Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(0), 235), a));
       Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(0xFFFFFF, 22), a));
-      Controls.text(g, this.font, Controls.fit(this.font, "Guide", l.panelWidth() - 2 * Theme.SPACE_L), x1 + Theme.SPACE_L, y1 + 8, Glass.TEXT_DIM, a);
+      Controls.text(g, this.font, Controls.fit(this.font, "Guide", l.panelWidth() - 2 * Theme.SPACE_L), x1 + Theme.SPACE_L, y1 + 8, Glass.textDim(), a);
       this.extractTabs(g, mouseX, mouseY, a);
       this.extractDocument(g, a);
       if (this.tab == Tab.COMMANDS) {
          String hint = "Quick search: " + GeminiKeys.paletteHint();
-         Controls.text(g, this.font, Controls.fit(this.font, hint, l.panelWidth() / 2), x1 + Theme.SPACE_L, l.footerY() + Theme.SPACE_S + 4, Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, Controls.fit(this.font, hint, l.panelWidth() / 2), x1 + Theme.SPACE_L, l.footerY() + Theme.SPACE_S + 4, Glass.textFaint(), a);
       }
 
       super.extractRenderState(g, mouseX, mouseY, partialTick);
@@ -257,8 +260,8 @@ public final class HelpScreen extends Screen {
          }
 
          String label = Controls.fit(this.font, l.shortTabs() ? tabs[i].brief : tabs[i].label, w - 6);
-         int color = active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT);
-         Controls.text(g, this.font, label, x + (w - this.font.width(label)) / 2, y + 3, color, a);
+         int color = active ? Glass.text() : (over ? Glass.textDim() : Glass.textFaint());
+         Controls.text(g, this.font, label, x + (w - UiFont.width(label)) / 2, y + 3, color, a);
       }
    }
 
@@ -279,17 +282,13 @@ public final class HelpScreen extends Screen {
          int x = cx + piece.x();
          switch (piece.kind()) {
             case H1 -> {
-               g.pose().pushMatrix();
-               g.pose().translate(x, y);
-               g.pose().scale(DocLayout.H1_SCALE, DocLayout.H1_SCALE);
-               Controls.text(g, this.font, piece.text(), 0, 0, Glass.TEXT, a);
-               g.pose().popMatrix();
+               UiFont.draw(g, piece.text(), x, y, Glass.fade(Glass.text(), a), FontSize.LARGE, FontWeight.BOLD, false);
             }
-            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT, a);
-            case H3, CELL_KEY -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT, a);
-            case BODY, BULLET, CELL -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_DIM, a);
-            case BULLET_MARK -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_FAINT, a);
-            case TABLE_HEADER -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_FAINT, a);
+            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.text(), a);
+            case H3, CELL_KEY -> Controls.text(g, this.font, piece.text(), x, y, Glass.text(), a);
+            case BODY, BULLET, CELL -> Controls.text(g, this.font, piece.text(), x, y, Glass.textDim(), a);
+            case BULLET_MARK -> Controls.text(g, this.font, piece.text(), x, y, Glass.textFaint(), a);
+            case TABLE_HEADER -> Controls.text(g, this.font, piece.text(), x, y, Glass.textFaint(), a);
             case RULE -> g.fill(x, y, x + piece.width(), y + 1, Glass.fade(0x18FFFFFF, a));
             case STRIPE -> Glass.roundRect(g, x, y, x + piece.width(), y + piece.height(), Theme.RADIUS_SMALL, Glass.fade(0x0CFFFFFF, a));
          }

@@ -3,6 +3,7 @@ package gemini.ui.clickgui.controls;
 import com.mojang.blaze3d.platform.InputConstants;
 import gemini.input.Keys;
 import gemini.ui.Glass;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -58,13 +59,13 @@ public final class Controls {
    public static void text(GuiGraphicsExtractor g, Font font, String text, int x, int y, int color, float opacity) {
       int alpha = Math.round((color >>> 24) * Math.max(0.0F, Math.min(1.0F, opacity)));
       if (text != null && alpha >= 10) {
-         g.text(font, text, x, y, alpha << 24 | color & 0xFFFFFF, false);
+         UiFont.draw(g, text, x, y, alpha << 24 | color & 0xFFFFFF, false);
       }
    }
 
-   /** The text cut down with ".." so it is no wider than {@code maxWidth} (see {@link gemini.ui.Theme#fit}). */
+   /** The text cut down with an ellipsis so it is no wider than {@code maxWidth} (see {@link UiFont#ellipsize}). */
    public static String fit(Font font, String text, int maxWidth) {
-      return gemini.ui.Theme.fit(text, maxWidth, font::width);
+      return UiFont.ellipsize(text, maxWidth);
    }
 
    /** A light/dark checkerboard (the usual "this is transparent" backdrop) in at most a few dozen fills. */

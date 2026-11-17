@@ -8,6 +8,7 @@ import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.HudOverlay;
+import gemini.ui.Theme;
 
 public final class ClickGuiModule extends Module {
    private static final int[] SURFACE_OLED = {-16579836, -16316663, -15856110, -15263971};
@@ -15,41 +16,27 @@ public final class ClickGuiModule extends Module {
    private static final int[] SURFACE_GRAPHITE = {-15856114, -15395563, -14869219, -14211289};
    private static final int[] SURFACE_PLUM = {-15726057, -15331553, -14739920, -13951166};
    private static final int[] SURFACE_DARK = {-15987178, -15723481, -15196629, -14604492};
-   private final ModeSetting theme = this.addSetting(
+   private final ModeSetting theme = this.addSetting(themeSetting());
+   private final ModeSetting font = this.addSetting(
       new ModeSetting(
-         "Theme",
-         "Accent colours of the menus and HUD; Custom uses the Primary and Secondary colours below",
-         "Blue",
-         "Blue",
-         "Purple",
-         "Twin",
-         "Aurora",
-         "Ocean",
-         "Ember",
-         "Violet",
-         "Mono",
-         "Midnight",
-         "Sunset",
-         "Mint",
-         "Rose",
-         "Gold",
-         "Nord",
-         "Dracula",
-         "Sakura",
-         "Custom"
+         "Font",
+         "Smooth draws Gemini's menus and HUD in a clean sans-serif; Minecraft uses the game's pixel font",
+         "Smooth",
+         "Smooth",
+         "Minecraft"
       )
    );
    private final ModeSetting surface = this.addSetting(
       new ModeSetting(
          "Surface",
-         "Base colour of the menu panels: dark navy, pure black (OLED), blue slate, neutral graphite or plum",
+         "Panel colour of the Custom theme: dark navy, pure black (OLED), blue slate, neutral graphite or plum",
          "Dark",
          "Dark",
          "OLED",
          "Slate",
          "Graphite",
          "Plum"
-      )
+      ).showIf(() -> this.theme.is("Custom"))
    );
    private final ModeSetting layout = this.addSetting(
       new ModeSetting("Layout", "Window is one centred window with a sidebar; Panels is one draggable column per category", "Window", "Window", "Panels")
@@ -79,7 +66,7 @@ public final class ClickGuiModule extends Module {
    );
 
    public ClickGuiModule() {
-      super("ClickGUI", "Sets the look of the menus: theme colours, layout, motion, scale and tooltips.", Category.CLIENT);
+      super("ClickGUI", "Sets the look of the menus and HUD: theme, font, layout, motion, scale and tooltips.", Category.CLIENT);
       this.loadState(true, this.getKeybind());
    }
 
@@ -163,6 +150,52 @@ public final class ClickGuiModule extends Module {
       return this.theme.get();
    }
 
+   /** The Theme setting: the names in {@link Theme#themeNames()}, with the retired names still accepted from old configs. */
+   private static ModeSetting themeSetting() {
+      ModeSetting setting = new ModeSetting(
+         "Theme",
+         "Colours of the menus and HUD: accents, panels and text. Custom uses the Primary, Secondary and Surface settings below",
+         Theme.DEFAULT,
+         Theme.themeNames()
+      );
+      for (String retired : Theme.retiredThemeNames()) {
+         setting.alias(retired, Theme.canonicalTheme(retired));
+      }
+
+      return setting;
+   }
+
+   /** Whether Gemini's own text is drawn in the smooth font rather than the Minecraft font. */
+   public boolean smoothFont() {
+      return this.font.is("Smooth");
+   }
+
+   /** The Custom theme's surface choice (part of what {@link Theme} watches for changes). */
+   public String surfaceName() {
+      return this.surface.get();
+   }
+
+   /** The Custom theme's primary accent (live: follows the colour setting's rainbow or pulse). */
+   public int customPrimary() {
+      return this.primary.argb();
+   }
+
+   public int customSecondary() {
+      return this.secondary.argb();
+   }
+
+   /** The Custom theme's panel colour for an elevation level 0..3. */
+   public int customSurface(int level) {
+      int[] shades = switch (this.surface.get()) {
+         case "OLED" -> SURFACE_OLED;
+         case "Slate" -> SURFACE_SLATE;
+         case "Graphite" -> SURFACE_GRAPHITE;
+         case "Plum" -> SURFACE_PLUM;
+         default -> SURFACE_DARK;
+      };
+      return shades[Math.max(0, Math.min(3, level))];
+   }
+
    public boolean isFavorite(Module module) {
       return module != null && this.favorites.contains(module.getName());
    }
@@ -178,48 +211,13 @@ public final class ClickGuiModule extends Module {
       return this.favorites.size();
    }
 
+   /** The theme's primary accent (crossfading while the theme changes). */
    public int accentColor() {
-      return switch (this.theme.get()) {
-         case "Blue" -> -16748289;
-         case "Purple" -> -6467875;
-         case "Ocean" -> -11683841;
-         case "Ember" -> -30132;
-         case "Violet" -> -4160260;
-         case "Aurora" -> -12714014;
-         case "Mono" -> -2695962;
-         case "Midnight" -> -10781446;
-         case "Sunset" -> -34243;
-         case "Mint" -> -12714064;
-         case "Rose" -> -41846;
-         case "Gold" -> -15043;
-         case "Nord" -> -7814960;
-         case "Dracula" -> -4353031;
-         case "Sakura" -> -18491;
-         case "Custom" -> this.primary.argb();
-         default -> -10696449;
-      };
+      return Theme.current().accent;
    }
 
    public int secondaryColor() {
-      return switch (this.theme.get()) {
-         case "Blue" -> -16722689;
-         case "Purple" -> -16718337;
-         case "Ocean" -> -8614657;
-         case "Ember" -> -11444;
-         case "Violet" -> -38187;
-         case "Aurora" -> -6422678;
-         case "Mono" -> -7892061;
-         case "Midnight" -> -6595329;
-         case "Sunset" -> -49793;
-         case "Mint" -> -13972993;
-         case "Rose" -> -28751;
-         case "Gold" -> -30147;
-         case "Nord" -> -8281663;
-         case "Dracula" -> -34362;
-         case "Sakura" -> -36957;
-         case "Custom" -> this.secondary.argb();
-         default -> -45096;
-      };
+      return Theme.current().accent2;
    }
 
    /** Primary accent, optionally blended toward the colour of the category being viewed. */
@@ -233,16 +231,8 @@ public final class ClickGuiModule extends Module {
       return this.categoryTint.get() && category != null ? HudOverlay.lerp(accent, category.accent(), 0.25F) : accent;
    }
 
-   /** Panel colour for an elevation level: 0 is the backdrop, 3 the most raised control. */
+   /** The theme's panel colour for an elevation level: 0 is the backdrop, 3 the most raised control. */
    public int surface(int level) {
-      // Asked many times per menu frame, so the palettes are constants rather than new arrays.
-      int[] shades = switch (this.surface.get()) {
-         case "OLED" -> SURFACE_OLED;
-         case "Slate" -> SURFACE_SLATE;
-         case "Graphite" -> SURFACE_GRAPHITE;
-         case "Plum" -> SURFACE_PLUM;
-         default -> SURFACE_DARK;
-      };
-      return shades[Math.max(0, Math.min(3, level))];
+      return Theme.current().surface(level);
    }
 }

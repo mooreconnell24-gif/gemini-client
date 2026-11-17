@@ -17,6 +17,7 @@ import gemini.ui.Glass;
 import gemini.ui.UiMath;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.clickgui.controls.SettingControl;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -157,7 +158,7 @@ public final class ClickGuiScreen extends Screen {
       x = this.addChip(moreChips ? LESS : MORE, x + 6, y);
       if (moreChips) {
          for (String label : MORE_CHIPS) {
-            if (x + this.font.width(label) + 12 > limit) {
+            if (x + UiFont.width(label) + 12 > limit) {
                break;
             }
 
@@ -167,7 +168,7 @@ public final class ClickGuiScreen extends Screen {
    }
 
    private int addChip(String label, int x, int y) {
-      int w = this.font.width(label) + 12;
+      int w = UiFont.width(label) + 12;
       this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
       return x + w + 4;
    }
@@ -249,10 +250,10 @@ public final class ClickGuiScreen extends Screen {
          GeminiMark.draw(graphics, 14, 13, 20, accent, pulse);
       }
 
-      this.text(graphics, "Gemini", 40, 19, Glass.TEXT);
+      this.text(graphics, "Gemini", 40, 19, Glass.text());
       if (this.hudEditMode) {
          // Only the HUD editor needs instructions up here; the module menu explains itself.
-         this.text(graphics, "Drag to move  ·  arrow keys nudge 1px (Shift: 10px)", 40, 30, Glass.TEXT_DIM);
+         this.text(graphics, "Drag to move  ·  arrow keys nudge 1px (Shift: 10px)", 40, 30, Glass.textDim());
       }
       this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);
       this.drawChips(graphics, mouseX, mouseY, accent, accentB);
@@ -368,25 +369,25 @@ public final class ClickGuiScreen extends Screen {
       int textRight = searchX + searchW - 8;
       if (!this.search.isEmpty()) {
          boolean overClear = inside(mouseX, mouseY, searchX + searchW - 16, 28, 16, 16);
-         this.text(graphics, "x", searchX + searchW - 12, 32, overClear ? Glass.TEXT : Glass.TEXT_FAINT);
+         this.text(graphics, "x", searchX + searchW - 12, 32, overClear ? Glass.text() : Glass.textFaint());
          int results = 0;
          for (CategoryPanel panel : this.panels) {
             results += panel.visibleModules(this.search).size();
          }
 
          String count = Integer.toString(results);
-         textRight = searchX + searchW - 20 - this.font.width(count);
+         textRight = searchX + searchW - 20 - UiFont.width(count);
          this.text(graphics, count, textRight, 32, results == 0 ? Glass.ERROR : accentB);
          textRight -= 4;
       }
 
       boolean blink = this.searchFocused && now / 420L % 2L == 0L;
       String query = this.search.isEmpty() && !this.searchFocused ? "Search modules & settings..." : this.search + (blink ? "|" : "");
-      while (this.font.width(query) > textRight - searchX - 8 && query.length() > 1) {
+      while (UiFont.width(query) > textRight - searchX - 8 && query.length() > 1) {
          query = this.search.isEmpty() && !this.searchFocused ? query.substring(0, query.length() - 1) : query.substring(1);
       }
 
-      this.text(graphics, query, searchX + 8, 32, this.search.isEmpty() ? Glass.TEXT_FAINT : Glass.TEXT);
+      this.text(graphics, query, searchX + 8, 32, this.search.isEmpty() ? Glass.textFaint() : Glass.text());
    }
 
    private void drawChips(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent, int accentB) {
@@ -398,7 +399,7 @@ public final class ClickGuiScreen extends Screen {
             Glass.roundRect(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, this.faded(accent, 110));
          }
 
-         this.text(graphics, chip.label, chip.x + 6, chip.y + 3, over || activeChip ? Glass.TEXT : Glass.TEXT_DIM);
+         this.text(graphics, chip.label, chip.x + 6, chip.y + 3, over || activeChip ? Glass.text() : Glass.textDim());
       }
    }
 
@@ -413,7 +414,7 @@ public final class ClickGuiScreen extends Screen {
       for (String word : words) {
          if (current.length() == 0) {
             current.append(word);
-         } else if (this.font.width(current + " " + word) <= maxWidth) {
+         } else if (UiFont.width(current + " " + word) <= maxWidth) {
             current.append(' ').append(word);
          } else {
             lines.add(current.toString());
@@ -432,12 +433,12 @@ public final class ClickGuiScreen extends Screen {
    private void drawSlideTooltip(GuiGraphicsExtractor graphics, int accent, int accentB) {
       String cleanBody = this.tooltipBody.replaceAll("§.", "");
       boolean badge = this.tooltipKeyBadge != null && !"NONE".equals(this.tooltipKeyBadge);
-      int titleW = this.font.width(this.tooltipTitle) + (badge ? this.font.width(" [" + this.tooltipKeyBadge + "]") + 8 : 0);
+      int titleW = UiFont.width(this.tooltipTitle) + (badge ? UiFont.width(" [" + this.tooltipKeyBadge + "]") + 8 : 0);
       int maxTextW = Math.max(175, Math.min(245, titleW + 16));
       List<String> wrapped = this.wrapLines(cleanBody, maxTextW);
       int widestLine = titleW;
       for (String line : wrapped) {
-         widestLine = Math.max(widestLine, this.font.width(line));
+         widestLine = Math.max(widestLine, UiFont.width(line));
       }
 
       int cardW = widestLine + 16;
@@ -452,15 +453,15 @@ public final class ClickGuiScreen extends Screen {
       float show = this.tooltipProgress * this.fade;
       Glass.roundRect(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.fade(Glass.withAlpha(Glass.surface(1), 235), show));
       Glass.roundOutline(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, 20), show));
-      Controls.text(graphics, this.font, this.tooltipTitle, tx + 8, ty + 5, Glass.TEXT, show);
+      Controls.text(graphics, this.font, this.tooltipTitle, tx + 8, ty + 5, Glass.text(), show);
       if (badge) {
          String label = "[" + this.tooltipKeyBadge + "]";
-         Controls.text(graphics, this.font, label, tx + cardW - 6 - this.font.width(label), ty + 5, Glass.TEXT_DIM, show);
+         Controls.text(graphics, this.font, label, tx + cardW - 6 - UiFont.width(label), ty + 5, Glass.textDim(), show);
       }
 
       int lineY = ty + 16;
       for (String line : wrapped) {
-         Controls.text(graphics, this.font, line, tx + 8, lineY, Glass.TEXT_DIM, show);
+         Controls.text(graphics, this.font, line, tx + 8, lineY, Glass.textDim(), show);
          lineY += 10;
       }
    }
@@ -541,7 +542,7 @@ public final class ClickGuiScreen extends Screen {
                label = label + "  x " + Math.round(widget.lastScreenX()) + "  y " + Math.round(widget.lastScreenY());
             }
 
-            int labelW = this.font.width(label) + 6;
+            int labelW = UiFont.width(label) + 6;
             int ly = wy - 13 < TOP_BAR + 2 ? wy + wh + 3 : wy - 13;
             int lx = Mth.clamp(wx, 2, Math.max(2, this.vw - labelW - 2));
             if (selected || over) {
@@ -549,7 +550,7 @@ public final class ClickGuiScreen extends Screen {
                Glass.roundOutline(graphics, lx, ly, lx + labelW, ly + 11, 3, this.faded(accentB, selected ? 220 : 110));
             }
 
-            this.text(graphics, label, lx + 3, ly + 2, selected || over ? Glass.TEXT : accentB);
+            this.text(graphics, label, lx + 3, ly + 2, selected || over ? Glass.text() : accentB);
          }
       }
 
@@ -587,7 +588,7 @@ public final class ClickGuiScreen extends Screen {
 
    private void drawFooter(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int accent, int accentB, boolean tooltips, long now) {
       String bindLabel = this.menuKeyLabel();
-      int bindWidth = this.font.width(bindLabel) + 18;
+      int bindWidth = UiFont.width(bindLabel) + 18;
       int bindX = 14;
       int bindY = this.vh - FOOTER + 4;
       boolean overBind = inside(mouseX, mouseY, bindX, bindY, bindWidth, 18);
@@ -595,18 +596,18 @@ public final class ClickGuiScreen extends Screen {
          Glass.roundRect(graphics, bindX, bindY, bindX + bindWidth, bindY + 18, Glass.RADIUS, this.faded(accent, 110));
       }
 
-      this.text(graphics, bindLabel, bindX + 9, bindY + 5, this.bindingMenu || overBind ? Glass.TEXT : Glass.TEXT_DIM);
+      this.text(graphics, bindLabel, bindX + 9, bindY + 5, this.bindingMenu || overBind ? Glass.text() : Glass.textDim());
       boolean flashing = this.flashText != null && now < this.flashUntil;
       if (tooltips || flashing) {
          String tip = this.hoveredDescription.replaceAll("§.", "");
          int maxWidth = Math.max(120, this.vw - (bindX + bindWidth + 12) - 22);
-         if (this.font.width(tip) <= maxWidth) {
-            this.text(graphics, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : Glass.TEXT_DIM);
+         if (UiFont.width(tip) <= maxWidth) {
+            this.text(graphics, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : Glass.textDim());
          } else {
             List<String> lines = this.wrapLines(tip, maxWidth);
             int topY = lines.size() > 1 ? bindY + 1 : bindY + 5;
             for (int i = 0; i < Math.min(2, lines.size()); i++) {
-               this.text(graphics, lines.get(i), bindX + bindWidth + 12, topY + i * 9, flashing ? accentB : Glass.TEXT_DIM);
+               this.text(graphics, lines.get(i), bindX + bindWidth + 12, topY + i * 9, flashing ? accentB : Glass.textDim());
             }
          }
       }
@@ -679,7 +680,7 @@ public final class ClickGuiScreen extends Screen {
       }
 
       String bindLabel = this.menuKeyLabel();
-      int bindWidth = this.font.width(bindLabel) + 18;
+      int bindWidth = UiFont.width(bindLabel) + 18;
       int bindY = this.vh - FOOTER + 4;
       if (button == 0 && mx >= 14.0 && mx <= 14 + bindWidth && my >= bindY && my <= bindY + 18) {
          this.bindingMenu = true;

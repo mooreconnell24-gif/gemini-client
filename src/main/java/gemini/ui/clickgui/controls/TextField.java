@@ -2,6 +2,7 @@ package gemini.ui.clickgui.controls;
 
 import gemini.input.Keys;
 import gemini.ui.Glass;
+import gemini.ui.font.UiFont;
 import java.util.function.IntPredicate;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -150,20 +151,20 @@ public final class TextField {
       String shown = this.focused ? this.text : (idleText == null ? "" : idleText);
       boolean caret = this.focused && !this.allSelected && Util.getMillis() / 420L % 2L == 0L;
       int room = w - 8;
-      while (shown.length() > 1 && font.width(shown) > room) {
+      while (shown.length() > 1 && UiFont.width(shown) > room) {
          shown = shown.substring(1);
       }
 
-      int textW = font.width(shown);
+      int textW = UiFont.width(shown);
       int tx = alignRight ? x + w - 4 - textW : x + 4;
       int ty = y + (h - 8) / 2;
       if (this.focused && this.allSelected && textW > 0) {
          g.fill(tx - 1, ty - 1, tx + textW + 1, ty + 9, Glass.fade(Glass.withAlpha(accent, 110), opacity));
       }
 
-      Controls.text(g, font, shown, tx, ty, Glass.lerp(this.focused ? Glass.TEXT : Glass.TEXT_DIM, Glass.ERROR, this.error), opacity);
+      Controls.text(g, font, shown, tx, ty, Glass.lerp(this.focused ? Glass.text() : Glass.textDim(), Glass.ERROR, this.error), opacity);
       if (caret) {
-         g.fill(tx + textW + 1, ty - 1, tx + textW + 2, ty + 9, Glass.fade(Glass.TEXT, opacity));
+         g.fill(tx + textW + 1, ty - 1, tx + textW + 2, ty + 9, Glass.fade(Glass.text(), opacity));
       }
    }
 }

@@ -6,6 +6,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -131,7 +132,7 @@ public final class Radar extends HudWidget {
          int rim = half - 4;
          int nx = c + (int)Math.round(sin * rim);
          int ny = c + (int)Math.round(cos * rim);
-         g.text(hud.font, "N", nx - 2, ny - 3, HudStyle.label(backdrop), hud.shadow);
+         UiFont.draw(g, "N", nx - 2, ny - 3, HudStyle.label(backdrop), hud.shadow);
       }
 
       // You, at the centre: a small chevron pointing ahead.
