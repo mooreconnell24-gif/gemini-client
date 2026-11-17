@@ -24,7 +24,7 @@ public final class HotbarSorter extends Module {
    private int wait;
 
    public HotbarSorter() {
-      super("HotbarSorter", "Keeps your sword, pickaxe, golden apples and blocks in fixed hotbar slots.", Category.PLAYER);
+      super("Hotbar Sorter", "Keeps your sword, pickaxe, golden apples and blocks in fixed hotbar slots.", Category.PLAYER);
    }
 
    @Override

@@ -37,7 +37,7 @@ public final class KillAura extends Module {
       new ModeSetting(
          "Target Mode",
          "Single keeps hitting the best target by Priority; Switch moves to the next target every 6 ticks",
-         "Switch",
+         "Single",
          "Single",
          "Switch"
       )
@@ -50,29 +50,29 @@ public final class KillAura extends Module {
       .box("Both", 280)
       .build();
    private final ModeSetting versionMode = this.addSetting(
-      new ModeSetting("Version", "Wait for the attack cooldown, or click at a fixed rate", "1.9+ Cooldown", "1.9+ Cooldown", "1.8 Legacy CPS")
+      new ModeSetting("Timing", "Cooldown waits until your attack is fully charged, for full damage; CPS clicks at a fixed rate", "Cooldown", "Cooldown", "CPS")
    );
    private final NumberSetting legacyCps = this.addSetting(
-      new NumberSetting("Legacy CPS", "Clicks per second in 1.8 Legacy CPS mode", 14.0, 4.0, 20.0, 1.0).showIf(() -> this.versionMode.is("1.8 Legacy CPS"))
+      new NumberSetting("CPS", "Clicks per second in CPS timing", 12.0, 1.0, 20.0, 1.0).showIf(() -> this.versionMode.is("CPS"))
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to attack, in blocks", 4.2, 2.5, 6.0, 0.1));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to attack, in blocks", 4.2, 1.0, 6.0, 0.1));
    private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Farthest target to attack through a wall, in blocks", 3.0, 0.0, 6.0, 0.1));
-   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Only attack targets within this many degrees of where you look", 180.0, 30.0, 360.0, 5.0));
+   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Only attack targets within this many degrees of where you look; 360 attacks all round", 360.0, 30.0, 360.0, 5.0));
    private final NumberSetting turnSpeed = this.addSetting(
       new NumberSetting("Turn Speed", "Most you turn per tick, in degrees", 85.0, 15.0, 180.0, 5.0)
    );
    private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera", true));
-   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Only attack targets you can see", false));
+   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Visible Only", "Only attack targets you can see", false));
    private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "While in the air, wait until you are falling so the hit is a critical", true));
    private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Keep sprinting after each hit", true));
    private final BooleanSetting smartSwitch = this.addSetting(
-      new BooleanSetting("Smart Switch", "Switch to the best sword, or an axe against a raised shield, before attacking", true)
+      new BooleanSetting("Auto Weapon", "Switch to your best weapon, or an axe against a raised shield, before attacking", true)
    );
    private final BooleanSetting lagComp = this.addSetting(
-      new BooleanSetting("Lag Comp", "Lead moving targets by their speed and your ping", true)
+      new BooleanSetting("Predict", "Aim and measure reach at where a moving target will be, not where it is", true)
    );
    private final NumberSetting predictTicks = this.addSetting(
-      new NumberSetting("Predict Ticks", "Ticks ahead to lead a moving target, before ping is added", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
+      new NumberSetting("Predict Ticks", "How many ticks ahead a moving target is led", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
    );
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players", true));
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Attack hostile mobs", true));
@@ -92,7 +92,7 @@ public final class KillAura extends Module {
    private double eyeZ;
 
    public KillAura() {
-      super("KillAura", "Attacks nearby targets, turning to face each one first.", Category.COMBAT);
+      super("Kill Aura", "Attacks the targets around you, turning to face each one first.", Category.COMBAT);
    }
 
    @Override
@@ -137,7 +137,7 @@ public final class KillAura extends Module {
                float[] rotation = Rotations.face(player, this.currentTarget, pred);
                boolean aimed = RotationManager.request(player, rotation[0], rotation[1], this.turnSpeed.floatValue(), this.silentRotate.get(), ActionPriority.COMBAT, 8.0F);
                if (aimed) {
-                  boolean useLegacy = this.versionMode.is("1.8 Legacy CPS");
+                  boolean useLegacy = this.versionMode.is("CPS");
                   float cooldownRequired = 0.9F;
                   long nowMs = System.currentTimeMillis();
                   long minDelayMs = (long)Math.max(45.0, 1000.0 / Math.max(1.0, this.legacyCps.get()));
@@ -223,7 +223,7 @@ public final class KillAura extends Module {
       return next;
    }
 
-   /** In the FOV cone, within Range (or Wall Range when not visible) of where Lag Comp expects it, and seen if Raytrace Check is on. */
+   /** In the FOV cone, within Range (or Wall Range when not visible) of where Predict expects it, and seen if Visible Only is on. */
    private boolean attackable(LivingEntity living) {
       LocalPlayer player = this.scanPlayer;
       if (player == null) {
@@ -244,7 +244,7 @@ public final class KillAura extends Module {
          return false;
       }
 
-      // Within both ranges the line of sight only matters for Raytrace Check, so skip the trace.
+      // Within both ranges the line of sight only matters for Visible Only, so skip the trace.
       if (reach <= Math.min(maxRange, maxWall) && !this.raytrace.get()) {
          return true;
       }

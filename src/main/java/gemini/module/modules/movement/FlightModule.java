@@ -8,33 +8,53 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.AttributeBoost;
 import gemini.util.MoveUtil;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.phys.Vec3;
 
 public final class FlightModule extends LinearFlightModuleBase {
+   /** Blocks per tick of vanilla creative flight, so "Speed 1" feels the same in Creative and Motion. */
+   private static final double CREATIVE_SPEED = 0.545;
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
-         "Mode", "How you fly; Auto flies like creative mode in a single-player world", "Auto", "Auto", "Strict", "Packet", "Creative", "Velocity", "Glide", "Jetpack"
+         "Mode",
+         "Creative flies exactly like creative mode; Motion stops dead when you let go of the keys; Glide sinks slowly; Jetpack pushes you up while Jump is held",
+         "Creative",
+         "Creative",
+         "Motion",
+         "Glide",
+         "Jetpack"
       )
    );
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal flight speed, in blocks per tick", 0.55, 0.2, 5.0, 0.1));
-   private final NumberSetting vertical = this.addSetting(
-      new NumberSetting("Vertical", "Climb and descent speed, in blocks per tick", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
+   private final NumberSetting speed = this.addSetting(
+      new NumberSetting("Speed", "Horizontal speed, where 1 is creative-mode flight", 1.0, 0.2, 10.0, 0.1)
    );
-   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Damp", "Slow down after the game pulls you back to your last position", true));
-   private final BooleanSetting noFall = this.addSetting(new BooleanSetting("No Fall", "Reset fall distance while flying so you take no fall damage", true));
+   private final NumberSetting vertical = this.addSetting(
+      new NumberSetting("Vertical", "Climb and descent speed with Jump and Sneak, in blocks per tick", 0.45, 0.1, 3.0, 0.05).showIf(() -> !this.mode.is("Creative"))
+   );
+   private final NumberSetting fallSpeed = this.addSetting(
+      new NumberSetting("Fall Speed", "How fast you sink while gliding, in blocks per tick", 0.1, 0.0, 0.5, 0.01).showIf(() -> this.mode.is("Glide"))
+   );
+   private final BooleanSetting noFall = this.addSetting(
+      new BooleanSetting("No Fall", "Reset fall distance while flying so you take no fall damage", true).showIf(() -> !this.mode.is("Creative"))
+   );
    private boolean previousFlying;
    /** True while the creative-style abilities written by this module are in place and have to be taken back. */
    private boolean abilitiesWritten;
 
    public FlightModule() {
-      super("Flight", "Lets you fly in survival, in one of several flight styles.", Category.MOVEMENT, Keys.fromGlfw('R'));
+      super("Flight", "Lets you fly in survival.", Category.MOVEMENT, Keys.fromGlfw('R'));
    }
 
-   private boolean creativeMode() {
-      return this.mode.is("Creative") || this.mode.is("Auto") && Minecraft.getInstance().hasSingleplayerServer();
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Fly");
+      names.add("Glide");
+      return names;
    }
 
    @Override
@@ -46,8 +66,7 @@ public final class FlightModule extends LinearFlightModuleBase {
 
    @Override
    public void onDisable() {
-      Minecraft client = Minecraft.getInstance();
-      LocalPlayer player = client.player;
+      LocalPlayer player = Minecraft.getInstance().player;
       if (player != null) {
          this.restoreAbilities(player, this.previousFlying);
       }
@@ -73,155 +92,98 @@ public final class FlightModule extends LinearFlightModuleBase {
 
    @Override
    public void onTick() {
-      Minecraft client = Minecraft.getInstance();
-      LocalPlayer player = client.player;
-      if (player != null) {
-         if (this.setbackPause.get() && !this.creativeMode() && MoveUtil.hasRecentSetback()) {
-            MoveUtil.smoothVelocity(player, 0.35);
-            return;
-         }
-
-         if (this.creativeMode()) {
-            float flySpeed = this.speed.floatValue();
-            this.abilitiesWritten = true;
-            write(player.getAbilities(), true, true, true, flySpeed);
-            player.onUpdateAbilities();
-            AttributeBoost.onServer(serverPlayer -> {
-               write(serverPlayer.getAbilities(), true, true, true, flySpeed);
-               serverPlayer.onUpdateAbilities();
-            });
-         } else {
-            if (this.abilitiesWritten) {
-               // The mode was changed away from creative-style flight while the module stayed on.
-               this.abilitiesWritten = false;
-               this.restoreAbilities(player, false);
-            }
-
-            Abilities abilities = player.getAbilities();
-            if (abilities.flying && !player.isCreative() && !player.isSpectator()) {
-               abilities.flying = false;
-            }
-
-            if (this.mode.is("Jetpack")) {
-               this.jetpack(player);
-            } else if (this.mode.is("Glide")) {
-               this.glide(player);
-            } else if (this.mode.is("Packet")) {
-               this.packetFlight(client, player);
-            } else if (this.mode.is("Strict")) {
-               this.strictFlight(player);
-            } else {
-               this.velocityFlight(player);
-            }
-         }
-      }
-   }
-
-   private void strictFlight(LocalPlayer player) {
-      boolean jump = jumpHeld(player);
-      boolean sneak = sneakHeld(player);
-      double targetY = 0.0;
-      if (jump) {
-         targetY = Math.min(0.42, this.vertical.get());
-      } else if (sneak) {
-         targetY = -Math.min(0.42, this.vertical.get());
+      LocalPlayer player = Minecraft.getInstance().player;
+      if (player == null) {
+         return;
       }
 
-      double maxHoriz = 0.2806 * Math.min(this.speed.get(), 1.65);
-      Vec3 dir = MoveUtil.direction(player);
-      Vec3 current = player.getDeltaMovement();
-      double targetX = dir == null ? 0.0 : dir.x * maxHoriz;
-      double targetZ = dir == null ? 0.0 : dir.z * maxHoriz;
-      player.setDeltaMovement(
-         MoveUtil.lerpMotion(current.x, targetX, 0.55), MoveUtil.lerpMotion(current.y, targetY, 0.65), MoveUtil.lerpMotion(current.z, targetZ, 0.55)
-      );
-      if (this.noFall.get()) {
+      if (this.mode.is("Creative")) {
+         float flySpeed = this.speed.floatValue();
+         this.abilitiesWritten = true;
+         write(player.getAbilities(), true, true, true, flySpeed);
+         player.onUpdateAbilities();
+         AttributeBoost.onServer(serverPlayer -> {
+            write(serverPlayer.getAbilities(), true, true, true, flySpeed);
+            serverPlayer.onUpdateAbilities();
+         });
+         return;
+      }
+
+      if (this.abilitiesWritten) {
+         // The mode was changed away from creative-style flight while the module stayed on.
+         this.abilitiesWritten = false;
+         this.restoreAbilities(player, false);
+      }
+
+      Abilities abilities = player.getAbilities();
+      if (abilities.flying && !player.isCreative() && !player.isSpectator()) {
+         abilities.flying = false;
+      }
+
+      if (player.isFallFlying() || player.isPassenger()) {
+         return;
+      }
+
+      boolean acted;
+      if (this.mode.is("Jetpack")) {
+         acted = this.jetpack(player);
+      } else if (this.mode.is("Glide")) {
+         acted = this.glide(player);
+      } else {
+         this.motion(player);
+         acted = true;
+      }
+
+      if (acted && this.noFall.get()) {
          AttributeBoost.resetFall(player);
       }
    }
 
-   private void packetFlight(Minecraft client, LocalPlayer player) {
-      boolean jump = jumpHeld(player);
-      boolean sneak = sneakHeld(player);
-      double dy = jump ? 0.062 : (sneak ? -0.062 : 0.0);
-      Vec3 dir = MoveUtil.direction(player);
-      double step = 0.22 * Math.min(this.speed.get(), 1.5);
-      double dx = dir == null ? 0.0 : dir.x * step;
-      double dz = dir == null ? 0.0 : dir.z * step;
-      player.setDeltaMovement(0.0, 0.0, 0.0);
-      Vec3 next = player.position().add(dx, dy, dz);
-      // The regular movement packet sends this position; a second position packet in the same tick gets the
-      // player disconnected by the 26.x server.
-      player.setPos(next);
-
-      if (this.noFall.get()) {
-         AttributeBoost.resetFall(player);
+   /** Movement keys map straight to a velocity; with no key held the player hangs still. */
+   private void motion(LocalPlayer player) {
+      double y = verticalInput(player) * this.vertical.get();
+      if (MoveUtil.hasInput(player)) {
+         player.setDeltaMovement(player.getDeltaMovement().x, y, player.getDeltaMovement().z);
+         MoveUtil.setHorizontal(player, CREATIVE_SPEED * this.speed.get());
+      } else {
+         player.setDeltaMovement(0.0, y, 0.0);
       }
    }
 
-   private void velocityFlight(LocalPlayer player) {
+   private boolean jetpack(LocalPlayer player) {
+      if (!jumpHeld(player)) {
+         return false;
+      }
+
       Vec3 motion = player.getDeltaMovement();
-      double y = 0.0;
-      boolean jump = jumpHeld(player);
-      boolean sneak = sneakHeld(player);
-      if (jump) {
-         y += this.vertical.get();
+      player.setDeltaMovement(motion.x, Math.min(this.vertical.get(), motion.y + 0.12), motion.z);
+      if (MoveUtil.hasInput(player)) {
+         MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * Math.max(1.0, this.speed.get()));
       }
 
-      if (sneak) {
-         y -= this.vertical.get();
+      return true;
+   }
+
+   /** Only acts in the air, so walking and jumping on the ground stay vanilla. */
+   private boolean glide(LocalPlayer player) {
+      if (!MovementHelpers.airborne(player)) {
+         return false;
+      }
+
+      Vec3 motion = player.getDeltaMovement();
+      double y = motion.y;
+      if (sneakHeld(player)) {
+         y = -Math.max(0.2, this.vertical.get());
+      } else if (motion.y < -this.fallSpeed.get()) {
+         y = -this.fallSpeed.get();
       }
 
       player.setDeltaMovement(motion.x, y, motion.z);
-      if (MoveUtil.hasInput(player)) {
-         MoveUtil.setHorizontal(player, 0.2806 * this.speed.get() * 1.5);
-      } else {
-         player.setDeltaMovement(0.0, y, 0.0);
+      if (this.speed.get() > 1.0 && MoveUtil.hasInput(player)) {
+         MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * this.speed.get());
       }
 
-      if (this.noFall.get()) {
-         AttributeBoost.resetFall(player);
-      }
-   }
-
-   private void jetpack(LocalPlayer player) {
-      boolean jump = jumpHeld(player);
-      if (jump) {
-         Vec3 motion = player.getDeltaMovement();
-         double y = Math.min(this.vertical.get(), motion.y + 0.12);
-         player.setDeltaMovement(motion.x, y, motion.z);
-         if (MoveUtil.hasInput(player)) {
-            MoveUtil.setHorizontal(player, 0.2806 * this.speed.get());
-         }
-
-         if (this.noFall.get()) {
-            AttributeBoost.resetFall(player);
-         }
-      }
-   }
-
-   private void glide(LocalPlayer player) {
-      boolean jump = jumpHeld(player);
-      boolean sneak = sneakHeld(player);
-      double y;
-      if (jump) {
-         y = this.vertical.get() * 0.35;
-      } else if (sneak) {
-         y = -Math.max(0.2, this.vertical.get());
-      } else {
-         y = -0.03;
-      }
-
-      player.setDeltaMovement(player.getDeltaMovement().x, y, player.getDeltaMovement().z);
-      if (MoveUtil.hasInput(player)) {
-         MoveUtil.setHorizontal(player, 0.2806 * this.speed.get());
-      } else {
-         player.setDeltaMovement(0.0, y, 0.0);
-      }
-
-      if (this.noFall.get()) {
-         AttributeBoost.resetFall(player);
-      }
+      return true;
    }
 
    @Override

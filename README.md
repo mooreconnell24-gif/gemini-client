@@ -5,7 +5,7 @@
 
   **A single-player utility / sandbox client for Minecraft 26.3 (Fabric).**
 
-  312 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
+  239 modules · window or panel ClickGUI · draggable HUD · pathfinding bot (Baritone built in)
 
   [![Minecraft](https://img.shields.io/badge/Minecraft-26.3-62b47a?style=flat-square&logo=minecraft)](https://www.minecraft.net/)
   [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbb69c?style=flat-square)](https://fabricmc.net/)
@@ -266,7 +266,7 @@ The rest:
 
 | | |
 |---|---|
-| **312 modules** | Combat, Movement, Player, World, Render, HUD and Misc |
+| **239 modules** | Combat, Movement, Player, World, Render, HUD and Misc: one module per job, each with a plain name and a short list of settings |
 | **Two menu layouts** | Window (fuzzy-search everything, settings side by side) or classic panels |
 | **HUD widgets** | FPS, TPS, armour, potions, radar, TargetHUD, keystrokes, graphs and more; drag them anywhere with magnetic snapping |
 | **Pathfinding bot** | Drives the bundled Baritone; built-in 3D A* fallback with `#goto`, `#mine`, `#follow`, `#tunnel`, `#farm`, `#explore`, `#excavate` |
@@ -276,15 +276,52 @@ The rest:
 
 ## Module overview
 
-| Category | Examples |
+| Category | Modules | Examples |
+|---|---|---|
+| Combat | 32 | Kill Aura, Trigger Bot, Auto Totem, Velocity, Criticals, Auto Crystal, Anchor Aura, Bow Aimbot, Silly Aimbot, Surround, Web Aura |
+| Movement | 33 | Flight, Speed, Step, Jesus, No Fall, No Slow, Safe Walk, Spider, Elytra Fly, Boat Fly, Click TP |
+| Player | 42 | Clutch, Auto Armor, Auto Eat, Auto Tool, Fast Break, Fast Place, Chest Stealer, Inventory Cleaner, Kits, Buffs, Regen |
+| World | 31 | Scaffold, Nuker, Auto Farm, Vein Miner, World Tools, Spawn Proofer, Timer, Tick Freeze, Summoner, Waypoints |
+| Render | 45 | ESP, X-Ray, Fullbright, Zoom, Freecam, Free Look, Ambience, No Render, Chams, Storage ESP, Block ESP, Nametags, View Model |
+| HUD | 37 | ArrayList, Target HUD, Position, FPS, TPS, Armor, Potion Timers, Radar, Keystrokes, Session Stats, Custom Text |
+| Misc | 19 | ClickGUI, Rotations, Presets, Macro 1–3, Panic, Performance, Anti Lag, World Backup, World Notes, Name Protect |
+
+Each job has one module. Where several modules used to do nearly the same thing they are now one, with the old ones as a mode or a setting; every old name still finds its module in the search and in `.name` commands.
+
+| Module | What it took in |
 |---|---|
-| Combat | KillAura, Bow Aimbot, Silly Aimbot, AutoCrystal, AnchorAura, Auto City, Hit Crystal, AutoTotem, Velocity |
-| Movement | Flight, Speed, Step, Jesus, Elytra Fly, NoFall, NoWeb, Spider, Boat Fly, Click TP |
-| Player | Clutch, AutoArmor, AutoEat, AutoTool, Quick Move, Craft Repeat, Auto Heal, Kits, Inventory Sorter, Durability Alert |
-| World | Scaffold, Nuker, Auto Farm, Vein Miner, World Rules, Tick Freeze, Mob Sweeper, Summoner, Time, Weather, Waypoints |
-| Render | ESP, Chams, Break ESP, Harvest ESP, Biome Border, View Model, StorageESP, Xray, Nametags, Freecam |
-| HUD | ArrayList, TargetHUD, Day Info, Spawn Info, Session Stats, Weather Forecast, Mob Caps, FPS, Radar, Keystrokes |
-| Misc | ClickGUI, HUD, Coords Copier, Screenshot Helper, Macro 1–3, Panic, Presets, NameProtect |
+| Auto Totem | Offhand: the **Item** setting keeps a shield, golden apple or crystal in your offhand and swaps a totem in when you are in danger (low health, a lethal fall, gliding) |
+| Auto Eat | AutoGapple, SmartEat, AutoSoup: **Golden Apples** eats one at low health |
+| Trigger Bot | AutoClicker: **Require Click** and **Weapon Only** |
+| Super Knockback | WTap |
+| Web Aura | Auto Web Fill: webs the target's feet and its predicted path (**Webs Ahead**) |
+| Surround | SelfTrap, BlockIn: **Cover** is Feet, Head or Full |
+| Flight | Glide (a mode, with **Fall Speed**) |
+| Speed | Strafe (**Air Control**) |
+| No Slow | NoWeb, TerrainSpeed: one switch each for items, cobwebs, berry bushes, powder snow, soul sand and honey |
+| Safe Walk | Eagle: **Mode** is Stop or Sneak |
+| Auto Jump | Auto Hop (**Always**) |
+| Parkour, Hole Snap, Spider, Elytra Fly | EdgeJump, Hole Pull, WallClimb, ElytraBoost |
+| Fast Break | InstantMine (**Instant** mode), PacketMine (**Keep Mining**), and **No Delay** between blocks |
+| Fast Place | Fast Use (**Blocks Only** off) |
+| Inventory Cleaner | Auto Drop: drops the items you list, or everything except them |
+| Kits | Give List (the **Custom** kit) |
+| Buffs | Cleanse (**Clear Bad Effects**, **Auto Cleanse**), Potion Spoof, NoHunger (**Saturation**) |
+| Regen | Auto Heal (**Below Health**) |
+| Auto EXP | EXP Thrower and the combat Auto EXP |
+| World Tools | Time, Weather, Gamemode, Seed and World Rules: one-click buttons plus the game-rule switches |
+| Spawn Proofer | Auto Torch |
+| Nuker | Bed Breaker: **Filter** breaks only the blocks you list |
+| Lawn Mower | Extinguish |
+| No Render | AntiBlind, NoBob, NoHurtCam |
+| View Model | Animations (**Swing Duration**) |
+| Zoom | Cinematic Camera, plus scroll to zoom and a mouse that slows with the zoom |
+| Breadcrumbs, Break ESP | PlayerTrails, BreakIndicators |
+| Scaffold | Tower, BlockCounter (**Show Count**) |
+
+Removed because they only made sense against other players or a remote server, or duplicated a vanilla command: AutoPearl, AutoRod, Backtrack, BlockHit, Teams, Freeze, Gap Closer, Slippy, Derp, NoRotateSet, AutoWindCharge, BedPlates, Bed Defender, LogoffSpot, PearlTracker, Tunnel ESP, Stash Finder, StrongholdFinder (Locate finds strongholds), Auto Nametag, AutoGG, FlagCheck, Notifier, PacketLogger, Baritone Status, EntityCulling (Anti Lag hides distant name tags), Coordinates (the Position widget), and the HUD widgets Welcome, Totem Counter (Combat Items), Lag Notifier, Chunk Info, Food Info, Xp Info and Free Slots (Custom Text has `{chunk}`, `{food}`, `{saturation}`, `{xp}` and `{slots}`).
+
+New: **Ambience** (Render) changes the time of day and the weather you see without changing the world.
 
 ### Clutch
 

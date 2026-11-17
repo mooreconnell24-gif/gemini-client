@@ -23,7 +23,7 @@ public final class GhostHand extends Module {
    private boolean wasDown;
 
    public GhostHand() {
-      super("GhostHand", "Opens the chest, barrel, ender chest or shulker box you look at through walls.", Category.PLAYER);
+      super("Ghost Hand", "Opens the chest, barrel, ender chest or shulker box you look at through walls.", Category.PLAYER);
    }
 
    @Override

@@ -30,7 +30,7 @@ public final class AnchorAura extends Module {
    private int wait;
 
    public AnchorAura() {
-      super("AnchorAura", "Places, charges and sets off respawn anchors next to the chosen enemy, skipping any blast that would hurt you too much.", Category.COMBAT);
+      super("Anchor Aura", "Places, charges and sets off respawn anchors next to the chosen enemy, skipping any blast that would hurt you too much.", Category.COMBAT);
    }
 
    @Override

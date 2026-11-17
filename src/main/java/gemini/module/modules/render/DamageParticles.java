@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.render.Render3D;
@@ -17,7 +19,14 @@ public final class DamageParticles extends Module {
    private final ArrayDeque<DamageParticles.Popup> popups = new ArrayDeque<>();
 
    public DamageParticles() {
-      super("DamageParticles", "Shows floating numbers for damage dealt and health healed.", Category.RENDER);
+      super("Damage Numbers", "Shows floating numbers for damage dealt and health healed.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("DamageParticles");
+      return names;
    }
 
    @Override

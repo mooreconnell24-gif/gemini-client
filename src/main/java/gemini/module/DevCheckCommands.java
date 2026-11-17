@@ -65,30 +65,32 @@ final class DevCheckCommands {
          buffs.setEnabled(false, false);
       });
       step(2, () -> expect("Buffs clears effects on disable", () -> player().hasEffect(MobEffects.SPEED) ? "speed still active" : null));
+      step(1, () -> buffs.settings().forEach(Setting::reset));
 
-      Module time = module(modules, "Time");
+      Module rules = module(modules, "World Tools");
       step(10, () -> {
-         setMode(time, "Time", "Midnight");
-         time.setEnabled(true, false);
+         setMode(rules, "Time", "Midnight");
+         action(rules, "Set Time");
       });
-      step(2, () -> expect("Time sets midnight", () -> {
-         long day = level().getOverworldClockTime() % 24000L;
+      step(2, () -> expect("World Tools sets midnight", () -> {
+         long day = server().overworld().getOverworldClockTime() % 24000L;
          return Math.abs(day - 18000L) < 200L ? null : "time of day is " + day;
       }));
-
-      Module weather = module(modules, "Weather");
       step(20, () -> {
-         setMode(weather, "Weather", "Rain");
-         weather.setEnabled(true, false);
+         setMode(rules, "Weather", "Rain");
+         action(rules, "Set Weather");
       });
-      step(20, () -> {
-         expect("Weather sets rain", () -> level().isRaining() ? null : "not raining");
-         setMode(weather, "Weather", "Clear");
-         weather.setEnabled(true, false);
+      // The client eases the rain in over about a second, so give it two.
+      step(40, () -> {
       });
-      step(2, () -> weather.setEnabled(false, false));
+      step(2, () -> {
+         expect("World Tools sets rain", () -> level().isRaining() ? null : "not raining");
+         setMode(rules, "Weather", "Clear");
+         action(rules, "Set Weather");
+         setMode(rules, "Time", "Day");
+         action(rules, "Set Time");
+      });
 
-      Module rules = module(modules, "World Rules");
       step(5, () -> {
          setBool(rules, "Keep Inventory", true);
          setBool(rules, "Restore On Disable", true);
@@ -96,15 +98,15 @@ final class DevCheckCommands {
          rules.setEnabled(true, false);
       });
       step(20, () -> {
-         expect("World Rules sets keep_inventory", () -> server().overworld().getGameRules().get(GameRules.KEEP_INVENTORY) ? null : "keep_inventory still false");
-         expect("World Rules sets random_tick_speed", () -> {
+         expect("World Tools sets keep_inventory", () -> server().overworld().getGameRules().get(GameRules.KEEP_INVENTORY) ? null : "keep_inventory still false");
+         expect("World Tools sets random_tick_speed", () -> {
             int speed = server().overworld().getGameRules().get(GameRules.RANDOM_TICK_SPEED);
             return speed == 10 ? null : "random_tick_speed is " + speed;
          });
          rules.setEnabled(false, false);
       });
       step(20, () -> {
-         expect("World Rules restores on disable", () -> server().overworld().getGameRules().get(GameRules.KEEP_INVENTORY) ? "keep_inventory still true" : null);
+         expect("World Tools restores on disable", () -> server().overworld().getGameRules().get(GameRules.KEEP_INVENTORY) ? "keep_inventory still true" : null);
          rules.settings().forEach(Setting::reset);
       });
 
@@ -174,30 +176,54 @@ final class DevCheckCommands {
          sweeper.settings().forEach(Setting::reset);
       });
 
-      Module cleanse = module(modules, "Cleanse");
       step(5, () -> SpCommands.run("effect give @s minecraft:poison 60 0"));
-      step(5, () -> cleanse.setEnabled(true, false));
-      step(5, () -> expect("Cleanse", () -> player().hasEffect(MobEffects.POISON) ? "still poisoned" : null));
-
-      Module gamemode = module(modules, "Gamemode");
-      step(10, () -> {
-         setMode(gamemode, "Mode", "Survival");
-         gamemode.setEnabled(true, false);
+      step(5, () -> action(buffs, "Clear Bad Effects"));
+      step(5, () -> expect("Buffs clears bad effects", () -> player().hasEffect(MobEffects.POISON) ? "still poisoned" : null));
+      step(5, () -> {
+         setBool(buffs, "Auto Cleanse", true);
+         buffs.setEnabled(true, false);
+         SpCommands.run("effect give @s minecraft:wither 60 0");
       });
-      step(2, () -> expect("Gamemode", () -> Minecraft.getInstance().gameMode.getPlayerMode() == GameType.SURVIVAL ? null : "still " + Minecraft.getInstance().gameMode.getPlayerMode()));
+      step(25, () -> {
+      });
+      step(2, () -> {
+         expect("Buffs auto cleanse", () -> player().hasEffect(MobEffects.WITHER) ? "still withered" : null);
+         buffs.setEnabled(false, false);
+         setBool(buffs, "Auto Cleanse", false);
+      });
 
-      Module heal = module(modules, "Auto Heal");
+      step(10, () -> {
+         setMode(rules, "Game Mode", "Survival");
+         action(rules, "Set Game Mode");
+      });
+      step(2, () -> expect("World Tools sets game mode", () -> Minecraft.getInstance().gameMode.getPlayerMode() == GameType.SURVIVAL ? null : "still " + Minecraft.getInstance().gameMode.getPlayerMode()));
+
+      Module heal = module(modules, "Regen");
       step(5, () -> SpCommands.run("damage @s 10 minecraft:generic"));
       step(5, () -> {
-         setNumber(heal, "Health", 16);
+         setNumber(heal, "Amount", 2);
+         setNumber(heal, "Interval", 5);
+         setNumber(heal, "Below Health", 16);
          heal.setEnabled(true, false);
       });
       step(30, () -> {
       });
       step(2, () -> {
-         expect("Auto Heal", () -> player().getHealth() > 12.0F ? null : "health " + player().getHealth());
+         expect("Regen heals below the threshold", () -> player().getHealth() > 12.0F ? null : "health " + player().getHealth());
          heal.setEnabled(false, false);
+         heal.settings().forEach(Setting::reset);
          SpCommands.run("gamemode creative");
+      });
+
+      step(5, () -> {
+         SpCommands.run("clear @s");
+         setMode(kits, "Kit", "Custom");
+         action(kits, "Give");
+      });
+      step(3, () -> {
+         expect("Kits Custom", () -> player().getInventory().isEmpty() ? "inventory empty" : null);
+         setMode(kits, "Kit", "PvP");
+         SpCommands.run("clear @s");
       });
 
       Module home = module(modules, "Home");

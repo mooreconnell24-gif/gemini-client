@@ -24,7 +24,7 @@ public final class BedAura extends Module {
    private int wait;
 
    public BedAura() {
-      super("BedAura", "Places and sets off beds next to the chosen enemy in the Nether or the End.", Category.COMBAT);
+      super("Bed Aura", "Places and sets off beds next to the chosen enemy in the Nether or the End.", Category.COMBAT);
    }
 
    @Override

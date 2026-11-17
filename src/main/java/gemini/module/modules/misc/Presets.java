@@ -22,12 +22,12 @@ public final class Presets extends Module {
    private static final Map<String, List<String>> PACKS = new LinkedHashMap<>();
 
    static {
-      PACKS.put("General", List.of("Sprint", "HUD", "TargetHUD", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag"));
-      PACKS.put("Performance", List.of("AntiLag", "EntityCulling", "Unfocused CPU", "Particles", "HUD", "FPS Graph", "AntiLag Status"));
-      PACKS.put("PvP", List.of("KillAura", "Velocity", "Criticals", "AutoTotem", "AutoArmor", "Sprint", "TargetHUD", "HoleESP", "HitEffect"));
-      PACKS.put("Explore", List.of("Fullbright", "Xray", "ESP", "StorageESP", "Waypoints", "Coordinates", "Zoom"));
-      PACKS.put("Build", List.of("Scaffold", "FastPlace", "AutoTool", "SafeWalk", "Sprint"));
-      PACKS.put("Travel", List.of("Flight", "Speed", "Jesus", "NoFall", "Sprint", "Step"));
+      PACKS.put("General", List.of("Sprint", "HUD", "Target HUD", "Velocity", "Auto Armor", "Auto Eat", "ESP", "Nametags", "Anti Lag"));
+      PACKS.put("Performance", List.of("Anti Lag", "Performance", "Background FPS", "Particles", "HUD", "FPS Graph", "Anti Lag Status"));
+      PACKS.put("PvP", List.of("Kill Aura", "Velocity", "Criticals", "Auto Totem", "Auto Armor", "Sprint", "Target HUD", "Hole ESP", "Hit Effect"));
+      PACKS.put("Explore", List.of("Fullbright", "X-Ray", "ESP", "Storage ESP", "Waypoints", "Position", "Zoom"));
+      PACKS.put("Build", List.of("Scaffold", "Fast Place", "Auto Tool", "Safe Walk", "Sprint"));
+      PACKS.put("Travel", List.of("Flight", "Speed", "Jesus", "No Fall", "Sprint", "Step"));
    }
 
    public Presets() {

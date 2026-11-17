@@ -1,5 +1,7 @@
 package gemini.module.modules.player;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -24,7 +26,14 @@ public final class Rotation extends Module {
    );
 
    public Rotation() {
-      super("Rotation", "Snaps your view to fixed steps or holds it at a set angle.", Category.PLAYER);
+      super("Rotation Lock", "Snaps your view to fixed steps or holds it at a set angle.", Category.PLAYER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Rotation");
+      return names;
    }
 
    @Override

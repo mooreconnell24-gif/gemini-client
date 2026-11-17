@@ -27,22 +27,21 @@ public final class NoFallModule extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Spoof marks falling moves as on the ground (safe at any speed); Packet sends an extra on-ground update; MLG places a water bucket before you land",
-         "Spoof",
-         "Packet",
-         "Spoof",
-         "MLG"
+         "Normal cancels the fall damage itself; Water Bucket places water under you before you land and picks it up again, and cancels the damage when it cannot",
+         "Normal",
+         "Normal",
+         "Water Bucket"
       )
    );
    // Vanilla starts hurting at 3 blocks, so anything above that would let damage through instead of preventing it.
    private final NumberSetting distance = this.addSetting(
-      new NumberSetting("Distance", "Start preventing damage after falling this far, in blocks (vanilla hurts from 3)", 2.0, 0.5, 2.9, 0.1)
+      new NumberSetting("Distance", "Start preventing damage after falling this far, in blocks (falls hurt from 3)", 2.0, 0.5, 2.9, 0.1)
    );
    private boolean replacing;
    private int pickup;
 
    public NoFallModule() {
-      super("NoFall", "Prevents fall damage.", Category.MOVEMENT);
+      super("No Fall", "Prevents fall damage.", Category.MOVEMENT);
    }
 
    @Override
@@ -67,8 +66,8 @@ public final class NoFallModule extends Module {
             boolean aboutToHurt = player.fallDistance > 0.0F && player.fallDistance + nextDrop >= this.distance.get();
             if (aboutToHurt
                && player.getDeltaMovement().y < -0.1
-               && (!this.mode.is("MLG") || !this.placeWater(client, player))
-               && !this.mode.is("Spoof")) {
+               && this.mode.is("Water Bucket")
+               && !this.placeWater(client, player)) {
                player.connection.send(new StatusOnly(true, player.horizontalCollision));
                player.resetFallDistance();
             }
@@ -84,7 +83,7 @@ public final class NoFallModule extends Module {
 
    @Override
    public boolean onSendPacket(Packet<?> packet) {
-      if (this.mode.is("Spoof") && !this.replacing && packet instanceof ServerboundMovePlayerPacket move && !move.isOnGround()) {
+      if (this.mode.is("Normal") && !this.replacing && packet instanceof ServerboundMovePlayerPacket move && !move.isOnGround()) {
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
          ClientPacketListener connection = client.getConnection();

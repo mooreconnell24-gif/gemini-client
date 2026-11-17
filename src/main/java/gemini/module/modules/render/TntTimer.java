@@ -14,7 +14,7 @@ public final class TntTimer extends Module {
    private String[] labels = new String[0];
 
    public TntTimer() {
-      super("TNTTimer", "Shows a fuse countdown above lit TNT.", Category.RENDER);
+      super("TNT Timer", "Shows a fuse countdown above lit TNT.", Category.RENDER);
    }
 
    @Override

@@ -32,11 +32,11 @@ public abstract class HudWidget extends Module {
     * corner they were created with and go after the listed ones.
     */
    private static final String[][] HOMES = {
-      {"Top Left", "Position", "Facing", "Biome", "Chunk Info", "Light Level", "Day Info", "Weather Forecast", "Spawn Info", "Last Death", "Radar"},
+      {"Top Left", "Position", "Facing", "Biome", "Light Level", "Day Info", "Weather Forecast", "Spawn Info", "Last Death", "Radar"},
       {"Top Right", "ArrayList", "Mob Caps", "Entity Counter", "AntiLag Status"},
-      {"Right Center", "Potion Timers", "Free Slots", "Food Info", "Xp Info", "Item Counter"},
-      {"Top Center", "Compass", "Looking At", "Lag Notifier", "Welcome", "Cooldowns"},
-      {"Bottom Center", "TargetHUD", "Armor", "Held Item", "Totem Counter", "Combat Items"},
+      {"Right Center", "Potion Timers", "Item Counter"},
+      {"Top Center", "Compass", "Looking At", "Cooldowns"},
+      {"Bottom Center", "TargetHUD", "Armor", "Held Item", "Combat Items"},
       {"Bottom Right", "FPS", "TPS", "Speedometer", "CPS", "Memory", "Clock", "Session Timer", "Session Stats", "FPS Graph"},
       {"Bottom Left", "Keystrokes", "Inventory Viewer", "Ender Chest Preview"},
       {"Left Center", "Keybinds", "Custom Text"}

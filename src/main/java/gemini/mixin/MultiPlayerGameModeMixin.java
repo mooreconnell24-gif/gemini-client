@@ -1,7 +1,7 @@
 package gemini.mixin;
 
 import gemini.Gemini;
-import gemini.module.modules.player.InstantMineModule;
+import gemini.module.modules.player.FastBreakModule;
 import gemini.util.BlockBreaking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -26,6 +26,8 @@ public abstract class MultiPlayerGameModeMixin {
    private float destroyProgress;
    @Shadow
    private boolean isDestroying;
+   @Shadow
+   private int destroyDelay;
 
    @Inject(
       method = {"continueDestroyBlock"},
@@ -35,8 +37,16 @@ public abstract class MultiPlayerGameModeMixin {
    )
    private void gemini$instantMine(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
       if (Gemini.getInstance() != null && this.minecraft.level != null) {
-         InstantMineModule module = Gemini.getInstance().modules().byClass(InstantMineModule.class).orElse(null);
-         if (module != null && module.isEnabled() && module.breakNow(pos)) {
+         FastBreakModule module = Gemini.getInstance().modules().byClass(FastBreakModule.class).orElse(null);
+         if (module == null || !module.isEnabled()) {
+            return;
+         }
+
+         if (module.removesDelay()) {
+            this.destroyDelay = 0;
+         }
+
+         if (module.instant() && module.breakNow(pos)) {
             this.destroyProgress = 0.0F;
             this.isDestroying = false;
             cir.setReturnValue(true);

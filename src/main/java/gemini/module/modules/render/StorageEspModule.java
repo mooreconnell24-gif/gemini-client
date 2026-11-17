@@ -49,7 +49,15 @@ public final class StorageEspModule extends Module {
    private final InfoText infoText = new InfoText();
 
    public StorageEspModule() {
-      super("StorageESP", "Highlights chests, barrels, shulker boxes, ender chests and other storage blocks.", Category.RENDER);
+      super("Storage ESP", "Highlights chests, barrels, shulker boxes, ender chests and other storage blocks.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Stash Finder");
+      names.add("StashFinder");
+      return names;
    }
 
    public List<StorageEspModule.Hit> hits() {

@@ -27,7 +27,7 @@ public final class TargetStrafe extends Module {
    private LivingEntity activeTarget;
 
    public TargetStrafe() {
-      super("TargetStrafe", "Circles around your combat target.", Category.MOVEMENT);
+      super("Target Strafe", "Circles around your combat target.", Category.MOVEMENT);
    }
 
    @Override

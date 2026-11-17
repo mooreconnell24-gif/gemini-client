@@ -22,7 +22,7 @@ public final class HoleEsp extends Module {
    private int wait;
 
    public HoleEsp() {
-      super("HoleESP", "Highlights safe holes surrounded by bedrock or obsidian.", Category.RENDER);
+      super("Hole ESP", "Highlights safe holes surrounded by bedrock or obsidian.", Category.RENDER);
    }
 
    @Override

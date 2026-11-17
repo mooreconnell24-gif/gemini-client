@@ -1,5 +1,6 @@
 package gemini.module.modules.render;
 
+import java.util.List;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -45,6 +46,14 @@ public final class BreakEsp extends Module {
 
    public BreakEsp() {
       super("Break ESP", "Shows a growing box on blocks being mined, with who is mining them and how far along they are.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("BreakIndicators");
+      names.add("Break Indicators");
+      return names;
    }
 
    private static final class Entry {

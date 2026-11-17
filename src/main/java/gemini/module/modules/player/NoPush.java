@@ -14,7 +14,7 @@ public final class NoPush extends Module {
    private final BooleanSetting water = this.addSetting(new BooleanSetting("Water Current", "Stop flowing water carrying you along", true));
 
    public NoPush() {
-      super("NoPush", "Stops crowds of entities and water currents pushing you while you stand still.", Category.PLAYER);
+      super("No Push", "Stops crowds of entities and water currents pushing you while you stand still.", Category.PLAYER);
    }
 
    @Override

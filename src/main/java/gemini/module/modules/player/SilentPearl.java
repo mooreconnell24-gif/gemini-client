@@ -1,5 +1,7 @@
 package gemini.module.modules.player;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -30,7 +32,15 @@ public final class SilentPearl extends Module {
    private int waited;
 
    public SilentPearl() {
-      super("Silent Pearl", "Throws an ender pearl from anywhere in your inventory with one key press.", Category.PLAYER);
+      super("Quick Pearl", "Throws an ender pearl from anywhere in your inventory with one key press.", Category.PLAYER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Silent Pearl");
+      names.add("SilentPearl");
+      return names;
    }
 
    @Override

@@ -153,7 +153,7 @@ public final class XrayModule extends Module {
    private String infoText = "";
 
    public XrayModule() {
-      super("Xray", "Shows ores and other chosen blocks through solid terrain.", Category.RENDER);
+      super("X-Ray", "Shows ores and other chosen blocks through solid terrain.", Category.RENDER);
 
       for (int i = 0; i < PRESETS.size(); i++) {
          XrayModule.Preset preset = PRESETS.get(i);

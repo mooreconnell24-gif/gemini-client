@@ -26,7 +26,7 @@ public final class AutoFishModule extends Module {
    private final InfoText infoText = new InfoText();
 
    public AutoFishModule() {
-      super("AutoFish", "Reels in when a fish bites and casts again.", Category.PLAYER);
+      super("Auto Fish", "Reels in when a fish bites and casts again.", Category.PLAYER);
    }
 
    @Override

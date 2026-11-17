@@ -24,8 +24,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Cobwebs where the enemy is going, not where it was. Web Aura webs the enemy's feet; this predicts its path from
- * its velocity with {@link WebPath} and webs the blocks ahead of it (and optionally its feet too). Your own
+ * Cobwebs where the enemy is and where it is going: its feet, and the blocks ahead of it on the path predicted
+ * from its velocity with {@link WebPath}. Your own
  * blocks, and every block your own motion is about to carry you into, are never webbed.
  */
 public final class AutoWebFill extends PlacementModuleBase {
@@ -34,8 +34,8 @@ public final class AutoWebFill extends PlacementModuleBase {
    private final NumberSetting predictTicks = this.addSetting(
       new NumberSetting("Prediction Ticks", "Ticks ahead the enemy's path is predicted", 8.0, 1.0, 20.0, 1.0)
    );
-   private final NumberSetting ahead = this.addSetting(new NumberSetting("Webs Ahead", "Most blocks ahead of the enemy to web", 2.0, 1.0, 6.0, 1.0));
-   private final BooleanSetting feet = this.addSetting(new BooleanSetting("Feet", "Also web the block the enemy stands in", true));
+   private final NumberSetting ahead = this.addSetting(new NumberSetting("Webs Ahead", "Most blocks ahead of the enemy to web along its predicted path; 0 webs only where it stands", 2.0, 0.0, 6.0, 1.0));
+   private final BooleanSetting feet = this.addSetting(new BooleanSetting("Feet", "Web the block the enemy stands in", true));
    private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Show the predicted path and the planned webs", true));
    private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Colour of the path and planned webs", 190).showIf(this.render::get));
    private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
@@ -43,7 +43,15 @@ public final class AutoWebFill extends PlacementModuleBase {
    private final List<BlockPos> planned = new ArrayList<>();
 
    public AutoWebFill() {
-      super("Auto Web Fill", "Places cobwebs along the path the chosen enemy is about to walk.", Category.COMBAT, 1, 2, 4.5);
+      super("Web Aura", "Places cobwebs at the chosen enemy's feet and along the path it is about to walk.", Category.COMBAT, 1, 2, 4.5);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Web Fill");
+      names.add("Auto Web");
+      return names;
    }
 
    @Override

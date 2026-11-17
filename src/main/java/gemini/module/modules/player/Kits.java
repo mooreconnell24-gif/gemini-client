@@ -5,7 +5,9 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
+import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
+import gemini.module.setting.NumberSetting;
 import gemini.util.SingleplayerGate;
 import gemini.util.SpCommands;
 import java.util.ArrayList;
@@ -14,14 +16,30 @@ import java.util.List;
 /** Hands out ready-made loadouts with /give and /item so a test world is kitted in one click. */
 public final class Kits extends Module {
    private final ModeSetting kit = this.addSetting(
-      new ModeSetting("Kit", "Kit to give", "PvP", "PvP", "Crystal", "Builder", "Miner", "Explorer", "Food")
+      new ModeSetting("Kit", "Kit to give; Custom gives your own list of items", "PvP", "PvP", "Crystal", "Builder", "Miner", "Explorer", "Food", "Custom")
+   );
+   private final ListSetting customItems = this.addSetting(
+      new ListSetting(
+         "Custom Items", "Items the Custom kit gives (ids such as diamond_sword or minecraft:ender_pearl)", ListSetting.Kind.ITEM, "diamond_sword", "ender_pearl", "golden_apple"
+      ).showIf(() -> this.kit.is("Custom"))
+   );
+   private final NumberSetting customCount = this.addSetting(
+      new NumberSetting("Custom Count", "How many of each Custom item", 1.0, 1.0, 64.0, 1.0).showIf(() -> this.kit.is("Custom"))
    );
    private final BooleanSetting clearFirst = this.addSetting(new BooleanSetting("Clear First", "Empty your inventory before giving the kit", false));
    private final BooleanSetting equip = this.addSetting(new BooleanSetting("Equip Armour", "Put the kit's armour on straight away", true));
 
    public Kits() {
-      super("Kits", "Gives you a ready-made PvP, crystal, builder, miner, explorer or food kit.", Category.PLAYER);
+      super("Kits", "Gives you a ready-made PvP, crystal, builder, miner, explorer or food kit, or your own list of items.", Category.PLAYER);
       this.addSetting(new ActionSetting("Give", "Give the selected kit", this::give));
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Give List");
+      names.add("GiveList");
+      return names;
    }
 
    @Override
@@ -52,6 +70,18 @@ public final class Kits extends Module {
       }
 
       switch (this.kit.get()) {
+         case "Custom" -> {
+            if (this.customItems.isEmpty()) {
+               CommandManager.feedback("§cThe Custom kit is empty. §7Add items to §fCustom Items §7first.");
+               return;
+            }
+
+            for (String item : this.customItems.get()) {
+               if (this.customItems.isKnown(item)) {
+                  commands.add("give @s " + item + " " + this.customCount.intValue());
+               }
+            }
+         }
          case "Crystal" -> {
             this.armour(commands, "netherite");
             this.item(commands, "netherite_sword", 1);

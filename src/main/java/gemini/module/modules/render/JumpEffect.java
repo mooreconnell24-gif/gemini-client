@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ColorSetting;
@@ -16,7 +18,14 @@ public final class JumpEffect extends Module {
    private boolean wasOnGround = true;
 
    public JumpEffect() {
-      super("JumpEffect", "Draws expanding rings on the ground when you jump.", Category.RENDER);
+      super("Jump Circles", "Draws expanding rings on the ground when you jump.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("JumpEffect");
+      return names;
    }
 
    @Override

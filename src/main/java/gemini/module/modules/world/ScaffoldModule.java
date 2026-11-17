@@ -6,6 +6,7 @@ import gemini.module.Category;
 import gemini.event.ActionPriority;
 import gemini.util.Hands;
 import gemini.module.Module;
+import gemini.ui.HudContext;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -39,10 +40,10 @@ public final class ScaffoldModule extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between block placements", 0.0, 0.0, 6.0, 1.0));
    private final NumberSetting expand = this.addSetting(new NumberSetting("Expand", "Extra blocks placed ahead of you", 0.0, 0.0, 4.0, 1.0));
    private final ModeSetting sprintMode = this.addSetting(
-      new ModeSetting("Sprint", "How you move while bridging", "Godbridge", "Telly", "Godbridge", "Breeze", "Eagle", "Normal", "Legit", "Off")
+      new ModeSetting("Sprint", "On keeps you sprinting while you bridge; Off stops you sprinting; Vanilla leaves it to you", "On", "On", "Vanilla", "Off")
    );
    private final ModeSetting rotate = this.addSetting(
-      new ModeSetting("Rotate", "How you face the block being placed; Silent turns without moving your camera", "Silent", "Silent", "Godbridge", "Strict", "Snap", "None")
+      new ModeSetting("Rotate", "How you face the block being placed: Silent turns without moving your camera, Visible turns the camera, None does not turn", "Silent", "Silent", "Visible", "None")
    );
    private final NumberSetting turnSpeed = this.addSetting(
       new NumberSetting("Turn Speed", "Most you turn per tick, in degrees", 95.0, 20.0, 180.0, 5.0).showIf(() -> !this.rotate.is("None"))
@@ -63,26 +64,27 @@ public final class ScaffoldModule extends Module {
       new NumberSetting("Tower Motion", "Upward speed while building up, in blocks per tick", 0.42, 0.25, 0.6, 0.02)
          .showIf(() -> this.towerMode.is("Motion") || this.towerMode.is("Constant"))
    );
-   private boolean steerExact;
-   private final BooleanSetting raycast = this.addSetting(
-      new BooleanSetting("Raycast Check", "Only place when your aim really hits the face being clicked", true).showIf(() -> !this.rotate.is("None"))
+   private final BooleanSetting keepY = this.addSetting(
+      new BooleanSetting("Keep Y", "Keep placing at the height you started at and jump as you run, which bridges faster", false)
    );
-   private final BooleanSetting keepY = this.addSetting(new BooleanSetting("Keep Y", "Keep placing at the height you started at", false));
-   private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Look up to 3 blocks away for something to place against when there is nothing directly below", true));
+   private final BooleanSetting clutchSearch = this.addSetting(new BooleanSetting("Clutch Search", "Look up to 3 blocks away for something to place against when there is nothing directly below, so it can catch you in mid-air", true));
    private final BooleanSetting autoRefill = this.addSetting(new BooleanSetting("Auto Refill", "Refill hotbar blocks from your inventory", true));
-   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Stop you walking off block edges", true));
+   private final BooleanSetting safeWalk = this.addSetting(new BooleanSetting("Safe Walk", "Sneak for a moment whenever you are over a gap, so you cannot fall off", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand on each placement", true));
    private final BooleanSetting keepSlot = this.addSetting(new BooleanSetting("Restore Slot", "Switch back to the original hotbar slot after placing", false));
    private final BooleanSetting sneakPause = this.addSetting(new BooleanSetting("Pause Sneak", "Pause placing while you sneak", false));
    private final BooleanSetting downwards = this.addSetting(new BooleanSetting("Downwards", "Place blocks one level lower while sneaking", false));
    private final BooleanSetting renderBlock = this.addSetting(new BooleanSetting("Highlight", "Show the blocks Scaffold places as fading boxes", true));
+   private final BooleanSetting showCount = this.addSetting(
+      new BooleanSetting("Show Count", "Show how many blocks are left in your hotbar under the crosshair, in red when they run low", true)
+   );
+   private final InfoText countText = new InfoText();
    private final PlacementFade fade = new PlacementFade(this, true, 286, this.renderBlock::get);
    private final InfoText infoText = new InfoText();
    private static final Direction[] FACE_ORDER = {Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
    private int cooldown;
    private int startY;
    private int towerTicks;
-   private int breezeTick;
    private boolean sneaking;
    private int blockCount;
 
@@ -91,12 +93,20 @@ public final class ScaffoldModule extends Module {
    }
 
    @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Tower");
+      names.add("BlockCounter");
+      names.add("Block Counter");
+      return names;
+   }
+
+   @Override
    public void onEnable() {
       LocalPlayer player = Minecraft.getInstance().player;
       this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);
       this.sneaking = false;
       this.towerTicks = 0;
-      this.breezeTick = 0;
       this.cooldown = 0;
       this.fade.clear();
    }
@@ -105,13 +115,11 @@ public final class ScaffoldModule extends Module {
    public void onDisable() {
       this.releaseSneak();
       this.fade.clear();
-      this.steerExact = false;
    }
 
    @Override
    public void onWorldChange() {
       this.fade.clear();
-      this.steerExact = false;
       LocalPlayer player = Minecraft.getInstance().player;
       this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);
    }
@@ -131,7 +139,7 @@ public final class ScaffoldModule extends Module {
       }
 
       // Sprint Jump is the one tower mode meant for running; the others only tower in place unless bridging upward.
-      return this.towerMode.is("Sprint Jump") || !MoveUtil.hasInput(player) || !this.keepY.get() && !this.sprintMode.is("Telly");
+      return this.towerMode.is("Sprint Jump") || !MoveUtil.hasInput(player) || !this.keepY.get();
    }
 
    @Override
@@ -150,7 +158,7 @@ public final class ScaffoldModule extends Module {
             return;
          }
 
-         if (player.onGround() && !this.keepY.get() && !this.sprintMode.is("Telly")) {
+         if (player.onGround() && !this.keepY.get()) {
             this.startY = Mth.floor(player.getY() - 0.01);
          } else if (player.getY() < this.startY) {
             this.startY = Mth.floor(player.getY() - 0.01);
@@ -166,13 +174,13 @@ public final class ScaffoldModule extends Module {
          if (sprintTower) {
             this.sprintJump(player);
          }
-         if ((this.safeWalk.get() || this.sprintMode.is("Eagle")) && !towering) {
+         if (this.safeWalk.get() && !towering) {
             this.holdEdge(client, player);
          } else {
             this.releaseSneak();
          }
 
-         if ((this.keepY.get() || this.sprintMode.is("Telly")) && MoveUtil.hasInput(player) && player.onGround() && !client.options.keyJump.isDown()) {
+         if (this.keepY.get() && MoveUtil.hasInput(player) && player.onGround() && !client.options.keyJump.isDown()) {
             player.jumpFromGround();
          }
 
@@ -194,7 +202,7 @@ public final class ScaffoldModule extends Module {
          } else if (this.downwards.get() && MoveUtil.physicalKeyDown(client.options.keyShift)) {
             targetY = Mth.floor(player.getY() - 0.01) - 1;
             this.startY = targetY;
-         } else if (this.keepY.get() || this.sprintMode.is("Telly")) {
+         } else if (this.keepY.get()) {
             targetY = this.startY;
          } else if (player.onGround()) {
             targetY = Mth.floor(player.getY() - 0.01);
@@ -235,38 +243,16 @@ public final class ScaffoldModule extends Module {
 
          if (plan == null && !this.rotate.is("None") && MoveUtil.hasInput(player)) {
             float[] idleRot = this.computeBridgeRotation(player, null);
-            RotationManager.request(player, idleRot[0], idleRot[1], this.turnSpeed.floatValue(), !this.rotate.is("Snap"), ActionPriority.WORLD_UTILITY, 10.0F);
+            RotationManager.request(player, idleRot[0], idleRot[1], this.turnSpeed.floatValue(), !this.rotate.is("Visible"), ActionPriority.WORLD_UTILITY, 10.0F);
          }
 
          if (plan != null) {
             BlockHitResult hit = plan.hit;
             if (!this.rotate.is("None")) {
-               boolean quiet = !this.rotate.is("Snap");
-               // After a raycast miss the styled angle is dropped for one placement and the face itself is aimed at,
-               // so each tick makes exactly one rotation request.
-               float[] placeRot = this.steerExact ? RotationManager.toward(player, plan.hit.getLocation()) : this.computeBridgeRotation(player, plan.hit);
-               // The turn goes through RotationManager's spring (Aim settings) at Turn Speed instead of jumping there.
-               boolean ready = RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 16.0F);
-               if (!ready && this.rotate.is("Strict")) {
-                  return;
-               }
-
-               if (this.raycast.get()) {
-                  // The look the placement goes out with must really hit the face we are about to click.
-                  BlockHitResult seen = BlockPlacer.verifyLook(client.level, player, RotationManager.aimYaw(), RotationManager.aimPitch(), 5.0, plan.hit);
-                  if (seen == null) {
-                     // The aimed angle misses this face: aim at the face itself next tick instead of placing blind.
-                     this.steerExact = true;
-                     return;
-                  }
-
-                  this.steerExact = false;
-                  hit = seen;
-               }
-            }
-
-            if (this.sprintMode.is("Legit") && player.isSprinting()) {
-               player.setSprinting(false);
+               boolean quiet = !this.rotate.is("Visible");
+               float[] placeRot = this.computeBridgeRotation(player, plan.hit);
+               // The turn goes through RotationManager's spring (Rotations settings) at Turn Speed instead of jumping there.
+               RotationManager.request(player, placeRot[0], placeRot[1], this.turnSpeed.floatValue(), quiet, ActionPriority.WORLD_UTILITY, 16.0F);
             }
 
             if (!Hands.claimMainHand()) {
@@ -307,50 +293,26 @@ public final class ScaffoldModule extends Module {
 
    private void applySprintControl(Minecraft client, LocalPlayer player, boolean towering) {
       if (MoveUtil.hasInput(player) && !MoveUtil.hasRecentSetback() && !towering) {
-         String mode = this.sprintMode.get();
-         switch (mode) {
-            case "Off":
-            case "Eagle":
-               player.setSprinting(false);
-               break;
-            case "Breeze":
-               player.setSprinting(true);
-               this.breezeTick++;
-               if (player.onGround() && this.breezeTick % 3 == 0) {
-                  Vec3 motion = player.getDeltaMovement();
-                  double side = (this.breezeTick / 3 % 2 == 0 ? 1.0 : -1.0) * 0.042;
-                  double strafeRad = Math.toRadians(movementYaw(player) + 90.0F);
-                  player.setDeltaMovement(motion.x - Math.sin(strafeRad) * side, motion.y, motion.z + Math.cos(strafeRad) * side);
-               }
-               break;
-            case "Telly":
-            case "Godbridge":
-            case "Normal":
-               if (!player.isCrouching()) {
-                  player.setSprinting(true);
-               }
+         if (this.sprintMode.is("Off")) {
+            player.setSprinting(false);
+         } else if (this.sprintMode.is("On") && !player.isCrouching()) {
+            player.setSprinting(true);
          }
       }
    }
 
    private float[] computeBridgeRotation(LocalPlayer player, BlockHitResult hit) {
-      if (this.rotate.is("Godbridge")) {
-         float moveYaw = movementYaw(player);
-         float pitch = hit != null ? Mth.clamp(RotationManager.toward(player, hit.getLocation())[1], 74.0F, 79.5F) : 75.6F;
-         return new float[]{Mth.wrapDegrees(moveYaw + 135.0F), pitch};
-      } else if (hit != null) {
-         float[] exact = RotationManager.toward(player, hit.getLocation());
-         if (this.rotate.is("Strict")) {
-            return exact;
-         } else {
-            float moveYaw = MoveUtil.hasInput(player) ? Mth.wrapDegrees(movementYaw(player) + 180.0F) : exact[0];
-            float blendedYaw = moveYaw + Mth.wrapDegrees(exact[0] - moveYaw) * 0.65F;
-            return new float[]{Mth.wrapDegrees(blendedYaw), Mth.clamp(exact[1], 70.0F, 88.5F)};
-         }
-      } else {
-         float moveYaw = movementYaw(player);
-         return new float[]{Mth.wrapDegrees(moveYaw + 180.0F), 79.5F};
+      float backwards = Mth.wrapDegrees(movementYaw(player) + 180.0F);
+      if (hit == null) {
+         return new float[]{backwards, 79.5F};
       }
+
+      // Mostly the exact angle to the clicked face, eased towards "looking back along the bridge" so the head
+      // does not whip round between placements.
+      float[] exact = RotationManager.toward(player, hit.getLocation());
+      float moveYaw = MoveUtil.hasInput(player) ? backwards : exact[0];
+      float blendedYaw = moveYaw + Mth.wrapDegrees(exact[0] - moveYaw) * 0.65F;
+      return new float[]{Mth.wrapDegrees(blendedYaw), Mth.clamp(exact[1], 70.0F, 88.5F)};
    }
 
    private static float movementYaw(LocalPlayer player) {
@@ -411,6 +373,15 @@ public final class ScaffoldModule extends Module {
          this.sneaking = false;
          Minecraft client = Minecraft.getInstance();
          client.options.keyShift.setDown(MoveUtil.physicalKeyDown(client.options.keyShift));
+      }
+   }
+
+   @Override
+   public void onRenderHud(HudContext hud) {
+      if (this.showCount.get() && hud.client.gui.screen() == null) {
+         int count = this.blockCount;
+         String text = this.countText.whole(count, count == 1 ? " block" : " blocks");
+         hud.graphics.text(hud.font, text, hud.width / 2 - hud.font.width(text) / 2, hud.height / 2 + 14, count > 16 ? -1 : -43691, true);
       }
    }
 

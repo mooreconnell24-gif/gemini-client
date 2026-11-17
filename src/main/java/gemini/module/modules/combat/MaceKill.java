@@ -15,7 +15,7 @@ public final class MaceKill extends Module {
    private final NumberSetting height = this.addSetting(new NumberSetting("Spoof Height", "Height of the fall each hit counts as, in blocks", 6.0, 2.0, 22.0, 1.0));
 
    public MaceKill() {
-      super("MaceKill", "Makes each mace hit count as a fall from the set height, so it deals smash damage.", Category.COMBAT);
+      super("Mace Kill", "Makes each mace hit count as a fall from the set height, so it deals smash damage.", Category.COMBAT);
    }
 
    @Override

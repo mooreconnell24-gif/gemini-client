@@ -23,22 +23,4 @@ public final class PlayerMath {
          return 100.0 * left / max < percent ? ALERT_WARN : ALERT_NONE;
       }
    }
-
-   /**
-    * The index of the highest value that beats {@code current} by more than {@code margin}, or -1 when none does.
-    * Entries that are NaN are skipped (a slot that does not qualify). Ties keep the earliest index.
-    */
-   public static int bestAbove(double[] values, double current, double margin) {
-      int best = -1;
-      double bestValue = current + margin;
-      for (int i = 0; i < values.length; i++) {
-         double value = values[i];
-         if (!Double.isNaN(value) && value > bestValue) {
-            best = i;
-            bestValue = value;
-         }
-      }
-
-      return best;
-   }
 }

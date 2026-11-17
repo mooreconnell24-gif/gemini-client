@@ -1,5 +1,7 @@
 package gemini.module.modules.world;
 
+import java.util.List;
+import java.util.ArrayList;
 import com.mojang.datafixers.util.Pair;
 import gemini.Gemini;
 import gemini.command.CommandManager;
@@ -99,6 +101,14 @@ public final class Locate extends Module {
    public Locate() {
       super("Locate", "Finds the nearest structure or biome, pins it and can teleport you there.", Category.WORLD);
       this.addSetting(new ActionSetting("Search", "Find the nearest one now", this::search));
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("StrongholdFinder");
+      names.add("Stronghold Finder");
+      return names;
    }
 
    @Override

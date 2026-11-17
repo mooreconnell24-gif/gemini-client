@@ -22,6 +22,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public final class SpawnProofer extends Module {
@@ -34,12 +35,23 @@ public final class SpawnProofer extends Module {
          "Blocks", "Blocks placed on dark floor spots (things mobs cannot spawn on, like torches, buttons or pressure plates); nothing is placed while the list is empty", ListSetting.Kind.BLOCK, "minecraft:torch", "minecraft:stone_button", "minecraft:stone_pressure_plate"
       )
    );
+   private final ListSetting avoid = this.addSetting(
+      new ListSetting("Avoid", "Floor blocks never to place anything on", ListSetting.Kind.BLOCK, "farmland", "ice", "packed_ice", "blue_ice")
+   );
    private final ArrayDeque<BlockPos> recent = new ArrayDeque<>();
    private final ArrayDeque<Integer> recentTick = new ArrayDeque<>();
    private int tick;
 
    public SpawnProofer() {
-      super("Spawn Proofer", "Covers dark floor around you with blocks mobs cannot spawn on, such as torches or buttons.", Category.WORLD);
+      super("Spawn Proofer", "Places torches, or other blocks mobs cannot spawn on, on dark floor around you.", Category.WORLD);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Torch");
+      names.add("AutoTorch");
+      return names;
    }
 
    @Override
@@ -81,6 +93,7 @@ public final class SpawnProofer extends Module {
          MutableBlockPos floor = new MutableBlockPos();
          MutableBlockPos head = new MutableBlockPos();
          List<BlockPos> targets = new ArrayList<>();
+         Set<Block> avoided = this.avoid.blocks();
 
          for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -89,7 +102,8 @@ public final class SpawnProofer extends Module {
                   if (level.getBlockState(cursor).isAir()
                      && !(eye.distanceToSqr(cursor.getX() + 0.5, cursor.getY() + 0.5, cursor.getZ() + 0.5) > reach * reach)) {
                      floor.set(cursor).move(Direction.DOWN);
-                     if (level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP)) {
+                     BlockState floorState = level.getBlockState(floor);
+                     if (floorState.isFaceSturdy(level, floor, Direction.UP) && !avoided.contains(floorState.getBlock())) {
                         head.set(cursor).move(Direction.UP);
                         if (level.getBlockState(head).getCollisionShape(level, head).isEmpty() && level.getBrightness(LightLayer.BLOCK, cursor) <= light) {
                            BlockPos pos = cursor.immutable();

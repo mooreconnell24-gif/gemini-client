@@ -1,5 +1,7 @@
 package gemini.module.modules.misc;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -19,11 +21,11 @@ public final class AntiLag extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Dynamic limits effects harder when FPS drops below Target FPS; Always limits them harder all the time; Aggressive also cuts particles to a third and mutes explosion, firework and piston sounds",
+         "Dynamic limits effects harder when FPS drops below Target FPS; Always limits them harder all the time; Strict also cuts particles to a third and mutes explosion, firework and piston sounds",
          "Dynamic",
          "Dynamic",
          "Always",
-         "Aggressive"
+         "Strict"
       )
    );
    private final NumberSetting targetFps = this.addSetting(
@@ -37,16 +39,16 @@ public final class AntiLag extends Module {
       new NumberSetting("Particle Distance", "Hide particles farther away than this, in blocks", 28.0, 8.0, 96.0, 4.0)
    );
    private final BooleanSetting blockExplosions = this.addSetting(
-      new BooleanSetting("Block Explosions & Fireworks", "Hide explosion and firework particles", true)
+      new BooleanSetting("Hide Explosions", "Hide explosion and firework particles", true)
    );
    private final BooleanSetting blockSmoke = this.addSetting(
-      new BooleanSetting("Block Smoke & Campfires", "Hide heavy campfire smoke", true)
+      new BooleanSetting("Hide Smoke", "Hide heavy campfire smoke", true)
    );
    private final BooleanSetting blockWeather = this.addSetting(
-      new BooleanSetting("Block Weather & Portals", "Hide rain splashes, dripping water and portal particles", true)
+      new BooleanSetting("Hide Weather And Portals", "Hide rain splashes, dripping water and portal particles", true)
    );
    private final BooleanSetting packetGuard = this.addSetting(
-      new BooleanSetting("Packet Flood Guard", "Ignore server packets that spawn huge numbers of particles", true)
+      new BooleanSetting("Particle Burst Guard", "Ignore single bursts that would spawn more than 150 particles at once", true)
    );
    private final BooleanSetting soundThrottle = this.addSetting(
       new BooleanSetting("Sound Spam Filter", "Limit how many sounds can start in one tick", true)
@@ -65,8 +67,15 @@ public final class AntiLag extends Module {
    private String infoText = "";
 
    public AntiLag() {
-      super("AntiLag", "Raises FPS by limiting particles and sounds, and guards against lag machines.", Category.CLIENT);
+      super("Anti Lag", "Raises FPS by limiting particles, sounds and distant name tags when there are too many.", Category.CLIENT);
       instance = this;
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("EntityCulling");
+      return names;
    }
 
    @Override
@@ -86,7 +95,7 @@ public final class AntiLag extends Module {
    }
 
    public boolean isStrictNow() {
-      if (!this.mode.is("Always") && !this.mode.is("Aggressive")) {
+      if (!this.mode.is("Always") && !this.mode.is("Strict")) {
          int fps = Minecraft.getInstance().getFps();
          return fps > 0 && fps < this.targetFps.intValue();
       } else {
@@ -110,7 +119,7 @@ public final class AntiLag extends Module {
    @Override
    public boolean onReceivePacket(Packet<?> packet) {
       if (!(this.packetGuard.get() && packet instanceof ClientboundLevelParticlesPacket p)
-         || p.count() <= 150 && (!this.mode.is("Aggressive") || p.count() <= 40)) {
+         || p.count() <= 150 && (!this.mode.is("Strict") || p.count() <= 40)) {
          return false;
       } else {
          this.totalBlocked++;
@@ -123,7 +132,7 @@ public final class AntiLag extends Module {
          return false;
       } else {
          boolean strict = this.isStrictNow();
-         int cap = this.mode.is("Aggressive")
+         int cap = this.mode.is("Strict")
             ? Math.max(5, this.maxParticlesTick.intValue() / 3)
             : (strict ? this.maxParticlesTick.intValue() : this.maxParticlesTick.intValue() * 2);
          if (this.particlesThisTick >= cap) {
@@ -179,7 +188,7 @@ public final class AntiLag extends Module {
             return true;
          } else {
             String path = id.getPath();
-            if (!this.mode.is("Aggressive") || !path.contains("explosion") && !path.contains("firework") && !path.contains("piston")) {
+            if (!this.mode.is("Strict") || !path.contains("explosion") && !path.contains("firework") && !path.contains("piston")) {
                this.soundsThisTick++;
                return false;
             } else {
