@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
@@ -66,19 +67,19 @@ public final class Tps extends Ticked {
          // Single player: read the integrated server directly instead of assuming 20.
          float target = server.tickRateManager().tickrate();
          if (server.tickRateManager().isFrozen()) {
-            return List.of(TextHudWidget.Line.row("", "frozen", "tps", Glass.TEXT_DIM));
+            return List.of(TextHudWidget.Line.row("", "frozen", "tps", HudStyle.SECONDARY));
          }
 
          double mspt = server.getAverageTickTimeNanos() / 1.0E6;
          double tps = mspt <= 0.0 ? target : Math.min(target, 1000.0 / mspt);
-         int color = tps >= target * 0.95 ? Glass.TEXT : (tps >= target * 0.75 ? Glass.WARN : Glass.ERROR);
+         int color = tps >= target * 0.95 ? HudStyle.PRIMARY : (tps >= target * 0.75 ? Glass.WARN : Glass.ERROR);
          // Value first; the tick time follows as a quiet second figure.
          return List.of(TextHudWidget.Line.row("", InfoText.format(tps, 1), "tps  " + InfoText.format(mspt, 1) + " ms", color));
       } else if (this.lastUpdate == 0L) {
          return List.of();
       } else {
          double tps = this.current;
-         return List.of(TextHudWidget.Line.row("", InfoText.format(tps, 1), "tps", tps >= 19.0 ? Glass.TEXT : (tps >= 15.0 ? Glass.WARN : Glass.ERROR)));
+         return List.of(TextHudWidget.Line.row("", InfoText.format(tps, 1), "tps", tps >= 19.0 ? HudStyle.PRIMARY : (tps >= 15.0 ? Glass.WARN : Glass.ERROR)));
       }
    }
 }

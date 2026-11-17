@@ -131,14 +131,14 @@ public final class ArmorHud extends HudWidget {
          }
 
          int color = HudStyle.level(left);
-         HudStyle.bar(g, x + 1, y + ICON + 1, x + ICON - 1, y + ICON + 3, left, color == Glass.TEXT ? Glass.withAlpha(Glass.TEXT, 210) : color, backdrop, 1.0F);
+         HudStyle.bar(g, x + 1, y + ICON + 1, x + ICON - 1, y + ICON + 3, left, color == HudStyle.PRIMARY ? Glass.withAlpha(Glass.text(), 210) : color, backdrop, 1.0F);
          if (this.percent.get()) {
             String text = PERCENTS[Math.round(left * 100.0F)];
             if (vertical) {
                // Right-aligned in a column so the digits line up down the list.
-               UiFont.draw(g, text, w - HudStyle.PAD_X - UiFont.width(text), y + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
+               UiFont.draw(g, text, w - HudStyle.PAD_X - UiFont.width(text), y + 5, color == HudStyle.PRIMARY ? HudStyle.label(backdrop) : color, hud.shadow);
             } else {
-               UiFont.draw(g, text, x + (ICON - UiFont.width(text) + 1) / 2, y + ICON + 5, color == Glass.TEXT ? HudStyle.label(backdrop) : color, hud.shadow);
+               UiFont.draw(g, text, x + (ICON - UiFont.width(text) + 1) / 2, y + ICON + 5, color == HudStyle.PRIMARY ? HudStyle.label(backdrop) : color, hud.shadow);
             }
          }
       }

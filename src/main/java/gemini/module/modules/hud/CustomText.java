@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ListSetting;
@@ -75,7 +76,7 @@ public final class CustomText extends Ticked {
                text = text.replace(value.getKey(), value.getValue());
             }
 
-            lines.add(new TextHudWidget.Line(text, this.accentColor.get() ? hud.accent : -1511689));
+            lines.add(new TextHudWidget.Line(text, this.accentColor.get() ? hud.accent : HudStyle.PRIMARY));
          }
 
          return lines;

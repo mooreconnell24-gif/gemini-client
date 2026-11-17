@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.ui.Glass;
@@ -113,7 +114,7 @@ public final class SpawnInfo extends Ticked {
          if (spawn != null) {
             BlockPos pos = spawn.pos();
             String dimension = spawn.dimension().identifier().toString();
-            lines.add(new TextHudWidget.Line(this.describe("Spawn", here, player, dimension, pos.getX(), pos.getY(), pos.getZ()), Glass.TEXT));
+            lines.add(new TextHudWidget.Line(this.describe("Spawn", here, player, dimension, pos.getX(), pos.getY(), pos.getZ()), HudStyle.PRIMARY));
          }
       }
 
@@ -127,7 +128,7 @@ public final class SpawnInfo extends Ticked {
                case "Bed" -> "Bed";
                default -> "Respawn";
             };
-            int color = "Missing".equals(bed.kind()) || bed.charges() == 0 ? Glass.ERROR : ("Spot".equals(bed.kind()) ? Glass.TEXT : Glass.OK);
+            int color = "Missing".equals(bed.kind()) || bed.charges() == 0 ? Glass.ERROR : ("Spot".equals(bed.kind()) ? HudStyle.PRIMARY : Glass.OK);
             lines.add(new TextHudWidget.Line(this.describe(label, here, player, bed.dimension(), bed.x(), bed.y(), bed.z()), color));
          }
       }

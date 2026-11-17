@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.font.FontWeight;
+import gemini.ui.font.FontSize;
 import gemini.module.HudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
@@ -131,18 +133,18 @@ public final class Cooldowns extends HudWidget {
          int y = HudStyle.PAD_Y + row * ROW;
          float pct = player.getCooldowns().getCooldownPercent(stack, hud.partialTick);
          g.item(stack, HudStyle.PAD_X, y);
-         UiFont.draw(g, this.names[i], textX, y, Glass.TEXT, hud.shadow);
+         UiFont.draw(g, this.names[i], textX, y, HudStyle.label(backdrop), hud.shadow);
          String time = this.times[i];
          if (!time.isEmpty()) {
             // Value white, its unit faint, right-aligned together.
             int unit = this.inSeconds[i] ? unitW : 0;
-            UiFont.draw(g, time, right - unit - UiFont.width(time), y, Glass.TEXT, hud.shadow);
+            UiFont.draw(g, time, right - unit - UiFont.width(time, FontSize.BODY, FontWeight.MEDIUM), y, hud.text, FontSize.BODY, FontWeight.MEDIUM, hud.shadow);
             if (unit > 0) {
                UiFont.draw(g, "s", right - unitW, y, HudStyle.unit(backdrop), hud.shadow);
             }
          }
 
-         HudStyle.bar(g, textX, y + 12, right, y + 14, pct, Glass.withAlpha(Glass.lerp(hud.accent, 0xFFFFFFFF, 0.45F), 220), backdrop, 1.0F);
+         HudStyle.bar(g, textX, y + 12, right, y + 14, pct, Glass.withAlpha(hud.accent, 235), backdrop, 1.0F);
       }
    }
 }

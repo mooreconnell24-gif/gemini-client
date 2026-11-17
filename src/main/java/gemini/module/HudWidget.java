@@ -6,7 +6,6 @@ import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
 import gemini.ui.UiMath;
@@ -37,7 +36,7 @@ public abstract class HudWidget extends Module {
       {"Top Right", "ArrayList", "Mob Caps", "Entity Counter", "AntiLag Status"},
       {"Right Center", "Potion Timers", "Item Counter"},
       {"Top Center", "Compass", "Looking At", "Cooldowns"},
-      {"Bottom Center", "TargetHUD", "Armor", "Held Item", "Combat Items"},
+      {"Bottom Center", "Target HUD", "Armor", "Held Item", "Combat Items"},
       {"Bottom Right", "FPS", "TPS", "Speedometer", "CPS", "Memory", "Clock", "Session Timer", "Session Stats", "FPS Graph"},
       {"Bottom Left", "Keystrokes", "Inventory Viewer", "Ender Chest Preview"},
       {"Left Center", "Keybinds", "Custom Text"}
@@ -56,6 +55,7 @@ public abstract class HudWidget extends Module {
    private final NumberSetting scale = this.addSetting(new NumberSetting("Scale", "Size of this widget", 1.0, 0.5, 2.5, 0.05));
    private final BooleanSetting background = this.addSetting(
       new BooleanSetting("Background", "Draw the HUD backdrop behind this widget; its look (Soft, Solid or None) is the HUD module's Backdrop setting", true)
+         .showIf(this::hasBackgroundSwitch)
    );
    private float lastX;
    private float lastY;
@@ -159,6 +159,11 @@ public abstract class HudWidget extends Module {
     */
    protected boolean hasBackground() {
       return this.background.get();
+   }
+
+   /** Whether the Background switch is offered. A widget with its own backdrop setting hides it. */
+   protected boolean hasBackgroundSwitch() {
+      return true;
    }
 
    /**
@@ -519,10 +524,10 @@ public abstract class HudWidget extends Module {
       hud.graphics.pose().scale(s, s);
       if (this.measuredPreview) {
          HudStyle.card(hud.graphics, 0, 0, w, h, HudStyle.SOFT, hud.surface, 0.8F);
-         UiFont.draw(hud.graphics, this.getName(), HudStyle.PAD_X, (h - 8) / 2, Glass.TEXT_DIM, false);
+         UiFont.draw(hud.graphics, this.getName(), HudStyle.PAD_X, UiFont.centerY(0, h), hud.textDim, false);
       } else {
          if (this.hasBackground()) {
-            Glass.hudCard(hud.graphics, 0, 0, w, h, this.backdrop, hud.surface);
+            HudStyle.card(hud.graphics, 0, 0, w, h, this.backdrop, hud.surface, 1.0F);
          }
 
          this.paint(hud, w, h);

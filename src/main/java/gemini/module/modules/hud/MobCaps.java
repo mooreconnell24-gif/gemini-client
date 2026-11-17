@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.ui.Glass;
@@ -121,7 +122,7 @@ public final class MobCaps extends Ticked {
       }
 
       if (!s.spawning()) {
-         return List.of(new TextHudWidget.Line("Mob spawning is off (game rule)", Glass.TEXT_DIM));
+         return List.of(new TextHudWidget.Line("Mob spawning is off (game rule)", HudStyle.SECONDARY));
       }
 
       if (s.chunks() < 0) {
@@ -132,7 +133,7 @@ public final class MobCaps extends Ticked {
       for (int i = 0; i < SHOWN.length; i++) {
          if (this.shown(i)) {
             if (i == 0 && !s.monsters()) {
-               lines.add(new TextHudWidget.Line("Monsters off (Peaceful or game rule)", Glass.TEXT_DIM));
+               lines.add(new TextHudWidget.Line("Monsters off (Peaceful or game rule)", HudStyle.SECONDARY));
                continue;
             }
 
@@ -141,14 +142,14 @@ public final class MobCaps extends Ticked {
             // The spawner only tries while the count is below the cap; more than the cap is normal (spawners,
             // mobs walking in, animals from world generation) and just means none of that kind spawns naturally.
             boolean full = count >= cap;
-            int color = full ? Glass.WARN : Glass.TEXT;
+            int color = full ? Glass.WARN : HudStyle.PRIMARY;
             lines.add(new TextHudWidget.Line(LABELS[i] + " " + count + " / " + cap + (full ? "  full" : ""), color));
          }
       }
 
       // The caps shrink with fewer spawnable chunks (a render distance below 8), so say so when that is happening.
       if (this.chunks.get() || s.chunks() < CHUNK_AREA) {
-         lines.add(new TextHudWidget.Line(s.chunks() + " of " + CHUNK_AREA + " chunks can spawn mobs", Glass.TEXT_DIM));
+         lines.add(new TextHudWidget.Line(s.chunks() + " of " + CHUNK_AREA + " chunks can spawn mobs", HudStyle.SECONDARY));
       }
 
       return lines;
