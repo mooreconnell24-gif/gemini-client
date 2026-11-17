@@ -7,13 +7,14 @@ package gemini.ui;
  * <p>The screen is one column: the logo, then the menu in three groups separated by a little extra space
  * (Singleplayer and, when there is a recent world, Continue; Multiplayer and Realms; Options and Quit sharing a
  * row as on the vanilla title screen), then one row of small text links. The column sits in the left part of a
- * wide screen so the panorama stays visible beside it, and in the middle of a narrow one. The footer row along the
+ * wide screen so the backdrop stays visible beside it, and in the middle of a narrow one. The footer row along the
  * bottom edge holds the version, the vanilla-menu link and the Mojang notice; the sandbox switch is in the top-right
  * corner.
  *
- * <p>The logo is drawn at its texture's native pixel size (160 screen pixels, i.e. {@code 160 / guiScale}) when
- * there is room, otherwise at half or a quarter of it, so it is never resampled at an odd ratio. When even that
- * does not fit, the buttons get slimmer, and as a last resort the logo is left out.
+ * <p>The logo is drawn in window pixels at its texture's native size (160 window pixels) when there is room,
+ * otherwise at half or a quarter of it, so it is never resampled at an odd ratio, whatever the GUI scale
+ * ({@link #logoPixels}). {@link #logoSize} is the room it takes in GUI units, rounded up. When even the smallest
+ * logo does not fit, the buttons get slimmer, and as a last resort the logo is left out.
  */
 public record TitleLayout(
    int width,
@@ -22,6 +23,7 @@ public record TitleLayout(
    int columnX,
    int columnWidth,
    int logoSize,
+   int logoPixels,
    int logoX,
    int logoY,
    int buttonHeight,
@@ -50,10 +52,13 @@ public record TitleLayout(
    private static final int MAX_COLUMN = 180;
    private static final int MIN_COLUMN = 100;
    private static final int PAIR_GAP = 4;
+   /** Largest and smallest logo, in GUI units. */
+   private static final int MAX_LOGO = 96;
+   private static final int MIN_LOGO = 20;
    /** Below this width the column is centred instead of sitting on the left. */
    private static final int CENTRE_BELOW = 400;
    /** Button height, gap between rows of a group, gap between groups, gap under the logo, gap above the links. */
-   private static final int[][] DENSITIES = {{20, 4, 10, 18, 10}, {18, 3, 7, 12, 8}, {16, 2, 4, 6, 4}};
+   private static final int[][] DENSITIES = {{20, 4, 10, 12, 10}, {18, 3, 7, 10, 8}, {16, 2, 4, 6, 4}};
 
    /**
     * @param guiScale the window's GUI scale (only used to draw the logo at a whole-number ratio; 0 or less means 2)
@@ -66,20 +71,26 @@ public record TitleLayout(
       int footerY = height - FOOTER_HEIGHT;
       int bottom = footerY - 4;
       int available = Math.max(0, bottom - top);
-      int big = Math.min(96, Math.round((float)LOGO_TEXTURE / scale));
-      int half = Math.round(LOGO_TEXTURE / 2.0F / scale);
-      int quarter = Math.round(LOGO_TEXTURE / 4.0F / scale);
+      int full = LOGO_TEXTURE;
+      int half = LOGO_TEXTURE / 2;
+      int quarter = LOGO_TEXTURE / 4;
       // Preference order: normal buttons with the full-size logo, then slimmer buttons, then smaller logos.
-      int[][] tries = {{0, big}, {1, big}, {0, half}, {1, half}, {2, half}, {2, quarter}, {2, 0}};
+      int[][] tries = {{0, full}, {1, full}, {0, half}, {1, half}, {2, half}, {2, quarter}, {2, 0}};
       int[] density = DENSITIES[2];
       int logo = 0;
+      int pixels = 0;
       int total = 0;
       for (int[] attempt : tries) {
          int[] d = DENSITIES[attempt[0]];
-         int size = attempt[1] < 20 ? 0 : attempt[1];
+         int size = logoUnits(attempt[1], scale);
+         if (size > MAX_LOGO) {
+            continue;
+         }
+
          int needed = stackHeight(d, size, hasContinue);
          density = d;
          logo = size;
+         pixels = size > 0 ? attempt[1] : 0;
          total = needed;
          if (needed <= available) {
             break;
@@ -88,6 +99,7 @@ public record TitleLayout(
 
       if (total > available && logo > 0) {
          logo = 0;
+         pixels = 0;
          total = stackHeight(density, 0, hasContinue);
       }
 
@@ -135,7 +147,13 @@ public record TitleLayout(
       slotW[QUIT] = columnWidth - left - PAIR_GAP;
       y += h;
       int linksY = y + density[4];
-      return new TitleLayout(width, height, centred, columnX, columnWidth, logo, logoX, logoY, h, slotX, slotY, slotW, linksY, footerY);
+      return new TitleLayout(width, height, centred, columnX, columnWidth, logo, pixels, logoX, logoY, h, slotX, slotY, slotW, linksY, footerY);
+   }
+
+   /** GUI units a logo {@code pixels} window pixels wide takes at {@code scale}, rounded up; 0 when it would be too small to read. */
+   static int logoUnits(int pixels, int scale) {
+      int units = (pixels + scale - 1) / scale;
+      return pixels <= 0 || units < MIN_LOGO ? 0 : units;
    }
 
    /** Height of logo + menu + links for one density. */

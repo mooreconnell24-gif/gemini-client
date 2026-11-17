@@ -37,11 +37,16 @@ public class GlassButton extends Button {
    private int expand;
    private boolean plain;
    private boolean primary;
+   private boolean raised;
    private boolean leftAligned;
    private String detail;
    private int detailWidth;
    private IntSupplier badge;
    private int badgeColor = Glass.ERROR;
+   /** Opacity (0..255) of a {@link #raised()} card's white fill at rest, the extra it gains when lit, and its edge. */
+   private static final int RAISED_FILL = 12;
+   private static final int RAISED_FILL_HOVER = 16;
+   private static final int RAISED_EDGE = 16;
 
    public GlassButton(int x, int y, int width, int height, Component message, Button.OnPress onPress) {
       this(x, y, width, height, message, onPress, null);
@@ -68,6 +73,15 @@ public class GlassButton extends Button {
    /** The one main action of a screen: filled with the accent colour instead of the neutral card. */
    public GlassButton primary() {
       this.primary = true;
+      return this;
+   }
+
+   /**
+    * For a very dark backdrop (the home screen): the card is a faint lift of white with a hairline edge instead
+    * of the dark surface colour, which would read as a hole there.
+    */
+   public GlassButton raised() {
+      this.raised = true;
       return this;
    }
 
@@ -147,6 +161,10 @@ public class GlassButton extends Button {
             if (this.isFocused()) {
                Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, 150), opacity));
             }
+         } else if (this.raised) {
+            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, Math.round(RAISED_FILL + RAISED_FILL_HOVER * lift)), opacity));
+            int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, RAISED_EDGE), Glass.withAlpha(accent, 130), this.hover);
+            Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(edge, opacity));
          } else {
             int fill = Glass.lerp(Glass.surface(1), Glass.surface(3), lift);
             Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, Math.round(150.0F + 70.0F * lift)), opacity));
