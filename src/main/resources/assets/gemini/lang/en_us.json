@@ -14,8 +14,6 @@
 	"gemini.title.realms.tooltip": "Open Minecraft Realms. Realms connections are refused while sandbox mode is on.",
 	"gemini.title.menu": "Gemini",
 	"gemini.title.menu.tooltip": "Open the module menu to set up modules, settings and key binds. Modules can only be switched on inside a single-player world.",
-	"gemini.title.configs": "Presets",
-	"gemini.title.configs.tooltip": "Load, save, share and import profiles, and apply the built-in presets.",
 	"gemini.title.search": "Search",
 	"gemini.title.search.tooltip": "Find any module, setting, command or page by typing (Ctrl+K).",
 	"gemini.title.guide": "Guide",
