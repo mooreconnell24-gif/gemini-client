@@ -141,7 +141,7 @@ public final class MobCaps extends Ticked {
             int cap = s.caps()[i];
             // The spawner only tries while the count is below the cap; more than the cap is normal (spawners,
             // mobs walking in, animals from world generation) and just means none of that kind spawns naturally.
-            boolean full = count >= cap;
+            boolean full = cap > 0 && count >= cap;
             int color = full ? Glass.WARN : HudStyle.PRIMARY;
             lines.add(new TextHudWidget.Line(LABELS[i] + " " + count + " / " + cap + (full ? "  full" : ""), color));
          }
