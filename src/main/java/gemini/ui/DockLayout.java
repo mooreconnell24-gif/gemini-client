@@ -13,9 +13,10 @@ public record DockLayout(boolean side, boolean shortLabels, int panelX, int pane
    public static final int VANILLA_HALF_WIDTH = 106;
    /** The vanilla "Game Menu" title sits at this y; a top row has to end above it. */
    public static final int VANILLA_TITLE_Y = 40;
-   public static final int BUTTON_HEIGHT = 16;
+   /** The vanilla button height, so the group matches the pause menu's own buttons. */
+   public static final int BUTTON_HEIGHT = 20;
    private static final int EDGE = 6;
-   private static final int GAP = 3;
+   private static final int GAP = 4;
 
    /**
     * @param fullWidths text width of each full label
@@ -28,7 +29,8 @@ public record DockLayout(boolean side, boolean shortLabels, int panelX, int pane
          widest = Math.max(widest, width);
       }
 
-      int sideButton = Math.max(72, Math.min(120, widest + 16));
+      // At least the vanilla half-width button (98), like the pause menu's own two-column rows.
+      int sideButton = Math.max(98, Math.min(120, widest + 16));
       int sideHeight = count * BUTTON_HEIGHT + (count - 1) * GAP;
       int[] x = new int[count];
       int[] y = new int[count];

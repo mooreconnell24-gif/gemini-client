@@ -79,7 +79,7 @@ public final class CommandHelp {
    );
 
    /** Module commands mentioned at the end of the chat help. */
-   public static final String MODULE_COMMANDS = ".xray reload, .marker add|remove|list|clear, .waypoints add|remove|list|tp|clear, .<module> <setting> [value]";
+   public static final String MODULE_COMMANDS = ".xray reload, .marker add|remove|list|clear, .waypoints add|remove|list|tp|clear, .backup now|list|folder, .notes [add|todo|done|list], .measure copy|clear, .<module> <setting> [value]";
 
    /** Every first word the dispatcher accepts, for "did you mean" suggestions. */
    public static final List<String> WORDS = List.of(

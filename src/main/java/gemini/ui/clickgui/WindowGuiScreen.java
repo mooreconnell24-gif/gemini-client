@@ -54,8 +54,10 @@ import net.minecraft.util.Util;
  */
 public final class WindowGuiScreen extends Screen implements DashboardPage.Host {
    private static final int SIDEBAR = 120;
-   private static final int CARD_H = 30;
-   private static final int CARD_GAP = 4;
+   private static final int CARD_H = 28;
+   private static final int CARD_GAP = 0;
+   /** Height of one text link in the sidebar's bottom group. */
+   private static final int LINK_ROW = 13;
    private static final int FOOTER = 20;
    private static final int LINE = 12;
    private static final String FAVORITES = "★";
@@ -65,6 +67,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    private static String lastModule;
    private static String rememberedSearch = "";
    private static Page lastPage = Page.MODULES;
+   /** Modules whose folded settings were opened with "More settings", by name; kept while the game runs. */
+   private static final java.util.Set<String> unfolded = new java.util.HashSet<>();
    /** Panel shades for this frame, taken from the ClickGUI "Surface" setting. */
    private int surface = 0xFF1A1E27;
    private int surface2 = 0xFF1F2430;
@@ -316,17 +320,11 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int wx = (this.vw - ww) / 2;
       int wy = (this.vh - wh) / 2;
       int bodyAlpha = this.a(Math.round(255.0F * glass));
-      Glass.glow(g, wx, wy, wx + ww, wy + wh, 7, accent, this.open * 0.55F);
-      for (int i = 4; i >= 1; i--) {
-         Glass.roundRect(g, wx - i, wy - i + 3, wx + ww + i, wy + wh + i + 3, 6 + i, Glass.withAlpha(0xFF000000, this.a(16)));
-      }
-
+      // One flat window with a soft shadow and a faint edge; the sidebar is set apart by a hairline, not a second card.
+      Glass.roundRect(g, wx - 1, wy + 2, wx + ww + 1, wy + wh + 4, 7, Glass.withAlpha(0xFF000000, this.a(40)));
       Glass.roundRect(g, wx, wy, wx + ww, wy + wh, 6, Glass.withAlpha(this.surface, bodyAlpha));
-      Glass.roundRect(g, wx, wy, wx + SIDEBAR, wy + wh, 6, Glass.withAlpha(this.surface2, bodyAlpha));
-      g.fill(wx + SIDEBAR - 6, wy, wx + SIDEBAR, wy + wh, Glass.withAlpha(this.surface2, bodyAlpha));
-      g.fill(wx + SIDEBAR, wy + 6, wx + SIDEBAR + 1, wy + wh - 6, Glass.withAlpha(0xFFFFFFFF, this.a(14)));
-      Glass.roundOutline(g, wx, wy, wx + ww, wy + wh, 6, Glass.withAlpha(Glass.lerp(0xFFFFFFFF, accent, 0.6F), this.a(60)));
-      Glass.gradientBar(g, wx + 6, wy, wx + ww - 6, wy + 2, Glass.withAlpha(accent, this.a(255)), Glass.withAlpha(accent2, this.a(255)));
+      g.fill(wx + SIDEBAR, wy + 8, wx + SIDEBAR + 1, wy + wh - 8, Glass.withAlpha(0xFFFFFFFF, this.a(14)));
+      Glass.roundOutline(g, wx, wy, wx + ww, wy + wh, 6, Glass.withAlpha(0xFFFFFFFF, this.a(22)));
       this.drawSidebar(g, wx, wy, wh, mouseX, mouseY, accent, accent2);
       int cx = wx + SIDEBAR + 1;
       int cw = ww - SIDEBAR - 1;
@@ -374,18 +372,14 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    }
 
    private void drawSidebar(GuiGraphicsExtractor g, int x, int y, int h, int mouseX, int mouseY, int accent, int accent2) {
-      float pulse = Glass.animations() ? 0.75F + 0.25F * (float)Math.sin(Util.getMillis() / 500.0) : 1.0F;
-      GeminiMark.draw(g, x + 10, y + 10, 22, accent, pulse * this.open);
-      g.text(this.font, "Gemini", x + 37, y + 11, Glass.withAlpha(Glass.TEXT, this.a(255)), true);
-      String version = "dev".equals(Gemini.VERSION) ? "dev build" : "v" + Gemini.VERSION;
-      g.text(this.font, version, x + 37, y + 22, Glass.withAlpha(accent2, this.a(255)), false);
-      int tabsTop = y + 38;
+      GeminiMark.draw(g, x + 11, y + 10, 16, accent, this.open);
+      g.text(this.font, "Gemini", x + 32, y + 14, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+      int tabsTop = y + 34;
       if (!SingleplayerGate.allowed()) {
          // Modules can be configured anywhere, but only run in a private single-player world.
-         String label = "configure only";
+         String label = "Settings only";
          int lw = this.font.width(label) + 8;
-         Glass.roundRect(g, x + 10, tabsTop, x + 10 + lw, tabsTop + 11, 3, Glass.withAlpha(Glass.WARN, this.a(70)));
-         g.text(this.font, label, x + 14, tabsTop + 2, Glass.withAlpha(Glass.WARN, this.a(255)), false);
+         g.text(this.font, label, x + 13, tabsTop + 2, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
          if (inside(mouseX, mouseY, x + 10, tabsTop, lw, 11)) {
             this.tip = plain(SingleplayerGate.denialMessage());
          }
@@ -393,7 +387,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          tabsTop += 14;
       }
 
-      int buttonsTop = y + h - 64;
+      int buttonsTop = y + h - 8 - 3 * LINK_ROW;
       int count = Category.values().length + PAGE_TABS.length;
       int step = Mth.clamp((buttonsTop - 6 - tabsTop - 9) / count, 13, 20);
       int th = step - 2;
@@ -423,8 +417,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       if (!Float.isNaN(this.indicatorY) && this.indicatorAlpha > 0.01F) {
          int top = Math.round(this.indicatorY);
          int alpha = Math.round(this.indicatorAlpha * 255.0F);
-         Glass.roundRect(g, x + 6, top, x + SIDEBAR - 6, top + th, 4, Glass.withAlpha(accent, this.a(Math.round(alpha * 0.2F))));
-         g.fill(x + 6, top + 3, x + 8, top + th - 3, Glass.withAlpha(accent2, this.a(alpha)));
+         Glass.roundRect(g, x + 6, top, x + SIDEBAR - 6, top + th, 4, Glass.withAlpha(0xFFFFFFFF, this.a(Math.round(alpha * 0.07F))));
       }
 
       iy = tabsTop;
@@ -438,13 +431,14 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          iy += step;
       }
 
-      int half = (SIDEBAR - 12 - 3) / 2;
+      // The tools under the tabs are quiet text links, two to a row, lined up with the tab labels.
+      int half = (SIDEBAR - 12) / 2;
       this.sidebarButton(g, x + 6, buttonsTop, half, "Search", WindowGuiScreen.Kind.PALETTE, mouseX, mouseY, accent, false);
-      this.sidebarButton(g, x + 6 + half + 3, buttonsTop, half, "Guide", WindowGuiScreen.Kind.HELP, mouseX, mouseY, accent, false);
-      this.sidebarButton(g, x + 6, buttonsTop + 20, half, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
-      this.sidebarButton(g, x + 6 + half + 3, buttonsTop + 20, half, "Panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
-      String menuKey = this.bindingMenu ? "Press a key..." : "Menu key: " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString();
-      this.sidebarButton(g, x + 6, buttonsTop + 40, SIDEBAR - 12, menuKey, WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
+      this.sidebarButton(g, x + 6 + half, buttonsTop, half, "Guide", WindowGuiScreen.Kind.HELP, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6, buttonsTop + LINK_ROW, half, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
+      this.sidebarButton(g, x + 6 + half, buttonsTop + LINK_ROW, half, "Panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
+      String menuKey = this.bindingMenu ? "Press a key..." : "Key: " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString();
+      this.sidebarButton(g, x + 6, buttonsTop + 2 * LINK_ROW, SIDEBAR - 12, menuKey, WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
    }
 
    private boolean tabActive(Object tab) {
@@ -467,8 +461,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int right = x + SIDEBAR - 10;
       String name;
       if (tab instanceof Category cat) {
-         int iconColor = active ? accent2 : Glass.lerp(cat.accent(), 0xFFFFFFFF, 0.35F);
-         icon(g, cat.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(iconColor, this.a(active || over ? 255 : 190)));
+         icon(g, cat.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.TEXT_DIM : Glass.TEXT_FAINT, this.a(255)));
          List<Module> list = modules(cat);
          int on = 0;
          for (Module module : list) {
@@ -477,17 +470,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             }
          }
 
-         String total = Integer.toString(list.size());
-         int tw = this.font.width(total);
-         g.text(this.font, total, right - tw, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
-         right -= tw + 4;
+         // Only the number switched on, and only when there is one; the total is not worth a badge.
          if (on > 0) {
             String count = Integer.toString(on);
-            int bw = this.font.width(count) + 6;
-            int bx = right - bw;
-            Glass.roundRect(g, bx, ty - 2, right, ty + 8, 3, Glass.withAlpha(active ? accent : this.surface3, this.a(active ? 170 : 255)));
-            g.text(this.font, count, bx + 3, ty - 1, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
-            right = bx - 3;
+            int cw = this.font.width(count);
+            g.text(this.font, count, right - cw, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+            right -= cw + 4;
          }
 
          name = cat.displayName();
@@ -497,17 +485,16 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
       } else {
          Page p = (Page)tab;
-         icon(g, p.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active ? accent2 : Glass.TEXT_DIM, this.a(active || over ? 255 : 190)));
-         name = p.label;
+         icon(g, p.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.TEXT_DIM : Glass.TEXT_FAINT, this.a(255)));
+         name = p == Page.PROFILES ? "Presets" : p.label;
          if (p == Page.KEYBINDS && Gemini.getInstance() != null) {
             int conflicts = conflictCount();
             if (conflicts > 0) {
+               // Meaningful: something to fix. Plain warning-coloured number, no pill.
                String count = Integer.toString(conflicts);
-               int bw = this.font.width(count) + 6;
-               int bx = right - bw;
-               Glass.roundRect(g, bx, ty - 2, right, ty + 8, 3, Glass.withAlpha(Glass.ERROR, this.a(170)));
-               g.text(this.font, count, bx + 3, ty - 1, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
-               right = bx - 3;
+               int cw = this.font.width(count);
+               g.text(this.font, count, right - cw, ty, Glass.withAlpha(Glass.WARN, this.a(255)), false);
+               right -= cw + 4;
             }
          } else if (p == Page.BARITONE && gemini.util.BaritoneBridge.isActive()) {
             Glass.roundRect(g, right - 5, ty + 1, right, ty + 6, 2, Glass.withAlpha(Glass.OK, this.a(255)));
@@ -533,15 +520,11 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    }
 
    private void sidebarButton(GuiGraphicsExtractor g, int x, int y, int w, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
-      boolean over = inside(mouseX, mouseY, x, y, w, 17);
-      Glass.roundRect(g, x, y, x + w, y + 17, 4, Glass.withAlpha(active ? accent : (over ? this.surface3 : this.surface), this.a(active ? 150 : 255)));
-      if (over) {
-         Glass.roundOutline(g, x, y, x + w, y + 17, 4, Glass.withAlpha(accent, this.a(120)));
-      }
-
+      boolean over = inside(mouseX, mouseY, x, y, w, LINK_ROW);
       String text = fit(this.font, label, w - 8);
-      g.text(this.font, text, x + (w - this.font.width(text)) / 2, y + 5, Glass.withAlpha(over || active ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
-      this.hit(kind, x, y, w, 17, null);
+      int color = active ? Glass.lerp(accent, 0xFFFFFFFF, 0.3F) : (over ? Glass.TEXT : Glass.TEXT_FAINT);
+      g.text(this.font, text, x + 7, y + 3, Glass.withAlpha(color, this.a(255)), false);
+      this.hit(kind, x, y, w, LINK_ROW, null);
       if (over) {
          this.tip = switch (kind) {
             case MENU_KEY -> "Click, then press the key that opens this menu";
@@ -563,8 +546,10 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int sw = w - 16 - filtersW - 6;
       int sy = y + 9;
       boolean overSearch = inside(mouseX, mouseY, sx, sy, sw, 16);
-      Glass.roundRect(g, sx, sy, sx + sw, sy + 16, 4, Glass.withAlpha(this.searchFocused ? this.surface3 : this.surface2, this.a(255)));
-      Glass.roundOutline(g, sx, sy, sx + sw, sy + 16, 4, Glass.withAlpha(this.searchFocused ? accent : 0xFFFFFFFF, this.a(this.searchFocused ? 160 : 18)));
+      Glass.roundRect(g, sx, sy, sx + sw, sy + 16, 4, Glass.withAlpha(this.searchFocused || overSearch ? this.surface3 : this.surface2, this.a(255)));
+      if (this.searchFocused) {
+         Glass.roundOutline(g, sx, sy, sx + sw, sy + 16, 4, Glass.withAlpha(accent, this.a(140)));
+      }
       magnifier(g, sx + 6, sy + 4, Glass.withAlpha(this.searchFocused ? accent2 : Glass.TEXT_FAINT, this.a(255)));
       boolean blink = this.searchFocused && now / 450L % 2L == 0L;
       String text = this.search.isEmpty() && !this.searchFocused ? "Search modules and settings..." : this.search + (blink ? "_" : "");
@@ -589,8 +574,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          int fw = this.font.width(f) + 12;
          boolean active = f.equals(this.filter);
          boolean over = inside(mouseX, mouseY, fx, sy, fw, 16);
-         Glass.roundRect(g, fx, sy, fx + fw, sy + 16, 4, Glass.withAlpha(active ? accent : (over ? this.surface3 : this.surface2), this.a(active ? 170 : 255)));
-         g.text(this.font, f, fx + 6, sy + 4, Glass.withAlpha(active || over ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
+         // Text toggles: only the active filter gets a soft fill.
+         if (active) {
+            Glass.roundRect(g, fx, sy, fx + fw, sy + 16, 4, Glass.withAlpha(this.surface3, this.a(255)));
+         }
+
+         g.text(this.font, f, fx + 6, sy + 4, Glass.withAlpha(active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.FILTER, fx, sy, fw, 16, f);
          if (over) {
             this.tip = switch (f) {
@@ -611,10 +600,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       String heading = !this.search.isBlank()
          ? "Results for \"" + this.search.trim() + "\""
          : (FAVORITES.equals(this.filter) ? "Favorites" : this.category.displayName());
-      g.text(this.font, fit(this.font, heading, w - 60), x + 2, top, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
-      String count = this.shown.size() + (this.shown.size() == 1 ? " module" : " modules");
-      g.text(this.font, count, x + w - this.font.width(count), top, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
-      this.listViewTop = top + 17;
+      g.text(this.font, fit(this.font, heading, w - 8), x + 9, top, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
+      this.listViewTop = top + 14;
       this.listViewBottom = bottom - 4;
       int viewH = this.listViewBottom - this.listViewTop;
       int contentHeight = this.shown.size() * (CARD_H + CARD_GAP);
@@ -658,18 +645,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       boolean switchedOn = blocked ? module.isSavedEnabled() : module.isEnabled();
       float hover = this.anim(this.hoverAnim, module, over ? 1.0F : 0.0F, 16.0F);
       float on = this.anim(this.enableAnim, module, switchedOn ? 1.0F : 0.0F, 12.0F);
-      Glass.roundRect(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(selected ? this.surface3 : this.surface2, this.a(255)));
-      if (on > 0.01F && !blocked) {
-         Glass.roundRect(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(accent, this.a(Math.round(34.0F * on))));
-         g.fill(x, y + 5, x + 2, y + CARD_H - 5, Glass.withAlpha(accent2, this.a(Math.round(255.0F * on))));
-      }
-
-      if (hover > 0.01F) {
-         Glass.roundRect(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(0xFFFFFFFF, this.a(Math.round(9.0F * hover))));
-      }
-
+      // Rows have no box of their own: spacing separates them, the selected row gets a soft fill, and a
+      // switched-on module shows it with its switch and a brighter name.
       if (selected) {
-         Glass.roundOutline(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(accent, this.a(130)));
+         Glass.roundRect(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(this.surface3, this.a(255)));
+      } else if (hover > 0.01F) {
+         Glass.roundRect(g, x, y, x + w, y + CARD_H, 4, Glass.withAlpha(0xFFFFFFFF, this.a(Math.round(8.0F * hover))));
       }
 
       // The card is registered before its switch so a click on the switch toggles instead of selecting.
@@ -677,7 +658,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int right = x + w - 8;
       if (!(module instanceof ClickGuiModule)) {
          int sx = right - 18;
-         Glass.toggle(g, sx, y + 10, on, blocked ? 0xFF59606E : Glass.lerp(accent, accent2, 0.35F), this.open * (blocked ? 0.6F : 1.0F));
+         Glass.toggle(g, sx, y + 9, on, blocked ? 0xFF59606E : Glass.lerp(accent, accent2, 0.35F), this.open * (blocked ? 0.6F : 1.0F));
          this.hit(WindowGuiScreen.Kind.SWITCH, sx - 4, y, 26, CARD_H, module, this.listViewTop, this.listViewBottom);
          right = sx - 6;
       }
@@ -696,30 +677,29 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       if (key != null && !"NONE".equals(key)) {
          String label = module.isHoldBind() ? key + " hold" : key;
          int kw = this.font.width(label) + 6;
-         Glass.roundRect(g, right - kw, y + 6, right, y + 17, 3, Glass.withAlpha(this.surface, this.a(255)));
-         g.text(this.font, label, right - kw + 3, y + 8, Glass.withAlpha(this.binding == module ? accent2 : Glass.TEXT_DIM, this.a(255)), false);
+         g.text(this.font, label, right - kw + 3, y + 5, Glass.withAlpha(this.binding == module ? accent2 : Glass.TEXT_FAINT, this.a(255)), false);
          right -= kw + 6;
       }
 
       int nameColor = blocked ? Glass.TEXT_FAINT : (module.isEnabled() ? Glass.TEXT : (over ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.7F) : Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.4F)));
-      int textX = x + 9 + Math.round(hover * 2.0F);
-      g.text(this.font, fit(this.font, module.getName(), right - textX - 6), textX, y + 6, Glass.withAlpha(nameColor, this.a(255)), false);
+      int textX = x + 9;
+      g.text(this.font, fit(this.font, module.getName(), right - textX - 6), textX, y + 5, Glass.withAlpha(nameColor, this.a(255)), false);
       Fuzzy.Match match = searchMode ? this.matches.get(module) : null;
       if (match != null && match.setting() != null) {
          // the search found this module through one of its settings: say which
-         String hint = "setting: " + match.setting();
-         g.text(this.font, fit(this.font, hint, x + w - 38 - textX), textX, y + 18, Glass.withAlpha(accent2, this.a(255)), false);
+         String hint = "Setting: " + match.setting();
+         g.text(this.font, fit(this.font, hint, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
       } else {
          String description = searchMode ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
-         g.text(this.font, fit(this.font, description, x + w - 38 - textX), textX, y + 18, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         g.text(this.font, fit(this.font, description, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
       }
    }
 
    private void drawSettings(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2) {
       int x = this.settingsX;
       int w = this.settingsW;
-      Glass.roundRect(g, x, top - 2, x + w, bottom - 4, 5, Glass.withAlpha(this.surface2, this.a(255)));
-      Glass.roundOutline(g, x, top - 2, x + w, bottom - 4, 5, Glass.withAlpha(0xFFFFFFFF, this.a(14)));
+      // No card around the pane: a hairline divides it from the list.
+      g.fill(x - 4, top, x - 3, bottom - 6, Glass.withAlpha(0xFFFFFFFF, this.a(12)));
       Module module = this.selected;
       if (module == null) {
          String text = "Select a module to see its settings";
@@ -728,7 +708,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       boolean blocked = blocked(module);
-      g.text(this.font, fit(this.font, module.getName(), w - 50), x + 9, top + 6, Glass.withAlpha(Glass.TEXT, this.a(255)), true);
+      g.text(this.font, fit(this.font, module.getName(), w - 50), x + 9, top + 6, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
       if (!(module instanceof ClickGuiModule)) {
          float on = this.anim(this.enableAnim, module, (blocked ? module.isSavedEnabled() : module.isEnabled()) ? 1.0F : 0.0F, 12.0F);
          int sx = x + w - 27;
@@ -739,7 +719,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int ty = top + 21;
       if (blocked) {
          String reason = plain(module.blockedReason());
-         g.text(this.font, fit(this.font, "Can't switch on now: " + reason, w - 18), x + 9, ty, Glass.withAlpha(Glass.WARN, this.a(255)), false);
+         // Without a world the full reason doesn't fit the pane; the short form says the same thing.
+         String shown = this.minecraft.player == null ? "Can be switched on in a world" : reason;
+         g.text(this.font, fit(this.font, shown, w - 18), x + 9, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
          if (inside(mouseX, mouseY, x + 9, ty, w - 18, LINE)) {
             this.tip = reason + "  ·  settings changed here apply when it can run";
          }
@@ -748,14 +730,13 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       List<String> lines = wrap(this.font, module.getDescription(), w - 18);
-      for (int i = 0; i < Math.min(blocked ? 2 : 3, lines.size()); i++) {
+      for (int i = 0; i < Math.min(2, lines.size()); i++) {
          g.text(this.font, lines.get(i), x + 9, ty, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
          ty += LINE;
       }
 
       this.settingsViewTop = ty + 6;
       this.settingsViewBottom = bottom - 8;
-      g.fill(x + 8, this.settingsViewTop - 2, x + w - 8, this.settingsViewTop - 1, Glass.withAlpha(0xFFFFFFFF, this.a(16)));
       List<Setting<?>> settings = new ArrayList<>();
       for (Setting<?> setting : module.settings()) {
          if (setting.visible()) {
@@ -763,8 +744,27 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
       }
 
+      if (this.revealSetting != null) {
+         // the search jumped to a setting: unfold the module if that setting is past the fold
+         for (int i = 0; i < settings.size(); i++) {
+            if (settings.get(i).name().equals(this.revealSetting) && SettingDisclosure.needsUnfold(i, settings.size())) {
+               unfolded.add(module.getName());
+            }
+         }
+      }
+
+      // Long setting lists show the first few and a "More settings" row (see SettingDisclosure).
+      boolean searching = !this.search.isBlank();
+      boolean expanded = unfolded.contains(module.getName());
+      int total = settings.size();
+      int shownCount = SettingDisclosure.shown(total, expanded, searching);
+      boolean moreRow = SettingDisclosure.foldable(total) && !searching;
+      if (shownCount < total) {
+         settings = settings.subList(0, shownCount);
+      }
+
       boolean bindable = module.isBindable();
-      int contentHeight = (bindable ? 22 : 0) + 4;
+      int contentHeight = (bindable ? 22 : 0) + 4 + (moreRow ? 20 : 0);
       for (Setting<?> setting : settings) {
          contentHeight += this.rowHeight(setting);
       }
@@ -813,6 +813,20 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
 
          ry += rh;
+      }
+
+      if (moreRow) {
+         int hiddenCount = total - shownCount;
+         String label = expanded ? "Fewer settings" : "More settings (" + hiddenCount + ")";
+         boolean over = inside(mouseX, mouseY, x + 4, ry, w - 8, 18) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
+         if (expanded) {
+            triDown(g, x + 12, ry + 7, 3, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)));
+         } else {
+            triRight(g, x + 12, ry + 6, 3, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)));
+         }
+
+         g.text(this.font, label, x + 20, ry + 5, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
+         this.hit(WindowGuiScreen.Kind.MORE, x + 4, ry, w - 8, 18, module, this.settingsViewTop, this.settingsViewBottom);
       }
 
       g.disableScissor();
@@ -877,7 +891,10 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          int pillW = Math.min(right - left - 56, this.font.width(value) + 28);
          int pillL = right - pillW;
          g.text(this.font, fit(this.font, setting.name(), pillL - left - 10), left, y + 6, label, false);
-         Glass.roundRect(g, pillL, y + 3, right, y + 16, 3, Glass.withAlpha(accent, this.a(over ? 70 : 40)));
+         if (over) {
+            Glass.roundRect(g, pillL, y + 3, right, y + 16, 3, Glass.withAlpha(this.surface3, this.a(255)));
+         }
+
          g.text(this.font, "<", pillL + 5, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)), false);
          g.text(this.font, ">", right - 10, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)), false);
          String shownValue = fit(this.font, value, pillW - 22);
@@ -888,10 +905,10 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          String value = list.size() + (list.size() == 1 ? " entry  >" : " entries  >");
          int valueW = this.font.width(value);
          g.text(this.font, fit(this.font, setting.name(), right - left - valueW - 12), left, y + 6, label, false);
-         g.text(this.font, value, right - valueW, y + 6, Glass.withAlpha(over ? Glass.TEXT : accent2, this.a(255)), false);
+         g.text(this.font, value, right - valueW, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.LIST, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ActionSetting) {
-         Glass.roundRect(g, left, y + 2, right, y + h - 2, 4, Glass.withAlpha(accent, this.a(over ? 150 : 85)));
+         Glass.roundRect(g, left, y + 2, right, y + h - 2, 4, Glass.withAlpha(over ? Glass.lerp(this.surface3, 0xFFFFFFFF, 0.06F) : this.surface3, this.a(255)));
          String text = fit(this.font, setting.name(), right - left - 8);
          g.text(this.font, text, left + (right - left - this.font.width(text)) / 2, y + (h - 8) / 2, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.ACTION, left, y + 2, right - left, h - 4, setting, this.settingsViewTop, this.settingsViewBottom);
@@ -938,15 +955,13 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          float max = Math.max(1, contentHeight - viewH);
          int thumbY = top + Math.round((viewH - thumbH) * (scroll / max));
          g.fill(x, top, x + 2, top + viewH, Glass.withAlpha(0xFFFFFFFF, this.a(10)));
-         g.fill(x, thumbY, x + 2, thumbY + thumbH, Glass.withAlpha(accent, this.a(170)));
+         g.fill(x, thumbY, x + 2, thumbY + thumbH, Glass.withAlpha(0xFFFFFFFF, this.a(60)));
       }
    }
 
    private void drawFooter(GuiGraphicsExtractor g, int x, int y, int w, int accent2, long now) {
       boolean flashing = this.flash != null && now < this.flashUntil;
       DashboardPage pageView = this.pageFor(this.page);
-      String hint = pageView == null ? "Esc close  ·  RMB toggle  ·  MMB bind  ·  ★ star" : "Esc close  ·  Tab next tab";
-      int hintW = this.font.width(hint);
       String text;
       if (this.bindingMenu) {
          text = "Press the key that should open this menu  ·  Esc cancels";
@@ -957,15 +972,14 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       } else if (this.tip != null) {
          text = this.tip;
       } else {
-         text = pageView == null ? "Click a module to edit it  ·  ↑↓ select  ·  Enter toggles" : pageView.hint();
+         text = pageView == null ? "Right-click toggles  ·  middle-click binds a key" : pageView.hint();
       }
 
       text = plain(text);
       g.text(
-         this.font, fit(this.font, text, w - hintW - 36), x + 8, y + 6,
-         Glass.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : Glass.TEXT_DIM, this.a(255)), false
+         this.font, fit(this.font, text, w - 16), x + 8, y + 6,
+         Glass.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : Glass.TEXT_FAINT, this.a(255)), false
       );
-      g.text(this.font, hint, x + w - 8 - hintW, y + 6, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
    }
 
    // ------------------------------------------------------------------ input
@@ -1048,6 +1062,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             }
          }
          case SWITCH -> this.toggle((Module)hit.target);
+         case MORE -> {
+            String name = ((Module)hit.target).getName();
+            if (!unfolded.remove(name)) {
+               unfolded.add(name);
+            }
+         }
          case STAR -> {
             ClickGuiModule style = style();
             if (style != null) {
@@ -1651,6 +1671,18 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
    }
 
+   private static void triRight(GuiGraphicsExtractor g, int x, int y, int size, int color) {
+      for (int i = 0; i < size; i++) {
+         g.fill(x + i, y + i, x + i + 1, y + 2 * size - 1 - i, color);
+      }
+   }
+
+   private static void triDown(GuiGraphicsExtractor g, int x, int y, int size, int color) {
+      for (int i = 0; i < size; i++) {
+         g.fill(x + i, y + i, x + 2 * size - 1 - i, y + i + 1, color);
+      }
+   }
+
    private static enum Kind {
       CATEGORY,
       PAGE_TAB,
@@ -1671,7 +1703,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       HUD_EDIT,
       MENU_KEY,
       PALETTE,
-      HELP;
+      HELP,
+      MORE;
    }
 
    private record PageHit(Object owner, DashboardPage.Click click) {
