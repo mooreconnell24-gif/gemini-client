@@ -47,7 +47,7 @@ import net.minecraft.world.level.storage.LevelSummary;
  * is one; then Multiplayer and Realms, Options and Quit) and a row of quick-link tiles (the module menu, the mod
  * browser, the guide, quick search). A small card in the bottom-right corner lists the first points of the
  * changelog and opens the guide. The footer carries the version, the theme swatches and Mojang's notice; the
- * "Vanilla menu" link and the sandbox switch sit quietly in the top corners. A line of text only appears when
+ * "Vanilla menu" link and the sandbox switch sit quietly in the top-right corner. A line of text only appears when
  * something is actually wrong (a game hook failed to load). Everything fades and slides in once when the screen
  * opens.
  *
@@ -324,18 +324,11 @@ public final class GeminiTitleScreen extends Screen {
    }
 
    /**
-    * The corners. Footer: the version and the theme swatches on the left, Mojang's notice on the right. Top: the
-    * vanilla-menu link on the left, the sandbox switch on the right.
+    * The corners. Footer: the version and the theme swatches on the left, Mojang's notice on the right. Top
+    * right: the vanilla-menu link and the sandbox switch.
     */
    private void addFooter(TitleLayout l) {
       this.versionWidth = UiFont.width(VERSION);
-      Component vanillaLabel = Component.translatable("gemini.title.vanilla");
-      GlassButton vanilla = this.addRenderableWidget(
-         new GlassButton(TitleLayout.EDGE, TitleLayout.EDGE, UiFont.width(vanillaLabel) + 2 * Theme.SPACE_XS, TitleLayout.CORNER_HEIGHT, vanillaLabel, button -> this.openVanilla())
-            .plain()
-      );
-      vanilla.setTooltip(UiFont.tooltip(Component.translatable("gemini.title.vanilla.tooltip")));
-      this.enter(vanilla, 12);
       Component sandboxLabel = Component.translatable("gemini.title.sandbox");
       int switchWidth = UiFont.width(sandboxLabel) + 2 * Theme.SPACE_XS + Theme.SPACE_S + 18;
       GlassButton sandbox = this.addRenderableWidget(
@@ -352,6 +345,14 @@ public final class GeminiTitleScreen extends Screen {
       );
       sandbox.setTooltip(UiFont.tooltip(SandboxUi.tooltip()));
       this.enter(sandbox, 12);
+      Component vanillaLabel = Component.translatable("gemini.title.vanilla");
+      int vanillaWidth = UiFont.width(vanillaLabel) + 2 * Theme.SPACE_XS;
+      GlassButton vanilla = this.addRenderableWidget(
+         new GlassButton(sandbox.getX() - Theme.SPACE_XL - vanillaWidth, TitleLayout.EDGE, vanillaWidth, TitleLayout.CORNER_HEIGHT, vanillaLabel, button -> this.openVanilla())
+            .plain()
+      );
+      vanilla.setTooltip(UiFont.tooltip(Component.translatable("gemini.title.vanilla.tooltip")));
+      this.enter(vanilla, 12);
       int swatchesX = TitleLayout.EDGE + this.versionWidth + Theme.SPACE_XL;
       int swatchesEnd = swatchesX;
       ThemeSwatches swatches = new ThemeSwatches(swatchesX, l.footerY() - 1);

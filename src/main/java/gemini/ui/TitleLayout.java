@@ -10,7 +10,7 @@ package gemini.ui;
  * then a row of four quick-link tiles. The column sits in the left part of a wide screen so the backdrop stays
  * visible beside it, and in the middle of a narrow one. On a wide screen a small "what's new" card sits in the
  * bottom-right corner. The footer row along the bottom edge holds the version, the theme swatches and the Mojang
- * notice; the vanilla-menu link and the sandbox switch are in the top corners.
+ * notice; the vanilla-menu link and the sandbox switch are in the top-right corner.
  *
  * <p>The emblem is drawn in window pixels at half or a quarter of its texture's size, so it is never resampled at
  * an odd ratio, whatever the GUI scale ({@link #logoPixels}); {@link #logoSize} is the room it takes in GUI units,
@@ -109,14 +109,14 @@ public record TitleLayout(
       for (int[] attempt : tries) {
          density = DENSITIES[attempt[0]];
          header = attempt[1];
-         headerHeight = headerHeight(header, scale);
+         headerHeight = headerHeight(header, scale, height);
          total = stackHeight(density, headerHeight, hasContinue);
          if (total <= available) {
             break;
          }
       }
 
-      int logoPixels = header == HEADER_FULL ? logoPixels(scale) : 0;
+      int logoPixels = header == HEADER_FULL ? logoPixels(scale, height) : 0;
       int logo = logoUnits(logoPixels, scale);
       // On a wide screen the column takes at most about two fifths of the width, which leaves room for the card.
       int widest = centred ? MAX_COLUMN : Math.min(MAX_COLUMN, Math.max(160, Math.round(width * 0.42F)));
@@ -173,10 +173,14 @@ public record TitleLayout(
       );
    }
 
-   /** Window pixels the emblem is drawn at for a GUI scale: half its texture, or a quarter where half would be too large. */
-   static int logoPixels(int scale) {
+   /**
+    * Window pixels the emblem is drawn at: half its texture, or a quarter where half would be too large for the
+    * GUI scale, or taller than the name beside it on a screen that is short of height.
+    */
+   static int logoPixels(int scale, int height) {
       int half = LOGO_TEXTURE / 2;
-      return logoUnits(half, scale) > 44 ? LOGO_TEXTURE / 4 : half;
+      int units = logoUnits(half, scale);
+      return units > 44 || height < 300 && units > NAME_CAP + TAGLINE_GAP + TAGLINE_CAP ? LOGO_TEXTURE / 4 : half;
    }
 
    /** GUI units an emblem {@code pixels} window pixels wide takes at {@code scale}, rounded up; 0 when it would be too small to read. */
@@ -186,9 +190,9 @@ public record TitleLayout(
    }
 
    /** Height of a header variant: the taller of the emblem and the text block beside it. */
-   static int headerHeight(int header, int scale) {
+   static int headerHeight(int header, int scale, int height) {
       if (header == HEADER_FULL) {
-         return Math.max(logoUnits(logoPixels(scale), scale), NAME_CAP + TAGLINE_GAP + TAGLINE_CAP);
+         return Math.max(logoUnits(logoPixels(scale, height), scale), NAME_CAP + TAGLINE_GAP + TAGLINE_CAP);
       }
 
       return header == HEADER_NAME ? NAME_CAP_SMALL + 1 : 0;

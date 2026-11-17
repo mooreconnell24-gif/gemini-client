@@ -111,6 +111,22 @@ class HelpTest {
       assertTrue(HelpContent.teaser(List.of(), 3).isEmpty());
    }
 
+   /** The README's "What's new" section is the bundled changelog, with its headings as bold lines. */
+   @Test
+   void readmeWhatsNewMatchesTheChangelog() throws IOException {
+      java.nio.file.Path readme = java.nio.file.Path.of("README.md");
+      org.junit.jupiter.api.Assumptions.assumeTrue(java.nio.file.Files.isRegularFile(readme), "run from the project directory");
+      java.util.Set<String> lines = new java.util.HashSet<>(java.nio.file.Files.readAllLines(readme, StandardCharsets.UTF_8));
+      for (String line : bundledChangelog().lines().toList()) {
+         if (line.isBlank() || line.startsWith("# ")) {
+            continue;
+         }
+
+         String expected = line.startsWith("## ") ? "**" + line.substring(3) + "**" : line;
+         assertTrue(lines.contains(expected), "README.md is missing this changelog line: " + line);
+      }
+   }
+
    // ---- wrapping -------------------------------------------------------------------------------------------
 
    @Test

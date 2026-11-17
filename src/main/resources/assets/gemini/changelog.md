@@ -2,9 +2,9 @@
 
 ## The rework
 
-- A smooth sans-serif font in every Gemini menu and HUD widget.
-- Ten colour themes that restyle the menus and the HUD together.
-- 239 modules, one per job, with plain names; every old name still finds its module.
+- A smooth font in every menu and HUD widget.
+- Ten colour themes for the menus and the HUD.
+- 239 modules, one per job, with plain names.
 - A new home screen, a pause-menu bar, and reworked module menus, HUD, guide and tool screens.
 - Configs from 3.2.0 and from earlier 3.3.0 builds are upgraded when they are loaded.
 
@@ -17,7 +17,7 @@
 
 ## Menus and screens
 
-- **Home screen.** The dark backdrop with the drifting network of points stays, now tinted by the theme. On it: the name in the large font, then Singleplayer, **Continue** (opens the world you played last), Multiplayer, Realms, Options and Quit, and four tiles for Modules, Mods, Guide and Search. A card in the corner lists the first points of this changelog and opens the guide. The footer has the version and the theme swatches; "Vanilla menu" and the sandbox switch are in the top corners.
+- **Home screen.** The dark backdrop with the drifting network of points stays, now tinted by the theme. On it: the name in the large font, then Singleplayer, **Continue** (opens the world you played last), Multiplayer, Realms, Options and Quit, and four tiles for Modules, Mods, Guide and Search. A card in the corner lists the first points of this changelog and opens the guide. The footer has the version and the theme swatches; "Vanilla menu" and the sandbox switch are in the top-right corner.
 - **Pause menu.** One bar along the top edge with Modules, Edit HUD, Mods, Guide and Panic. It does not move or replace any Minecraft button. A "key conflicts" entry appears only while two actions share a key.
 - **Module menu.** Two layouts, chosen in ClickGUI > **Layout**. **Window** has a sidebar of categories, module cards and the settings of the selected module in place, plus pages for presets, key binds, Baritone and mods. **Panels** has one column per category with module rows that expand in place. Both have rounded cards, soft shadows and eased animation.
 - **Guide, World backups, Notes and the Keybind report** share one window style: a rounded window with a title, text tabs and a thin scrollbar.

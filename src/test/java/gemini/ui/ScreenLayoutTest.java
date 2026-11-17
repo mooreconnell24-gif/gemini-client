@@ -104,7 +104,8 @@ class ScreenLayoutTest {
    @Test
    void theTargetWindowsGetTheFullHeader() {
       // 1280x720 at GUI scale 2 and 3: the emblem, the large name and the line under it, and tiles with icons.
-      for (int[] size : new int[][]{{640, 360, 2}, {427, 240, 3}}) {
+      // 854x480 is the same 427x240 GUI at scale 2, where the emblem is drawn at a quarter of its texture to fit.
+      for (int[] size : new int[][]{{640, 360, 2}, {427, 240, 3}, {427, 240, 2}}) {
          TitleLayout l = TitleLayout.compute(size[0], size[1], size[2], true);
          String at = size[0] + "x" + size[1];
          assertEquals(TitleLayout.HEADER_FULL, l.header(), "full header at " + at);
