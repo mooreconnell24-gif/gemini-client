@@ -79,10 +79,7 @@ public final class Summoner extends Module {
       double x = player.getX() - Math.sin(yawRad) * this.distance.get();
       double z = player.getZ() + Math.cos(yawRad) * this.distance.get();
       int y = BuiltInBaritone.findSurfaceY(client.level, Mth.floor(x), Mth.floor(z), player.getBlockY());
-      String id = this.mob.get().toLowerCase(Locale.ROOT).replace(' ', '_');
-      if ("lightning".equals(id)) {
-         id = "lightning_bolt";
-      }
+      String id = entityId(this.mob.get());
 
       int n = this.count.intValue();
       for (int i = 0; i < n; i++) {
@@ -93,6 +90,12 @@ public final class Summoner extends Module {
       }
 
       CommandManager.feedback("§bSummoner §7summoned §f" + n + " × " + this.mob.get() + "§7.");
+   }
+
+   /** The entity id (without namespace) for a "Mob" mode value. */
+   public static String entityId(String mob) {
+      String id = mob.toLowerCase(Locale.ROOT).replace(' ', '_');
+      return "lightning".equals(id) ? "lightning_bolt" : id;
    }
 
    @Override

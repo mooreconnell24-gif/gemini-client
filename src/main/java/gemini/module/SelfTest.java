@@ -214,6 +214,15 @@ public final class SelfTest {
       for (String problem : this.problems) {
          Gemini.LOGGER.warn("Self-test problem: {}", problem.replaceAll("§.", ""));
       }
+
+      // The chat lines stop at eight names; the log gets every one.
+      if (stoppedAlone.size() > 8) {
+         Gemini.LOGGER.info("Self-test: all that turned themselves off: {}", String.join(", ", stoppedAlone));
+      }
+
+      if (this.refused.size() > 8) {
+         Gemini.LOGGER.info("Self-test: all that refused to start: {}", String.join(", ", this.refused));
+      }
    }
 
    private String heaviest(long measuredNanos) {

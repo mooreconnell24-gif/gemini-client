@@ -96,11 +96,12 @@ public final class Enchanter extends Module {
             if (!worn[i].isEmpty()) {
                List<String> enchants = this.forStack(worn[i], "@s");
                if (!enchants.isEmpty()) {
-                  commands.add("item replace entity @s container.40 from entity @s weapon.mainhand");
+                  // The offhand is the scratch slot ("container.40" is not a player slot in 26.3 and failed, losing the held item).
+                  commands.add("item replace entity @s weapon.offhand from entity @s weapon.mainhand");
                   commands.add("item replace entity @s weapon.mainhand from entity @s " + slots[i]);
                   commands.addAll(enchants);
                   commands.add("item replace entity @s " + slots[i] + " from entity @s weapon.mainhand");
-                  commands.add("item replace entity @s weapon.mainhand from entity @s container.40");
+                  commands.add("item replace entity @s weapon.mainhand from entity @s weapon.offhand");
                   pieces++;
                }
             }
@@ -111,7 +112,7 @@ public final class Enchanter extends Module {
          } else if (!player.getOffhandItem().isEmpty()) {
             CommandManager.feedback("§cEnchanter §7empty your offhand first; it is used as a scratch slot while armour is enchanted.");
          } else {
-            commands.add("item replace entity @s container.40 with minecraft:air");
+            commands.add("item replace entity @s weapon.offhand with minecraft:air");
             this.run(commands, "enchanted " + pieces + " armour piece" + (pieces == 1 ? "" : "s"));
          }
       }

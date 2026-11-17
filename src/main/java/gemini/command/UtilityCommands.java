@@ -104,6 +104,14 @@ final class UtilityCommands {
          case "selftest":
             this.selfTest(parts);
             break;
+         case "devcheck":
+            // Development builds only (runClient); a release build treats it as an unknown command.
+            if (!gemini.module.DevCheck.available()) {
+               return false;
+            }
+
+            gemini.module.DevCheck.run(this.modules, parts);
+            break;
          default:
             return false;
       }
@@ -164,7 +172,7 @@ final class UtilityCommands {
                destination = player.position().add(-Math.sin(yaw) * amount, 0.0, Math.cos(yaw) * amount);
             }
 
-            MoveUtil.teleport(client, player, destination, true);
+            MoveUtil.teleport(client, player, destination);
             feedback(
                String.format(
                   Locale.ROOT,
