@@ -3,7 +3,9 @@ package gemini.module;
 import gemini.Gemini;
 import gemini.command.CommandManager;
 import gemini.module.modules.misc.ClickGuiModule;
+import gemini.module.setting.ColorSetting;
 import gemini.module.setting.Setting;
+import gemini.module.setting.SettingCodec;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -121,6 +123,15 @@ public final class SelfTest {
             setting.visible();
             setting.isDefault();
             setting.description();
+            // Saved and loaded through the same code as the config file; the original value is put back.
+            String trip = SettingCodec.roundTrip(setting);
+            if (trip == null && setting instanceof ColorSetting color) {
+               trip = SettingCodec.colorObjectRoundTrip(color);
+            }
+
+            if (trip != null) {
+               this.problems.add("§c" + module.getName() + " §7setting " + setting.name() + " does not survive a save: " + trip);
+            }
          }
 
          module.info();
@@ -202,6 +213,15 @@ public final class SelfTest {
 
       for (String problem : this.problems) {
          Gemini.LOGGER.warn("Self-test problem: {}", problem.replaceAll("§.", ""));
+      }
+
+      // The chat lines stop at eight names; the log gets every one.
+      if (stoppedAlone.size() > 8) {
+         Gemini.LOGGER.info("Self-test: all that turned themselves off: {}", String.join(", ", stoppedAlone));
+      }
+
+      if (this.refused.size() > 8) {
+         Gemini.LOGGER.info("Self-test: all that refused to start: {}", String.join(", ", this.refused));
       }
    }
 

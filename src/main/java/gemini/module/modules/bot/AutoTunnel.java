@@ -13,7 +13,7 @@ public final class AutoTunnel extends Module {
    private final NumberSetting length = this.addSetting(new NumberSetting("Length", "Blocks to tunnel ahead", 64.0, 4.0, 512.0, 4.0));
 
    public AutoTunnel() {
-      super("Auto Tunnel", "Dig a 1x2 tunnel and bridge gaps automatically.", Category.WORLD);
+      super("Auto Tunnel", "Digs a 1x2 tunnel in the direction you face, placing blocks over gaps in the floor.", Category.WORLD);
    }
 
    @Override
@@ -31,11 +31,20 @@ public final class AutoTunnel extends Module {
       LocalPlayer player = Minecraft.getInstance().player;
       Direction dir = player == null ? Direction.NORTH : player.getDirection();
       BaritoneBridge.startTunnel(dir, this.length.intValue());
+      BaritoneBridge.claimTask(this);
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 
    @Override

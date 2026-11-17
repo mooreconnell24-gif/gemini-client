@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -16,13 +17,13 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 
 public final class EntityCounter extends Ticked {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Only count entities this close", 48.0, 8.0, 256.0, 4.0));
-   private final NumberSetting entries = this.addSetting(new NumberSetting("Entries", "Maximum number of rows", 6.0, 1.0, 20.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Only count entities within this many blocks", 48.0, 8.0, 256.0, 4.0));
+   private final NumberSetting entries = this.addSetting(new NumberSetting("Entries", "Most rows shown", 6.0, 1.0, 20.0, 1.0));
    private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Count dropped items", false));
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Count other players", false));
 
    public EntityCounter() {
-      super("Entity Counter", "How many of each kind of entity are around you.", "Right Center", 6, -80, 500);
+      super("Entity Counter", "Shows how many of each kind of entity are around you.", "Right Center", 6, -80, 500);
    }
 
    @Override
@@ -46,7 +47,7 @@ public final class EntityCounter extends Ticked {
 
       for (int i = 0; i < Math.min(sorted.size(), this.entries.intValue()); i++) {
          Entry<EntityType<?>, Integer> entry = sorted.get(i);
-         lines.add(new TextHudWidget.Line(entry.getKey().getDescription().getString() + " x" + entry.getValue(), -1511689));
+         lines.add(new TextHudWidget.Line(entry.getKey().getDescription().getString() + " x" + entry.getValue(), HudStyle.PRIMARY));
       }
 
       return lines;

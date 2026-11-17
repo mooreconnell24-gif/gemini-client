@@ -1,5 +1,6 @@
 package gemini.module.modules.player;
 
+import gemini.util.InfoText;
 import com.mojang.authlib.GameProfile;
 import gemini.command.CommandManager;
 import gemini.module.Category;
@@ -22,13 +23,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public final class FakePlayer extends Module {
    private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Starting health of the dummy", 20.0, 1.0, 40.0, 1.0));
-   private final BooleanSetting copyGear = this.addSetting(new BooleanSetting("Copy Gear", "Wear the same armor and items as you", true));
+   private final BooleanSetting copyGear = this.addSetting(new BooleanSetting("Copy Gear", "Give the dummy the same armour and items as you", true));
    private final BooleanSetting glow = this.addSetting(new BooleanSetting("Glowing", "Give the dummy a glowing outline", false));
    private static int nextClientId = -1000000;
    private RemotePlayer dummy;
 
    public FakePlayer() {
-      super("Fake Player", "Spawn a dummy player next to you to test combat.", Category.PLAYER);
+      super("Fake Player", "Spawns a dummy player next to you to practise combat on.", Category.PLAYER);
    }
 
    @Override
@@ -112,8 +113,10 @@ public final class FakePlayer extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return this.dummy == null ? null : String.format("%.0f", this.dummy.getHealth());
+      return this.dummy == null ? null : this.infoText.fixed(Math.ceil(this.dummy.getHealth()), 0);
    }
 }

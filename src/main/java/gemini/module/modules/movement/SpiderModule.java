@@ -1,5 +1,8 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -9,11 +12,18 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class SpiderModule extends Module {
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climb speed", 0.3, 0.1, 0.8, 0.05));
-   private final BooleanSetting requireForward = this.addSetting(new BooleanSetting("Require Forward", "Only climb while pushing into the wall", true));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Climbing speed, in blocks per tick", 0.3, 0.1, 0.8, 0.05));
+   private final BooleanSetting requireForward = this.addSetting(new BooleanSetting("Require Forward", "Only climb while moving into the wall", true));
 
    public SpiderModule() {
-      super("Spider", "Climb walls like a spider.", Category.MOVEMENT);
+      super("Spider", "Lets you climb up walls.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("WallClimb");
+      return names;
    }
 
    @Override
@@ -30,8 +40,10 @@ public final class SpiderModule extends Module {
       }
    }
 
+   private final InfoText infoText = new InfoText();
+
    @Override
    public String info() {
-      return String.format("%.2f", this.speed.get());
+      return this.infoText.fixed(this.speed.get(), 2);
    }
 }

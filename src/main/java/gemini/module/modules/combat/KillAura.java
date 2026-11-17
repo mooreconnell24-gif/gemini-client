@@ -8,17 +8,17 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.render.Render3D;
-import gemini.util.Damage;
+import gemini.module.Targeting;
 import gemini.util.Inventories;
 import gemini.util.MoveUtil;
 import gemini.util.RotationManager;
 import gemini.util.Rotations;
 import gemini.util.Targets;
+import gemini.util.CombatTarget;
+import gemini.util.TargetCycle;
+import gemini.util.TargetPriority;
 import gemini.util.Hands;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
@@ -34,57 +34,94 @@ import net.minecraft.world.phys.Vec3;
 
 public final class KillAura extends Module {
    private final ModeSetting targetMode = this.addSetting(
-      new ModeSetting("Target Mode", "Single locks one target; Switch cycles targets", "Switch", "Single", "Switch")
+      new ModeSetting(
+         "Target Mode",
+         "Single keeps hitting the best target by Priority; Switch moves to the next target every 6 ticks",
+         "Single",
+         "Single",
+         "Switch"
+      )
    );
-   private final ModeSetting priority = this.addSetting(
-      new ModeSetting("Priority", "Target sorting priority", "Distance", "Distance", "Health", "Angle", "Armor")
-   );
+   // Lambdas, not method references: the filter settings are declared further down and are read only at pick time.
+   private final Targeting targeting = Targeting.builder(this)
+      .filters(() -> this.players.get(), () -> this.hostile.get(), () -> this.passive.get(), () -> true)
+      .priority(TargetPriority.CLOSEST)
+      .stick(true)
+      .box("Both", 280)
+      .build();
    private final ModeSetting versionMode = this.addSetting(
-      new ModeSetting("Version", "Wait for the attack cooldown, or click at a fixed rate", "1.9+ Cooldown", "1.9+ Cooldown", "1.8 Legacy CPS")
+      new ModeSetting("Timing", "Cooldown waits until your attack is fully charged, for full damage; CPS clicks at a fixed rate", "Cooldown", "Cooldown", "CPS")
    );
    private final NumberSetting legacyCps = this.addSetting(
-      new NumberSetting("Legacy CPS", "Clicks per second in 1.8 Legacy CPS mode", 14.0, 4.0, 20.0, 1.0).showIf(() -> this.versionMode.is("1.8 Legacy CPS"))
+      new NumberSetting("CPS", "Clicks per second in CPS timing", 12.0, 1.0, 20.0, 1.0).showIf(() -> this.versionMode.is("CPS"))
    );
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum attack reach", 4.2, 2.5, 6.0, 0.1));
-   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Maximum reach through walls", 3.0, 0.0, 6.0, 0.1));
-   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Field of view scan cone", 180.0, 30.0, 360.0, 5.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest target to attack, in blocks", 4.2, 1.0, 6.0, 0.1));
+   private final NumberSetting wallRange = this.addSetting(new NumberSetting("Wall Range", "Farthest target to attack through a wall, in blocks", 3.0, 0.0, 6.0, 0.1));
+   private final NumberSetting fov = this.addSetting(new NumberSetting("FOV", "Only attack targets within this many degrees of where you look; 360 attacks all round", 360.0, 30.0, 360.0, 5.0));
    private final NumberSetting turnSpeed = this.addSetting(
-      new NumberSetting("Turn Speed", "Rotation speed in degrees per tick", 85.0, 15.0, 180.0, 5.0)
+      new NumberSetting("Turn Speed", "Most you turn per tick, in degrees", 85.0, 15.0, 180.0, 5.0)
    );
-   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Rotate in packets without moving camera", true));
-   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Raytrace Check", "Require clear line-of-sight to target", false));
-   private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "Wait for falling window when airborne for crits", true));
-   private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Maintain sprint state while attacking", true));
+   private final BooleanSetting silentRotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim without moving your camera", true));
+   private final BooleanSetting raytrace = this.addSetting(new BooleanSetting("Visible Only", "Only attack targets you can see", false));
+   private final BooleanSetting autoCrit = this.addSetting(new BooleanSetting("Wait Crit", "While in the air, wait until you are falling so the hit is a critical", true));
+   private final BooleanSetting keepSprint = this.addSetting(new BooleanSetting("Keep Sprint", "Keep sprinting after each hit", true));
    private final BooleanSetting smartSwitch = this.addSetting(
-      new BooleanSetting("Smart Switch", "Auto-select best sword or shield-breaking axe", true)
+      new BooleanSetting("Auto Weapon", "Switch to your best weapon, or an axe against a raised shield, before attacking", true)
    );
    private final BooleanSetting lagComp = this.addSetting(
-      new BooleanSetting("Lag Comp", "Lead moving targets by ping and velocity", true)
+      new BooleanSetting("Predict", "Aim and measure reach at where a moving target will be, not where it is", true)
    );
    private final NumberSetting predictTicks = this.addSetting(
-      new NumberSetting("Predict Ticks", "Base movement ticks to lead target", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
+      new NumberSetting("Predict Ticks", "How many ticks ahead a moving target is led", 2.0, 0.0, 8.0, 0.5).showIf(this.lagComp::get)
    );
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Attack players", true));
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Attack hostile mobs", true));
    private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Attack passive animals", false));
-   private final BooleanSetting renderTarget = this.addSetting(new BooleanSetting("Highlight", "Render 3D box on active target", true));
+   private final TargetCycle cycle = new TargetCycle();
+   private final Predicate<LivingEntity> attackable = this::attackable;
+   private final Predicate<LivingEntity> attackableThisRound = living -> !this.cycle.visited(living.getId()) && this.attackable(living);
    private LivingEntity currentTarget;
-   private int switchIndex;
-   private int switchTimer;
+   private LivingEntity namedTarget;
+   private String targetName = "";
    private long lastLegacyAttackMs;
+   // Per-tick inputs of the attackable check (set before each pick, so the predicates allocate nothing).
+   private LocalPlayer scanPlayer;
+   private double scanPrediction;
+   private double eyeX;
+   private double eyeY;
+   private double eyeZ;
 
    public KillAura() {
-      super("KillAura", "Automatically attack nearby mobs and players with smooth aim.", Category.COMBAT);
+      super("Kill Aura", "Attacks the targets around you, turning to face each one first.", Category.COMBAT);
    }
 
    @Override
    public void onDisable() {
+      this.forget();
+   }
+
+   private void forget() {
       this.currentTarget = null;
+      this.scanPlayer = null;
+      this.targeting.clear();
+      this.cycle.reset();
+      CombatTarget.release(this);
    }
 
    @Override
    public String info() {
-      return this.currentTarget != null ? this.currentTarget.getName().getString() : this.priority.get();
+      LivingEntity target = this.currentTarget;
+      if (target == null) {
+         return this.targetMode.get();
+      }
+
+      // The name is looked up once per new target, not every frame.
+      if (target != this.namedTarget) {
+         this.namedTarget = target;
+         this.targetName = target.getName().getString();
+      }
+
+      return this.targetName;
    }
 
    @Override
@@ -93,28 +130,14 @@ public final class KillAura extends Module {
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
          if (!player.isUsingItem()) {
-            List<LivingEntity> candidates = this.collectTargets(client, player);
-            if (candidates.isEmpty()) {
-               this.currentTarget = null;
-            } else {
-               if (!this.targetMode.is("Single") || this.currentTarget == null || !candidates.contains(this.currentTarget)) {
-                  if (this.targetMode.is("Switch")) {
-                     if (++this.switchTimer >= 6) {
-                        this.switchTimer = 0;
-                        this.switchIndex = (this.switchIndex + 1) % candidates.size();
-                     }
-
-                     this.currentTarget = candidates.get(this.switchIndex % candidates.size());
-                  } else {
-                     this.currentTarget = candidates.get(0);
-                  }
-               }
-
-               double pred = this.effectivePredictionTicks(client, player);
+            this.currentTarget = this.chooseTarget(client, player);
+            CombatTarget.report(this, this.currentTarget);
+            if (this.currentTarget != null) {
+               double pred = this.scanPrediction;
                float[] rotation = Rotations.face(player, this.currentTarget, pred);
                boolean aimed = RotationManager.request(player, rotation[0], rotation[1], this.turnSpeed.floatValue(), this.silentRotate.get(), ActionPriority.COMBAT, 8.0F);
                if (aimed) {
-                  boolean useLegacy = this.versionMode.is("1.8 Legacy CPS");
+                  boolean useLegacy = this.versionMode.is("CPS");
                   float cooldownRequired = 0.9F;
                   long nowMs = System.currentTimeMillis();
                   long minDelayMs = (long)Math.max(45.0, 1000.0 / Math.max(1.0, this.legacyCps.get()));
@@ -151,6 +174,8 @@ public final class KillAura extends Module {
          }
       } else {
          this.currentTarget = null;
+         this.targeting.clear();
+         CombatTarget.release(this);
       }
    }
 
@@ -170,36 +195,70 @@ public final class KillAura extends Module {
       }
    }
 
-   private List<LivingEntity> collectTargets(Minecraft client, LocalPlayer player) {
-      List<LivingEntity> list = new ArrayList<>();
-      double maxRange = this.range.get();
-      double maxWall = this.wallRange.get();
-      double pred = this.effectivePredictionTicks(client, player);
-
-      for (Entity entity : client.level.entitiesForRendering()) {
-         if (Targets.isCandidate(player, entity, this.players.get(), this.hostile.get(), this.passive.get(), true)
-            && Targets.inFov(player, entity, this.fov.get())) {
-            LivingEntity living = (LivingEntity)entity;
-            Vec3 offset = living.getDeltaMovement().scale(pred);
-            AABB box = living.getBoundingBox().move(offset);
-            double dist = Math.sqrt(box.distanceToSqr(player.getEyePosition()));
-            boolean visible = Targets.visible(player, living);
-            if ((!this.raytrace.get() || visible) && dist <= (visible ? maxRange : maxWall)) {
-               list.add(living);
-            }
-         }
+   /** Picks this tick's target through the shared Targeting; Switch mode walks the candidates round-robin. */
+   private LivingEntity chooseTarget(Minecraft client, LocalPlayer player) {
+      this.scanPlayer = player;
+      this.scanPrediction = this.effectivePredictionTicks(client, player);
+      this.eyeX = player.getX();
+      this.eyeY = player.getEyeY();
+      this.eyeZ = player.getZ();
+      Iterable<Entity> entities = client.level.entitiesForRendering();
+      // Reach is measured by the attackable check (lag-compensated, with the wall range), so Targeting's own range is open.
+      if (!this.targetMode.is("Switch")) {
+         this.cycle.reset();
+         return this.targeting.pick(player, entities, Double.POSITIVE_INFINITY, this.attackable);
       }
 
-      String prio = this.priority.get();
+      LivingEntity previous = this.currentTarget;
+      if (this.cycle.tick(6) && previous != null) {
+         this.cycle.visit(previous.getId());
+      }
 
-      Comparator<LivingEntity> cmp = switch (prio) {
-         case "Health" -> Comparator.comparingDouble(Damage::health);
-         case "Angle" -> Comparator.comparingDouble(e -> Rotations.yawDiff(player.getYRot(), Rotations.face(player, e)[0]));
-         case "Armor" -> Comparator.comparingInt(LivingEntity::getArmorValue);
-         default -> Comparator.comparingDouble(player::distanceToSqr);
-      };
-      list.sort(cmp);
-      return list;
+      LivingEntity next = this.targeting.pick(player, entities, Double.POSITIVE_INFINITY, this.attackableThisRound);
+      if (next == null && this.cycle.midRound()) {
+         this.cycle.newRound();
+         next = this.targeting.pick(player, entities, Double.POSITIVE_INFINITY, this.attackable);
+      }
+
+      return next;
+   }
+
+   /** In the FOV cone, within Range (or Wall Range when not visible) of where Predict expects it, and seen if Visible Only is on. */
+   private boolean attackable(LivingEntity living) {
+      LocalPlayer player = this.scanPlayer;
+      if (player == null) {
+         return false;
+      }
+
+      Vec3 motion = living.getDeltaMovement();
+      double pred = this.scanPrediction;
+      AABB box = living.getBoundingBox();
+      double reach = boxDistance(
+         this.eyeX, this.eyeY, this.eyeZ,
+         box.minX + motion.x * pred, box.minY + motion.y * pred, box.minZ + motion.z * pred,
+         box.maxX + motion.x * pred, box.maxY + motion.y * pred, box.maxZ + motion.z * pred
+      );
+      double maxRange = this.range.get();
+      double maxWall = this.wallRange.get();
+      if (reach > Math.max(maxRange, maxWall) || !Targets.inFov(player, living, this.fov.get())) {
+         return false;
+      }
+
+      // Within both ranges the line of sight only matters for Visible Only, so skip the trace.
+      if (reach <= Math.min(maxRange, maxWall) && !this.raytrace.get()) {
+         return true;
+      }
+
+      boolean visible = Targets.visible(player, living);
+      return (!this.raytrace.get() || visible) && reach <= (visible ? maxRange : maxWall);
+   }
+
+   /** Distance from a point to an axis-aligned box (0 inside it). */
+   static double boxDistance(double x, double y, double z, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+      double dx = Math.max(Math.max(minX - x, 0.0), x - maxX);
+      double dy = Math.max(Math.max(minY - y, 0.0), y - maxY);
+      double dz = Math.max(Math.max(minZ - z, 0.0), z - maxZ);
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
    }
 
    private int pickSmartWeapon(LocalPlayer player, LivingEntity target) {
@@ -229,15 +288,12 @@ public final class KillAura extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
-      if (this.renderTarget.get() && this.currentTarget != null && this.currentTarget.isAlive()) {
-         AABB box = Render3D.interpolatedBox(this.currentTarget, partialTick);
-         Render3D.box(box, -6467875, true, true, 1.8F, 45, true);
-      }
+      this.targeting.render(partialTick);
    }
 
    /** Everything remembered here belongs to the world that was just left. */
    @Override
    public void onWorldChange() {
-      this.currentTarget = null;
+      this.forget();
    }
 }

@@ -1,24 +1,30 @@
 package gemini.ui.clickgui;
 
-import gemini.input.Keys;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 import gemini.Gemini;
 import gemini.input.GeminiKeys;
-import gemini.input.KeybindReport;
+import gemini.input.Keys;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.modules.misc.ClickGuiModule;
-import gemini.module.setting.ActionSetting;
-import gemini.module.setting.BooleanSetting;
-import gemini.module.setting.ColorSetting;
 import gemini.module.setting.ListSetting;
-import gemini.module.setting.ModeSetting;
-import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
-import gemini.ui.GeminiMark;
-import gemini.ui.HudOverlay;
 import gemini.ui.Fuzzy;
+import gemini.ui.GeminiMark;
+import gemini.ui.Glass;
+import gemini.ui.Theme;
+import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.clickgui.controls.ListControl;
+import gemini.ui.clickgui.controls.SettingControl;
+import gemini.ui.clickgui.controls.Widgets;
+import gemini.ui.clickgui.window.BaritonePage;
+import gemini.ui.clickgui.window.DashboardPage;
+import gemini.ui.clickgui.window.KeybindsPage;
+import gemini.ui.clickgui.window.ProfilesPage;
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
+import gemini.ui.font.UiFont;
+import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -39,73 +45,168 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 
 /**
- * The default Gemini menu: one centred window with a category sidebar, a searchable module list and a settings
- * pane for the selected module. Drawing and hit-testing share one pass: every clickable element registers a hit
- * rectangle while it is drawn, so input always matches what is on screen.
+ * The Gemini window menu: one centred, rounded window over the blurred and dimmed game. A sidebar lists the
+ * categories and the pages (presets, keybinds, Baritone, mods) with a selection pill that slides between them; the
+ * top bar holds the search, the filters and the theme swatches; the module area is a grid of cards, each with its
+ * name, a one-line description and a switch. A click on a card opens its settings in place, under the card.
+ *
+ * <p>Drawing and hit-testing share one pass: every clickable element registers a hit rectangle while it is drawn,
+ * so input always matches what is on screen. Pages register theirs through {@link DashboardPage.Host}.
+ *
+ * <p>Everything that moves is eased and frame-rate independent (the window scales and fades in and out, the pill
+ * and the switches ride springs, cards unfold, the list glides after the wheel); with the ClickGUI "Animations"
+ * setting off it all happens at once.
  */
-public final class WindowGuiScreen extends Screen {
-   private static final int SIDEBAR = 116;
-   private static final int CARD_H = 30;
-   private static final int CARD_GAP = 4;
+public final class WindowGuiScreen extends Screen implements DashboardPage.Host {
+   private static final int SIDEBAR = 126;
+   private static final int TOP_BAR = 40;
+   private static final int HEADING = 22;
+   private static final int CARD_H = 36;
+   private static final int CARD_GAP = 6;
+   private static final int RADIUS = 8;
+   /** Gap between the content column's edges and everything in it (the pages use the same). */
+   private static final int INSET = 10;
+   /** Height of one text link in the sidebar's bottom group. */
+   private static final int LINK_ROW = 13;
    private static final int FOOTER = 20;
-   private static final int LINE = 12;
-   private static final int TEXT = -1;
-   private static final int TEXT_DIM = -5592406;
-   private static final int TEXT_FAINT = -8355185;
-   private static final String FAVORITES = "★";
-   /** Panel shades for this frame, taken from the ClickGUI "Surface" setting. */
-   private int surface = -15723481;
-   private int surface2 = -15196629;
-   private int surface3 = -14604492;
+   private static final int BIND_ROW = 20;
+   private static final int MORE_ROW = 18;
+   private static final String FAVORITES = "Favorites";
    private static final String[] FILTERS = new String[]{"All", "On", "Bound", FAVORITES};
+   private static final Page[] PAGE_TABS = {Page.PROFILES, Page.KEYBINDS, Page.BARITONE, Page.MODS};
    private static Category lastCategory = Category.COMBAT;
    private static String lastModule;
    private static String rememberedSearch = "";
-   private final long openedAt = Util.getMillis();
+   private static Page lastPage = Page.MODULES;
+   /** Modules whose folded settings were opened with "More settings", by name; kept while the game runs. */
+   private static final java.util.Set<String> unfolded = new java.util.HashSet<>();
+   private final Screen parent;
+   /** The screen this menu was opened over; without a world its background is drawn behind the blur. */
+   private final Screen backdrop;
    private final List<WindowGuiScreen.Hit> hits = new ArrayList<>();
-   private final Map<Module, Float> hoverAnim = new HashMap<>();
-   private final Map<Module, Float> enableAnim = new HashMap<>();
-   private final Map<Setting<?>, Float> settingAnim = new IdentityHashMap<>();
-   private long lastFrame = this.openedAt;
+   private final Map<Module, WindowGuiScreen.Card> cards = new HashMap<>();
+   private final Map<Setting<?>, SettingControl> controls = new IdentityHashMap<>();
+   private final Map<Module, Fuzzy.Match> matches = new HashMap<>();
+   private final Glass.Hover[] tabHover = new Glass.Hover[Category.values().length + PAGE_TABS.length];
+   private final Glass.Hover searchHover = new Glass.Hover();
+   private final Glass.Hover themeHover = new Glass.Hover();
+   private final Glass.Spring pillY = new Glass.Spring(Float.NaN, 240.0F, 0.86F);
+   private final Glass.Spring filterX = new Glass.Spring(Float.NaN, 300.0F, 0.9F);
+   private final Glass.Spring filterW = new Glass.Spring(Float.NaN, 300.0F, 0.9F);
+   private final SmoothScroll listScroll = new SmoothScroll();
+   private final ProfilesPage profilesPage = new ProfilesPage(this);
+   private final KeybindsPage keybindsPage = new KeybindsPage(this);
+   private final BaritonePage baritonePage = new BaritonePage(this);
+   private final gemini.ui.mods.ModsPage modsPage = new gemini.ui.mods.ModsPage(this);
+   private SettingControl activeControl;
+   private long lastFrame = Util.getMillis();
+   private float dt;
+   /** 0 while closed, 1 when fully open; eases both ways. */
+   private float animationProgress;
+   private boolean closing;
    private float open;
+   private float zoom = 1.0F;
    private float uiScale = 1.0F;
    private int vw;
    private int vh;
-   private int slide;
+   private float pillAlpha;
+   private Page page;
    private Category category = lastCategory;
+   /** The card the keyboard is on (and the one last clicked). */
    private Module selected;
+   /** The card whose settings are open, or null. */
+   private Module expanded;
+   private boolean keyboardFocus;
+   private boolean mouseDown;
    private String search = "";
    private boolean searchFocused;
    private String filter = "All";
-   private float listScroll;
-   private float listScrollTarget;
-   private float settingsScroll;
-   private float settingsScrollTarget;
+   private boolean themeOpen;
+   private float themeAnim;
    private int listViewTop;
    private int listViewBottom;
    private int listX;
    private int listW;
-   private int settingsViewTop;
-   private int settingsViewBottom;
-   private int settingsX;
-   private int settingsW;
+   private int columns = 1;
+   private int[] cardHeights = new int[0];
+   private int[] cardTops = new int[0];
+   private int contentHeight;
    private Module binding;
    private boolean bindingMenu;
-   private Setting<?> dragging;
-   private int dragLeft;
-   private int dragRight;
+   /** A setting the search matched in the module just opened: the list scrolls to it once. */
+   private String revealSetting;
+   private int revealOffset = -1;
+   private boolean revealCard;
    private String tip;
    private String flash;
    private long flashUntil;
    private List<Module> shown = List.of();
-   private boolean revealed;
 
+   /** Which part of the menu is showing. */
+   public enum Page {
+      MODULES("Modules"),
+      PROFILES("Presets & Configs"),
+      KEYBINDS("Keybinds"),
+      BARITONE("Baritone"),
+      MODS("Mods");
+
+      public final String label;
+
+      Page(String label) {
+         this.label = label;
+      }
+   }
+
+   /** The eased state of one module card. */
+   private static final class Card {
+      final Glass.Hover hover = new Glass.Hover();
+      final Glass.Spring on = new Glass.Spring(Float.NaN, 260.0F, 0.82F);
+      float expand;
+   }
+
+   /** Opens on the page that was showing last time. */
    public WindowGuiScreen() {
+      this(null, null);
+   }
+
+   /**
+    * Opens on {@code page} (null: the page that was showing last time). {@code parent} is shown again when the
+    * menu closes; null closes to the game or the title screen as usual.
+    */
+   public WindowGuiScreen(Page page, Screen parent) {
       super(Component.literal("Gemini Client"));
+      this.parent = parent;
+      this.backdrop = Menus.backdropFor(parent != null ? parent : Minecraft.getInstance().gui.screen());
+      this.page = page == null ? lastPage : page;
+      for (int i = 0; i < this.tabHover.length; i++) {
+         this.tabHover[i] = new Glass.Hover();
+      }
+
       ClickGuiModule style = style();
       if (style != null && style.keepSearch()) {
          this.search = rememberedSearch;
       }
+
+      this.currentPage().ifPresent(DashboardPage::opened);
+   }
+
+   /**
+    * Opens the Modules page on {@code module}'s category with its settings open (the search cleared), as the
+    * quick-search palette's Shift+Enter does. {@code parent} is shown again when the menu closes.
+    */
+   public static WindowGuiScreen forModule(Module module, Screen parent) {
+      WindowGuiScreen screen = new WindowGuiScreen(Page.MODULES, parent);
+      if (module != null) {
+         screen.category = module.getCategory();
+         screen.selected = module;
+         screen.expanded = module;
+         screen.card(module).expand = 1.0F;
+         screen.search = "";
+         screen.filter = "All";
+         screen.revealCard = true;
+      }
+
+      return screen;
    }
 
    @Override
@@ -116,7 +217,7 @@ public final class WindowGuiScreen extends Screen {
       float base = style == null ? 1.0F : style.scale();
       float scale = base;
       if (style == null || style.autoFit()) {
-         scale = Math.min(base, Math.min(this.width / 470.0F, this.height / 290.0F));
+         scale = Math.min(base, Math.min(this.width / 480.0F, this.height / 330.0F));
       }
 
       this.uiScale = Mth.clamp(scale, 0.45F, 2.0F);
@@ -127,216 +228,420 @@ public final class WindowGuiScreen extends Screen {
       }
    }
 
+   private java.util.Optional<DashboardPage> currentPage() {
+      return java.util.Optional.ofNullable(this.pageFor(this.page));
+   }
+
+   private DashboardPage pageFor(Page p) {
+      return switch (p) {
+         case PROFILES -> this.profilesPage;
+         case KEYBINDS -> this.keybindsPage;
+         case BARITONE -> this.baritonePage;
+         case MODS -> this.modsPage;
+         default -> null;
+      };
+   }
+
+   /** The screen whose background is drawn behind this menu while no world is loaded, or null. */
+   Screen backdrop() {
+      return this.backdrop;
+   }
+
+   private WindowGuiScreen.Card card(Module module) {
+      return this.cards.computeIfAbsent(module, key -> new WindowGuiScreen.Card());
+   }
+
+   // ------------------------------------------------------------------ host for pages
+
+   @Override
+   public Font font() {
+      return this.font;
+   }
+
+   @Override
+   public float fade() {
+      return this.open;
+   }
+
+   @Override
+   public float dt() {
+      return this.dt;
+   }
+
+   @Override
+   public void hit(int x, int y, int w, int h, Object owner, DashboardPage.Click click) {
+      this.hits.add(new WindowGuiScreen.Hit(WindowGuiScreen.Kind.PAGE, x, y, w, h, new WindowGuiScreen.PageHit(owner, click)));
+   }
+
+   @Override
+   public void hit(int x, int y, int w, int h, int clipTop, int clipBottom, Object owner, DashboardPage.Click click) {
+      this.hit(WindowGuiScreen.Kind.PAGE, x, y, w, h, new WindowGuiScreen.PageHit(owner, click), clipTop, clipBottom);
+   }
+
+   @Override
+   public void tip(String text) {
+      this.tip = text;
+   }
+
+   @Override
+   public void notice(String text) {
+      this.showNotice(text);
+   }
+
+   @Override
+   public void beginBind(Module module) {
+      if (module.isBindable()) {
+         this.binding = module;
+         this.bindingMenu = false;
+      } else {
+         this.showNotice(module.getName() + " can't have a key bind");
+      }
+   }
+
+   @Override
+   public Module bindingModule() {
+      return this.binding;
+   }
+
+   @Override
+   public Screen screen() {
+      return this;
+   }
+
    // ------------------------------------------------------------------ rendering
 
-   /** Vanilla blurs the world behind every menu; the ClickGUI "Blur" switch turns that off for this one. */
+   /**
+    * The backdrop: the game (or, without a world, the screen this menu was opened over, else the panorama), blurred
+    * and dimmed. The dim fades with the window; the ClickGUI "Blur" and "Dim" switches turn either part off.
+    */
    @Override
-   protected void extractBlurredBackground(GuiGraphicsExtractor g) {
-      ClickGuiModule style = style();
-      if (style == null || style.blur()) {
-         super.extractBlurredBackground(g);
+   public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+      long now = Util.getMillis();
+      this.dt = Math.min(0.05F, (now - this.lastFrame) / 1000.0F);
+      this.lastFrame = now;
+      // Glass.approach jumps straight to the target when animations are off
+      this.animationProgress = Glass.approach(this.animationProgress, this.closing ? 0.0F : 1.0F, this.closing ? 20.0F : 11.0F, this.dt);
+      this.open = Mth.clamp(this.animationProgress, 0.0F, 1.0F);
+      this.zoom = this.open >= 0.999F ? 1.0F : 0.95F + 0.05F * Glass.easeOutCubic(this.open);
+      if (this.minecraft.level == null) {
+         if (this.backdrop != null) {
+            this.backdrop.extractBackground(g, -1, -1, partialTick);
+         } else {
+            this.extractPanorama(g, partialTick);
+         }
       }
+
+      ClickGuiModule style = style();
+      Glass.backdrop(g, style == null || style.dim() ? 0.5F : 0.0F, this.open);
    }
 
    @Override
    public void extractRenderState(GuiGraphicsExtractor g, int rawMouseX, int rawMouseY, float partialTick) {
       long now = Util.getMillis();
-      float delta = Math.min(0.05F, (now - this.lastFrame) / 1000.0F);
-      this.lastFrame = now;
       ClickGuiModule style = style();
-      boolean animate = style == null || style.animations();
-      this.open = animate ? ease(Math.min(1.0F, (now - this.openedAt) / 220.0F)) : 1.0F;
-      this.slide = Math.round((1.0F - this.open) * 12.0F);
-      Category tint = this.search.isBlank() && !FAVORITES.equals(this.filter) ? this.category : null;
-      int accent = style == null ? -16748289 : style.accentFor(tint);
-      int accent2 = style == null ? -16722689 : style.secondaryFor(tint);
-      float glass = style == null ? 0.9F : style.opacity();
-      if (style != null) {
-         this.surface = style.surface(1);
-         this.surface2 = style.surface(2);
-         this.surface3 = style.surface(3);
-      }
-
       this.hits.clear();
       this.tip = null;
-      if (style == null || style.dim()) {
-         g.fill(0, 0, this.width, this.height, GeminiMark.withAlpha(-16777216, this.a(150)));
+      if (this.closing && this.open <= 0.02F) {
+         super.extractRenderState(g, rawMouseX, rawMouseY, partialTick);
+         return;
       }
 
-      int mouseX = Math.round(rawMouseX / this.uiScale);
-      int mouseY = Math.round(rawMouseY / this.uiScale) - this.slide;
+      Category tint = this.page == Page.MODULES && this.search.isBlank() && !FAVORITES.equals(this.filter) ? this.category : null;
+      int accent = style == null ? Glass.accent() : style.accentFor(tint);
+      int accent2 = style == null ? Glass.accent2() : style.secondaryFor(tint);
+      float glass = style == null ? 0.9F : style.opacity();
+      int mouseX = (int)Math.floor(this.vx(rawMouseX));
+      int mouseY = (int)Math.floor(this.vy(rawMouseY));
       g.pose().pushMatrix();
       g.pose().scale(this.uiScale, this.uiScale);
-      g.pose().translate(0.0F, this.slide);
-      int ww = Mth.clamp(this.vw - 32, 440, 680);
-      int wh = Mth.clamp(this.vh - 32, 270, 400);
-      ww = Math.min(ww, this.vw - 8);
-      wh = Math.min(wh, this.vh - 8);
+      g.pose().translate(this.vw / 2.0F * (1.0F - this.zoom), this.vh / 2.0F * (1.0F - this.zoom));
+      g.pose().scale(this.zoom, this.zoom);
+      int ww = Math.min(Mth.clamp(this.vw - 40, 440, 720), this.vw - 8);
+      int wh = Math.min(Mth.clamp(this.vh - 36, 264, 430), this.vh - 8);
       int wx = (this.vw - ww) / 2;
       int wy = (this.vh - wh) / 2;
-      this.drawShadow(g, wx, wy, ww, wh, accent);
-      roundRect(g, wx, wy, wx + ww, wy + wh, 6, GeminiMark.withAlpha(this.surface, this.a(Math.round(255.0F * glass))));
-      roundRect(g, wx, wy, wx + SIDEBAR, wy + wh, 6, GeminiMark.withAlpha(this.surface2, this.a(Math.round(255.0F * glass))));
-      g.fill(wx + SIDEBAR - 6, wy, wx + SIDEBAR, wy + wh, GeminiMark.withAlpha(this.surface2, this.a(Math.round(255.0F * glass))));
-      g.fill(wx + SIDEBAR, wy + 6, wx + SIDEBAR + 1, wy + wh - 6, GeminiMark.withAlpha(-1, this.a(14)));
-      gradient(g, wx + 6, wy, wx + ww - 6, wy + 2, accent, accent2, this.a(255));
-      this.drawSidebar(g, wx, wy, wh, mouseX, mouseY, accent, accent2, delta);
-      int cx = wx + SIDEBAR + 1;
-      int cw = ww - SIDEBAR - 1;
-      this.drawHeader(g, cx, wy, cw, mouseX, mouseY, accent, accent2, now);
-      int bodyTop = wy + 32;
+      int bodyAlpha = Math.round(255.0F * glass);
+      // One window: a soft shadow, the sidebar a shade darker than the content, a hairline edge.
+      Glass.shadow(g, wx, wy, wx + ww, wy + wh, RADIUS, 22, 8, 0.55F * this.open);
+      Glass.roundRect(g, wx, wy, wx + ww, wy + wh, RADIUS, this.c(Glass.surface(1), bodyAlpha));
+      // the sidebar is the same window, shaded: one clip, so there is never a seam between the two halves
+      g.enableScissor(wx, wy, wx + SIDEBAR, wy + wh);
+      Glass.roundRect(g, wx, wy, wx + SIDEBAR + RADIUS * 2, wy + wh, RADIUS, this.c(Glass.surface(0), 215));
+      g.disableScissor();
+      Glass.roundOutline(g, wx, wy, wx + ww, wy + wh, RADIUS, this.c(Glass.text(), 20));
+      this.drawSidebar(g, wx, wy, wh, mouseX, mouseY, accent, accent2);
+      int cx = wx + SIDEBAR;
+      int cw = ww - SIDEBAR;
       int bodyBottom = wy + wh - FOOTER;
-      this.listX = cx + 8;
-      this.listW = Math.max(150, Math.round((cw - 24) * 0.47F));
-      this.settingsX = this.listX + this.listW + 8;
-      this.settingsW = cx + cw - 8 - this.settingsX;
-      this.shown = this.visibleModules();
-      if (this.selected != null && !this.shown.contains(this.selected) && this.search.isBlank()) {
-         this.selected = null;
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null) {
+         pageView.render(g, cx, wy + 2, cw, bodyBottom - wy - 2, mouseX, mouseY);
+      } else {
+         this.drawModulesPage(g, cx, wy, cw, bodyBottom, mouseX, mouseY, accent, accent2, now);
       }
 
-      if (this.selected == null && !this.shown.isEmpty()) {
-         this.selected = this.shown.get(0);
-      }
-
-      if (!this.revealed) {
-         this.revealed = true;
-         int index = this.selected == null ? -1 : this.shown.indexOf(this.selected);
-         if (index > 0) {
-            float target = index * (CARD_H + CARD_GAP) - (wh - 60) / 3.0F;
-            this.listScrollTarget = Math.max(0.0F, target);
-            this.listScroll = this.listScrollTarget;
-         }
-      }
-
-      this.drawModuleList(g, bodyTop, bodyBottom, mouseX, mouseY, accent, accent2, delta);
-      this.drawSettings(g, bodyTop, bodyBottom, mouseX, mouseY, accent, accent2, delta);
       this.drawFooter(g, cx, bodyBottom, cw, accent2, now);
+      this.drawThemePopover(g, wx + ww - INSET, wy + TOP_BAR - 6, mouseX, mouseY);
       g.pose().popMatrix();
       super.extractRenderState(g, rawMouseX, rawMouseY, partialTick);
    }
 
-   private void drawShadow(GuiGraphicsExtractor g, int x, int y, int w, int h, int accent) {
-      for (int i = 6; i >= 1; i--) {
-         roundRect(g, x - i, y - i + 2, x + w + i, y + h + i + 2, 6 + i, GeminiMark.withAlpha(-16777216, this.a(14)));
-      }
+   // ---- sidebar ------------------------------------------------------------------------------------------
 
-      roundRect(g, x - 1, y - 1, x + w + 1, y + h + 1, 7, GeminiMark.withAlpha(accent, this.a(40)));
-   }
-
-   private void drawSidebar(GuiGraphicsExtractor g, int x, int y, int h, int mouseX, int mouseY, int accent, int accent2, float delta) {
-      float pulse = 0.75F + 0.25F * (float)Math.sin(Util.getMillis() / 500.0);
-      GeminiMark.draw(g, x + 10, y + 10, 22, accent, pulse);
-      g.text(this.font, "Gemini", x + 37, y + 11, GeminiMark.withAlpha(TEXT, this.a(255)), true);
-      String version = "dev".equals(Gemini.VERSION) ? "dev build" : "v" + Gemini.VERSION;
-      g.text(this.font, version, x + 37, y + 22, GeminiMark.withAlpha(accent2, this.a(255)), false);
-      int iy = y + 42;
-      for (Category cat : Category.values()) {
-         boolean active = this.search.isBlank() && !FAVORITES.equals(this.filter) && cat == this.category;
-         boolean over = inside(mouseX, mouseY, x + 6, iy, SIDEBAR - 12, 20);
-         if (active) {
-            roundRect(g, x + 6, iy, x + SIDEBAR - 6, iy + 20, 4, GeminiMark.withAlpha(accent, this.a(46)));
-            g.fill(x + 6, iy + 4, x + 8, iy + 16, GeminiMark.withAlpha(accent, this.a(255)));
-         } else if (over) {
-            roundRect(g, x + 6, iy, x + SIDEBAR - 6, iy + 20, 4, GeminiMark.withAlpha(-1, this.a(10)));
+   private void drawSidebar(GuiGraphicsExtractor g, int x, int y, int h, int mouseX, int mouseY, int accent, int accent2) {
+      GeminiMark.draw(g, x + 13, y + 12, 16, accent, this.open);
+      this.txt(g, "Gemini", x + 35, UiFont.centerY(y + 12, 16, FontSize.LARGE), Glass.text(), FontSize.LARGE, FontWeight.BOLD);
+      int tabsTop = y + 40;
+      if (!SingleplayerGate.allowed()) {
+         // Modules can be configured anywhere, but only run in a private single-player world.
+         String label = "Settings only";
+         int lw = Widgets.chipWidth(label);
+         Widgets.chip(g, label, x + 13 + lw, tabsTop - 1, 12, Widgets.raised(), Glass.textDim(), this.open);
+         if (inside(mouseX, mouseY, x + 13, tabsTop - 1, lw, 12)) {
+            this.tip = plain(SingleplayerGate.denialMessage());
          }
 
-         int iconColor = active ? accent2 : HudOverlay.lerp(cat.accent(), -1, 0.35F);
-         icon(g, cat, x + 14, iy + 7, GeminiMark.withAlpha(iconColor, this.a(active || over ? 255 : 190)));
+         tabsTop += 17;
+      }
+
+      int linksTop = y + h - 10 - 3 * LINK_ROW;
+      int count = Category.values().length + PAGE_TABS.length;
+      int step = Mth.clamp((linksTop - 8 - tabsTop - 10) / count, 13, 21);
+      int th = step - 2;
+      List<Object> tabs = this.tabs();
+      float targetY = Float.NaN;
+      int iy = tabsTop;
+      // pass 1: where the selection pill belongs, so it is drawn under the labels
+      for (Object tab : tabs) {
+         if (tab == PAGE_TABS[0]) {
+            iy += 10;
+         }
+
+         if (this.tabActive(tab)) {
+            targetY = iy - y;
+         }
+
+         iy += step;
+      }
+
+      boolean showPill = !Float.isNaN(targetY);
+      this.pillAlpha = Glass.approach(this.pillAlpha, showPill ? 1.0F : 0.0F, 14.0F, this.dt);
+      if (showPill) {
+         this.pillY.update(targetY, this.dt);
+      }
+
+      if (!Float.isNaN(this.pillY.value) && this.pillAlpha > 0.01F) {
+         int top = y + Math.round(this.pillY.value);
+         float fade = this.pillAlpha * this.open;
+         Glass.roundGradient(
+            g, x + 8, top, x + SIDEBAR - 8, top + th, 5, Glass.fade(Glass.withAlpha(accent, 62), fade), Glass.fade(Glass.withAlpha(accent2, 18), fade)
+         );
+         Glass.roundRect(g, x + 8, top + 4, x + 10, top + th - 4, 1, Glass.fade(accent, fade));
+      }
+
+      iy = tabsTop;
+      int index = 0;
+      for (Object tab : tabs) {
+         if (tab == PAGE_TABS[0]) {
+            iy += 10;
+         }
+
+         this.drawTab(g, tab, this.tabHover[index++], x, iy, th, mouseX, mouseY, accent);
+         iy += step;
+      }
+
+      // The tools under the tabs are quiet text links, two to a row, lined up with the tab labels.
+      int half = (SIDEBAR - 16) / 2;
+      this.sidebarLink(g, x + 8, linksTop, half, "Search", WindowGuiScreen.Kind.PALETTE, mouseX, mouseY, accent, false);
+      this.sidebarLink(g, x + 8 + half, linksTop, half, "Guide", WindowGuiScreen.Kind.HELP, mouseX, mouseY, accent, false);
+      this.sidebarLink(g, x + 8, linksTop + LINK_ROW, half, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
+      this.sidebarLink(g, x + 8 + half, linksTop + LINK_ROW, half, "Panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
+      String menuKey = this.bindingMenu ? "Press a key..." : "Menu key: " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString();
+      this.sidebarLink(g, x + 8, linksTop + 2 * LINK_ROW, SIDEBAR - 16, menuKey, WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
+   }
+
+   private List<Object> tabs() {
+      List<Object> tabs = new ArrayList<>(List.of(Category.values()));
+      tabs.addAll(List.of(PAGE_TABS));
+      return tabs;
+   }
+
+   private boolean tabActive(Object tab) {
+      if (tab instanceof Category cat) {
+         return this.page == Page.MODULES && this.search.isBlank() && !FAVORITES.equals(this.filter) && cat == this.category;
+      }
+
+      return tab == this.page;
+   }
+
+   private void drawTab(GuiGraphicsExtractor g, Object tab, Glass.Hover hover, int x, int iy, int th, int mouseX, int mouseY, int accent) {
+      boolean active = this.tabActive(tab);
+      boolean over = inside(mouseX, mouseY, x + 8, iy, SIDEBAR - 16, th);
+      hover.update(over, over && this.mouseDown, active, this.dt);
+      if (!active && hover.hover > 0.01F) {
+         Glass.roundRect(g, x + 8, iy, x + SIDEBAR - 8, iy + th, 5, this.c(Glass.text(), Math.round(12.0F * hover.hover)));
+      }
+
+      int ty = UiFont.centerY(iy, th);
+      int textColor = Glass.lerp(Glass.textDim(), Glass.text(), Math.max(hover.focus, hover.hover * 0.7F));
+      int iconColor = Glass.lerp(Glass.lerp(Glass.textFaint(), Glass.textDim(), hover.hover), accent, hover.focus);
+      int right = x + SIDEBAR - 14;
+      String name;
+      String key;
+      if (tab instanceof Category cat) {
+         key = cat.name();
+         List<Module> list = modules(cat);
          int on = 0;
-         for (Module module : modules(cat)) {
+         for (Module module : list) {
             if (module.isEnabled() && module.isListed()) {
                on++;
             }
          }
 
-         int badge = on > 0 ? this.font.width(Integer.toString(on)) + 6 + 8 : 0;
-         String catName = fit(this.font, cat.displayName(), SIDEBAR - 27 - 10 - badge);
-         g.text(this.font, catName, x + 27, iy + 6, GeminiMark.withAlpha(active ? TEXT : (over ? -2302756 : TEXT_DIM), this.a(255)), false);
-
+         // Only the number switched on, and only when there is one; the total is not worth a badge.
          if (on > 0) {
             String count = Integer.toString(on);
-            int bw = this.font.width(count) + 6;
-            int bx = x + SIDEBAR - 12 - bw;
-            roundRect(g, bx, iy + 5, bx + bw, iy + 15, 3, GeminiMark.withAlpha(active ? accent : this.surface3, this.a(active ? 150 : 255)));
-            g.text(this.font, count, bx + 3, iy + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
+            int cw = UiFont.width(count, FontSize.SMALL, FontWeight.REGULAR);
+            this.txt(g, count, right - cw, UiFont.centerY(iy, th, FontSize.SMALL), active ? Glass.textDim() : Glass.textFaint(), FontSize.SMALL, FontWeight.REGULAR);
+            right -= cw + 4;
          }
 
-         this.hit(WindowGuiScreen.Kind.CATEGORY, x + 6, iy, SIDEBAR - 12, 20, cat);
+         name = cat.displayName();
+         this.hit(WindowGuiScreen.Kind.CATEGORY, x + 8, iy, SIDEBAR - 16, th, cat);
          if (over) {
-            this.tip = modules(cat).size() + " modules  ·  Tab / Shift+Tab switches category";
+            this.tip = list.size() + " modules, " + on + " on  ·  Tab / Shift+Tab switches tab";
+         }
+      } else {
+         Page p = (Page)tab;
+         key = p.name();
+         name = p == Page.PROFILES ? "Presets" : p.label;
+         if (p == Page.KEYBINDS && Gemini.getInstance() != null) {
+            int conflicts = conflictCount();
+            if (conflicts > 0) {
+               // Meaningful: something to fix. Plain warning-coloured number, no pill.
+               String count = Integer.toString(conflicts);
+               int cw = UiFont.width(count, FontSize.SMALL, FontWeight.MEDIUM);
+               this.txt(g, count, right - cw, UiFont.centerY(iy, th, FontSize.SMALL), Theme.current().warn, FontSize.SMALL, FontWeight.MEDIUM);
+               right -= cw + 4;
+            }
+         } else if (p == Page.BARITONE && gemini.util.BaritoneBridge.isActive()) {
+            Glass.roundRect(g, right - 5, iy + th / 2 - 2, right, iy + th / 2 + 3, 2, this.c(Theme.current().ok));
+            right -= 8;
          }
 
-         iy += 22;
+         this.hit(WindowGuiScreen.Kind.PAGE_TAB, x + 8, iy, SIDEBAR - 16, th, p);
+         if (over) {
+            this.tip = switch (p) {
+               case PROFILES -> "Saved profiles, export and import, built-in presets";
+               case KEYBINDS -> "Every key bind grouped by key, with conflicts to fix";
+               case MODS -> "Find mods and resource packs on Modrinth and manage your mods folder";
+               default -> "Live pathing status and bot quick starts";
+            };
+         }
       }
 
-      int by = y + h - 24;
-      this.sidebarButton(g, x, by, this.bindingMenu ? "Press a key..." : "Menu: " + GeminiKeys.OPEN_GUI.getTranslatedKeyMessage().getString(), WindowGuiScreen.Kind.MENU_KEY, mouseX, mouseY, accent, this.bindingMenu);
-      by -= 20;
-      this.sidebarButton(g, x, by, "Classic panels", WindowGuiScreen.Kind.LAYOUT, mouseX, mouseY, accent, false);
-      by -= 20;
-      this.sidebarButton(g, x, by, "Edit HUD", WindowGuiScreen.Kind.HUD_EDIT, mouseX, mouseY, accent, false);
+      Icons.draw(g, Icons.named(key), x + 15, iy + (th - 10) / 2, 10, this.c(iconColor));
+      FontWeight weight = active ? FontWeight.MEDIUM : FontWeight.REGULAR;
+      this.txt(g, UiFont.ellipsize(name, right - (x + 31) - 2, FontSize.BODY, weight), x + 31, ty, textColor, FontSize.BODY, weight);
    }
 
-   private void sidebarButton(GuiGraphicsExtractor g, int x, int y, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
-      boolean over = inside(mouseX, mouseY, x + 6, y, SIDEBAR - 12, 17);
-      roundRect(
-         g, x + 6, y, x + SIDEBAR - 6, y + 17, 4, GeminiMark.withAlpha(active ? accent : (over ? this.surface3 : this.surface), this.a(active ? 140 : 255))
-      );
-      String text = fit(this.font, label, SIDEBAR - 22);
-      g.text(this.font, text, x + (SIDEBAR - this.font.width(text)) / 2, y + 5, GeminiMark.withAlpha(over || active ? TEXT : TEXT_DIM, this.a(255)), false);
-      this.hit(kind, x + 6, y, SIDEBAR - 12, 17, null);
+   /** Conflicting keys for the sidebar badge: the same cached count the title screen and the pause dock show. */
+   private static int conflictCount() {
+      return gemini.input.BindWarnings.conflictCount(Gemini.getInstance().modules());
+   }
+
+   private void sidebarLink(GuiGraphicsExtractor g, int x, int y, int w, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
+      boolean over = inside(mouseX, mouseY, x, y, w, LINK_ROW);
+      String text = UiFont.ellipsize(label, w - 8, FontSize.SMALL, FontWeight.REGULAR);
+      int color = active ? accent : (over ? Glass.text() : Glass.textFaint());
+      this.txt(g, text, x + 7, UiFont.centerY(y, LINK_ROW, FontSize.SMALL), color, FontSize.SMALL, FontWeight.REGULAR);
+      this.hit(kind, x, y, w, LINK_ROW, null);
       if (over) {
          this.tip = switch (kind) {
             case MENU_KEY -> "Click, then press the key that opens this menu";
-            case LAYOUT -> "Switch to the classic draggable panels (change back in ClickGUI > Layout)";
+            case PALETTE -> "Quick search over modules, settings, commands and pages (" + GeminiKeys.paletteHint() + ")";
+            case HELP -> "What's new, controls, every command and about";
+            case LAYOUT -> "Switch to the draggable category panels (change back in ClickGUI > Layout)";
             default -> "Drag HUD widgets around the screen";
          };
       }
    }
 
-   private void drawHeader(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY, int accent, int accent2, long now) {
-      int filtersW = 0;
-      for (String f : FILTERS) {
-         filtersW += this.font.width(f) + 12 + 3;
+   // ---- modules page -------------------------------------------------------------------------------------
+
+   private void drawModulesPage(GuiGraphicsExtractor g, int cx, int wy, int cw, int bodyBottom, int mouseX, int mouseY, int accent, int accent2, long now) {
+      this.shown = this.visibleModules();
+      if (this.selected != null && !this.shown.contains(this.selected) && this.search.isBlank()) {
+         this.selected = null;
       }
 
-      int sx = x + 8;
-      int sw = w - 16 - filtersW - 6;
-      int sy = y + 9;
-      boolean overSearch = inside(mouseX, mouseY, sx, sy, sw, 16);
-      roundRect(g, sx, sy, sx + sw, sy + 16, 4, GeminiMark.withAlpha(this.searchFocused ? this.surface3 : this.surface2, this.a(255)));
-      if (this.searchFocused) {
-         gradient(g, sx + 4, sy + 15, sx + sw - 4, sy + 16, accent, accent2, this.a(255));
+      if (this.expanded != null && !this.shown.contains(this.expanded)) {
+         this.expanded = null;
       }
 
-      magnifier(g, sx + 6, sy + 4, GeminiMark.withAlpha(this.searchFocused ? accent2 : TEXT_FAINT, this.a(255)));
-      boolean blink = this.searchFocused && now / 450L % 2L == 0L;
-      String text = this.search.isEmpty() && !this.searchFocused ? "Search all modules..." : this.search + (blink ? "_" : "");
-      while (this.font.width(text) > sw - 34 && text.length() > 1) {
-         text = text.substring(1);
+      this.drawTopBar(g, cx, wy, cw, mouseX, mouseY, accent, now);
+      this.drawHeading(g, cx, wy + TOP_BAR, cw);
+      this.listX = cx + INSET;
+      this.listW = cw - INSET * 2;
+      this.listViewTop = wy + TOP_BAR + HEADING;
+      this.listViewBottom = bodyBottom;
+      this.drawModuleGrid(g, mouseX, mouseY, accent, accent2);
+   }
+
+   private void drawTopBar(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY, int accent, long now) {
+      int barY = y + 10;
+      int barH = 20;
+      int right = x + w - INSET;
+      // theme button: a dot in the current accent pair
+      int themeL = right - barH;
+      boolean overTheme = inside(mouseX, mouseY, themeL, barY, barH, barH);
+      this.themeHover.update(overTheme, overTheme && this.mouseDown, this.themeOpen, this.dt);
+      Glass.roundRect(g, themeL, barY, right, barY + barH, 5, this.c(this.themeHover.fill(Glass.surface(2), Widgets.raised())));
+      Glass.roundGradient(g, themeL + 5, barY + 5, right - 5, barY + barH - 5, 5, this.c(Glass.accent()), this.c(Glass.accent2()));
+      this.hit(WindowGuiScreen.Kind.THEME_BUTTON, themeL, barY, barH, barH, null);
+      if (overTheme) {
+         this.tip = "Theme: " + Theme.current().name() + "  ·  click to pick another";
       }
 
-      g.text(this.font, text, sx + 18, sy + 4, GeminiMark.withAlpha(this.search.isEmpty() ? TEXT_FAINT : TEXT, this.a(255)), false);
-      this.hit(WindowGuiScreen.Kind.SEARCH, sx, sy, sw, 16, null);
-      if (!this.search.isEmpty()) {
-         boolean overClear = inside(mouseX, mouseY, sx + sw - 14, sy, 14, 16);
-         g.text(this.font, "x", sx + sw - 10, sy + 4, GeminiMark.withAlpha(overClear ? TEXT : TEXT_FAINT, this.a(255)), false);
-         this.hit(WindowGuiScreen.Kind.CLEAR, sx + sw - 14, sy, 14, 16, null);
+      right = themeL - 6;
+      // filters: one segmented control, the highlight slides to the active one
+      int[] widths = new int[FILTERS.length];
+      int filtersW = 2;
+      for (int i = 0; i < FILTERS.length; i++) {
+         widths[i] = (FAVORITES.equals(FILTERS[i]) ? 9 : UiFont.width(FILTERS[i], FontSize.SMALL, FontWeight.MEDIUM)) + 14;
+         filtersW += widths[i];
       }
 
-      if (overSearch) {
-         this.tip = "Type anywhere to search  ·  Ctrl+F focuses  ·  Esc clears";
+      int bedL = right - filtersW;
+      Glass.roundRect(g, bedL, barY, right, barY + barH, 5, this.c(Glass.surface(2)));
+      int fx = bedL + 1;
+      int activeX = fx;
+      int activeW = widths[0];
+      for (int i = 0; i < FILTERS.length; i++) {
+         if (FILTERS[i].equals(this.filter)) {
+            activeX = fx;
+            activeW = widths[i];
+         }
+
+         fx += widths[i];
       }
 
-      int fx = sx + sw + 6;
-      for (String f : FILTERS) {
-         int fw = this.font.width(f) + 12;
+      float px = this.filterX.update(activeX - bedL, this.dt);
+      float pw = this.filterW.update(activeW, this.dt);
+      Glass.roundRect(g, bedL + Math.round(px), barY + 1, bedL + Math.round(px + pw), barY + barH - 1, 4, this.c(Widgets.raised()));
+      fx = bedL + 1;
+      for (int i = 0; i < FILTERS.length; i++) {
+         String f = FILTERS[i];
          boolean active = f.equals(this.filter);
-         boolean over = inside(mouseX, mouseY, fx, sy, fw, 16);
-         roundRect(g, fx, sy, fx + fw, sy + 16, 4, GeminiMark.withAlpha(active ? accent : (over ? this.surface3 : this.surface2), this.a(active ? 170 : 255)));
-         g.text(this.font, f, fx + 6, sy + 4, GeminiMark.withAlpha(active || over ? TEXT : TEXT_DIM, this.a(255)), false);
-         this.hit(WindowGuiScreen.Kind.FILTER, fx, sy, fw, 16, f);
+         boolean over = inside(mouseX, mouseY, fx, barY, widths[i], barH);
+         int color = active ? Glass.text() : (over ? Glass.lerp(Glass.textDim(), Glass.text(), 0.6F) : Glass.textDim());
+         if (FAVORITES.equals(f)) {
+            Icons.draw(g, active ? Icons.Icon.STAR : Icons.Icon.STAR_OUTLINE, fx + 7, barY + 5, 10, this.c(active ? accent : color));
+         } else {
+            this.txt(g, f, fx + 7, UiFont.centerY(barY, barH, FontSize.SMALL), color, FontSize.SMALL, FontWeight.MEDIUM);
+         }
+
+         this.hit(WindowGuiScreen.Kind.FILTER, fx, barY, widths[i], barH, f);
          if (over) {
             this.tip = switch (f) {
                case "On" -> "Only show modules that are switched on";
@@ -346,141 +651,244 @@ public final class WindowGuiScreen extends Screen {
             };
          }
 
-         fx += fw + 3;
+         fx += widths[i];
+      }
+
+      // search takes the rest
+      int sx = x + INSET;
+      int sw = bedL - 6 - sx;
+      boolean overSearch = inside(mouseX, mouseY, sx, barY, sw, barH);
+      this.searchHover.update(overSearch, false, this.searchFocused, this.dt);
+      Glass.roundRect(g, sx, barY, sx + sw, barY + barH, 5, this.c(this.searchHover.fill(Glass.surface(2), Widgets.raised())));
+      if (this.searchHover.focus > 0.01F) {
+         Glass.roundOutline(g, sx, barY, sx + sw, barY + barH, 5, this.c(accent, Math.round(150.0F * this.searchHover.focus)));
+      }
+
+      Icons.draw(g, Icons.Icon.SEARCH, sx + 6, barY + 5, 10, this.c(Glass.lerp(Glass.textFaint(), accent, this.searchHover.focus)));
+      int textX = sx + 21;
+      int room = sw - 21 - (this.search.isEmpty() ? 6 : 18);
+      int textY = UiFont.centerY(barY, barH);
+      if (this.search.isEmpty()) {
+         this.txt(g, UiFont.ellipsize(this.searchFocused ? "Type to search" : "Search modules and settings", room), textX, textY, Glass.textFaint());
+         if (this.searchFocused && now / 450L % 2L == 0L) {
+            g.fill(textX - 1, barY + 5, textX, barY + barH - 5, this.c(Glass.text()));
+         }
+      } else {
+         String text = this.search;
+         while (UiFont.width(text) > room && text.length() > 1) {
+            text = text.substring(1);
+         }
+
+         this.txt(g, text, textX, textY, Glass.text());
+         if (this.searchFocused && now / 450L % 2L == 0L) {
+            int caret = textX + UiFont.width(text) + 1;
+            g.fill(caret, barY + 5, caret + 1, barY + barH - 5, this.c(Glass.text()));
+         }
+
+         boolean overClear = inside(mouseX, mouseY, sx + sw - 18, barY, 18, barH);
+         Icons.draw(g, Icons.Icon.CLOSE, sx + sw - 14, barY + 6, 8, this.c(overClear ? Glass.text() : Glass.textFaint()));
+      }
+
+      this.hit(WindowGuiScreen.Kind.SEARCH, sx, barY, sw, barH, null);
+      if (!this.search.isEmpty()) {
+         this.hit(WindowGuiScreen.Kind.CLEAR, sx + sw - 18, barY, 18, barH, null);
+      }
+
+      if (overSearch) {
+         this.tip = "Type anywhere to search  ·  setting names count too  ·  Ctrl+F focuses  ·  Esc clears";
       }
    }
 
-   private void drawModuleList(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
-      int x = this.listX;
-      int w = this.listW;
+   private void drawHeading(GuiGraphicsExtractor g, int x, int y, int w) {
       String heading = !this.search.isBlank()
          ? "Results for \"" + this.search.trim() + "\""
          : (FAVORITES.equals(this.filter) ? "Favorites" : this.category.displayName());
-      g.text(this.font, fit(this.font, heading, w - 40), x + 2, top, GeminiMark.withAlpha(TEXT, this.a(255)), false);
-      String count = this.shown.size() + (this.shown.size() == 1 ? " module" : " modules");
-      g.text(this.font, count, x + w - this.font.width(count), top, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
-      this.listViewTop = top + 17;
-      this.listViewBottom = bottom - 4;
+      int on = 0;
+      for (Module module : this.shown) {
+         if (module.isEnabled()) {
+            on++;
+         }
+      }
+
+      String count = this.shown.size() + (this.shown.size() == 1 ? " module" : " modules") + (on > 0 ? "  ·  " + on + " on" : "");
+      int countW = UiFont.width(count, FontSize.SMALL, FontWeight.REGULAR);
+      this.txt(g, count, x + w - INSET - 1 - countW, y + 6, Glass.textFaint(), FontSize.SMALL, FontWeight.REGULAR);
+      this.txt(g, UiFont.ellipsize(heading, w - 40 - countW, FontSize.LARGE, FontWeight.MEDIUM), x + INSET + 1, y + 3, Glass.text(), FontSize.LARGE, FontWeight.MEDIUM);
+   }
+
+   private void drawModuleGrid(GuiGraphicsExtractor g, int mouseX, int mouseY, int accent, int accent2) {
+      int x = this.listX;
       int viewH = this.listViewBottom - this.listViewTop;
-      int contentH = this.shown.size() * (CARD_H + CARD_GAP);
-      float maxScroll = Math.max(0, contentH - viewH);
-      this.listScrollTarget = Mth.clamp(this.listScrollTarget, 0.0F, maxScroll);
-      this.listScroll = approach(this.listScroll, this.listScrollTarget, delta, 18.0F);
-      if (this.shown.isEmpty()) {
-         String empty = this.search.isBlank() ? "Nothing matches this filter." : "No module matches your search.";
-         g.text(this.font, empty, x + (w - this.font.width(empty)) / 2, this.listViewTop + 20, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
+      int count = this.shown.size();
+      if (count == 0) {
+         String empty = this.search.isBlank()
+            ? (FAVORITES.equals(this.filter) ? "No favourites yet. Hover a module and click its star." : "Nothing matches this filter.")
+            : "No module or setting matches your search.";
+         this.txt(g, empty, x + (this.listW - UiFont.width(empty)) / 2, this.listViewTop + 24, Glass.textFaint());
          return;
       }
 
-      g.enableScissor(x, this.listViewTop, x + w, this.listViewBottom);
-      int y = this.listViewTop - Math.round(this.listScroll);
-      boolean searchMode = !this.search.isBlank();
-      for (Module module : this.shown) {
-         if (y + CARD_H >= this.listViewTop && y <= this.listViewBottom) {
-            boolean over = inside(mouseX, mouseY, x, y, w, CARD_H) && mouseY >= this.listViewTop && mouseY < this.listViewBottom;
-            this.drawCard(g, module, x, y, w, over, module == this.selected, searchMode, accent, accent2, delta);
-            if (over) {
-               this.tip = module.canActivate() || module instanceof ClickGuiModule
-                  ? module.getDescription()
-                  : module.blockedReason().replaceAll("§.", "");
-            }
-         } else {
-            this.hoverAnim.remove(module);
+      int gridW = this.listW;
+      this.columns = CardGrid.columns(gridW, CARD_GAP);
+      int cardW = CardGrid.cardWidth(gridW, this.columns, CARD_GAP);
+      if (this.cardHeights.length < count) {
+         this.cardHeights = new int[count + 16];
+         this.cardTops = new int[count + 16];
+      }
+
+      this.revealOffset = -1;
+      for (int i = 0; i < count; i++) {
+         Module module = this.shown.get(i);
+         WindowGuiScreen.Card card = this.card(module);
+         card.expand = Glass.approach(card.expand, module == this.expanded ? 1.0F : 0.0F, 13.0F, this.dt);
+         int height = CARD_H;
+         if (card.expand > 0.001F) {
+            int body = this.settingsBody(null, module, 0, 0, cardW, SettingControl.NO_MOUSE, SettingControl.NO_MOUSE, 0, 0, accent, accent2);
+            height += Math.round(body * Glass.easeInOut(card.expand));
          }
 
-         y += CARD_H + CARD_GAP;
+         this.cardHeights[i] = height;
+      }
+
+      this.contentHeight = CardGrid.layout(this.cardHeights, count, this.columns, CARD_GAP, this.cardTops) + 8;
+      if (this.revealCard && this.expanded != null) {
+         // bring the card that was just opened (or the setting the search matched in it) into view, once
+         int index = this.shown.indexOf(this.expanded);
+         WindowGuiScreen.Card card = this.card(this.expanded);
+         if (index >= 0 && (card.expand > 0.98F || !Glass.animations())) {
+            int top = this.cardTops[index];
+            if (this.revealOffset >= 0) {
+               this.listScroll.reveal(top + CARD_H + this.revealOffset - 24, top + CARD_H + this.revealOffset + 44, viewH);
+            } else {
+               this.listScroll.reveal(top - 4, top + this.cardHeights[index] + 4, viewH);
+            }
+
+            this.revealCard = false;
+            this.revealSetting = null;
+         }
+      }
+
+      this.listScroll.update(this.dt, this.contentHeight - viewH, Glass.animations());
+      int scroll = this.listScroll.pixels();
+      g.enableScissor(x - 2, this.listViewTop, x + this.listW, this.listViewBottom);
+      boolean inView = mouseY >= this.listViewTop && mouseY < this.listViewBottom;
+      for (int i = 0; i < count; i++) {
+         Module module = this.shown.get(i);
+         int cardX = x + CardGrid.columnX(CardGrid.column(i, this.columns), gridW, this.columns, CARD_GAP);
+         int cardY = this.listViewTop + this.cardTops[i] - scroll;
+         int height = this.cardHeights[i];
+         if (cardY + height < this.listViewTop || cardY > this.listViewBottom) {
+            this.card(module).hover.update(false, false, this.dt);
+            continue;
+         }
+
+         this.drawCard(g, module, cardX, cardY, cardW, height, inView ? mouseX : SettingControl.NO_MOUSE, mouseY, accent, accent2);
       }
 
       g.disableScissor();
-      this.scrollbar(g, x + w + 2, this.listViewTop, viewH, contentH, this.listScroll, accent);
+      if (scroll > 0) {
+         // cards scrolled under the heading fade out instead of being cut off by a hard edge
+         int shade = Math.round(255.0F * Math.min(1.0F, scroll / 8.0F));
+         Glass.gradientV(g, x - 2, this.listViewTop, x + this.listW + 2, this.listViewTop + 7, this.c(Glass.surface(1), shade), this.c(Glass.surface(1), 0));
+      }
+
+      Widgets.scrollbar(g, x + this.listW + 3, this.listViewTop + 2, viewH - 6, this.contentHeight, this.listScroll.value(), this.open);
    }
 
-   private void drawCard(
-      GuiGraphicsExtractor g, Module module, int x, int y, int w, boolean over, boolean selected, boolean searchMode, int accent, int accent2, float delta
-   ) {
-      float hover = this.anim(this.hoverAnim, module, over ? 1.0F : 0.0F, delta, 16.0F);
-      float on = this.anim(this.enableAnim, module, module.isEnabled() ? 1.0F : 0.0F, delta, 12.0F);
-      boolean blocked = !module.canActivate() && !(module instanceof ClickGuiModule);
-      roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(selected ? this.surface3 : this.surface2, this.a(255)));
-      if (on > 0.01F) {
-         roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(accent, this.a(Math.round(34.0F * on))));
-         g.fill(x, y + 5, x + 2, y + CARD_H - 5, GeminiMark.withAlpha(accent2, this.a(Math.round(255.0F * on))));
+   /** A module that cannot be switched on right now (no world, sandbox off...). The ClickGUI module is never toggled. */
+   private static boolean blocked(Module module) {
+      return !(module instanceof ClickGuiModule) && !module.canActivate();
+   }
+
+   private void drawCard(GuiGraphicsExtractor g, Module module, int x, int y, int w, int h, int mouseX, int mouseY, int accent, int accent2) {
+      WindowGuiScreen.Card card = this.card(module);
+      boolean blocked = blocked(module);
+      boolean switchedOn = !(module instanceof ClickGuiModule) && (blocked ? module.isSavedEnabled() : module.isEnabled());
+      boolean over = mouseX != SettingControl.NO_MOUSE && inside(mouseX, mouseY, x, y, w, CARD_H);
+      boolean focused = this.keyboardFocus && module == this.selected;
+      card.hover.update(over, over && this.mouseDown, focused, this.dt);
+      float on = Mth.clamp(card.on.update(switchedOn ? 1.0F : 0.0F, this.dt), 0.0F, 1.0F);
+      float lit = blocked ? on * 0.35F : on;
+      boolean searchMode = !this.search.isBlank();
+      // The card: a raised surface; a module that is on gets a wash of the accent and an accent edge.
+      int fill = card.hover.fill(Glass.surface(2), Glass.lerp(Glass.surface(2), Glass.surface(3), 0.7F));
+      fill = Theme.mix(fill, accent, 0.11F * lit);
+      Glass.roundRect(g, x, y, x + w, y + h, 6, this.c(fill));
+      if (lit > 0.01F) {
+         Glass.roundOutline(g, x, y, x + w, y + h, 6, this.c(accent, Math.round(76.0F * lit)));
       }
 
-      if (hover > 0.01F) {
-         roundRect(g, x, y, x + w, y + CARD_H, 4, GeminiMark.withAlpha(-1, this.a(Math.round(9.0F * hover))));
+      if (card.hover.focus > 0.01F) {
+         Glass.roundOutline(g, x - 1, y - 1, x + w + 1, y + h + 1, 7, this.c(accent2, Math.round(200.0F * card.hover.focus)));
       }
 
-      if (selected) {
-         outline(g, x, y, x + w, y + CARD_H, GeminiMark.withAlpha(accent, this.a(110)));
-      }
-
-      // The card is registered before its switch so a click on the switch toggles instead of selecting.
+      // The card is registered before its switch so a click on the switch toggles instead of opening.
       this.hit(WindowGuiScreen.Kind.CARD, x, y, w, CARD_H, module, this.listViewTop, this.listViewBottom);
-      boolean toggleable = !(module instanceof ClickGuiModule);
-      int right = x + w - 8;
-      if (toggleable) {
-         int sx = right - 18;
-         this.drawSwitch(g, sx, y + 10, on, accent, accent2, blocked);
-         this.hit(WindowGuiScreen.Kind.SWITCH, sx - 4, y, 26, CARD_H, module, this.listViewTop, this.listViewBottom);
-         right = sx - 6;
+      int right = x + w - 10;
+      if (!(module instanceof ClickGuiModule)) {
+         int sx = right - Widgets.TOGGLE_W;
+         Widgets.toggle(g, sx, y + (CARD_H - Widgets.TOGGLE_H) / 2, on, Glass.lerp(accent, accent2, 0.25F), !blocked, this.open);
+         this.hit(WindowGuiScreen.Kind.SWITCH, sx - 5, y, Widgets.TOGGLE_W + 15, CARD_H, module, this.listViewTop, this.listViewBottom);
+         right = sx - 7;
       }
 
       ClickGuiModule style = style();
       boolean starred = style != null && style.isFavorite(module);
-      if (starred || hover > 0.3F) {
-         int starW = this.font.width(FAVORITES);
-         int starAlpha = starred ? 255 : Math.round(140.0F * hover);
-         g.text(this.font, FAVORITES, right - starW, y + 6, GeminiMark.withAlpha(starred ? accent2 : TEXT_FAINT, this.a(starAlpha)), false);
-         this.hit(WindowGuiScreen.Kind.STAR, right - starW - 3, y, starW + 6, CARD_H, module, this.listViewTop, this.listViewBottom);
-         right -= starW + 6;
+      if (starred || card.hover.hover > 0.2F) {
+         boolean overStar = over && mouseX >= right - 13 && mouseX < right + 3;
+         int starColor = starred ? accent2 : (overStar ? Glass.text() : Glass.textFaint());
+         Icons.draw(g, starred ? Icons.Icon.STAR : Icons.Icon.STAR_OUTLINE, right - 10, y + (CARD_H - 10) / 2, 10, this.c(starColor, starred ? 255 : Math.round(255.0F * card.hover.hover)));
+         this.hit(WindowGuiScreen.Kind.STAR, right - 13, y, 16, CARD_H, module, this.listViewTop, this.listViewBottom);
+         if (overStar) {
+            this.tip = starred ? "Remove from favourites" : "Add to favourites";
+         }
+
+         right -= 15;
       }
 
-      String key = this.binding == module ? "..." : (module.getKeybind() == -1 ? null : GeminiKeys.displayName(module.getKeybind()));
+      String key = this.binding == module ? "Press a key" : (module.getKeybind() == -1 ? null : GeminiKeys.displayName(module.getKeybind()));
       if (key != null && !"NONE".equals(key)) {
-         String label = module.isHoldBind() ? key + " hold" : key;
-         int kw = this.font.width(label) + 6;
-         roundRect(g, right - kw, y + 6, right, y + 17, 3, GeminiMark.withAlpha(this.surface, this.a(255)));
-         g.text(this.font, label, right - kw + 3, y + 8, GeminiMark.withAlpha(this.binding == module ? accent2 : TEXT_DIM, this.a(255)), false);
-         right -= kw + 6;
+         boolean capturing = this.binding == module;
+         String label = module.isHoldBind() && !capturing ? key + " hold" : key;
+         right = Widgets.chip(
+            g, label, right, y + (CARD_H - 12) / 2, 12, capturing ? accent : Glass.lerp(fill, Glass.text(), 0.09F), capturing ? Theme.onColor(accent) : Glass.textDim(), this.open
+         ) - 5;
       }
 
-      int nameColor = blocked ? TEXT_FAINT : (module.isEnabled() ? TEXT : (over ? -2302756 : -3355444));
-      int textX = x + 9 + Math.round(hover * 2.0F);
-      g.text(this.font, fit(this.font, module.getName(), right - textX - 6), textX, y + 6, GeminiMark.withAlpha(nameColor, this.a(255)), false);
-      String description = searchMode ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
-      g.text(this.font, fit(this.font, description, x + w - 38 - textX), textX, y + 18, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
+      int textX = x + 11;
+      int nameColor = blocked ? Glass.textFaint() : Glass.lerp(Glass.lerp(Glass.textDim(), Glass.text(), 0.5F + 0.5F * card.hover.hover), Glass.text(), on);
+      this.txt(g, UiFont.ellipsize(module.getName(), right - textX - 4, FontSize.BODY, FontWeight.MEDIUM), textX, y + 8, nameColor, FontSize.BODY, FontWeight.MEDIUM);
+      Fuzzy.Match match = searchMode ? this.matches.get(module) : null;
+      String sub;
+      int subColor = Glass.textFaint();
+      if (match != null && match.setting() != null) {
+         // the search found this module through one of its settings: say which
+         sub = "Setting: " + match.setting();
+         subColor = Glass.textDim();
+      } else {
+         sub = searchMode || FAVORITES.equals(this.filter) ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
+      }
+
+      this.txt(g, UiFont.ellipsize(sub, right - textX - 2, FontSize.SMALL, FontWeight.REGULAR), textX, y + 22, subColor, FontSize.SMALL, FontWeight.REGULAR);
+      if (over && this.tip == null) {
+         this.tip = blocked ? plain(module.blockedReason()) + "  ·  you can still change its settings" : module.getDescription();
+      }
+
+      int bodyH = h - CARD_H;
+      if (bodyH > 0) {
+         int clipTop = Math.max(this.listViewTop, y + CARD_H);
+         int clipBottom = Math.min(this.listViewBottom, y + h);
+         g.fill(x + 10, y + CARD_H, x + w - 10, y + CARD_H + 1, this.c(Widgets.divider()));
+         if (clipBottom > clipTop) {
+            g.enableScissor(x, y + CARD_H, x + w, y + h);
+            this.settingsBody(g, module, x, y + CARD_H, w, mouseX, mouseY, clipTop, clipBottom, accent, accent2);
+            g.disableScissor();
+         }
+      }
    }
 
-   private void drawSettings(GuiGraphicsExtractor g, int top, int bottom, int mouseX, int mouseY, int accent, int accent2, float delta) {
-      int x = this.settingsX;
-      int w = this.settingsW;
-      roundRect(g, x, top - 2, x + w, bottom - 4, 5, GeminiMark.withAlpha(this.surface2, this.a(255)));
-      Module module = this.selected;
-      if (module == null) {
-         String text = "Select a module to see its settings";
-         g.text(this.font, text, x + (w - this.font.width(text)) / 2, top + 30, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
-         return;
-      }
-
-      g.text(this.font, fit(this.font, module.getName(), w - 50), x + 9, top + 6, GeminiMark.withAlpha(TEXT, this.a(255)), true);
-      if (!(module instanceof ClickGuiModule)) {
-         float on = this.anim(this.enableAnim, module, module.isEnabled() ? 1.0F : 0.0F, delta, 12.0F);
-         int sx = x + w - 27;
-         this.drawSwitch(g, sx, top + 6, on, accent, accent2, !module.canActivate());
-         this.hit(WindowGuiScreen.Kind.SWITCH, sx - 3, top + 2, 24, 16, module);
-      }
-
-      List<String> lines = wrap(this.font, module.getDescription(), w - 18);
-      int ty = top + 21;
-      for (int i = 0; i < Math.min(3, lines.size()); i++) {
-         g.text(this.font, lines.get(i), x + 9, ty, GeminiMark.withAlpha(TEXT_DIM, this.a(255)), false);
-         ty += LINE;
-      }
-
-      this.settingsViewTop = ty + 6;
-      this.settingsViewBottom = bottom - 8;
-      g.fill(x + 8, this.settingsViewTop - 2, x + w - 8, this.settingsViewTop - 1, GeminiMark.withAlpha(-1, this.a(16)));
+   /** The visible settings of a module, in order. */
+   private static List<Setting<?>> visibleSettings(Module module) {
       List<Setting<?>> settings = new ArrayList<>();
       for (Setting<?> setting : module.settings()) {
          if (setting.visible()) {
@@ -488,180 +896,230 @@ public final class WindowGuiScreen extends Screen {
          }
       }
 
-      boolean bindable = module.isBindable();
-      int contentH = (bindable ? 22 : 0) + 4;
-      for (Setting<?> setting : settings) {
-         contentH += rowHeight(setting);
+      return settings;
+   }
+
+   /**
+    * The settings under an open card: the reason it cannot run here (if any), the key bind, the settings and the
+    * "More settings" row. With {@code g} null nothing is drawn and no hit is registered: the call only measures.
+    * Returns the full height.
+    */
+   private int settingsBody(
+      GuiGraphicsExtractor g, Module module, int x, int y, int w, int mouseX, int mouseY, int clipTop, int clipBottom, int accent, int accent2
+   ) {
+      boolean draw = g != null;
+      boolean live = draw && mouseX != SettingControl.NO_MOUSE && mouseY >= clipTop && mouseY < clipBottom;
+      int ry = y + 5;
+      boolean blocked = blocked(module);
+      if (blocked) {
+         if (draw) {
+            String reason = plain(module.blockedReason());
+            // Without a world the full reason doesn't fit the card; the short form says the same thing.
+            String shownReason = this.minecraft.player == null ? "Can be switched on in a world" : reason;
+            this.txt(g, UiFont.ellipsize(shownReason, w - 22, FontSize.SMALL, FontWeight.REGULAR), x + 11, ry + 3, Glass.textFaint(), FontSize.SMALL, FontWeight.REGULAR);
+            if (live && inside(mouseX, mouseY, x, ry, w, 14)) {
+               this.tip = reason + "  ·  settings changed here apply when it can run";
+            }
+         }
+
+         ry += 14;
       }
 
-      int viewH = this.settingsViewBottom - this.settingsViewTop;
-      float maxScroll = Math.max(0, contentH - viewH);
-      this.settingsScrollTarget = Mth.clamp(this.settingsScrollTarget, 0.0F, maxScroll);
-      this.settingsScroll = approach(this.settingsScroll, this.settingsScrollTarget, delta, 18.0F);
-      g.enableScissor(x, this.settingsViewTop, x + w, this.settingsViewBottom);
-      int ry = this.settingsViewTop + 4 - Math.round(this.settingsScroll);
-      if (bindable) {
-         this.drawBindRow(g, module, x + 4, ry, w - 8, mouseX, mouseY, accent2);
-         ry += 22;
+      if (module.isBindable()) {
+         if (draw) {
+            this.drawBindRow(g, module, x + 3, ry, w - 6, live ? mouseX : SettingControl.NO_MOUSE, mouseY, accent, clipTop, clipBottom);
+         }
+
+         ry += BIND_ROW;
       }
 
-      for (Setting<?> setting : settings) {
-         int rh = rowHeight(setting);
-         if (ry + rh >= this.settingsViewTop && ry <= this.settingsViewBottom) {
-            boolean over = inside(mouseX, mouseY, x + 4, ry, w - 8, rh) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
-            this.drawSetting(g, module, setting, x + 4, ry, w - 8, rh, over, accent, accent2, delta);
+      List<Setting<?>> settings = visibleSettings(module);
+      int total = settings.size();
+      if (this.revealSetting != null && module == this.expanded) {
+         // the search jumped to a setting: unfold the module if that setting is past the fold
+         for (int i = 0; i < total; i++) {
+            if (settings.get(i).name().equals(this.revealSetting) && SettingDisclosure.needsUnfold(i, total)) {
+               unfolded.add(module.getName());
+            }
+         }
+      }
+
+      // Long setting lists show the first few and a "More settings" row (see SettingDisclosure).
+      boolean searching = !this.search.isBlank();
+      boolean unfoldedNow = unfolded.contains(module.getName());
+      int shownCount = SettingDisclosure.shown(total, unfoldedNow, searching);
+      boolean moreRow = SettingDisclosure.foldable(total) && !searching;
+      String query = this.search.trim();
+      for (int i = 0; i < shownCount; i++) {
+         Setting<?> setting = settings.get(i);
+         SettingControl control = this.control(module, setting);
+         if (control == null) {
+            continue;
+         }
+
+         int rh = control.height();
+         if (!draw && setting.name().equals(this.revealSetting) && module == this.expanded) {
+            this.revealOffset = ry - y;
+         }
+
+         if (draw && ry + rh >= clipTop && ry <= clipBottom) {
+            if (!query.isEmpty() && Fuzzy.substringScore(query, setting.name()) > 0) {
+               // a setting the search matched: a wash of the accent so it stands out in the list
+               Glass.roundRect(g, x + 5, ry, x + w - 5, ry + rh, 3, this.c(accent, 34));
+            }
+
+            boolean over = live && inside(mouseX, mouseY, x + 3, ry, w - 6, rh);
+            control.setOpacity(this.open);
+            control.setAccent(accent, accent2);
+            control.render(g, x + 3, ry, w - 6, live ? mouseX : SettingControl.NO_MOUSE, live ? mouseY : SettingControl.NO_MOUSE, this.dt);
+            this.hit(WindowGuiScreen.Kind.CONTROL, x + 3, ry, w - 6, rh, control, clipTop, clipBottom);
             if (over) {
-               this.tip = setting.description();
+               String hint = control.hint();
+               this.tip = hint == null ? setting.description() : setting.description() + "  ·  " + hint;
             }
          }
 
          ry += rh;
       }
 
-      g.disableScissor();
-      if (settings.isEmpty() && !bindable) {
-         String text = "This module has no settings";
-         g.text(this.font, text, x + (w - this.font.width(text)) / 2, this.settingsViewTop + 12, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
+      if (moreRow) {
+         if (draw) {
+            String label = unfoldedNow ? "Fewer settings" : "More settings (" + (total - shownCount) + ")";
+            boolean over = live && inside(mouseX, mouseY, x + 3, ry, w - 6, MORE_ROW);
+            int color = over ? Glass.text() : Glass.textDim();
+            Icons.draw(g, unfoldedNow ? Icons.Icon.CHEVRON_DOWN : Icons.Icon.CHEVRON_RIGHT, x + 10, ry + 5, 8, this.c(color));
+            this.txt(g, label, x + 22, UiFont.centerY(ry, MORE_ROW, FontSize.SMALL), color, FontSize.SMALL, FontWeight.MEDIUM);
+            this.hit(WindowGuiScreen.Kind.MORE, x + 3, ry, w - 6, MORE_ROW, module, clipTop, clipBottom);
+         }
+
+         ry += MORE_ROW;
       }
 
-      this.scrollbar(g, x + w - 4, this.settingsViewTop, viewH, contentH, this.settingsScroll, accent);
+      if (total == 0 && !module.isBindable()) {
+         if (draw) {
+            this.txt(g, "No settings", x + 11, ry + 3, Glass.textFaint(), FontSize.SMALL, FontWeight.REGULAR);
+         }
+
+         ry += 14;
+      }
+
+      return ry + 5 - y;
    }
 
-   private void drawBindRow(GuiGraphicsExtractor g, Module module, int x, int y, int w, int mouseX, int mouseY, int accent2) {
-      boolean over = inside(mouseX, mouseY, x, y, w, 20) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
+   private void drawBindRow(GuiGraphicsExtractor g, Module module, int x, int y, int w, int mouseX, int mouseY, int accent, int clipTop, int clipBottom) {
+      boolean over = mouseX != SettingControl.NO_MOUSE && inside(mouseX, mouseY, x, y, w, BIND_ROW);
+      Widgets.rowHover(g, x, y, w, BIND_ROW, over ? 1.0F : 0.0F, this.open);
       if (over) {
-         roundRect(g, x, y, x + w, y + 20, 3, GeminiMark.withAlpha(-1, this.a(10)));
          this.tip = "Click and press a key to bind  ·  right-click clears  ·  Bind Mode picks Toggle or Hold";
       }
 
-      g.text(this.font, "Keybind", x + 8, y + 6, GeminiMark.withAlpha(TEXT_DIM, this.a(255)), false);
+      this.txt(g, "Keybind", x + Widgets.PAD, UiFont.centerY(y, BIND_ROW), Widgets.label(module.getKeybind() == -1));
+      boolean capturing = this.binding == module;
       String key;
-      if (this.binding == module) {
-         key = "Press a key...";
+      if (capturing) {
+         key = "Press a key";
       } else {
          key = module.getKeybind() == -1 ? "None" : GeminiKeys.displayName(module.getKeybind());
          if (module.getKeybind() != -1 && module.isHoldBind()) {
-            key = key + "  (hold)";
+            key = key + " (hold)";
          }
       }
 
-      int kw = this.font.width(key) + 10;
-      roundRect(g, x + w - 8 - kw, y + 4, x + w - 8, y + 16, 3, GeminiMark.withAlpha(this.binding == module ? accent2 : this.surface3, this.a(this.binding == module ? 120 : 255)));
-      g.text(this.font, key, x + w - 8 - kw + 5, y + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
-      this.hit(WindowGuiScreen.Kind.BIND, x, y, w, 20, module, this.settingsViewTop, this.settingsViewBottom);
+      Widgets.chip(
+         g, key, x + w - Widgets.PAD, y + 4, 12, capturing ? accent : (over ? Widgets.raisedHover() : Widgets.raised()),
+         capturing ? Theme.onColor(accent) : (module.getKeybind() == -1 ? Glass.textDim() : Glass.text()), this.open
+      );
+      this.hit(WindowGuiScreen.Kind.BIND, x, y, w, BIND_ROW, module, clipTop, clipBottom);
    }
 
-   private void drawSetting(
-      GuiGraphicsExtractor g, Module module, Setting<?> setting, int x, int y, int w, int h, boolean over, int accent, int accent2, float delta
-   ) {
-      if (over) {
-         roundRect(g, x, y, x + w, y + h, 3, GeminiMark.withAlpha(-1, this.a(8)));
-      }
-
-      int left = x + 8;
-      int right = x + w - 8;
-      int label = GeminiMark.withAlpha(!setting.isDefault() && !(setting instanceof ActionSetting) ? -1250068 : TEXT_DIM, this.a(255));
-      if (setting instanceof BooleanSetting bool) {
-         float on = this.settingAnim(setting, bool.get() ? 1.0F : 0.0F, delta);
-         g.text(this.font, fit(this.font, setting.name(), right - left - 34), left, y + 6, label, false);
-         this.drawSwitch(g, right - 18, y + 5, on, accent, accent2, false);
-         this.hit(WindowGuiScreen.Kind.BOOL, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
-      } else if (setting instanceof NumberSetting number) {
-         String value = number.display();
-         int vw = this.font.width(value);
-         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 12), left, y + 5, label, false);
-         g.text(this.font, value, right - vw, y + 5, GeminiMark.withAlpha(accent2, this.a(255)), false);
-         float pct = this.settingAnim(setting, (float)number.percent(), delta);
-         this.drawTrack(g, left, right, y + 20, pct, accent, accent2, false, this.dragging == setting || over);
-         this.hit(WindowGuiScreen.Kind.NUMBER, left - 3, y + 14, right - left + 6, 14, setting, this.settingsViewTop, this.settingsViewBottom);
-      } else if (setting instanceof ColorSetting color) {
-         g.text(this.font, fit(this.font, setting.name(), right - left - 28), left, y + 5, label, false);
-         roundRect(g, right - 16, y + 4, right, y + 13, 2, GeminiMark.withAlpha(-16777216, this.a(255)));
-         g.fill(right - 15, y + 5, right - 1, y + 12, GeminiMark.withAlpha(color.argb(), this.a(255)));
-         float pct = this.settingAnim(setting, (float)color.percent(), delta);
-         this.drawTrack(g, left, right, y + 20, pct, accent, accent2, true, this.dragging == setting || over);
-         this.hit(WindowGuiScreen.Kind.COLOR, left - 3, y + 14, right - left + 6, 14, setting, this.settingsViewTop, this.settingsViewBottom);
-      } else if (setting instanceof ModeSetting mode) {
-         String value = mode.get();
-         int pillW = Math.min(right - left - 56, this.font.width(value) + 28);
-         int pillL = right - pillW;
-         g.text(this.font, fit(this.font, setting.name(), pillL - left - 10), left, y + 6, label, false);
-         roundRect(g, pillL, y + 3, right, y + 16, 3, GeminiMark.withAlpha(accent, this.a(over ? 70 : 40)));
-         g.text(this.font, "<", pillL + 5, y + 6, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
-         g.text(this.font, ">", right - 10, y + 6, GeminiMark.withAlpha(over ? TEXT : TEXT_FAINT, this.a(255)), false);
-         String shownValue = fit(this.font, value, pillW - 22);
-         g.text(this.font, shownValue, pillL + (pillW - this.font.width(shownValue)) / 2, y + 6, GeminiMark.withAlpha(TEXT, this.a(255)), false);
-         this.hit(WindowGuiScreen.Kind.MODE, pillL, y, pillW, h, setting, this.settingsViewTop, this.settingsViewBottom);
-         this.hit(WindowGuiScreen.Kind.MODE, x, y, pillL - x, h, setting, this.settingsViewTop, this.settingsViewBottom);
-      } else if (setting instanceof ListSetting list) {
-         String value = list.size() + (list.size() == 1 ? " entry  >" : " entries  >");
-         int vw = this.font.width(value);
-         g.text(this.font, fit(this.font, setting.name(), right - left - vw - 12), left, y + 6, label, false);
-         g.text(this.font, value, right - vw, y + 6, GeminiMark.withAlpha(over ? TEXT : accent2, this.a(255)), false);
-         this.hit(WindowGuiScreen.Kind.LIST, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
-      } else if (setting instanceof ActionSetting) {
-         roundRect(g, left, y + 2, right, y + h - 2, 4, GeminiMark.withAlpha(accent, this.a(over ? 150 : 85)));
-         String text = fit(this.font, setting.name(), right - left - 8);
-         g.text(this.font, text, left + (right - left - this.font.width(text)) / 2, y + (h - 8) / 2, GeminiMark.withAlpha(TEXT, this.a(255)), false);
-         this.hit(WindowGuiScreen.Kind.ACTION, left, y + 2, right - left, h - 4, setting, this.settingsViewTop, this.settingsViewBottom);
-      }
-   }
-
-   private static int rowHeight(Setting<?> setting) {
-      if (setting instanceof NumberSetting || setting instanceof ColorSetting) {
-         return 30;
-      } else {
-         return setting instanceof ActionSetting ? 24 : 20;
-      }
-   }
-
-   private void drawSwitch(GuiGraphicsExtractor g, int x, int y, float on, int accent, int accent2, boolean blocked) {
-      int track = blocked ? -13421773 : HudOverlay.lerp(-13289414, HudOverlay.lerp(accent, accent2, 0.35F), on);
-      roundRect(g, x, y, x + 18, y + 9, 4, GeminiMark.withAlpha(track, this.a(255)));
-      int kx = x + 1 + Math.round(on * 9.0F);
-      roundRect(g, kx, y + 1, kx + 7, y + 8, 3, GeminiMark.withAlpha(HudOverlay.lerp(-6908266, -1, on), this.a(255)));
-   }
-
-   private void drawTrack(GuiGraphicsExtractor g, int left, int right, int y, float pct, int accent, int accent2, boolean hue, boolean active) {
-      int width = right - left;
-      float clamped = Mth.clamp(pct, 0.0F, 1.0F);
-      if (hue) {
-         int segments = Math.max(6, width / 3);
-         for (int i = 0; i < segments; i++) {
-            int sx = left + width * i / segments;
-            int ex = left + width * (i + 1) / segments;
-            g.fill(sx, y, ex, y + 4, GeminiMark.withAlpha(ColorSetting.hueColor((float)i / segments, 0.72F, 1.0F), this.a(255)));
+   private SettingControl control(Module module, Setting<?> setting) {
+      SettingControl control = this.controls.get(setting);
+      if (control == null) {
+         control = SettingControl.of(setting);
+         if (control == null) {
+            return null;
          }
-      } else {
-         roundRect(g, left, y, right, y + 4, 2, GeminiMark.withAlpha(-13289414, this.a(255)));
-         int fill = Math.round(width * clamped);
-         if (fill > 1) {
-            gradient(g, left, y, left + fill, y + 4, accent, accent2, this.a(255));
+
+         control.setOnChange(WindowGuiScreen::save);
+         if (control instanceof ListControl list) {
+            list.setOpener(() -> {
+               try {
+                  this.minecraft.gui.setScreen(new ListEditorScreen(this, module, (ListSetting)setting));
+               } catch (RuntimeException e) {
+                  // block, item and entity lists need the game's registries, which only a loaded world has
+                  this.showNotice("This list can be edited once a world is loaded");
+               }
+            });
+         }
+
+         this.controls.put(setting, control);
+      }
+
+      return control;
+   }
+
+   private SettingControl focusedControl() {
+      for (SettingControl control : this.controls.values()) {
+         if (control.focused()) {
+            return control;
          }
       }
 
-      int knob = left + Math.round(width * clamped);
-      if (active) {
-         roundRect(g, knob - 5, y - 3, knob + 5, y + 7, 4, GeminiMark.withAlpha(accent2, this.a(70)));
-      }
-
-      roundRect(g, knob - 3, y - 2, knob + 3, y + 6, 2, GeminiMark.withAlpha(-1, this.a(255)));
+      return null;
    }
 
-   private void scrollbar(GuiGraphicsExtractor g, int x, int top, int viewH, int contentH, float scroll, int accent) {
-      if (contentH > viewH && viewH > 8) {
-         int thumbH = Math.max(14, Math.round(viewH * ((float)viewH / contentH)));
-         float max = Math.max(1, contentH - viewH);
-         int thumbY = top + Math.round((viewH - thumbH) * (scroll / max));
-         g.fill(x, top, x + 2, top + viewH, GeminiMark.withAlpha(-1, this.a(10)));
-         g.fill(x, thumbY, x + 2, thumbY + thumbH, GeminiMark.withAlpha(accent, this.a(170)));
+   // ---- theme switcher -----------------------------------------------------------------------------------
+
+   /** The swatch popover under the theme button: one dot per preset; a click recolours everything at once. */
+   private void drawThemePopover(GuiGraphicsExtractor g, int right, int top, int mouseX, int mouseY) {
+      this.themeAnim = Glass.approach(this.themeAnim, this.themeOpen ? 1.0F : 0.0F, 18.0F, this.dt);
+      if (this.themeAnim <= 0.01F) {
+         return;
       }
+
+      List<Theme.Palette> presets = Theme.PRESETS;
+      int w = ThemeSwatches.width();
+      int h = ThemeSwatches.height(presets.size());
+      float fade = this.themeAnim * this.open;
+      int x = right - w;
+      int y = top + Math.round((1.0F - Glass.easeOutCubic(this.themeAnim)) * -4.0F);
+      Glass.shadow(g, x, y, x + w, y + h, 6, 14, 5, 0.5F * fade);
+      Glass.roundRect(g, x, y, x + w, y + h, 6, Glass.fade(Glass.surface(3), fade));
+      Glass.roundOutline(g, x, y, x + w, y + h, 6, Glass.fade(Glass.withAlpha(Glass.text(), 26), fade));
+      if (this.themeOpen) {
+         this.hit(WindowGuiScreen.Kind.THEME_POPOVER, x, y, w, h, null);
+      }
+
+      String current = Theme.current().name();
+      String label = current;
+      for (int i = 0; i < presets.size(); i++) {
+         Theme.Palette preset = presets.get(i);
+         int cellX = x + ThemeSwatches.cellX(i);
+         int cellY = y + ThemeSwatches.cellY(i);
+         boolean over = ThemeSwatches.indexAt(mouseX - x, mouseY - y, presets.size()) == i;
+         boolean active = preset.name().equals(current);
+         if (active || over) {
+            Glass.roundOutline(g, cellX + 1, cellY + 1, cellX + ThemeSwatches.CELL - 1, cellY + ThemeSwatches.CELL - 1, 10, Glass.fade(Glass.withAlpha(Glass.text(), active ? 230 : 110), fade));
+         }
+
+         Glass.roundGradient(g, cellX + 4, cellY + 4, cellX + ThemeSwatches.CELL - 4, cellY + ThemeSwatches.CELL - 4, 7, Glass.fade(preset.accent, fade), Glass.fade(preset.accent2, fade));
+         if (this.themeOpen) {
+            this.hit(WindowGuiScreen.Kind.THEME, cellX, cellY, ThemeSwatches.CELL, ThemeSwatches.CELL, preset.name());
+         }
+
+         if (over) {
+            label = preset.name();
+         }
+      }
+
+      Controls.text(g, label, x + (w - UiFont.width(label, FontSize.SMALL, FontWeight.MEDIUM)) / 2, y + h - 14, Glass.textDim(), fade, FontSize.SMALL, FontWeight.MEDIUM);
    }
+
+   // ---- footer -------------------------------------------------------------------------------------------
 
    private void drawFooter(GuiGraphicsExtractor g, int x, int y, int w, int accent2, long now) {
       boolean flashing = this.flash != null && now < this.flashUntil;
-      String hint = "Esc close  ·  RMB toggle  ·  MMB bind  ·  ★ star";
-      int hintW = this.font.width(hint);
+      DashboardPage pageView = this.pageFor(this.page);
       String text;
       if (this.bindingMenu) {
          text = "Press the key that should open this menu  ·  Esc cancels";
@@ -669,24 +1127,40 @@ public final class WindowGuiScreen extends Screen {
          text = "Binding " + this.binding.getName() + "  ·  press a key  ·  Esc cancels  ·  Delete clears";
       } else if (flashing) {
          text = this.flash;
+      } else if (this.tip != null) {
+         text = this.tip;
       } else {
-         text = this.tip == null ? "Click a module to edit it  ·  ↑↓ select  ·  Enter toggles" : this.tip;
+         text = pageView == null ? "Click a module for its settings  ·  right-click toggles  ·  middle-click binds a key" : pageView.hint();
       }
 
-      text = text.replaceAll("§.", "");
-      g.text(
-         this.font, fit(this.font, text, w - hintW - 36), x + 8, y + 6,
-         GeminiMark.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : TEXT_DIM, this.a(255)), false
+      text = plain(text);
+      boolean loud = flashing || this.binding != null || this.bindingMenu;
+      g.fill(x + INSET, y, x + w - INSET, y + 1, this.c(Widgets.divider()));
+      this.txt(
+         g, UiFont.ellipsize(text, w - 26, FontSize.SMALL, FontWeight.REGULAR), x + INSET + 1, UiFont.centerY(y + 1, FOOTER - 1, FontSize.SMALL),
+         loud ? accent2 : Glass.textFaint(), FontSize.SMALL, FontWeight.REGULAR
       );
-      g.text(this.font, hint, x + w - 8 - hintW, y + 6, GeminiMark.withAlpha(TEXT_FAINT, this.a(255)), false);
    }
 
    // ------------------------------------------------------------------ input
 
+   /** Screen x to the window's virtual coordinates (undoing the GUI scale and the open/close zoom). */
+   private double vx(double raw) {
+      return (raw / this.uiScale - this.vw / 2.0F * (1.0F - this.zoom)) / this.zoom;
+   }
+
+   private double vy(double raw) {
+      return (raw / this.uiScale - this.vh / 2.0F * (1.0F - this.zoom)) / this.zoom;
+   }
+
    @Override
    public boolean mouseClicked(MouseButtonEvent rawEvent, boolean doubled) {
-      double mx = rawEvent.x() / this.uiScale;
-      double my = rawEvent.y() / this.uiScale - this.slide;
+      if (this.closing) {
+         return true;
+      }
+
+      double mx = this.vx(rawEvent.x());
+      double my = this.vy(rawEvent.y());
       int button = Keys.glfwButton(rawEvent.button());
       if (this.binding != null || this.bindingMenu) {
          this.binding = null;
@@ -694,12 +1168,32 @@ public final class WindowGuiScreen extends Screen {
          return true;
       }
 
+      this.mouseDown = button == 0;
+      this.keyboardFocus = false;
       WindowGuiScreen.Hit hit = null;
       for (int i = this.hits.size() - 1; i >= 0; i--) {
          if (this.hits.get(i).contains(mx, my)) {
             hit = this.hits.get(i);
             break;
          }
+      }
+
+      if (this.themeOpen && (hit == null || hit.kind != WindowGuiScreen.Kind.THEME && hit.kind != WindowGuiScreen.Kind.THEME_POPOVER)) {
+         // a click anywhere else only closes the swatches
+         this.themeOpen = false;
+         return true;
+      }
+
+      Object owner = hit == null ? null : (hit.kind == WindowGuiScreen.Kind.CONTROL ? hit.target : (hit.kind == WindowGuiScreen.Kind.PAGE ? ((WindowGuiScreen.PageHit)hit.target).owner : null));
+      for (SettingControl control : this.controls.values()) {
+         if (control != owner) {
+            control.blur();
+         }
+      }
+
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null) {
+         pageView.blurExcept(owner);
       }
 
       if (hit == null) {
@@ -712,6 +1206,8 @@ public final class WindowGuiScreen extends Screen {
       }
 
       switch (hit.kind) {
+         case PAGE -> ((WindowGuiScreen.PageHit)hit.target).click.click(button, mx, my, doubled);
+         case PAGE_TAB -> this.showPage((Page)hit.target);
          case SEARCH -> this.searchFocused = true;
          case CLEAR -> {
             this.leaveSearch();
@@ -719,78 +1215,73 @@ public final class WindowGuiScreen extends Screen {
          }
          case FILTER -> {
             this.filter = (String)hit.target;
-            this.listScrollTarget = 0.0F;
+            this.listScroll.jumpTo(0.0F);
          }
          case CATEGORY -> this.selectCategory((Category)hit.target);
          case CARD -> {
             Module module = (Module)hit.target;
+            this.selected = module;
             if (button == 1) {
                this.toggle(module);
             } else if (button == 2) {
                this.beginBind(module);
             } else {
-               this.select(module);
+               this.card(module).hover.flash();
+               this.setExpanded(module, this.expanded != module);
             }
          }
-         case SWITCH -> this.toggle((Module)hit.target);
+         case SWITCH -> {
+            this.selected = (Module)hit.target;
+            this.toggle((Module)hit.target);
+         }
+         case MORE -> {
+            String name = ((Module)hit.target).getName();
+            if (!unfolded.remove(name)) {
+               unfolded.add(name);
+            }
+         }
          case STAR -> {
             ClickGuiModule style = style();
             if (style != null) {
                Module module = (Module)hit.target;
                boolean starred = style.toggleFavorite(module);
-               this.showNotice(starred ? module.getName() + " starred" : module.getName() + " unstarred");
+               this.showNotice(starred ? module.getName() + " added to favourites" : module.getName() + " removed from favourites");
             }
          }
          case BIND -> {
             Module module = (Module)hit.target;
             if (button == 1) {
                module.setKeybind(-1);
+               gemini.input.BindWarnings.invalidate();
                this.showNotice(module.getName() + " unbound");
             } else {
                this.beginBind(module);
             }
          }
-         case BOOL -> {
-            BooleanSetting bool = (BooleanSetting)hit.target;
-            if (button == 1) {
-               bool.reset();
-            } else {
-               bool.toggle();
-            }
-
-            save();
-         }
-         case MODE -> {
-            ModeSetting mode = (ModeSetting)hit.target;
-            if (button == 1 || button == 0 && mx < hit.x + 14) {
-               mode.cycleBack();
-            } else if (button == 2) {
-               mode.reset();
-            } else {
-               mode.cycle();
-            }
-
-            save();
-         }
-         case NUMBER, COLOR -> {
-            if (button == 1) {
-               ((Setting<?>)hit.target).reset();
+         case CONTROL -> {
+            SettingControl control = (SettingControl)hit.target;
+            if (button == 2) {
+               // middle click puts any setting back to its default
+               control.blur();
+               control.setting().reset();
                save();
-            } else if (button == 0) {
-               this.dragging = (Setting<?>)hit.target;
-               this.dragLeft = hit.x + 3;
-               this.dragRight = hit.x + hit.w - 3;
-               this.updateDrag(mx);
+            } else if (control.mouseClicked(mx, my, button, doubled)) {
+               if (control.dragging()) {
+                  this.activeControl = control;
+               }
+            } else if (button == 1) {
+               control.setting().reset();
+               save();
             }
          }
-         case LIST -> {
-            if (this.selected != null) {
-               this.minecraft.gui.setScreen(new ListEditorScreen(this, this.selected, (ListSetting)hit.target));
+         case THEME_BUTTON -> this.themeOpen = !this.themeOpen;
+         case THEME -> {
+            ClickGuiModule style = style();
+            if (style != null) {
+               style.setTheme((String)hit.target);
             }
          }
-         case ACTION -> {
-            ((ActionSetting)hit.target).run();
-            save();
+         case THEME_POPOVER -> {
          }
          case LAYOUT -> {
             ClickGuiModule style = style();
@@ -801,6 +1292,11 @@ public final class WindowGuiScreen extends Screen {
             this.minecraft.gui.setScreen(new ClickGuiScreen());
          }
          case HUD_EDIT -> this.minecraft.gui.setScreen(ClickGuiScreen.hudEditor());
+         case PALETTE -> {
+            this.blurAll();
+            gemini.ui.palette.PaletteScreen.open(this.minecraft);
+         }
+         case HELP -> gemini.ui.help.HelpScreen.open(gemini.ui.help.HelpScreen.Tab.WHATS_NEW, this);
          case MENU_KEY -> {
             this.bindingMenu = true;
             this.binding = null;
@@ -812,19 +1308,33 @@ public final class WindowGuiScreen extends Screen {
 
    @Override
    public boolean mouseDragged(MouseButtonEvent rawEvent, double deltaX, double deltaY) {
-      if (this.dragging != null) {
-         this.updateDrag(rawEvent.x() / this.uiScale);
+      int button = Keys.glfwButton(rawEvent.button());
+      if (this.activeControl != null) {
+         this.activeControl.mouseDragged(this.vx(rawEvent.x()), this.vy(rawEvent.y()), button);
          return true;
-      } else {
-         return super.mouseDragged(rawEvent, deltaX, deltaY);
       }
+
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null && pageView.mouseDragged(this.vx(rawEvent.x()), this.vy(rawEvent.y()), button)) {
+         return true;
+      }
+
+      return super.mouseDragged(rawEvent, deltaX, deltaY);
    }
 
    @Override
    public boolean mouseReleased(MouseButtonEvent rawEvent) {
-      if (this.dragging != null) {
-         this.dragging = null;
-         save();
+      int button = Keys.glfwButton(rawEvent.button());
+      this.mouseDown = false;
+      if (this.activeControl != null) {
+         SettingControl control = this.activeControl;
+         this.activeControl = null;
+         control.mouseReleased(this.vx(rawEvent.x()), this.vy(rawEvent.y()), button);
+      }
+
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null) {
+         pageView.mouseReleased(this.vx(rawEvent.x()), this.vy(rawEvent.y()), button);
       }
 
       return super.mouseReleased(rawEvent);
@@ -833,14 +1343,16 @@ public final class WindowGuiScreen extends Screen {
    @Override
    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
       ClickGuiModule style = style();
-      float speed = (style == null ? 2.0F : style.scrollSpeed()) * 12.0F;
-      double mx = x / this.uiScale;
-      double my = y / this.uiScale - this.slide;
-      if (mx >= this.listX && mx < this.listX + this.listW + 6 && my >= this.listViewTop && my < this.listViewBottom) {
-         this.listScrollTarget -= (float)(scrollY * speed);
-         return true;
-      } else if (mx >= this.settingsX && mx < this.settingsX + this.settingsW && my >= this.settingsViewTop && my < this.settingsViewBottom) {
-         this.settingsScrollTarget -= (float)(scrollY * speed);
+      float speed = style == null ? 2.0F : style.scrollSpeed();
+      double mx = this.vx(x);
+      double my = this.vy(y);
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null) {
+         return pageView.mouseScrolled(mx, my, scrollY * speed * 12.0F) || super.mouseScrolled(x, y, scrollX, scrollY);
+      }
+
+      if (mx >= this.listX - 4 && mx < this.listX + this.listW + 6 && my >= this.listViewTop && my < this.listViewBottom) {
+         this.listScroll.scrollBy((float)(-scrollY * speed * (CARD_H + CARD_GAP) / 2.0F));
          return true;
       } else {
          return super.mouseScrolled(x, y, scrollX, scrollY);
@@ -849,6 +1361,10 @@ public final class WindowGuiScreen extends Screen {
 
    @Override
    public boolean keyPressed(KeyEvent event) {
+      if (this.closing) {
+         return true;
+      }
+
       int key = event.key();
       if (this.bindingMenu) {
          if (key != Keys.ESCAPE) {
@@ -856,6 +1372,10 @@ public final class WindowGuiScreen extends Screen {
             KeyMapping.resetMapping();
             this.minecraft.options.save();
             save();
+            String clash = gemini.input.BindWarnings.afterMenuKey(Gemini.getInstance().modules());
+            if (clash != null) {
+               this.showNotice(clash);
+            }
          }
 
          this.bindingMenu = false;
@@ -864,18 +1384,42 @@ public final class WindowGuiScreen extends Screen {
          if (key != Keys.ESCAPE) {
             if (key == Keys.DELETE || key == Keys.BACKSPACE) {
                this.binding.setKeybind(-1);
+               gemini.input.BindWarnings.invalidate();
                this.showNotice(this.binding.getName() + " unbound");
             } else {
                this.binding.setKeybind(key);
-               String clash = KeybindReport.warning(Gemini.getInstance().modules(), this.binding, key);
+               String clash = gemini.input.BindWarnings.afterBind(Gemini.getInstance().modules(), this.binding, key);
                this.showNotice(clash != null ? clash : this.binding.getName() + " bound to " + GeminiKeys.displayName(key));
             }
+
+            gemini.input.BindWarnings.invalidate();
+            this.keybindsPage.opened();
          }
 
          this.binding = null;
          return true;
-      } else if (key == Keys.ESCAPE) {
-         if (!this.search.isEmpty()) {
+      }
+
+      if (GeminiKeys.opensPalette(event)) {
+         this.blurAll();
+         gemini.ui.palette.PaletteScreen.open(this.minecraft);
+         return true;
+      }
+
+      SettingControl focused = this.page == Page.MODULES ? this.focusedControl() : null;
+      if (focused != null && focused.keyPressed(event)) {
+         return true;
+      }
+
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null && pageView.focused() && pageView.keyPressed(event)) {
+         return true;
+      }
+
+      if (key == Keys.ESCAPE) {
+         if (this.themeOpen) {
+            this.themeOpen = false;
+         } else if (pageView == null && !this.search.isEmpty()) {
             this.leaveSearch();
          } else {
             this.onClose();
@@ -885,29 +1429,35 @@ public final class WindowGuiScreen extends Screen {
       } else if (!this.searchFocused && GeminiKeys.OPEN_GUI.matches(event)) {
          this.onClose();
          return true;
-      } else if (key == Keys.F && ctrlDown()) {
+      } else if (key == Keys.F && event.hasControlDown()) {
+         this.showPage(Page.MODULES);
          this.searchFocused = true;
          return true;
+      } else if (key == Keys.TAB) {
+         this.cycleTab(event.hasShiftDown() ? -1 : 1);
+         return true;
+      } else if (pageView != null) {
+         return super.keyPressed(event);
       } else if (key == Keys.BACKSPACE) {
          if (!this.search.isEmpty()) {
-            this.search = this.search.substring(0, this.search.length() - 1);
-            this.listScrollTarget = 0.0F;
+            this.search = event.hasControlDown() ? "" : this.search.substring(0, this.search.offsetByCodePoints(this.search.length(), -1));
+            this.listScroll.jumpTo(0.0F);
          }
 
          return true;
-      } else if (key == Keys.DOWN || key == Keys.UP) {
-         this.moveSelection(key == Keys.DOWN ? 1 : -1);
+      } else if (key == Keys.DOWN || key == Keys.UP || key == Keys.LEFT || key == Keys.RIGHT) {
+         this.moveSelection(key == Keys.LEFT ? -1 : (key == Keys.RIGHT ? 1 : 0), key == Keys.UP ? -1 : (key == Keys.DOWN ? 1 : 0));
          return true;
       } else if (Keys.isEnter(key)) {
-         if (this.selected != null) {
-            this.toggle(this.selected);
+         if (this.selected != null && this.shown.contains(this.selected)) {
+            this.keyboardFocus = true;
+            if (event.hasShiftDown()) {
+               this.setExpanded(this.selected, this.expanded != this.selected);
+            } else {
+               this.toggle(this.selected);
+            }
          }
 
-         return true;
-      } else if (key == Keys.TAB) {
-         Category[] all = Category.values();
-         int index = this.category.ordinal() + (shiftDown() ? all.length - 1 : 1);
-         this.selectCategory(all[index % all.length]);
          return true;
       } else {
          return super.keyPressed(event);
@@ -916,24 +1466,86 @@ public final class WindowGuiScreen extends Screen {
 
    @Override
    public boolean charTyped(CharacterEvent event) {
-      if (this.binding != null || this.bindingMenu) {
+      if (this.closing || this.binding != null || this.bindingMenu) {
          return true;
-      } else if (event.isAllowedChatCharacter() && this.search.length() < 32) {
+      }
+
+      SettingControl focused = this.page == Page.MODULES ? this.focusedControl() : null;
+      if (focused != null) {
+         return focused.charTyped(event);
+      }
+
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null && pageView.focused()) {
+         return pageView.charTyped(event);
+      }
+
+      if (event.isAllowedChatCharacter() && this.search.length() < 32) {
+         // typing anywhere searches modules, from any page
+         this.showPage(Page.MODULES);
          this.search = this.search + event.codepointAsString();
          this.searchFocused = true;
-         this.listScrollTarget = 0.0F;
+         this.listScroll.jumpTo(0.0F);
          return true;
       } else {
          return super.charTyped(event);
       }
    }
 
+   // ------------------------------------------------------------------ lifecycle
+
+   /** Starts the close animation; the screen really closes from {@link #tick()} once it has faded out. */
+   @Override
+   public void onClose() {
+      if (this.closing) {
+         return;
+      }
+
+      this.blurAll();
+      this.binding = null;
+      this.bindingMenu = false;
+      this.themeOpen = false;
+      if (Glass.animations() && this.animationProgress > 0.05F) {
+         this.closing = true;
+      } else {
+         this.finishClose();
+      }
+   }
+
+   private void finishClose() {
+      if (this.parent != null) {
+         this.minecraft.gui.setScreen(this.parent);
+      } else {
+         super.onClose();
+      }
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      if (this.closing && (this.animationProgress <= 0.03F || Util.getMillis() - this.lastFrame > 500L)) {
+         this.closing = false;
+         this.finishClose();
+      }
+   }
+
+   @Override
+   public void added() {
+      super.added();
+      // coming back from the list editor or reopening: never stay stuck in a half-finished close
+      this.closing = false;
+      this.mouseDown = false;
+      this.lastFrame = Util.getMillis();
+   }
+
    @Override
    public void removed() {
+      this.blurAll();
       this.minecraft.textInputManager().stopTextInput(this);
       lastCategory = this.category;
       lastModule = this.selected == null ? null : this.selected.getName();
       rememberedSearch = this.search;
+      lastPage = this.page;
       save();
    }
 
@@ -942,49 +1554,99 @@ public final class WindowGuiScreen extends Screen {
       return false;
    }
 
+   private void blurAll() {
+      for (SettingControl control : this.controls.values()) {
+         control.blur();
+      }
+
+      this.activeControl = null;
+      DashboardPage pageView = this.pageFor(this.page);
+      if (pageView != null) {
+         pageView.blurExcept(null);
+      }
+   }
+
    // ------------------------------------------------------------------ actions
+
+   private void showPage(Page target) {
+      if (target != this.page) {
+         this.blurAll();
+         this.page = target;
+         this.binding = null;
+         this.themeOpen = false;
+         DashboardPage pageView = this.pageFor(target);
+         if (pageView != null) {
+            pageView.opened();
+         }
+      }
+   }
+
+   /** Tab / Shift+Tab: through the categories, then the pages, and around. */
+   private void cycleTab(int step) {
+      List<Object> tabs = this.tabs();
+      Object current = this.page == Page.MODULES ? this.category : this.page;
+      int index = Math.max(0, tabs.indexOf(current));
+      Object next = tabs.get(Math.floorMod(index + step, tabs.size()));
+      if (next instanceof Category cat) {
+         this.selectCategory(cat);
+      } else {
+         this.showPage((Page)next);
+      }
+   }
 
    /** Clears the search but stays on the module you picked from the results by opening its category. */
    private void leaveSearch() {
       this.search = "";
       this.searchFocused = false;
-      this.listScrollTarget = 0.0F;
+      this.listScroll.jumpTo(0.0F);
       if (this.selected != null) {
          this.category = this.selected.getCategory();
-         this.revealed = false;
+         if (this.expanded == this.selected) {
+            this.revealCard = true;
+         }
       }
    }
 
    private void selectCategory(Category cat) {
+      this.showPage(Page.MODULES);
+      boolean changed = cat != this.category || !this.search.isEmpty() || FAVORITES.equals(this.filter);
       this.category = cat;
       this.search = "";
       this.searchFocused = false;
-      this.listScrollTarget = 0.0F;
-      this.listScroll = 0.0F;
-      List<Module> list = this.visibleModules();
-      this.select(list.isEmpty() ? null : list.get(0));
-   }
+      if (FAVORITES.equals(this.filter)) {
+         this.filter = "All";
+      }
 
-   private void select(Module module) {
-      if (module != this.selected) {
-         this.selected = module;
-         this.settingsScroll = 0.0F;
-         this.settingsScrollTarget = 0.0F;
+      if (changed) {
+         this.listScroll.jumpTo(0.0F);
+         this.expanded = null;
+         this.selected = null;
       }
    }
 
-   private void moveSelection(int step) {
-      List<Module> list = this.visibleModules();
+   /** Opens or closes a card's settings; only one card is open at a time. */
+   private void setExpanded(Module module, boolean open) {
+      this.blurAll();
+      if (open) {
+         this.expanded = module;
+         this.revealCard = true;
+         Fuzzy.Match match = this.search.isBlank() ? null : this.matches.get(module);
+         this.revealSetting = match == null ? null : match.setting();
+      } else if (this.expanded == module) {
+         this.expanded = null;
+      }
+   }
+
+   /** Moves the keyboard focus one card across ({@code dx}) or down ({@code dy}) and keeps it in view. */
+   private void moveSelection(int dx, int dy) {
+      List<Module> list = this.shown;
       if (!list.isEmpty()) {
          int index = this.selected == null ? -1 : list.indexOf(this.selected);
-         int next = Mth.clamp(index + step, 0, list.size() - 1);
-         this.select(list.get(next));
-         int top = next * (CARD_H + CARD_GAP);
-         int view = this.listViewBottom - this.listViewTop;
-         if (top < this.listScrollTarget) {
-            this.listScrollTarget = top;
-         } else if (top + CARD_H > this.listScrollTarget + view) {
-            this.listScrollTarget = top + CARD_H - view;
+         int next = this.keyboardFocus || index < 0 ? CardGrid.step(index, list.size(), this.columns, dx, dy) : index;
+         this.selected = list.get(next);
+         this.keyboardFocus = true;
+         if (next < this.cardTops.length) {
+            this.listScroll.reveal(this.cardTops[next] - 4, this.cardTops[next] + this.cardHeights[next] + 4, this.listViewBottom - this.listViewTop);
          }
       }
    }
@@ -995,34 +1657,16 @@ public final class WindowGuiScreen extends Screen {
       }
 
       if (!module.isSavedEnabled() && !module.canActivate()) {
+         // refused by Module.canActivate(): say why instead of silently doing nothing
          this.showNotice(module.blockedReason());
       } else {
          module.toggle();
       }
    }
 
-   private void beginBind(Module module) {
-      if (module.isBindable()) {
-         this.binding = module;
-         this.bindingMenu = false;
-         this.select(module);
-      } else {
-         this.showNotice(module.getName() + " can't have a key bind");
-      }
-   }
-
-   private void updateDrag(double mouseX) {
-      double pct = this.dragRight <= this.dragLeft ? 0.0 : (mouseX - this.dragLeft) / (this.dragRight - this.dragLeft);
-      if (this.dragging instanceof NumberSetting number) {
-         number.setFromPercent(pct);
-      } else if (this.dragging instanceof ColorSetting color) {
-         color.setFromPercent(pct);
-      }
-   }
-
    private void showNotice(String message) {
       if (message != null) {
-         this.flash = message;
+         this.flash = plain(message);
          this.flashUntil = Util.getMillis() + 2600L;
       }
    }
@@ -1036,19 +1680,19 @@ public final class WindowGuiScreen extends Screen {
       boolean favoritesOnly = FAVORITES.equals(this.filter);
       ClickGuiModule style = style();
       List<Module> list = new ArrayList<>();
-      Map<Module, Integer> scores = new HashMap<>();
+      this.matches.clear();
       for (Module module : query.isEmpty() && !favoritesOnly ? modules(this.category) : Gemini.getInstance().modules().getModules()) {
          if (favoritesOnly && (style == null || !style.isFavorite(module))) {
             continue;
          }
 
          if (!query.isEmpty()) {
-            int score = Fuzzy.moduleScore(query, module);
-            if (score == 0) {
+            Fuzzy.Match match = Fuzzy.moduleMatch(query, module);
+            if (!match.matched()) {
                continue;
             }
 
-            scores.put(module, score);
+            this.matches.put(module, match);
          }
 
          if ("On".equals(this.filter) && !module.isEnabled() || "Bound".equals(this.filter) && module.getKeybind() == -1) {
@@ -1063,7 +1707,7 @@ public final class WindowGuiScreen extends Screen {
          list.sort(byName);
       } else {
          // Best fuzzy match first (name hits beat description and setting hits), then alphabetical.
-         list.sort(Comparator.<Module>comparingInt(m -> -scores.getOrDefault(m, 0)).thenComparing(byName));
+         list.sort(Comparator.<Module>comparingInt(m -> -this.matches.get(m).score()).thenComparing(byName));
       }
 
       return list;
@@ -1085,25 +1729,22 @@ public final class WindowGuiScreen extends Screen {
 
    // ------------------------------------------------------------------ helpers
 
-   private int a(int alpha) {
-      return Math.round(alpha * this.open);
+   /** {@code color} faded with the window's open/close animation. */
+   private int c(int color) {
+      return Glass.fade(color, this.open);
    }
 
-   private float anim(Map<Module, Float> map, Module key, float target, float delta, float speed) {
-      float value = approach(map.getOrDefault(key, target), target, delta, speed);
-      map.put(key, value);
-      return value;
+   /** {@code color} at {@code alpha} (0..255), faded with the window. */
+   private int c(int color, int alpha) {
+      return Glass.withAlpha(color, Math.round(alpha * this.open));
    }
 
-   private float settingAnim(Setting<?> setting, float target, float delta) {
-      float value = this.dragging == setting ? target : approach(this.settingAnim.getOrDefault(setting, target), target, delta, 16.0F);
-      this.settingAnim.put(setting, value);
-      return value;
+   private void txt(GuiGraphicsExtractor g, String text, int x, int y, int color) {
+      Controls.text(g, text, x, y, color, this.open, FontSize.BODY, FontWeight.REGULAR);
    }
 
-   private static float approach(float current, float target, float delta, float speed) {
-      float next = current + (target - current) * Math.min(1.0F, delta * speed);
-      return Math.abs(next - target) < 0.002F ? target : next;
+   private void txt(GuiGraphicsExtractor g, String text, int x, int y, int color, FontSize size, FontWeight weight) {
+      Controls.text(g, text, x, y, color, this.open, size, weight);
    }
 
    private void hit(WindowGuiScreen.Kind kind, int x, int y, int w, int h, Object target) {
@@ -1123,137 +1764,14 @@ public final class WindowGuiScreen extends Screen {
       return mx >= x && mx < x + w && my >= y && my < y + h;
    }
 
-   private static float ease(float t) {
-      return 1.0F - (float)Math.pow(1.0F - t, 3.0);
-   }
-
-   private static boolean ctrlDown() {
-      Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(Keys.LEFT_CONTROL) || InputConstants.isKeyDown(Keys.RIGHT_CONTROL);
-   }
-
-   private static boolean shiftDown() {
-      Window window = Minecraft.getInstance().getWindow();
-      return InputConstants.isKeyDown(Keys.LEFT_SHIFT) || InputConstants.isKeyDown(Keys.RIGHT_SHIFT);
-   }
-
-   static String fit(Font font, String text, int maxWidth) {
-      if (maxWidth <= 4) {
-         return "";
-      } else if (font.width(text) <= maxWidth) {
-         return text;
-      } else {
-         String cut = text;
-         while (cut.length() > 1 && font.width(cut + "..") > maxWidth) {
-            cut = cut.substring(0, cut.length() - 1);
-         }
-
-         return cut + "..";
-      }
-   }
-
-   static List<String> wrap(Font font, String text, int maxWidth) {
-      List<String> lines = new ArrayList<>();
-      StringBuilder line = new StringBuilder();
-      for (String word : text.split("\\s+")) {
-         if (line.length() == 0) {
-            line.append(word);
-         } else if (font.width(line + " " + word) <= maxWidth) {
-            line.append(' ').append(word);
-         } else {
-            lines.add(line.toString());
-            line.setLength(0);
-            line.append(word);
-         }
-      }
-
-      if (line.length() > 0) {
-         lines.add(line.toString());
-      }
-
-      return lines;
-   }
-
-   /** Filled rectangle with rounded corners, built from non-overlapping fills so translucent colours stay even. */
-   static void roundRect(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int radius, int color) {
-      int r = Math.max(0, Math.min(radius, Math.min((x2 - x1) / 2, (y2 - y1) / 2)));
-      if (r <= 0) {
-         g.fill(x1, y1, x2, y2, color);
-         return;
-      }
-
-      g.fill(x1 + r, y1, x2 - r, y2, color);
-      g.fill(x1, y1 + r, x1 + r, y2 - r, color);
-      g.fill(x2 - r, y1 + r, x2, y2 - r, color);
-      for (int i = 0; i < r; i++) {
-         double dy = r - i - 0.5;
-         int inset = (int)Math.round(r - Math.sqrt(Math.max(0.0, r * r - dy * dy)));
-         g.fill(x1 + inset, y1 + i, x1 + r, y1 + i + 1, color);
-         g.fill(x2 - r, y1 + i, x2 - inset, y1 + i + 1, color);
-         g.fill(x1 + inset, y2 - i - 1, x1 + r, y2 - i, color);
-         g.fill(x2 - r, y2 - i - 1, x2 - inset, y2 - i, color);
-      }
-   }
-
-   private static void outline(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int color) {
-      g.fill(x1 + 2, y1, x2 - 2, y1 + 1, color);
-      g.fill(x1 + 2, y2 - 1, x2 - 2, y2, color);
-      g.fill(x1, y1 + 2, x1 + 1, y2 - 2, color);
-      g.fill(x2 - 1, y1 + 2, x2, y2 - 2, color);
-      g.fill(x1 + 1, y1 + 1, x1 + 2, y1 + 2, color);
-      g.fill(x2 - 2, y1 + 1, x2 - 1, y1 + 2, color);
-      g.fill(x1 + 1, y2 - 2, x1 + 2, y2 - 1, color);
-      g.fill(x2 - 2, y2 - 2, x2 - 1, y2 - 1, color);
-   }
-
-   private static void gradient(GuiGraphicsExtractor g, int left, int top, int right, int bottom, int c1, int c2, int alpha) {
-      int width = Math.max(1, right - left);
-      int steps = Math.min(32, width);
-      for (int i = 0; i < steps; i++) {
-         int sx = left + width * i / steps;
-         int ex = left + width * (i + 1) / steps;
-         float t = steps <= 1 ? 0.0F : (float)i / (steps - 1);
-         g.fill(sx, top, ex, bottom, GeminiMark.withAlpha(HudOverlay.lerp(c1, c2, t), alpha));
-      }
-   }
-
-   private static void magnifier(GuiGraphicsExtractor g, int x, int y, int color) {
-      g.fill(x + 1, y, x + 4, y + 1, color);
-      g.fill(x, y + 1, x + 1, y + 4, color);
-      g.fill(x + 4, y + 1, x + 5, y + 4, color);
-      g.fill(x + 1, y + 4, x + 4, y + 5, color);
-      g.fill(x + 4, y + 5, x + 5, y + 6, color);
-      g.fill(x + 5, y + 6, x + 6, y + 7, color);
-   }
-
-   /** 7x7 pixel icons per category, drawn with fills so they take the theme colour. */
-   private static void icon(GuiGraphicsExtractor g, Category category, int x, int y, int color) {
-      String[] rows = switch (category) {
-         case COMBAT -> new String[]{".....##", "....###", "...###.", "#.###..", ".###...", ".##....", "#.#...."};
-         case MOVEMENT -> new String[]{"#..#...", ".#..#..", "..#..#.", "...#..#", "..#..#.", ".#..#..", "#..#..."};
-         case PLAYER -> new String[]{"..###..", "..###..", "...#...", ".#####.", "...#...", "..#.#..", ".#...#."};
-         case WORLD -> new String[]{"..###..", ".#.#.#.", "#..#..#", "#######", "#..#..#", ".#.#.#.", "..###.."};
-         case RENDER -> new String[]{".......", "..###..", ".#...#.", "#..#..#", ".#...#.", "..###..", "......."};
-         case HUD -> new String[]{"#######", "#.....#", "#######", "#..#..#", "#..#..#", "#..#..#", "#######"};
-         default -> new String[]{"...#...", ".#####.", ".#...#.", "##.#.##", ".#...#.", ".#####.", "...#..."};
-      };
-      for (int row = 0; row < rows.length; row++) {
-         String line = rows[row];
-         int start = -1;
-         for (int col = 0; col <= line.length(); col++) {
-            boolean set = col < line.length() && line.charAt(col) == '#';
-            if (set && start < 0) {
-               start = col;
-            } else if (!set && start >= 0) {
-               g.fill(x + start, y + row, x + col, y + row + 1, color);
-               start = -1;
-            }
-         }
-      }
+   private static String plain(String text) {
+      return text == null ? "" : text.replaceAll("§.", "");
    }
 
    private static enum Kind {
       CATEGORY,
+      PAGE_TAB,
+      PAGE,
       CARD,
       SWITCH,
       STAR,
@@ -1261,15 +1779,19 @@ public final class WindowGuiScreen extends Screen {
       SEARCH,
       CLEAR,
       BIND,
-      BOOL,
-      NUMBER,
-      COLOR,
-      MODE,
-      LIST,
-      ACTION,
+      CONTROL,
+      THEME_BUTTON,
+      THEME_POPOVER,
+      THEME,
       LAYOUT,
       HUD_EDIT,
-      MENU_KEY;
+      MENU_KEY,
+      PALETTE,
+      HELP,
+      MORE;
+   }
+
+   private record PageHit(Object owner, DashboardPage.Click click) {
    }
 
    private record Hit(WindowGuiScreen.Kind kind, int x, int y, int w, int h, Object target) {

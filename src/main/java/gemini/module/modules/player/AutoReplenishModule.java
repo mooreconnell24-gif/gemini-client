@@ -15,14 +15,14 @@ public final class AutoReplenishModule extends Module {
    private int cooldown;
 
    public AutoReplenishModule() {
-      super("AutoReplenish", "Refill hotbar stacks from your inventory.", Category.PLAYER);
+      super("Auto Replenish", "Refills low hotbar stacks from the rest of your inventory.", Category.PLAYER);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && client.gameMode != null && client.gui.screen() == null && Inventories.inventoryOpenOrClosed(player)) {
+      if (player != null && client.gameMode != null && client.gui.screen() == null && Inventories.canClick(player)) {
          if (this.cooldown > 0) {
             this.cooldown--;
          } else {

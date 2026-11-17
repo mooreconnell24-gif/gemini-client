@@ -2,15 +2,18 @@ package gemini;
 
 import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
+import gemini.input.BindWarnings;
 import gemini.input.GeminiKeys;
 import gemini.module.ModuleManager;
 import gemini.render.Render3D;
 import gemini.ui.HudOverlay;
 import gemini.ui.SandboxUi;
 import gemini.ui.clickgui.Menus;
+import gemini.ui.palette.PaletteScreen;
 import gemini.util.BaritoneBridge;
 import gemini.util.ChunkChanges;
 import gemini.util.ClientThread;
+import gemini.module.modules.render.CrosshairPlus;
 import gemini.util.SingleplayerGate;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -79,6 +82,12 @@ public final class Gemini implements ClientModInitializer {
             toggleMenu(client);
          }
 
+         while (GeminiKeys.PALETTE.consumeClick()) {
+            openPalette(client);
+         }
+
+         BindWarnings.tick(client, this.moduleManager);
+
          this.moduleManager.onEndTick(client);
          this.configManager.tick();
       });
@@ -98,6 +107,15 @@ public final class Gemini implements ClientModInitializer {
             return false;
          }
       });
+      // Crosshair (render module) can stand in for the vanilla crosshair rather than drawing over it.
+      HudElementRegistry.replaceElement(
+         VanillaHudElements.CROSSHAIR,
+         vanilla -> (graphics, deltaTracker) -> {
+            if (!CrosshairPlus.replacesVanilla() || !SingleplayerGate.allowed()) {
+               vanilla.extractRenderState(graphics, deltaTracker);
+            }
+         }
+      );
       HudElementRegistry.attachElementBefore(
          VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("gemini", "overlay"), new HudOverlay(this.moduleManager)::onHudRender
       );
@@ -139,6 +157,19 @@ public final class Gemini implements ClientModInitializer {
 
    public static Identifier id(String path) {
       return Identifier.fromNamespaceAndPath("gemini", path);
+   }
+
+   /** The quick-search key in game: the palette over the world, refused with the reason where Gemini may not act. */
+   private static void openPalette(Minecraft client) {
+      if (client.gui.screen() != null || client.player == null) {
+         return;
+      }
+
+      if (!SingleplayerGate.allowed()) {
+         client.gui.hud.getChat().addClientSystemMessage(Component.literal(SingleplayerGate.denialMessage()));
+      } else {
+         PaletteScreen.open(client);
+      }
    }
 
    private static void toggleMenu(Minecraft client) {

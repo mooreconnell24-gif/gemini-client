@@ -9,10 +9,10 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class AutoWalkModule extends Module {
    private final BooleanSetting sprint = this.addSetting(new BooleanSetting("Sprint", "Sprint while walking", true));
-   private final BooleanSetting jump = this.addSetting(new BooleanSetting("Auto Jump", "Hop over obstacles in the way", true));
+   private final BooleanSetting jump = this.addSetting(new BooleanSetting("Auto Jump", "Jump over blocks in the way", true));
 
    public AutoWalkModule() {
-      super("AutoWalk", "Walk forward automatically.", Category.MOVEMENT);
+      super("Auto Walk", "Walks forward without you holding the key.", Category.MOVEMENT);
    }
 
    @Override
@@ -21,9 +21,7 @@ public final class AutoWalkModule extends Module {
       if (client.options != null) {
          // Hand control back to the real keys so holding W while switching AutoWalk off keeps walking.
          client.options.keyUp.setDown(MoveUtil.physicalKeyDown(client.options.keyUp));
-         if (this.sprint.get()) {
-            client.options.keySprint.setDown(MoveUtil.physicalKeyDown(client.options.keySprint));
-         }
+         client.options.keySprint.setDown(MoveUtil.physicalKeyDown(client.options.keySprint));
       }
    }
 

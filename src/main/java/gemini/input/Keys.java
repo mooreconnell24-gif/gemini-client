@@ -14,12 +14,17 @@ public final class Keys {
 
    public static final int A = 4;
    public static final int F = 9;
+   public static final int K = 14;
    public static final int ENTER = 40;
    public static final int ESCAPE = 41;
    public static final int BACKSPACE = 42;
    public static final int TAB = 43;
    public static final int SPACE = 44;
+   public static final int HOME = 74;
+   public static final int PAGE_UP = 75;
    public static final int DELETE = 76;
+   public static final int END = 77;
+   public static final int PAGE_DOWN = 78;
    public static final int RIGHT = 79;
    public static final int LEFT = 80;
    public static final int DOWN = 81;

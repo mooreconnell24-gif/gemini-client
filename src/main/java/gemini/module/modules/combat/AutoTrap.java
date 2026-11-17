@@ -1,9 +1,9 @@
 package gemini.module.modules.combat;
 
-import gemini.util.Targets;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -21,20 +21,22 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AutoTrap extends Module {
    private final PlaceSettings placer = new PlaceSettings(this, 1, 3, 4.8);
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Trap block coverage", "Full", "Full", "Head", "Feet"));
-   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Enemy search range", 5.0, 2.0, 7.0, 0.2));
-   private final NumberSetting predictTicks = this.addSetting(new NumberSetting("Predict Ticks", "Predict enemy movement ticks ahead", 2.0, 0.0, 6.0, 1.0));
-   private final BooleanSetting antiStep = this.addSetting(new BooleanSetting("Anti Step", "Cap top of trap to block stepping out", true));
-   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight queued trap blocks", true));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Which part of the enemy to enclose: full body, head or feet", "Full", "Full", "Head", "Feet"));
+   private final NumberSetting targetRange = this.addSetting(new NumberSetting("Target Range", "Farthest enemy to look for, in blocks", 5.0, 2.0, 7.0, 0.2));
+   private final NumberSetting predictTicks = this.addSetting(new NumberSetting("Predict Ticks", "Ticks ahead the enemy's movement is projected", 2.0, 0.0, 6.0, 1.0));
+   private final BooleanSetting antiStep = this.addSetting(new BooleanSetting("Anti Step", "Cover the top of the trap so the enemy cannot step out", true));
+   private final BooleanSetting render = this.addSetting(new BooleanSetting("Render", "Highlight the blocks waiting to be placed", true));
+   private final Targeting targeting = Targeting.builder(this).box("Outline", 190).build();
    private final List<BlockPos> currentPlan = new ArrayList<>();
 
    public AutoTrap() {
-      super("AutoTrap", "Encase nearby enemies in obsidian with predictive aim.", Category.COMBAT);
+      super("Auto Trap", "Surrounds the chosen enemy with obsidian, aiming at where it is moving.", Category.COMBAT);
    }
 
    @Override
    public void onDisable() {
       this.currentPlan.clear();
+      this.targeting.clear();
    }
 
    @Override
@@ -42,7 +44,7 @@ public final class AutoTrap extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
-         LivingEntity enemy = Targets.nearestEnemy(player, client.level.entitiesForRendering(), this.targetRange.get(), true);
+         LivingEntity enemy = this.targeting.pick(player, client.level.entitiesForRendering(), this.targetRange.get(), null);
          if (enemy == null) {
             this.currentPlan.clear();
          } else {
@@ -74,11 +76,13 @@ public final class AutoTrap extends Module {
          }
       } else {
          this.currentPlan.clear();
+         this.targeting.clear();
       }
    }
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       Minecraft client = Minecraft.getInstance();
       if (this.render.get() && client.level != null) {
          for (BlockPos pos : this.currentPlan) {
@@ -93,5 +97,6 @@ public final class AutoTrap extends Module {
    @Override
    public void onWorldChange() {
       this.currentPlan.clear();
+      this.targeting.clear();
    }
 }

@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class NoPush extends Module {
-   private final BooleanSetting entities = this.addSetting(new BooleanSetting("Entities", "Cancel horizontal push from crowded entities", true));
-   private final BooleanSetting water = this.addSetting(new BooleanSetting("Water Current", "Resist flowing water drift when standing still", true));
+   private final BooleanSetting entities = this.addSetting(new BooleanSetting("Entities", "Cancel sideways pushes from entities around you", true));
+   private final BooleanSetting water = this.addSetting(new BooleanSetting("Water Current", "Stop flowing water carrying you along", true));
 
    public NoPush() {
-      super("NoPush", "Prevent entities and water currents from pushing you.", Category.PLAYER);
+      super("No Push", "Stops crowds of entities and water currents pushing you while you stand still.", Category.PLAYER);
    }
 
    @Override

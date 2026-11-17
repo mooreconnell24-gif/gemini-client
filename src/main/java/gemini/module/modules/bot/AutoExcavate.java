@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 
 public final class AutoExcavate extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Horizontal excavation radius", 4.0, 1.0, 16.0, 1.0));
-   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "Layers downward to clear", 3.0, 1.0, 16.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Horizontal radius to dig out, in blocks", 4.0, 1.0, 16.0, 1.0));
+   private final NumberSetting depth = this.addSetting(new NumberSetting("Depth", "Layers to dig downwards", 3.0, 1.0, 16.0, 1.0));
 
    public AutoExcavate() {
-      super("Auto Excavate", "Excavate a cubic area around you layer by layer.", Category.WORLD);
+      super("Auto Excavate", "Digs out the area around you layer by layer.", Category.WORLD);
    }
 
    @Override
@@ -35,11 +35,20 @@ public final class AutoExcavate extends Module {
          int r = this.radius.intValue();
          int d = this.depth.intValue();
          BaritoneBridge.startExcavate(p.offset(-r, -d, -r), p.offset(r, 2, r));
+         BaritoneBridge.claimTask(this);
       }
    }
 
    @Override
    public void onDisable() {
-      BaritoneBridge.stopAll();
+      BaritoneBridge.stopTaskOf(this);
+   }
+
+   /** Switches the module off once its task is over or another request replaced it, so the list shows what is really running. */
+   @Override
+   public void onTick() {
+      if (!BaritoneBridge.holdsTask(this)) {
+         this.setEnabled(false);
+      }
    }
 }

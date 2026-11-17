@@ -205,7 +205,8 @@ class EventBusTest {
          }
 
          @Override
-         public void record(Module module, long nanos) {
+         public void record(Module module, int hook, long nanos) {
+            assertEquals(EventBus.TICK, hook);
             timed.add(module);
          }
       });

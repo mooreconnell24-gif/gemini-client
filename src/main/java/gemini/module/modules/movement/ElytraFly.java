@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -16,19 +18,26 @@ import net.minecraft.world.phys.Vec3;
 
 public final class ElytraFly extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Control = fly where you look at a fixed speed", "Control", "Control", "Boost")
+      new ModeSetting("Mode", "Control flies where you look at a fixed speed; Boost speeds up your glide while you hold forward", "Control", "Control", "Boost")
    );
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Flight speed in blocks per tick", 1.2, 0.2, 5.0, 0.1));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Flight speed (top speed in Boost), in blocks per tick", 1.2, 0.2, 5.0, 0.1));
    private final NumberSetting vertical = this.addSetting(
       new NumberSetting("Vertical Speed", "Climb and descent speed with Jump and Sneak", 0.5, 0.1, 2.0, 0.1).showIf(() -> this.mode.is("Control"))
    );
    private final BooleanSetting hover = this.addSetting(
-      new BooleanSetting("Hover", "Hang still in the air when no movement key is held", true).showIf(() -> this.mode.is("Control"))
+      new BooleanSetting("Hover", "Stay still in the air when no movement key is held", true).showIf(() -> this.mode.is("Control"))
    );
    private final BooleanSetting takeoff = this.addSetting(new BooleanSetting("Auto Takeoff", "Open the elytra when you press Jump in mid-air", true));
 
    public ElytraFly() {
-      super("Elytra Fly", "Fly with an elytra with full control.", Category.MOVEMENT);
+      super("Elytra Fly", "Lets you fly freely with an elytra instead of gliding.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("ElytraBoost");
+      return names;
    }
 
    @Override

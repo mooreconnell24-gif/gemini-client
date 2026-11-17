@@ -10,12 +10,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class FastSwim extends Module {
-   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Water acceleration mode", "Dolphin", "Dolphin", "Stream", "Pulse"));
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Horizontal swim multiplier", 1.55, 1.1, 3.0, 0.05));
+   private final ModeSetting mode = this.addSetting(new ModeSetting("Mode", "Pulse boosts every fourth tick; Dolphin and Stream boost every tick", "Dolphin", "Dolphin", "Stream", "Pulse"));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Swim speed multiplier", 1.55, 1.1, 3.0, 0.05));
    private int tick;
 
    public FastSwim() {
-      super("FastSwim", "Swim faster underwater and on the surface.", Category.MOVEMENT);
+      super("Fast Swim", "Makes you swim faster in water and lava.", Category.MOVEMENT);
    }
 
    @Override

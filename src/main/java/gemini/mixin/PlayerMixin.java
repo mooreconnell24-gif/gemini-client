@@ -21,7 +21,7 @@ public abstract class PlayerMixin {
       Gemini gemini = Gemini.getInstance();
       if (gemini != null && gemini.modules() != null && (Object)this == Minecraft.getInstance().player) {
          SafeWalkModule safeWalk = gemini.modules().byClass(SafeWalkModule.class).orElse(null);
-         if (safeWalk != null && safeWalk.isEnabled()) {
+         if (safeWalk != null && safeWalk.isEnabled() && safeWalk.stopsAtEdges()) {
             cir.setReturnValue(true);
          }
       }

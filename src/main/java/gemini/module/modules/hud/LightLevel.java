@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
+import gemini.ui.Glass;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.List;
@@ -9,7 +11,7 @@ import net.minecraft.world.level.LightLayer;
 
 public final class LightLevel extends Ticked {
    public LightLevel() {
-      super("Light Level", "Light at your feet and whether monsters can spawn there.", "Top Left", 6, 166, 200);
+      super("Light Level", "Shows the light level at your feet and whether monsters can spawn there.", "Top Left", 6, 166, 200);
    }
 
    @Override
@@ -23,8 +25,8 @@ public final class LightLevel extends Ticked {
       int effective = Math.min(level.getMaxLocalRawBrightness(pos), 15);
       boolean spawnable = block <= blockLimit && effective <= skyLimit;
       return List.of(
-         new TextHudWidget.Line("Light " + effective + "  (sky " + sky + " / block " + block + ")", -1511689),
-         new TextHudWidget.Line(spawnable ? "Monsters can spawn" : "Spawn-proof", spawnable ? -1548963 : -11086174)
+         TextHudWidget.Line.row("Light", Integer.toString(effective), "sky " + sky + "  block " + block, spawnable ? Glass.WARN : HudStyle.PRIMARY),
+         TextHudWidget.Line.row("Monsters", spawnable ? "can spawn" : "too bright", "", spawnable ? Glass.WARN : HudStyle.PRIMARY)
       );
    }
 }

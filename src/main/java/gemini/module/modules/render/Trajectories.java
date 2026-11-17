@@ -34,18 +34,18 @@ public final class Trajectories extends Module {
    private int candidatesTick = -1;
    private final BooleanSetting bows = this.addSetting(new BooleanSetting("Bows", "Bows and loaded crossbows", true));
    private final BooleanSetting tridents = this.addSetting(new BooleanSetting("Tridents", "Thrown tridents", true));
-   private final BooleanSetting throwables = this.addSetting(new BooleanSetting("Throwables", "Pearls, snowballs, eggs, potions and XP bottles", true));
+   private final BooleanSetting throwables = this.addSetting(new BooleanSetting("Throwables", "Pearls, snowballs, eggs, potions and experience bottles", true));
    private final NumberSetting steps = this.addSetting(new NumberSetting("Max Steps", "How many ticks of flight to simulate", 150.0, 20.0, 400.0, 10.0));
-   private final BooleanSetting landing = this.addSetting(new BooleanSetting("Landing Marker", "Box where the projectile ends", true));
+   private final BooleanSetting landing = this.addSetting(new BooleanSetting("Landing Marker", "Draw a box where the projectile lands", true));
    private final BooleanSetting entities = this.addSetting(
-      new BooleanSetting("Hit Entities", "Stop trajectory arc at entities and highlight the target", true)
+      new BooleanSetting("Hit Entities", "Stop the path at entities and highlight the one it would hit", true)
    );
    private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the path", 2.0, 0.5, 5.0, 0.5));
-   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Path Color", "Color of the flight path", 190));
-   private final ColorSetting hitColor = this.addSetting(new ColorSetting("Hit Color", "Color of the landing marker", 0));
+   private final ColorSetting pathColor = this.addSetting(new ColorSetting("Path Color", "Colour of the flight path", 190));
+   private final ColorSetting hitColor = this.addSetting(new ColorSetting("Hit Color", "Colour of the landing marker", 0));
 
    public Trajectories() {
-      super("Trajectories", "Predict where arrows, pearls and other projectiles will land.", Category.RENDER);
+      super("Trajectories", "Shows where arrows, pearls and other projectiles you are about to throw or shoot will land.", Category.RENDER);
    }
 
    @Override
@@ -161,10 +161,9 @@ public final class Trajectories extends Module {
 
       if (end != null && this.landing.get()) {
          int hit = this.hitColor.argb();
-         AABB marker = new AABB(end.x - 0.2, end.y - 0.2, end.z - 0.2, end.x + 0.2, end.y + 0.2, end.z + 0.2);
-         Render3D.box(marker, hit, true, true, 2.0F, 90, true);
+         Render3D.box(end.x - 0.2, end.y - 0.2, end.z - 0.2, end.x + 0.2, end.y + 0.2, end.z + 0.2, hit, true, true, 2.0F, 90, true);
          if (struck != null) {
-            Render3D.box(Render3D.interpolatedBox(struck, partialTick), hit, true, true, 2.0F, 40, true);
+            Render3D.entityBox(struck, partialTick, 0.0, hit, true, true, 2.0F, 40, true);
          }
       }
    }

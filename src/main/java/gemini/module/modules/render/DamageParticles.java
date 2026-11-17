@@ -1,24 +1,32 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.render.Render3D;
+import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
 import java.util.ArrayDeque;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 public final class DamageParticles extends Module {
-   private final Map<Integer, Float> lastHealth = new HashMap<>();
+   private final Int2FloatOpenHashMap lastHealth = new Int2FloatOpenHashMap();
    private final ArrayDeque<DamageParticles.Popup> popups = new ArrayDeque<>();
 
    public DamageParticles() {
-      super("DamageParticles", "Show floating 3D damage and heal numbers on hit.", Category.RENDER);
+      super("Damage Numbers", "Shows floating numbers for damage dealt and health healed.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("DamageParticles");
+      return names;
    }
 
    @Override
@@ -39,8 +47,9 @@ public final class DamageParticles extends Module {
          for (Entity entity : client.level.entitiesForRendering()) {
             if (entity != client.player && entity instanceof LivingEntity living && entity.distanceToSqr(client.player) <= 400.0) {
                float hp = living.getHealth() + living.getAbsorptionAmount();
-               Float prev = this.lastHealth.put(living.getId(), hp);
-               if (prev != null && Math.abs(prev - hp) >= 0.5F) {
+               boolean known = this.lastHealth.containsKey(living.getId());
+               float prev = this.lastHealth.put(living.getId(), hp);
+               if (known && Math.abs(prev - hp) >= 0.5F) {
                   float diff = hp - prev;
                   String text = String.format(Locale.ROOT, "%s%.1f", diff < 0.0F ? "-" : "+", Math.abs(diff));
                   int color = diff < 0.0F ? -1548963 : -11086174;
@@ -70,7 +79,7 @@ public final class DamageParticles extends Module {
          if (age >= 1.0F) {
             it.remove();
          } else {
-            Render3D.text(p.text, p.pos.add(0.0, age * 0.65, 0.0), p.color, 0.9F, true);
+            Render3D.text(p.text, p.pos.x, p.pos.y + age * 0.65, p.pos.z, p.color, 0.9F, true);
          }
       }
    }

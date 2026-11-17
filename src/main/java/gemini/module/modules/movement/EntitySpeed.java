@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.LinearFlightModuleBase;
 import gemini.module.setting.BooleanSetting;
@@ -12,16 +13,18 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 public final class EntitySpeed extends LinearFlightModuleBase {
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Mount speed in blocks per tick", 0.6, 0.1, 3.0, 0.05));
-   private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only On Ground", "Leave airborne mounts alone", false));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Mount speed, in blocks per tick", 0.6, 0.1, 3.0, 0.05));
+   private final BooleanSetting onlyGround = this.addSetting(new BooleanSetting("Only On Ground", "Leave mounts that are in the air alone", false));
 
    public EntitySpeed() {
-      super("Entity Speed", "Speed up the vehicle or animal you are riding.", Category.MOVEMENT);
+      super("Entity Speed", "Speeds up the vehicle or animal you are riding.", Category.MOVEMENT);
    }
+
+   private final InfoText infoText = new InfoText();
 
    @Override
    public String info() {
-      return String.format("%.2f", this.speed.get());
+      return this.infoText.fixed(this.speed.get(), 2);
    }
 
    @Override

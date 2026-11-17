@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.Inventories;
 import gemini.util.ClientState;
 import gemini.module.Category;
@@ -19,14 +21,22 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 
 public final class AutoPot extends Module {
-   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw potion at or below this health", 10.0, 1.0, 20.0, 0.5));
+   private final NumberSetting health = this.addSetting(new NumberSetting("Health", "Throw a potion at or below this health", 10.0, 1.0, 20.0, 0.5));
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between throws", 10.0, 1.0, 60.0, 1.0));
-   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets only", true));
-   private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Use only healing/regen potions", true));
+   private final BooleanSetting silent = this.addSetting(new BooleanSetting("Silent Aim", "Look down without moving your camera", true));
+   private final BooleanSetting onlyHealing = this.addSetting(new BooleanSetting("Healing Only", "Only use healing and regeneration potions", true));
    private int wait;
 
    public AutoPot() {
-      super("Auto Pot", "Splash healing potions at your feet when low on HP.", Category.COMBAT);
+      super("Auto Potion", "Throws healing splash potions at your feet when your health is low.", Category.COMBAT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Pot");
+      names.add("AutoPot");
+      return names;
    }
 
    @Override
@@ -39,13 +49,24 @@ public final class AutoPot extends Module {
       Minecraft client = Minecraft.getInstance();
       if (ClientState.ready(client) && client.gui.screen() == null) {
          LocalPlayer player = client.player;
+         if (this.wait > 0) {
+            this.wait--;
+         }
+
+         // No potion left: do not hold the aim (and every lower-priority rotation) down for nothing.
          if (!(player.getHealth() > this.health.get())
-            && this.wait-- <= 0
+            && this.wait <= 0
+            && Inventories.findHotbar(player, this::usable) >= 0
             && RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, this.silent.get(), ActionPriority.CRITICAL_SURVIVAL, 2.0F)
             && Inventories.withHotbarItem(player, this::usable, () -> RotationManager.useWithAim(player, () -> client.gameMode.useItem(player, InteractionHand.MAIN_HAND)))) {
             this.wait = this.delay.intValue();
          }
       }
+   }
+
+   @Override
+   public void onEnable() {
+      this.wait = 0;
    }
 
    private boolean usable(ItemStack stack) {

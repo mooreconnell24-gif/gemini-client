@@ -5,7 +5,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.util.SpCommands;
+import gemini.util.TickControl;
 
 /** Freezes the world with /tick freeze; the player can still move, build and step time forward. */
 public final class TickFreeze extends Module {
@@ -14,7 +14,7 @@ public final class TickFreeze extends Module {
    );
 
    public TickFreeze() {
-      super("Tick Freeze", "Freeze mobs, redstone and time while you keep moving.", Category.WORLD);
+      super("Tick Freeze", "Freezes mobs, redstone and time while you keep moving.", Category.WORLD);
       this.addSetting(new ActionSetting("Step", "Advance the frozen world by Step Ticks", this::step));
    }
 
@@ -30,19 +30,21 @@ public final class TickFreeze extends Module {
 
    @Override
    public void onEnable() {
-      if (SpCommands.run("tick freeze")) {
+      if (TickControl.freeze(this)) {
          CommandManager.feedback("§bTick Freeze §7the world is frozen. Use §fStep§7 to advance it.");
       }
    }
 
    @Override
    public void onDisable() {
-      SpCommands.run("tick unfreeze");
+      TickControl.unfreeze(this);
    }
 
    private void step() {
       if (this.isEnabled()) {
-         SpCommands.run("tick step " + this.stepTicks.intValue());
+         if (!TickControl.step(this, this.stepTicks.intValue())) {
+            CommandManager.feedback("§bTick Freeze §7could not step the world right now.");
+         }
       } else {
          CommandManager.feedback("§bTick Freeze §7switch the module on first.");
       }

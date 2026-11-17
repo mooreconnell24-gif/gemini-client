@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import net.minecraft.world.phys.HitResult;
 
 public final class LookingAt extends Ticked {
    public LookingAt() {
-      super("Looking At", "The block or entity under your crosshair.", "Top Center", 0, 40, 50);
+      super("Looking At", "Shows the block or entity under your crosshair.", "Top Center", 0, 40, 50);
    }
 
    @Override
@@ -27,7 +28,7 @@ public final class LookingAt extends Ticked {
          BlockPos pos = block.getBlockPos();
          return List.of(
             new TextHudWidget.Line(state.getBlock().getName().getString(), hud.accent),
-            new TextHudWidget.Line(pos.getX() + "  " + pos.getY() + "  " + pos.getZ(), -6641995)
+            new TextHudWidget.Line(pos.getX() + "  " + pos.getY() + "  " + pos.getZ(), HudStyle.SECONDARY)
          );
       } else if (hit instanceof EntityHitResult entityHit) {
          Entity entity = entityHit.getEntity();
@@ -37,7 +38,7 @@ public final class LookingAt extends Ticked {
             lines.add(
                new TextHudWidget.Line(
                   String.format(Locale.ROOT, "%.1f / %.0f HP", living.getHealth(), living.getMaxHealth()),
-                  HudHelpers.ratioColor(living.getHealth() / Math.max(1.0F, living.getMaxHealth()))
+                  HudStyle.health(living.getHealth() / Math.max(1.0F, living.getMaxHealth()))
                )
             );
          }

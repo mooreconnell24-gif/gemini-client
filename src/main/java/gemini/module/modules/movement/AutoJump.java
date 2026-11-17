@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -10,11 +12,20 @@ import net.minecraft.client.player.LocalPlayer;
 
 public final class AutoJump extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Always = bunny hop while moving", "Obstacle", "Always", "Obstacle")
+      new ModeSetting("Mode", "Obstacle jumps when you walk into a block; Always jumps whenever you move", "Obstacle", "Always", "Obstacle")
    );
 
    public AutoJump() {
-      super("Auto Jump", "Jump automatically while walking.", Category.MOVEMENT);
+      super("Auto Jump", "Jumps for you while you walk, either over obstacles or all the time.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Hop");
+      names.add("KeepY");
+      names.add("Bhop");
+      return names;
    }
 
    @Override

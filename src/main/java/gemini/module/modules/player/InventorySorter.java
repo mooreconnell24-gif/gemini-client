@@ -6,6 +6,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import gemini.util.Inventories;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,9 +26,10 @@ public final class InventorySorter extends Module {
    private int cooldown;
    private int moves;
    private int guard;
+   private final InfoText infoText = new InfoText();
 
    public InventorySorter() {
-      super("Inventory Sorter", "Tidy your inventory into sorted, merged stacks.", Category.PLAYER);
+      super("Inventory Sorter", "Sorts your inventory and merges partial stacks.", Category.PLAYER);
    }
 
    @Override
@@ -136,6 +138,6 @@ public final class InventorySorter extends Module {
 
    @Override
    public String info() {
-      return this.moves > 0 ? this.moves + " moves" : null;
+      return this.moves > 0 ? this.infoText.whole(this.moves, " moves") : null;
    }
 }

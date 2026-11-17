@@ -1,5 +1,7 @@
 package gemini.module.modules.misc;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -21,24 +23,31 @@ import net.minecraft.world.phys.Vec3;
 public final class Aim extends Module {
    public static Aim instance;
    private final BooleanSetting spring = this.addSetting(
-      new BooleanSetting("Spring Turns", "Turns from modules accelerate and settle like a hand on a mouse instead of moving at one fixed rate", true)
+      new BooleanSetting("Spring Turns", "Turns made by modules speed up and settle like a hand on a mouse instead of moving at one fixed rate", true)
    );
    private final NumberSetting smoothness = this.addSetting(
       new NumberSetting("Snappiness", "How quickly a spring turn reaches its target", 0.6, 0.1, 1.0, 0.05).showIf(this.spring::get)
    );
    private final BooleanSetting marker = this.addSetting(
-      new BooleanSetting("Show Silent Aim", "Draw a marker in the world where silent rotations are pointing", true)
+      new BooleanSetting("Show Silent Aim", "Draw a marker where modules are aiming without moving your camera", true)
    );
    private final ColorSetting color = this.addSetting(new ColorSetting("Marker Color", "Colour of the aim marker", 196).showIf(this.marker::get));
    private final NumberSetting distance = this.addSetting(
-      new NumberSetting("Marker Distance", "How far in front of your eyes the marker floats", 2.5, 1.0, 6.0, 0.5).showIf(this.marker::get)
+      new NumberSetting("Marker Distance", "How far in front of your eyes the marker floats, in blocks", 2.5, 1.0, 6.0, 0.5).showIf(this.marker::get)
    );
    private long lastFrame;
 
    public Aim() {
-      super("Aim", "Smooth module turns and show where silent aim points.", Category.CLIENT);
+      super("Rotations", "Makes module turns speed up and settle like a hand on a mouse, and shows where silent aim is pointing.", Category.CLIENT);
       instance = this;
       this.loadState(true, this.getKeybind());
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Aim");
+      return names;
    }
 
    @Override
@@ -83,8 +92,15 @@ public final class Aim extends Module {
       float yawRad = -aim[0] * (float)(Math.PI / 180.0);
       float pitchRad = aim[1] * (float)(Math.PI / 180.0);
       float cosPitch = Mth.cos(pitchRad);
-      Vec3 look = new Vec3(Mth.sin(yawRad) * cosPitch, -Mth.sin(pitchRad), Mth.cos(yawRad) * cosPitch);
-      Vec3 at = player.getEyePosition(partialTick).add(look.scale(this.distance.get()));
-      Render3D.point(at, this.color.argb(), 5.0F, true);
+      double reach = this.distance.get();
+      double eyeY = Render3D.entityY(player, partialTick) + player.getEyeHeight();
+      Render3D.point(
+         Render3D.entityX(player, partialTick) + Mth.sin(yawRad) * cosPitch * reach,
+         eyeY - Mth.sin(pitchRad) * reach,
+         Render3D.entityZ(player, partialTick) + Mth.cos(yawRad) * cosPitch * reach,
+         this.color.argb(),
+         5.0F,
+         true
+      );
    }
 }

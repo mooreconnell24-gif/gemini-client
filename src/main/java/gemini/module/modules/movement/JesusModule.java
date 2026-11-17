@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -31,12 +33,12 @@ public final class JesusModule extends Module {
    private static volatile boolean active;
    private final ModeSetting waterMode = this.addSetting(
       new ModeSetting(
-         "Water", "Solid walks on water; Bob floats; Dolphin leaps", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Water", "Solid lets you walk on water; Bob floats you up and down; Dolphin makes you leap", "Solid", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final ModeSetting lavaMode = this.addSetting(
       new ModeSetting(
-         "Lava", "Solid walks on lava; Bob floats; Dolphin leaps", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Lava", "Solid lets you walk on lava; Bob floats you up and down; Dolphin makes you leap", "Solid", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final BooleanSetting flowing = this.addSetting(
@@ -46,19 +48,19 @@ public final class JesusModule extends Module {
       new NumberSetting("Surface Offset", "Raises or lowers the surface you stand on, in blocks", 0.0, -0.3, 0.3, 0.01).showIf(this::anySolid)
    );
    private final NumberSetting speed = this.addSetting(
-      new NumberSetting("Speed", "Walking speed multiplier while standing on a fluid", 1.0, 1.0, 2.0, 0.05).showIf(this::anySolid)
+      new NumberSetting("Speed", "Walking speed multiplier while on a fluid", 1.0, 1.0, 2.0, 0.05).showIf(this::anySolid)
    );
    private final NumberSetting rise = this.addSetting(
-      new NumberSetting("Rise Speed", "Upward speed when rising back to the fluid surface", 0.12, 0.03, 0.4, 0.01)
+      new NumberSetting("Rise Speed", "Upward speed when rising back to the surface", 0.12, 0.03, 0.4, 0.01)
    );
    private final NumberSetting bobHeight = this.addSetting(
-      new NumberSetting("Bob Height", "How far Bob mode swings up and down", 1.0, 0.0, 3.0, 0.1).showIf(() -> this.anyMode(JesusModule.Treatment.BOB))
+      new NumberSetting("Bob Height", "How far Bob mode moves you up and down", 1.0, 0.0, 3.0, 0.1).showIf(() -> this.anyMode(JesusModule.Treatment.BOB))
    );
    private final NumberSetting leap = this.addSetting(
-      new NumberSetting("Leap Power", "Upward speed of each Dolphin jump", 0.42, 0.2, 0.8, 0.02).showIf(() -> this.anyMode(JesusModule.Treatment.DOLPHIN))
+      new NumberSetting("Leap Power", "Upward speed of each Dolphin leap", 0.42, 0.2, 0.8, 0.02).showIf(() -> this.anyMode(JesusModule.Treatment.DOLPHIN))
    );
    private final BooleanSetting dipSneak = this.addSetting(
-      new BooleanSetting("Dip On Sneak", "Hold sneak to sink down into the fluid", true)
+      new BooleanSetting("Dip On Sneak", "Hold sneak to sink into the fluid", true)
    );
    private final BooleanSetting dipBurning = this.addSetting(
       new BooleanSetting("Dip If Burning", "Sink into water when you are on fire so it puts the fire out", true)
@@ -72,7 +74,15 @@ public final class JesusModule extends Module {
    private int surfaceTick = -1073741824;
 
    public JesusModule() {
-      super("Jesus", "Walk on water and lava, or float and leap through it.", Category.MOVEMENT);
+      super("Jesus", "Lets you walk on water and lava, or float and leap through it.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Water Walk");
+      names.add("Liquid Walk");
+      return names;
    }
 
    public static boolean active() {

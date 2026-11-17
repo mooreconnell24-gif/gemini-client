@@ -16,7 +16,7 @@ public final class ChestSwap extends Module {
    private boolean done;
 
    public ChestSwap() {
-      super("Chest Swap", "Swap your chestplate and elytra (bind a key to this).", Category.PLAYER);
+      super("Chest Swap", "Swaps your chestplate and elytra; bind it to a key.", Category.PLAYER);
    }
 
    @Override
@@ -45,7 +45,7 @@ public final class ChestSwap extends Module {
          this.done = true;
          Minecraft client = Minecraft.getInstance();
          LocalPlayer player = client.player;
-         if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(player)) {
+         if (ClientState.ready(client) && Inventories.canClick(player)) {
             this.swap(client, player);
          }
 

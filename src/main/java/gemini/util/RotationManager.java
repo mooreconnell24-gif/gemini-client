@@ -129,7 +129,10 @@ public final class RotationManager {
     * {@code level} is an {@link ActionPriority#level()}, or one of the old 0/5/8/10 values.
     */
    public static boolean request(LocalPlayer player, float yaw, float pitch, float speed, boolean quiet, int level, float tolerance) {
-      if (requested && level < priority) {
+      if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+         // A NaN angle (aiming at a point inside the eye) would end up in the movement packet and get the player kicked.
+         return false;
+      } else if (requested && level < priority) {
          return false;
       } else {
          float fromYaw = quiet && haveServer ? serverYaw : player.getYRot();

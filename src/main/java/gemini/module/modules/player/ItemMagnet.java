@@ -3,6 +3,7 @@ package gemini.module.modules.player;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
+import gemini.util.InfoText;
 import gemini.util.SingleplayerGate;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
@@ -14,10 +15,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class ItemMagnet extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Blocks around you that drops are pulled from", 8.0, 2.0, 24.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you items are pulled from, in blocks", 8.0, 2.0, 24.0, 1.0));
+
+   private final InfoText infoText = new InfoText();
 
    public ItemMagnet() {
-      super("Item Magnet", "Pull your own dropped items toward you.", Category.PLAYER);
+      super("Item Magnet", "Pulls dropped items within the radius to you so you pick them up at once.", Category.PLAYER);
    }
 
    @Override
@@ -50,6 +53,6 @@ public final class ItemMagnet extends Module {
 
    @Override
    public String info() {
-      return this.radius.intValue() + "m";
+      return this.infoText.whole(this.radius.intValue(), "m");
    }
 }

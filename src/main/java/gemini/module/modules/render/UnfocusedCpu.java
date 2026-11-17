@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -12,8 +14,15 @@ public final class UnfocusedCpu extends Module {
    );
 
    public UnfocusedCpu() {
-      super("Unfocused CPU", "Save power by limiting the frame rate when you tab out.", Category.RENDER);
+      super("Background FPS", "Limits the frame rate while the game window is not focused, to save power.", Category.RENDER);
       instance = this;
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Unfocused CPU");
+      return names;
    }
 
    public int cap(int vanilla) {

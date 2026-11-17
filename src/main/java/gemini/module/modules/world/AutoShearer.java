@@ -25,7 +25,7 @@ public final class AutoShearer extends AuraModuleBase<LivingEntity> {
    public AutoShearer() {
       super(
          "Auto Shearer",
-         "Shear grown sheep with the shears in your hotbar.",
+         "Shears nearby sheep that have wool, using shears from your hotbar.",
          Category.WORLD,
          LivingEntity.class,
          "How far away animals are sheared",

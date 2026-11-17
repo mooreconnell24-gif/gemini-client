@@ -6,6 +6,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
+import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,11 +26,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class StorageEspModule extends Module {
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Scan distance in blocks", 64.0, 8.0, 160.0, 4.0));
-   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "3D box rendering style", "Box + Fill", "Box + Fill", "Outline", "Glow", "Fill"));
-   private final BooleanSetting boxes3D = this.addSetting(new BooleanSetting("3D Boxes", "Highlight storage blocks in 3D through walls", true));
-   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw tracer lines to storage blocks", false));
-   private final BooleanSetting labels3D = this.addSetting(new BooleanSetting("3D Labels", "Draw floating labels above storage blocks", false));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far around you to look, in blocks", 64.0, 8.0, 160.0, 4.0));
+   private final ModeSetting style = this.addSetting(new ModeSetting("Style", "Box + Fill draws edges and faces; Outline edges only; Glow edges with a soft edge; Fill faces only", "Box + Fill", "Box + Fill", "Outline", "Glow", "Fill"));
+   private final BooleanSetting boxes3D = this.addSetting(new BooleanSetting("3D Boxes", "Highlight storage blocks through walls", true));
+   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines to storage blocks", false));
+   private final BooleanSetting labels3D = this.addSetting(new BooleanSetting("3D Labels", "Draw labels above storage blocks", false));
    private final BooleanSetting hudList = this.addSetting(new BooleanSetting("HUD List", "Also list nearby storage blocks on the HUD", true));
    private final NumberSetting maxResults = this.addSetting(
       new NumberSetting("Max HUD Entries", "Most entries in the HUD list", 10.0, 3.0, 25.0, 1.0).showIf(this.hudList::get)
@@ -39,15 +40,24 @@ public final class StorageEspModule extends Module {
    private final BooleanSetting shulkers = this.addSetting(new BooleanSetting("Shulkers", "Highlight shulker boxes", true));
    private final BooleanSetting ender = this.addSetting(new BooleanSetting("Ender Chests", "Highlight ender chests", true));
    private final BooleanSetting furnaces = this.addSetting(
-      new BooleanSetting("Furnaces & Hoppers", "Highlight furnaces, smokers, blast furnaces, and hoppers", false)
+      new BooleanSetting("Furnaces & Hoppers", "Highlight furnaces, smokers, blast furnaces and hoppers", false)
    );
    private final BooleanSetting spawners = this.addSetting(new BooleanSetting("Spawners", "Highlight mob spawners", true));
    private final List<StorageEspModule.Hit> allHits = new ArrayList<>();
    private final List<StorageEspModule.Hit> hits = new ArrayList<>();
    private int ticker;
+   private final InfoText infoText = new InfoText();
 
    public StorageEspModule() {
-      super("StorageESP", "Highlight chests, shulkers, ender chests, barrels.", Category.RENDER);
+      super("Storage ESP", "Highlights chests, barrels, shulker boxes, ender chests and other storage blocks.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Stash Finder");
+      names.add("StashFinder");
+      return names;
    }
 
    public List<StorageEspModule.Hit> hits() {
@@ -56,7 +66,7 @@ public final class StorageEspModule extends Module {
 
    @Override
    public String info() {
-      return this.allHits.isEmpty() ? null : Integer.toString(this.allHits.size());
+      return this.allHits.isEmpty() ? null : this.infoText.whole(this.allHits.size(), "");
    }
 
    @Override
@@ -84,7 +94,9 @@ public final class StorageEspModule extends Module {
                      if (!(entity.getBlockPos().distSqr(origin) > maxDistSq)) {
                         String label = this.label(entity);
                         if (label != null) {
-                           found.add(new StorageEspModule.Hit(entity.getBlockPos().immutable(), label));
+                           BlockPos pos = entity.getBlockPos().immutable();
+                           // The 3D tag is built here, twice a second, rather than for every block every frame.
+                           found.add(new StorageEspModule.Hit(pos, label, label + " " + (int)Math.sqrt(pos.distSqr(origin)) + "m"));
                         }
                      }
                   }
@@ -117,19 +129,18 @@ public final class StorageEspModule extends Module {
                if (this.boxes3D.get()) {
                   // Both calls cull off-screen blocks themselves.
                   if (glow) {
-                     Render3D.boxGlow(new AABB(pos), color, 2.0F, 65, true);
+                     Render3D.boxGlow(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0, pos.getY() + 1.0, pos.getZ() + 1.0, color, 2.0F, 65, true);
                   } else {
                      Render3D.block(pos.getX(), pos.getY(), pos.getZ(), color, outline, fill, 1.6F, 50, true);
                   }
                }
 
                if (this.tracers.get()) {
-                  Render3D.line(crosshair, Vec3.atCenterOf(pos), color, 1.2F, true);
+                  Render3D.line(crosshair.x, crosshair.y, crosshair.z, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, color, 1.2F, true);
                }
 
                if (this.labels3D.get() && !Render3D.behindCamera(pos.getX() + 0.5, pos.getY() + 1.25, pos.getZ() + 0.5, 0.0)) {
-                  int dist = (int)Math.sqrt(pos.distSqr(client.player.blockPosition()));
-                  Render3D.text(hit.label() + " " + dist + "m", Vec3.atCenterOf(pos).add(0.0, 0.75, 0.0), color, 0.75F, true);
+                  Render3D.text(hit.tag(), pos.getX() + 0.5, pos.getY() + 1.25, pos.getZ() + 0.5, color, 0.75F, true);
                }
             }
          }
@@ -165,7 +176,8 @@ public final class StorageEspModule extends Module {
       }
    }
 
-   public record Hit(BlockPos pos, String label) {
+   /** A storage block: where, its kind, and the 3D tag ("kind distance") as of the last scan. */
+   public record Hit(BlockPos pos, String label, String tag) {
    }
 
    /** Everything remembered here belongs to the world that was just left. */

@@ -6,6 +6,7 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
+import gemini.util.Hands;
 import gemini.util.Inventories;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -17,23 +18,23 @@ public final class AntiBreak extends Module {
       new NumberSetting("Durability", "Protect items with this many uses left or fewer", 10.0, 1.0, 100.0, 1.0)
    );
    private final BooleanSetting tools = this.addSetting(new BooleanSetting("Held Items", "Move a nearly broken held item out of the hotbar", true));
-   private final BooleanSetting armor = this.addSetting(new BooleanSetting("Armor", "Take off armor that is about to break", true));
-   private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say which item was saved", true));
+   private final BooleanSetting armor = this.addSetting(new BooleanSetting("Armor", "Take off armour that is about to break", true));
+   private final BooleanSetting notify = this.addSetting(new BooleanSetting("Notify", "Say in chat which item was saved", true));
 
    public AntiBreak() {
-      super("Anti Break", "Stop using items that are one hit from breaking.", Category.PLAYER);
+      super("Anti Break", "Moves held items and armour that are about to break out of use before they do.", Category.PLAYER);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && Inventories.canClick(client.player)) {
          LocalPlayer player = client.player;
          if (this.tools.get()) {
             ItemStack held = player.getMainHandItem();
             if (this.atRisk(held)) {
                int target = emptySlot(player);
-               if (target >= 0) {
+               if (target >= 0 && Hands.claimMainHand()) {
                   int selected = player.getInventory().getSelectedSlot();
                   client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(selected), 0, ContainerInput.PICKUP, player);
                   client.gameMode.handleContainerInput(player.inventoryMenu.containerId, Inventories.menuSlot(target), 0, ContainerInput.PICKUP, player);

@@ -11,20 +11,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
 
 public final class ChunkBorders extends Module {
    private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Extra chunks drawn around yours", 0.0, 0.0, 3.0, 1.0));
    private final NumberSetting vertical = this.addSetting(
-      new NumberSetting("Vertical Range", "Blocks above and below you that get lines", 48.0, 16.0, 256.0, 16.0)
+      new NumberSetting("Vertical Range", "How far above and below you lines are drawn, in blocks", 48.0, 16.0, 256.0, 16.0)
    );
-   private final BooleanSetting sections = this.addSetting(new BooleanSetting("Section Lines", "Rings every 16 blocks of height", true));
-   private final ColorSetting edge = this.addSetting(new ColorSetting("Chunk Color", "Color of your chunk's edges", 210));
-   private final ColorSetting inner = this.addSetting(new ColorSetting("Section Color", "Color of the 16-block rings", 120));
+   private final BooleanSetting sections = this.addSetting(new BooleanSetting("Section Lines", "Draw a ring every 16 blocks of height", true));
+   private final ColorSetting edge = this.addSetting(new ColorSetting("Chunk Color", "Colour of your chunk's edges", 210));
+   private final ColorSetting inner = this.addSetting(new ColorSetting("Section Color", "Colour of the 16-block rings", 120));
    private final NumberSetting width = this.addSetting(new NumberSetting("Line Width", "Thickness of the lines", 1.5, 0.5, 4.0, 0.5));
 
    public ChunkBorders() {
-      super("Chunk Borders", "Draw chunk and section boundaries around you.", Category.RENDER);
+      super("Chunk Borders", "Draws chunk and section borders around you.", Category.RENDER);
    }
 
    @Override
@@ -54,7 +53,7 @@ public final class ChunkBorders extends Module {
             for (int z = cz - extra; z <= cz + extra + 1; z++) {
                double wz = z * 16.0;
                boolean corner = own && (z == cz || z == cz + 1);
-               Render3D.line(new Vec3(wx, bottom, wz), new Vec3(wx, top, wz), corner ? edgeColor : innerColor, corner ? stroke : stroke * 0.6F, false);
+               Render3D.line(wx, bottom, wz, wx, top, wz, corner ? edgeColor : innerColor, corner ? stroke : stroke * 0.6F, false);
             }
          }
 
@@ -71,13 +70,9 @@ public final class ChunkBorders extends Module {
    }
 
    private static void ring(double west, double east, double north, double south, double y, int color, float width) {
-      Vec3 a = new Vec3(west, y, north);
-      Vec3 b = new Vec3(east, y, north);
-      Vec3 c = new Vec3(east, y, south);
-      Vec3 d = new Vec3(west, y, south);
-      Render3D.line(a, b, color, width, false);
-      Render3D.line(b, c, color, width, false);
-      Render3D.line(c, d, color, width, false);
-      Render3D.line(d, a, color, width, false);
+      Render3D.line(west, y, north, east, y, north, color, width, false);
+      Render3D.line(east, y, north, east, y, south, color, width, false);
+      Render3D.line(east, y, south, west, y, south, color, width, false);
+      Render3D.line(west, y, south, west, y, north, color, width, false);
    }
 }

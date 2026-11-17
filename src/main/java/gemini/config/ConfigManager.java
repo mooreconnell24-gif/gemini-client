@@ -13,6 +13,7 @@ import gemini.module.ModuleManager;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ColorSetting;
+import gemini.module.setting.SettingCodec;
 import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
@@ -58,6 +59,9 @@ public final class ConfigManager {
    private static final long RETRY_MS = 5000L;
    private static final long SHUTDOWN_WAIT_MS = 5000L;
    private static final String SANDBOX_KEY = "sandboxMode";
+   private static final String TITLE_SCREEN_KEY = "geminiTitleScreen";
+   private static final String ACTIVE_PROFILE_KEY = "activeProfile";
+   private static final String LAST_SEEN_VERSION_KEY = "lastSeenVersion";
    private final ModuleManager moduleManager;
    private final Path configPath;
    private final Path profileDir;
@@ -75,6 +79,12 @@ public final class ConfigManager {
    private volatile boolean writeProblemShown;
    /** Something the player should hear about the last load (restored from backup, reset to defaults). */
    private String loadNotice;
+   /** Whether the Gemini home screen replaces the vanilla title screen. */
+   private boolean geminiTitleScreen = true;
+   /** The profile that was last saved or loaded, or null while the settings never came from or went to one. */
+   private String activeProfile;
+   /** The Gemini version whose "What's new" the player last saw; null before the first time. */
+   private String lastSeenVersion;
 
    public ConfigManager(ModuleManager moduleManager) {
       this(moduleManager, FabricLoader.getInstance().getConfigDir());
@@ -85,6 +95,54 @@ public final class ConfigManager {
       this.configPath = dir.resolve("gemini_config.json");
       this.profileDir = dir.resolve("gemini_profiles");
       this.exportDir = dir.resolve("gemini_exports");
+   }
+
+   public boolean geminiTitleScreen() {
+      return this.geminiTitleScreen;
+   }
+
+   public void setGeminiTitleScreen(boolean on) {
+      if (this.geminiTitleScreen != on) {
+         this.geminiTitleScreen = on;
+         this.save();
+      }
+   }
+
+   /** The Gemini version whose changelog was last shown, or null if it never was. */
+   public String lastSeenVersion() {
+      return this.lastSeenVersion;
+   }
+
+   /** Records that the "What's new" page of {@code version} has been shown, so it does not open by itself again. */
+   public void setLastSeenVersion(String version) {
+      if (version != null && !version.equals(this.lastSeenVersion)) {
+         this.lastSeenVersion = version;
+         this.save();
+      }
+   }
+
+   /** Name of the profile the current settings were last saved to or loaded from; null when there is none. */
+   public String activeProfile() {
+      return this.activeProfile;
+   }
+
+   private void readHomeScreen(JsonObject root) {
+      try {
+         if (root.has(TITLE_SCREEN_KEY) && root.get(TITLE_SCREEN_KEY).isJsonPrimitive()) {
+            this.geminiTitleScreen = root.get(TITLE_SCREEN_KEY).getAsBoolean();
+         }
+
+         if (root.has(ACTIVE_PROFILE_KEY) && root.get(ACTIVE_PROFILE_KEY).isJsonPrimitive()) {
+            this.activeProfile = sanitize(root.get(ACTIVE_PROFILE_KEY).getAsString());
+         }
+
+         if (root.has(LAST_SEEN_VERSION_KEY) && root.get(LAST_SEEN_VERSION_KEY).isJsonPrimitive()) {
+            String seen = root.get(LAST_SEEN_VERSION_KEY).getAsString();
+            this.lastSeenVersion = seen == null || seen.isBlank() || seen.length() > 64 ? null : seen;
+         }
+      } catch (RuntimeException e) {
+         Gemini.LOGGER.warn("Ignoring invalid home screen entries in config");
+      }
    }
 
    public Path exportDir() {
@@ -141,6 +199,7 @@ public final class ConfigManager {
 
          upgrades = ConfigMigrations.migrate(root);
          this.readSandbox(root);
+         this.readHomeScreen(root);
          this.readMenuKey(root);
          this.readPanels(root);
          this.applyModules(root, true);
@@ -296,23 +355,7 @@ public final class ConfigManager {
          JsonElement value = settings.has(setting.name()) ? settings.get(setting.name()) : normalizedMap.get(normalizeId(setting.name()));
          if (value != null) {
             try {
-               if (setting instanceof BooleanSetting bool) {
-                  bool.set(value.getAsBoolean());
-               } else if (setting instanceof NumberSetting number) {
-                  number.set(value.getAsDouble());
-               } else if (setting instanceof ColorSetting color) {
-                  color.set(value.getAsInt());
-               } else if (setting instanceof ModeSetting mode) {
-                  mode.set(value.getAsString());
-               } else if (setting instanceof ListSetting list) {
-                  List<String> entries = new ArrayList<>();
-
-                  for (JsonElement entry : value.getAsJsonArray()) {
-                     entries.add(entry.getAsString());
-                  }
-
-                  list.set(entries);
-               }
+               SettingCodec.read(setting, value);
             } catch (RuntimeException var141) {
                Gemini.LOGGER.warn("Ignoring bad value for {}.{}", module.getName(), setting.name());
             }
@@ -334,18 +377,9 @@ public final class ConfigManager {
          JsonObject settings = new JsonObject();
 
          for (Setting<?> setting : module.settings()) {
-            if (setting instanceof BooleanSetting bool) {
-               settings.addProperty(setting.name(), bool.get());
-            } else if (setting instanceof NumberSetting number) {
-               settings.addProperty(setting.name(), number.get());
-            } else if (setting instanceof ColorSetting color) {
-               settings.addProperty(setting.name(), color.get());
-            } else if (setting instanceof ModeSetting mode) {
-               settings.addProperty(setting.name(), mode.get());
-            } else if (setting instanceof ListSetting list) {
-               JsonArray entries = new JsonArray();
-               list.get().forEach(entries::add);
-               settings.add(setting.name(), entries);
+            JsonElement saved = SettingCodec.write(setting);
+            if (saved != null) {
+               settings.add(setting.name(), saved);
             }
          }
 
@@ -452,6 +486,15 @@ public final class ConfigManager {
       JsonObject root = new JsonObject();
       root.addProperty("version", ConfigMigrations.CURRENT_VERSION);
       root.addProperty(SANDBOX_KEY, SingleplayerGate.sandboxMode());
+      root.addProperty(TITLE_SCREEN_KEY, this.geminiTitleScreen);
+      if (this.activeProfile != null) {
+         root.addProperty(ACTIVE_PROFILE_KEY, this.activeProfile);
+      }
+
+      if (this.lastSeenVersion != null) {
+         root.addProperty(LAST_SEEN_VERSION_KEY, this.lastSeenVersion);
+      }
+
       root.addProperty("menuKey", GeminiKeys.OPEN_GUI.saveString());
       root.add("modules", this.buildModules(true));
       root.add("panels", this.buildPanels());
@@ -503,6 +546,8 @@ public final class ConfigManager {
       root.add("modules", this.buildModules(true));
       root.add("panels", this.buildPanels());
       this.writer.submit(this.profilePath(clean), JsonFiles.GSON.toJson(root), false);
+      this.activeProfile = clean;
+      this.save();
       return true;
    }
 
@@ -522,26 +567,38 @@ public final class ConfigManager {
       try {
          JsonObject root = JsonFiles.read(path);
          ConfigMigrations.migrate(root);
-         boolean portable = ProfileBundle.isPortable(root);
-         this.suppressAutosave = true;
-
-         try {
-            if (!portable) {
-               this.readMenuKey(root);
-               this.readPanels(root);
-            }
-
-            this.applyModules(root, !portable);
-         } finally {
-            this.suppressAutosave = false;
-         }
-
-         this.save();
+         this.applyProfile(root, clean, "profile " + clean);
          return true;
       } catch (IOException | RuntimeException e) {
          Gemini.LOGGER.error("Failed to load profile {}", clean, e);
          return false;
       }
+   }
+
+   /**
+    * Applies a migrated profile document and makes {@code clean} the active profile. A portable profile (an
+    * import) leaves the menu key, panel layout and per-module extras alone. Key binds the profile introduces that
+    * clash with something else are announced (see {@link gemini.input.BindWarnings#afterLoad}).
+    */
+   private void applyProfile(JsonObject root, String clean, String source) {
+      boolean portable = ProfileBundle.isPortable(root);
+      Map<String, Integer> bindsBefore = gemini.input.BindWarnings.snapshot(this.moduleManager);
+      this.suppressAutosave = true;
+
+      try {
+         if (!portable) {
+            this.readMenuKey(root);
+            this.readPanels(root);
+         }
+
+         this.applyModules(root, !portable);
+      } finally {
+         this.suppressAutosave = false;
+      }
+
+      this.activeProfile = clean;
+      this.save();
+      gemini.input.BindWarnings.afterLoad(this.moduleManager, bindsBefore, source);
    }
 
    public boolean deleteProfile(String name) {
@@ -551,6 +608,11 @@ public final class ConfigManager {
       }
 
       this.writer.awaitIdle(2000L);
+      if (clean.equals(this.activeProfile)) {
+         this.activeProfile = null;
+         this.save();
+      }
+
       try {
          return Files.deleteIfExists(this.profilePath(clean));
       } catch (IOException e) {
@@ -615,12 +677,94 @@ public final class ConfigManager {
       }
    }
 
+   /** The current settings as a one-line share code (see {@link ShareCode}). */
+   public String shareCode(String name) {
+      return ShareCode.encode(this.exportBundle(name));
+   }
+
+   /** This game's modules in the config shape, for comparing against a profile before it is applied. */
+   public JsonObject currentModules() {
+      return this.buildModules(true);
+   }
+
+   /** A validated import that has not been stored or applied yet, with what applying it would change. */
+   public record ImportPreview(JsonObject profile, String suggestedName, ProfileDiff diff) {
+   }
+
+   /**
+    * Reads a share code, or profile JSON pasted as text, into an {@link ImportPreview}. Nothing is stored or
+    * applied; refuses malformed, oversize or foreign input with a message written for the player.
+    */
+   public ImportPreview previewImport(String text) throws ProfileBundle.FormatException {
+      if (text == null || text.isBlank()) {
+         throw new ProfileBundle.FormatException("there is nothing to import (the text is empty)");
+      }
+
+      JsonObject document;
+      if (ShareCode.looksLikeCode(text)) {
+         document = ShareCode.decode(text);
+      } else {
+         if (text.length() > ShareCode.MAX_JSON_BYTES) {
+            throw new ProfileBundle.FormatException("the text is too long to be a profile");
+         }
+
+         try {
+            document = JsonFiles.parse(text);
+         } catch (RuntimeException e) {
+            throw new ProfileBundle.FormatException("that is neither a share code (gemini:...) nor profile JSON");
+         }
+      }
+
+      JsonObject profile = ProfileBundle.unwrap(document);
+      return new ImportPreview(profile, ShareCode.suggestedName(document), ProfileDiff.compute(this.currentModules(), profile.getAsJsonObject("modules")));
+   }
+
+   /** Stores a previewed import as the profile {@code name} without applying it. Returns the stored id. */
+   public String storeImport(String name, ImportPreview preview) throws ProfileBundle.FormatException {
+      String clean = sanitize(name);
+      if (clean == null) {
+         throw new ProfileBundle.FormatException("the profile name needs letters or digits");
+      }
+
+      JsonObject profile = preview.profile().deepCopy();
+      profile.addProperty("presetName", clean);
+      this.writer.submit(this.profilePath(clean), JsonFiles.GSON.toJson(profile), false);
+      return clean;
+   }
+
+   /** Stores a previewed import as the profile {@code name} and applies it straight away. Returns the stored id. */
+   public String applyImport(String name, ImportPreview preview) throws ProfileBundle.FormatException {
+      String clean = this.storeImport(name, preview);
+      this.applyProfile(preview.profile().deepCopy(), clean, "the imported profile " + clean);
+      return clean;
+   }
+
    public List<String> exports() {
       return listJson(this.exportDir);
    }
 
    public List<String> profiles() {
       return listJson(this.profileDir);
+   }
+
+   /** The id a profile name is stored under (lower case, letters, digits, - and _), or null when nothing is left. */
+   public static String profileId(String name) {
+      return sanitize(name);
+   }
+
+   /** When the profile file was last written, in epoch milliseconds, or -1 when it is missing or unreadable. */
+   public long profileModified(String name) {
+      String clean = sanitize(name);
+      if (clean == null) {
+         return -1L;
+      }
+
+      try {
+         Path path = this.profilePath(clean);
+         return Files.isRegularFile(path) ? Files.getLastModifiedTime(path).toMillis() : -1L;
+      } catch (IOException | RuntimeException e) {
+         return -1L;
+      }
    }
 
    private static List<String> listJson(Path dir) {

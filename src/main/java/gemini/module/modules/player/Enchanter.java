@@ -19,12 +19,12 @@ import net.minecraft.world.item.Items;
 
 public final class Enchanter extends Module {
    private final ModeSetting damage = this.addSetting(
-      new ModeSetting("Weapon Damage", "Which damage enchantment weapons get", "Sharpness", "Sharpness", "Smite", "Bane of Arthropods")
+      new ModeSetting("Weapon Damage", "Damage enchantment for weapons", "Sharpness", "Sharpness", "Smite", "Bane of Arthropods")
    );
    private final ModeSetting mining = this.addSetting(new ModeSetting("Tool Drops", "Fortune or Silk Touch on tools", "Fortune", "Fortune", "Silk Touch"));
    private final ModeSetting protection = this.addSetting(
       new ModeSetting(
-         "Armour Protection", "Which protection armour gets", "Protection", "Protection", "Blast Protection", "Fire Protection", "Projectile Protection"
+         "Armour Protection", "Protection enchantment for armour", "Protection", "Protection", "Blast Protection", "Fire Protection", "Projectile Protection"
       )
    );
    private final ModeSetting boots = this.addSetting(
@@ -35,12 +35,12 @@ public final class Enchanter extends Module {
    private final BooleanSetting mendingUnbreaking = this.addSetting(
       new BooleanSetting("Mending + Unbreaking", "Add Mending and Unbreaking III to everything that can take them", true)
    );
-   private final BooleanSetting curses = this.addSetting(new BooleanSetting("Curses", "Also add Binding and Vanishing curses", false));
+   private final BooleanSetting curses = this.addSetting(new BooleanSetting("Curses", "Also add the Binding and Vanishing curses", false));
 
    public Enchanter() {
-      super("Enchanter", "Max out the item in your hand with the best vanilla enchantments.", Category.PLAYER);
-      this.addSetting(new ActionSetting("Enchant Held Item", "Apply the best enchantments to what you are holding", this::enchantHeld));
-      this.addSetting(new ActionSetting("Enchant Armour", "Apply the best enchantments to everything you are wearing", this::enchantArmour));
+      super("Enchanter", "Adds the best vanilla enchantments to the item in your hand or the armour you wear.", Category.PLAYER);
+      this.addSetting(new ActionSetting("Enchant Held Item", "Enchant the item you are holding", this::enchantHeld));
+      this.addSetting(new ActionSetting("Enchant Armour", "Enchant everything you are wearing", this::enchantArmour));
       this.addSetting(
          new ActionSetting("+30 Levels", "Give yourself 30 experience levels", () -> this.run(List.of("xp add @s 30 levels"), "gave you 30 levels"))
       );
@@ -96,11 +96,12 @@ public final class Enchanter extends Module {
             if (!worn[i].isEmpty()) {
                List<String> enchants = this.forStack(worn[i], "@s");
                if (!enchants.isEmpty()) {
-                  commands.add("item replace entity @s container.40 from entity @s weapon.mainhand");
+                  // The offhand is the scratch slot ("container.40" is not a player slot in 26.3 and failed, losing the held item).
+                  commands.add("item replace entity @s weapon.offhand from entity @s weapon.mainhand");
                   commands.add("item replace entity @s weapon.mainhand from entity @s " + slots[i]);
                   commands.addAll(enchants);
                   commands.add("item replace entity @s " + slots[i] + " from entity @s weapon.mainhand");
-                  commands.add("item replace entity @s weapon.mainhand from entity @s container.40");
+                  commands.add("item replace entity @s weapon.mainhand from entity @s weapon.offhand");
                   pieces++;
                }
             }
@@ -111,7 +112,7 @@ public final class Enchanter extends Module {
          } else if (!player.getOffhandItem().isEmpty()) {
             CommandManager.feedback("§cEnchanter §7empty your offhand first; it is used as a scratch slot while armour is enchanted.");
          } else {
-            commands.add("item replace entity @s container.40 with minecraft:air");
+            commands.add("item replace entity @s weapon.offhand with minecraft:air");
             this.run(commands, "enchanted " + pieces + " armour piece" + (pieces == 1 ? "" : "s"));
          }
       }

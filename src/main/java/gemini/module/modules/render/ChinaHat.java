@@ -10,11 +10,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class ChinaHat extends Module {
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hat accent hue", 205));
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Hat brim radius", 0.65, 0.3, 1.2, 0.05));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hat colour", 205));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Brim radius, in blocks", 0.65, 0.3, 1.2, 0.05));
 
    public ChinaHat() {
-      super("ChinaHat", "Render a 3D neon cone hat above your head.", Category.RENDER);
+      super("Cone Hat", "Draws a cone-shaped hat above your head in third person.", Category.RENDER);
    }
 
    @Override
@@ -22,19 +22,18 @@ public final class ChinaHat extends Module {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
       if (player != null && !client.options.getCameraType().isFirstPerson()) {
-         Vec3 base = player.getPosition(partialTick).add(0.0, player.getBbHeight() + 0.12, 0.0);
-         Vec3 tip = base.add(0.0, 0.32, 0.0);
+         double x = Render3D.entityX(player, partialTick);
+         double y = Render3D.entityY(player, partialTick) + player.getBbHeight() + 0.12;
+         double z = Render3D.entityZ(player, partialTick);
          int argb = this.color.argb();
+         int spoke = Render3D.alpha(argb, 150);
          double r = this.radius.get();
          int segments = 16;
+         Render3D.ring(x, y, z, r, segments, Render3D.alpha(argb, 255), 1.8F, false);
 
          for (int i = 0; i < segments; i++) {
-            double a1 = i * Math.PI * 2.0 / segments;
-            double a2 = (i + 1) * Math.PI * 2.0 / segments;
-            Vec3 p1 = base.add(Math.cos(a1) * r, 0.0, Math.sin(a1) * r);
-            Vec3 p2 = base.add(Math.cos(a2) * r, 0.0, Math.sin(a2) * r);
-            Render3D.line(p1, p2, argb, 1.8F, false);
-            Render3D.line(tip, p1, Render3D.alpha(argb, 150), 1.2F, false);
+            double angle = i * Math.PI * 2.0 / segments;
+            Render3D.lineArgb(x, y + 0.32, z, x + Math.cos(angle) * r, y, z + Math.sin(angle) * r, spoke, 1.2F, false);
          }
       }
    }

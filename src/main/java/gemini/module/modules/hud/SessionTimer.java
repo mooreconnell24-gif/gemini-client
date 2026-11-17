@@ -14,7 +14,7 @@ public final class SessionTimer extends Ticked {
    private double travelled;
 
    public SessionTimer() {
-      super("Session Timer", "How long you have been playing and how far you walked.", "Bottom Right", 6, 96, 250);
+      super("Session Timer", "Shows how long you have been playing and how far you have travelled.", "Bottom Right", 6, 96, 250);
    }
 
    @Override
@@ -39,7 +39,7 @@ public final class SessionTimer extends Ticked {
       long seconds = (System.currentTimeMillis() - this.started) / 1000L;
       String time = String.format(Locale.ROOT, "%02d:%02d:%02d", seconds / 3600L, seconds / 60L % 60L, seconds % 60L);
       return !this.distance.get()
-         ? List.of(new TextHudWidget.Line("Session " + time, -1511689))
-         : List.of(new TextHudWidget.Line("Session " + time, -1511689), new TextHudWidget.Line(Math.round(this.travelled) + " blocks walked", -6641995));
+         ? List.of(TextHudWidget.Line.row("Session", time, ""))
+         : List.of(TextHudWidget.Line.row("Session", time, ""), TextHudWidget.Line.row("Travelled", HudFormat.grouped(Math.round(this.travelled)), "blocks"));
    }
 }

@@ -6,16 +6,33 @@ import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class Presets extends Module {
    private final ModeSetting pack = this.addSetting(
-      new ModeSetting("Preset", "Which bundle of modules to enable", "LiquidBounce", "LiquidBounce", "Performance", "PvP", "Explore", "Build", "Travel")
+      new ModeSetting("Preset", "Which group of modules to turn on", "General", "General", "Performance", "PvP", "Explore", "Build", "Travel")
    );
-   private final BooleanSetting disableOthers = this.addSetting(new BooleanSetting("Disable Others", "Turn off the other presets' modules first", false));
+   private final BooleanSetting disableOthers = this.addSetting(new BooleanSetting("Disable Others", "First turn off the modules the other presets use that this one does not", false));
+
+   /** The modules each preset turns on, by preset name. */
+   private static final Map<String, List<String>> PACKS = new LinkedHashMap<>();
+
+   static {
+      PACKS.put("General", List.of("Sprint", "HUD", "Target HUD", "Velocity", "Auto Armor", "Auto Eat", "ESP", "Nametags", "Anti Lag"));
+      PACKS.put("Performance", List.of("Anti Lag", "Performance", "Background FPS", "Particles", "HUD", "FPS Graph", "Anti Lag Status"));
+      PACKS.put("PvP", List.of("Kill Aura", "Velocity", "Criticals", "Auto Totem", "Auto Armor", "Sprint", "Target HUD", "Hole ESP", "Hit Effect"));
+      PACKS.put("Explore", List.of("Fullbright", "X-Ray", "ESP", "Storage ESP", "Waypoints", "Position", "Zoom"));
+      PACKS.put("Build", List.of("Scaffold", "Fast Place", "Auto Tool", "Safe Walk", "Sprint"));
+      PACKS.put("Travel", List.of("Flight", "Speed", "Jesus", "No Fall", "Sprint", "Step"));
+   }
 
    public Presets() {
       super(
-         "Presets", "One-click module bundles for PvP, FPS, and travel.", Category.CLIENT
+         "Presets", "Turns on a ready-made group of modules for PvP, performance, exploring, building or travel.", Category.CLIENT
       );
    }
 
@@ -34,63 +51,45 @@ public final class Presets extends Module {
       return this.pack.get();
    }
 
+   /**
+    * The modules "Disable Others" turns off for {@code chosen}: every module of the other presets that the chosen
+    * one does not use itself. The HUD is never among them; it is a settings page, not something to switch off.
+    */
+   static Set<String> othersOf(String chosen) {
+      List<String> keep = PACKS.getOrDefault(chosen, List.of());
+      Set<String> off = new LinkedHashSet<>();
+      for (Map.Entry<String, List<String>> entry : PACKS.entrySet()) {
+         if (!entry.getKey().equals(chosen)) {
+            for (String name : entry.getValue()) {
+               if (!keep.contains(name) && !name.equals("HUD")) {
+                  off.add(name);
+               }
+            }
+         }
+      }
+
+      return off;
+   }
+
    @Override
    public void onEnable() {
       Gemini client = Gemini.getInstance();
       if (client == null) {
          this.setEnabled(false, false);
       } else {
+         String chosen = this.pack.get();
          if (this.disableOthers.get()) {
-            toggle(
-               client,
-               false,
-               "Fullbright",
-               "Xray",
-               "ESP",
-               "StorageESP",
-               "Waypoints",
-               "Flight",
-               "Speed",
-               "Jesus",
-               "Scaffold",
-               "Nuker",
-               "AutoTool",
-               "FastPlace",
-               "KillAura",
-               "Velocity",
-               "TargetHUD"
-            );
+            for (String name : othersOf(chosen)) {
+               client.modules().getByName(name).ifPresent(module -> module.setEnabled(false, false));
+            }
          }
 
-         String var2 = this.pack.get();
-         switch (var2) {
-            case "LiquidBounce":
-               toggle(client, true, "Sprint", "HUD", "TargetHUD", "Velocity", "AutoArmor", "InventoryCleaner", "ESP", "Nametags", "AntiLag");
-               break;
-            case "Performance":
-               toggle(client, true, "AntiLag", "EntityCulling", "Unfocused CPU", "Particles", "HUD", "FPS Graph", "AntiLag Status");
-               break;
-            case "PvP":
-               toggle(client, true, "KillAura", "Velocity", "Criticals", "AutoTotem", "AutoArmor", "Sprint", "TargetHUD", "HoleESP", "HitEffect");
-               break;
-            case "Build":
-               toggle(client, true, "Scaffold", "FastPlace", "AutoTool", "SafeWalk", "Sprint");
-               break;
-            case "Travel":
-               toggle(client, true, "Flight", "Speed", "Jesus", "NoFall", "Sprint", "Step");
-               break;
-            default:
-               toggle(client, true, "Fullbright", "Xray", "ESP", "StorageESP", "Waypoints", "Coordinates", "Zoom");
+         for (String name : PACKS.getOrDefault(chosen, List.of())) {
+            client.modules().getByName(name).ifPresent(module -> module.setEnabled(true, false));
          }
 
-         CommandManager.feedback("§bPresets §7applied §f" + this.pack.get() + "§7.");
+         CommandManager.feedback("§bPresets §7applied §f" + chosen + "§7.");
          this.setEnabled(false, false);
-      }
-   }
-
-   private static void toggle(Gemini gemini, boolean on, String... names) {
-      for (String name : names) {
-         gemini.modules().getByName(name).ifPresent(module -> module.setEnabled(on, false));
       }
    }
 }

@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -12,7 +14,14 @@ public final class ParkourModule extends Module {
    private final BooleanSetting sprintOnly = this.addSetting(new BooleanSetting("Sprint Only", "Only jump while sprinting", false));
 
    public ParkourModule() {
-      super("Parkour", "Jump automatically at the edge of blocks.", Category.MOVEMENT);
+      super("Parkour", "Jumps when you are about to run off the edge of a block.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("EdgeJump");
+      return names;
    }
 
    @Override

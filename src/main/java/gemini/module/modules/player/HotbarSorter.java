@@ -17,20 +17,20 @@ import net.minecraft.world.item.Items;
 
 public final class HotbarSorter extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay Ticks", "Ticks between slot swaps", 3.0, 1.0, 15.0, 1.0));
-   private final BooleanSetting swordSlot1 = this.addSetting(new BooleanSetting("Sword Slot 1", "Keep sword in slot 1", true));
-   private final BooleanSetting pickSlot2 = this.addSetting(new BooleanSetting("Pickaxe Slot 2", "Keep pickaxe in slot 2", true));
-   private final BooleanSetting gappleSlot3 = this.addSetting(new BooleanSetting("Gapple Slot 3", "Keep Golden Apples in slot 3", true));
+   private final BooleanSetting swordSlot1 = this.addSetting(new BooleanSetting("Sword Slot 1", "Keep a sword in slot 1", true));
+   private final BooleanSetting pickSlot2 = this.addSetting(new BooleanSetting("Pickaxe Slot 2", "Keep a pickaxe in slot 2", true));
+   private final BooleanSetting gappleSlot3 = this.addSetting(new BooleanSetting("Gapple Slot 3", "Keep golden apples in slot 3", true));
    private final BooleanSetting blocksSlot9 = this.addSetting(new BooleanSetting("Blocks Slot 9", "Keep building blocks in slot 9", true));
    private int wait;
 
    public HotbarSorter() {
-      super("HotbarSorter", "Keep sword, pickaxe, gapples, and blocks sorted.", Category.PLAYER);
+      super("Hotbar Sorter", "Keeps your sword, pickaxe, golden apples and blocks in fixed hotbar slots.", Category.PLAYER);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
-      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.inventoryOpenOrClosed(client.player)) {
+      if (ClientState.ready(client) && this.wait-- <= 0 && Inventories.canClick(client.player) && !client.player.isUsingItem()) {
          this.wait = this.delay.intValue();
          LocalPlayer player = client.player;
          if (this.swordSlot1.get() && this.ensureSlot(client, player, 0, s -> s.is(ItemTags.SWORDS))) {

@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.NumberSetting;
@@ -8,15 +9,22 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 public final class StepModule extends Module {
-   private final NumberSetting height = this.addSetting(new NumberSetting("Height", "Step height in blocks", 1.0, 0.6, 2.5, 0.1));
+   private final NumberSetting height = this.addSetting(new NumberSetting("Height", "Tallest step, in blocks", 1.0, 0.6, 2.5, 0.1));
 
    public StepModule() {
-      super("Step", "Walk up taller blocks without jumping.", Category.MOVEMENT);
+      super("Step", "Lets you walk up blocks taller than a slab without jumping.", Category.MOVEMENT);
    }
 
    @Override
    public void onDisable() {
       AttributeBoost.clear(Attributes.STEP_HEIGHT, "step");
+   }
+
+   private final InfoText infoText = new InfoText();
+
+   @Override
+   public String info() {
+      return this.infoText.fixed(this.height.get(), 1);
    }
 
    @Override

@@ -1,12 +1,14 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
+import gemini.ui.Glass;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.List;
 
 public final class Memory extends Ticked {
    public Memory() {
-      super("Memory", "Java heap usage of the game.", "Bottom Right", 6, 78, 1000);
+      super("Memory", "Shows how much memory the game is using.", "Bottom Right", 6, 78, 1000);
    }
 
    @Override
@@ -15,6 +17,7 @@ public final class Memory extends Ticked {
       long max = runtime.maxMemory() / 1048576L;
       long used = (runtime.totalMemory() - runtime.freeMemory()) / 1048576L;
       float ratio = max <= 0L ? 0.0F : (float)used / (float)max;
-      return List.of(new TextHudWidget.Line("Mem " + used + " / " + max + " MB", ratio < 0.7F ? -1511689 : (ratio < 0.9F ? -14249 : -1548963)));
+      int color = ratio < 0.7F ? HudStyle.PRIMARY : (ratio < 0.9F ? Glass.WARN : Glass.ERROR);
+      return List.of(TextHudWidget.Line.row("Memory", HudFormat.grouped(used), "/ " + HudFormat.grouped(max) + " MB", color));
    }
 }

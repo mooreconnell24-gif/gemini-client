@@ -1,5 +1,7 @@
 package gemini.module.modules.world;
 
+import java.util.List;
+import java.util.ArrayList;
 import com.mojang.datafixers.util.Pair;
 import gemini.Gemini;
 import gemini.command.CommandManager;
@@ -27,6 +29,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
 /** Finds the nearest structure or biome on the integrated server, pins it and optionally teleports there. */
@@ -89,14 +92,23 @@ public final class Locate extends Module {
    private final NumberSetting radius = this.addSetting(
       new NumberSetting("Radius", "Search distance in chunks (large searches take a moment)", 100.0, 10.0, 400.0, 10.0)
    );
-   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Drop a waypoint at what was found", true));
+   private final BooleanSetting pin = this.addSetting(new BooleanSetting("Pin Waypoint", "Add a waypoint at what was found", true));
    private final BooleanSetting teleport = this.addSetting(new BooleanSetting("Teleport", "Teleport to the surface above what was found", false));
-   private boolean busy;
+   /** The integrated server a search is running on, or null when none is; a search on a server that has since stopped never reports. */
+   private IntegratedServer busy;
    private String last;
 
    public Locate() {
-      super("Locate", "Find the nearest structure or biome, pin it and optionally teleport there.", Category.WORLD);
+      super("Locate", "Finds the nearest structure or biome, pins it and can teleport you there.", Category.WORLD);
       this.addSetting(new ActionSetting("Search", "Find the nearest one now", this::search));
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("StrongholdFinder");
+      names.add("Stronghold Finder");
+      return names;
    }
 
    @Override
@@ -124,7 +136,7 @@ public final class Locate extends Module {
       IntegratedServer server = client.getSingleplayerServer();
       if (!SingleplayerGate.allowed() || server == null || client.player == null) {
          CommandManager.feedback(SingleplayerGate.denialMessage());
-      } else if (this.busy) {
+      } else if (this.busy == server) {
          CommandManager.feedback("§bLocate §7is still searching.");
       } else {
          boolean wantBiome = this.kind.is("Biome");
@@ -132,7 +144,7 @@ public final class Locate extends Module {
          Identifier id = Identifier.withDefaultNamespace(id(label));
          int chunks = this.radius.intValue();
          UUID playerId = client.player.getUUID();
-         this.busy = true;
+         this.busy = server;
          CommandManager.feedback("§bLocate §7searching for the nearest §f" + label + "§7...");
          server.execute(() -> {
             BlockPos found = null;
@@ -173,7 +185,7 @@ public final class Locate extends Module {
    }
 
    private void report(String label, BlockPos found) {
-      this.busy = false;
+      this.busy = null;
       Minecraft client = Minecraft.getInstance();
       if (found == null) {
          this.last = null;
@@ -188,7 +200,12 @@ public final class Locate extends Module {
          }
 
          if (this.teleport.get() && client.level != null) {
-            SpCommands.run(String.format(Locale.ROOT, "execute positioned %d 0 %d run spreadplayers ~ ~ 0 1 false @s", found.getX(), found.getZ()));
+            // In a dimension with a ceiling, the plain form puts you on the bedrock roof: look for ground below it.
+            DimensionType type = client.level.dimensionType();
+            String under = type.hasCeiling() ? "under " + (type.minY() + type.logicalHeight() - 8) + " " : "";
+            SpCommands.run(
+               String.format(Locale.ROOT, "execute positioned %d 0 %d run spreadplayers ~ ~ 0 1 %sfalse @s", found.getX(), found.getZ(), under)
+            );
          }
       }
    }

@@ -6,6 +6,7 @@ import gemini.command.CommandManager;
 import gemini.config.ConfigManager;
 import gemini.diags.MixinReport;
 import gemini.event.EventBus;
+import gemini.module.modules.bot.AutoBuildBot;
 import gemini.module.modules.bot.AutoExcavate;
 import gemini.module.modules.bot.AutoExplore;
 import gemini.module.modules.bot.AutoGoto;
@@ -13,7 +14,6 @@ import gemini.module.modules.bot.AutoHighway;
 import gemini.module.modules.bot.AutoMineBot;
 import gemini.module.modules.bot.AutoTunnel;
 import gemini.module.modules.bot.BaritonePause;
-import gemini.module.modules.bot.BaritoneStatus;
 import gemini.module.modules.bot.FollowBot;
 import gemini.module.modules.bot.PathRenderer;
 import gemini.module.modules.combat.AimAssist;
@@ -21,20 +21,12 @@ import gemini.module.modules.combat.AnchorAura;
 import gemini.module.modules.combat.ArrowDamageModule;
 import gemini.module.modules.combat.ArrowDodge;
 import gemini.module.modules.combat.AutoBlockModule;
-import gemini.module.modules.combat.AutoClickerModule;
 import gemini.module.modules.combat.AutoCrystal;
-import gemini.module.modules.combat.AutoExp;
-import gemini.module.modules.combat.AutoGappleModule;
-import gemini.module.modules.combat.AutoPearl;
 import gemini.module.modules.combat.AutoPot;
-import gemini.module.modules.combat.AutoRod;
-import gemini.module.modules.combat.AutoSoup;
 import gemini.module.modules.combat.AutoTotemModule;
 import gemini.module.modules.combat.AutoTrap;
 import gemini.module.modules.combat.AutoWeapon;
-import gemini.module.modules.combat.Backtrack;
 import gemini.module.modules.combat.BedAura;
-import gemini.module.modules.combat.BlockHitModule;
 import gemini.module.modules.combat.BowSpam;
 import gemini.module.modules.combat.Burrow;
 import gemini.module.modules.combat.CriticalsModule;
@@ -44,26 +36,30 @@ import gemini.module.modules.combat.KeepRange;
 import gemini.module.modules.combat.KeepSprintModule;
 import gemini.module.modules.combat.KillAura;
 import gemini.module.modules.combat.MaceKill;
-import gemini.module.modules.combat.Offhand;
-import gemini.module.modules.combat.ProjectileAimbot;
+import gemini.module.modules.combat.BowAimbot;
 import gemini.module.modules.combat.Quiver;
-import gemini.module.modules.combat.SelfTrap;
 import gemini.module.modules.combat.ShieldBreaker;
 import gemini.module.modules.combat.SuperKnockback;
 import gemini.module.modules.combat.Surround;
-import gemini.module.modules.combat.Teams;
 import gemini.module.modules.combat.TriggerBot;
 import gemini.module.modules.combat.VelocityModule;
-import gemini.module.modules.combat.WTap;
-import gemini.module.modules.combat.WebAura;
+import gemini.module.modules.combat.AutoCity;
+import gemini.module.modules.combat.HitCrystal;
+import gemini.module.modules.combat.HolePush;
+import gemini.module.modules.combat.AutoWebFill;
+import gemini.module.modules.combat.SillyAimbot;
 import gemini.module.modules.hud.AntiLagHud;
+import gemini.module.modules.hud.ArrayListHud;
 import gemini.module.modules.hud.ArmorHud;
 import gemini.module.modules.hud.BiomeInfo;
-import gemini.module.modules.hud.ChunkInfo;
 import gemini.module.modules.hud.Clock;
-import gemini.module.modules.hud.FoodInfo;
-import gemini.module.modules.hud.FreeSlots;
-import gemini.module.modules.hud.XpInfo;
+import gemini.module.modules.hud.DayInfo;
+import gemini.module.modules.hud.EnderChestPreview;
+import gemini.module.modules.hud.NotesHud;
+import gemini.module.modules.hud.MobCaps;
+import gemini.module.modules.hud.SessionStats;
+import gemini.module.modules.hud.SpawnInfo;
+import gemini.module.modules.hud.WeatherForecast;
 import gemini.module.modules.hud.CombatItems;
 import gemini.module.modules.hud.CompassBar;
 import gemini.module.modules.hud.Cooldowns;
@@ -78,7 +74,6 @@ import gemini.module.modules.hud.InventoryViewer;
 import gemini.module.modules.hud.ItemCounter;
 import gemini.module.modules.hud.KeybindList;
 import gemini.module.modules.hud.Keystrokes;
-import gemini.module.modules.hud.LagNotifier;
 import gemini.module.modules.hud.LastDeath;
 import gemini.module.modules.hud.LightLevel;
 import gemini.module.modules.hud.LookingAt;
@@ -89,67 +84,54 @@ import gemini.module.modules.hud.Radar;
 import gemini.module.modules.hud.SessionTimer;
 import gemini.module.modules.hud.Speedometer;
 import gemini.module.modules.hud.TargetHud;
-import gemini.module.modules.hud.TotemCounter;
 import gemini.module.modules.hud.Tps;
-import gemini.module.modules.hud.Welcome;
 import gemini.module.modules.misc.AntiLag;
-import gemini.module.modules.misc.AutoGG;
 import gemini.module.modules.misc.AutoSave;
 import gemini.module.modules.misc.BetterChat;
 import gemini.module.modules.misc.Aim;
 import gemini.module.modules.misc.ClickGuiModule;
 import gemini.module.modules.misc.DeathCoords;
-import gemini.module.modules.misc.FlagCheck;
 import gemini.module.modules.misc.Macro;
 import gemini.module.modules.misc.NameProtect;
-import gemini.module.modules.misc.Notifier;
-import gemini.module.modules.misc.PacketLogger;
 import gemini.module.modules.misc.Panic;
 import gemini.module.modules.misc.Performance;
+import gemini.module.modules.misc.CoordsCopier;
+import gemini.module.modules.misc.ScreenshotHelper;
+import gemini.module.modules.misc.WorldBackup;
+import gemini.module.modules.misc.WorldNotesModule;
 import gemini.module.modules.misc.Presets;
 import gemini.module.modules.misc.SoundBlocker;
 import gemini.module.modules.movement.AirJumpModule;
-import gemini.module.modules.movement.AnchorPull;
 import gemini.module.modules.movement.AntiLevitation;
 import gemini.module.modules.movement.AutoFirework;
 import gemini.module.modules.movement.AutoJump;
 import gemini.module.modules.movement.AutoWalkModule;
 import gemini.module.modules.movement.BoatFly;
 import gemini.module.modules.movement.ClickTp;
-import gemini.module.modules.movement.EdgeJump;
-import gemini.module.modules.movement.ElytraBoostModule;
 import gemini.module.modules.movement.ElytraFly;
 import gemini.module.modules.movement.EntitySpeed;
 import gemini.module.modules.movement.FastFall;
 import gemini.module.modules.movement.FastLadderModule;
 import gemini.module.modules.movement.FastSwim;
 import gemini.module.modules.movement.FlightModule;
-import gemini.module.modules.movement.Freeze;
-import gemini.module.modules.movement.Glide;
 import gemini.module.modules.movement.HighJumpModule;
 import gemini.module.modules.movement.HoleSnap;
 import gemini.module.modules.movement.InventoryMoveModule;
 import gemini.module.modules.movement.JesusModule;
-import gemini.module.modules.movement.KeepY;
 import gemini.module.modules.movement.LongJumpModule;
 import gemini.module.modules.movement.NoFallModule;
 import gemini.module.modules.movement.NoJumpDelayModule;
 import gemini.module.modules.movement.NoSlowModule;
-import gemini.module.modules.movement.NoWeb;
 import gemini.module.modules.movement.ParkourModule;
 import gemini.module.modules.movement.SafeWalkModule;
-import gemini.module.modules.movement.Slippy;
 import gemini.module.modules.movement.Sneak;
 import gemini.module.modules.movement.SpeedModule;
 import gemini.module.modules.movement.SpiderModule;
 import gemini.module.modules.movement.SprintAssist;
 import gemini.module.modules.movement.StepModule;
-import gemini.module.modules.movement.Strafe;
 import gemini.module.modules.movement.TargetStrafe;
-import gemini.module.modules.movement.TerrainSpeed;
-import gemini.module.modules.movement.TimerRange;
 import gemini.module.modules.movement.TridentBoost;
-import gemini.module.modules.movement.WallClimb;
+import gemini.module.modules.movement.ElytraRecast;
 import gemini.module.modules.player.AntiBreak;
 import gemini.module.modules.player.AntiVoidModule;
 import gemini.module.modules.player.AutoArmorModule;
@@ -163,61 +145,46 @@ import gemini.module.modules.player.AutoReplenishModule;
 import gemini.module.modules.player.AutoRespawnModule;
 import gemini.module.modules.player.AutoSleep;
 import gemini.module.modules.player.AutoToolModule;
-import gemini.module.modules.player.AutoWindCharge;
 import gemini.module.modules.player.Buffs;
 import gemini.module.modules.player.ChestStealerModule;
 import gemini.module.modules.player.ChestSwap;
-import gemini.module.modules.player.Cleanse;
-import gemini.module.modules.player.Derp;
 import gemini.module.modules.player.DurabilityAlert;
-import gemini.module.modules.player.Eagle;
 import gemini.module.modules.player.Enchanter;
 import gemini.module.modules.player.ExpThrower;
 import gemini.module.modules.player.FakePlayer;
 import gemini.module.modules.player.FastBreakModule;
 import gemini.module.modules.player.FastPlaceModule;
-import gemini.module.modules.player.FastUse;
-import gemini.module.modules.player.Gamemode;
-import gemini.module.modules.player.AutoHeal;
 import gemini.module.modules.player.Kits;
 import gemini.module.modules.player.GhostHand;
-import gemini.module.modules.player.GiveList;
 import gemini.module.modules.player.HotbarSorter;
-import gemini.module.modules.player.InstantMineModule;
-import gemini.module.modules.player.InventoryCleaner;
 import gemini.module.modules.player.InventorySorter;
 import gemini.module.modules.player.ItemMagnet;
 import gemini.module.modules.player.LiquidInteract;
 import gemini.module.modules.player.MiddleClickExtra;
-import gemini.module.modules.player.NoHungerModule;
 import gemini.module.modules.player.NoInteract;
 import gemini.module.modules.player.NoPush;
-import gemini.module.modules.player.NoRotateSet;
 import gemini.module.modules.player.Phase;
 import gemini.module.modules.player.PortalMenu;
-import gemini.module.modules.player.PotionSpoof;
 import gemini.module.modules.player.ReachModule;
 import gemini.module.modules.player.RegenModule;
 import gemini.module.modules.player.Rotation;
-import gemini.module.modules.player.SmartEat;
-import gemini.module.modules.player.Tower;
 import gemini.module.modules.player.XCarry;
-import gemini.module.modules.render.Animations;
-import gemini.module.modules.render.AntiBlindModule;
-import gemini.module.modules.render.BedPlates;
+import gemini.module.modules.player.SilentPearl;
+import gemini.module.modules.player.AutoRegear;
+import gemini.module.modules.player.MultiTask;
+import gemini.module.modules.player.CraftRepeat;
+import gemini.module.modules.player.QuickMove;
+import gemini.module.modules.render.Ambience;
 import gemini.module.modules.render.BetterTooltips;
-import gemini.module.modules.render.BlockCounter;
 import gemini.module.modules.render.BlockSelection;
 import gemini.module.modules.render.Breadcrumbs;
-import gemini.module.modules.render.BreakIndicators;
+import gemini.module.modules.render.BreakEsp;
 import gemini.module.modules.render.CameraTweaks;
+import gemini.module.modules.render.Chams;
 import gemini.module.modules.render.ChinaHat;
 import gemini.module.modules.render.ChunkBorders;
-import gemini.module.modules.render.CinematicCamera;
-import gemini.module.modules.render.CoordinatesModule;
 import gemini.module.modules.render.CrosshairPlus;
 import gemini.module.modules.render.DamageParticles;
-import gemini.module.modules.render.EntityCulling;
 import gemini.module.modules.render.EntityOwner;
 import gemini.module.modules.render.EspModule;
 import gemini.module.modules.render.Fov;
@@ -230,15 +197,10 @@ import gemini.module.modules.render.HudModule;
 import gemini.module.modules.render.ItemEsp;
 import gemini.module.modules.render.JumpEffect;
 import gemini.module.modules.render.LightOverlay;
-import gemini.module.modules.render.LogoffSpot;
 import gemini.module.modules.render.Marker;
 import gemini.module.modules.render.Nametags;
-import gemini.module.modules.render.NoBobModule;
-import gemini.module.modules.render.NoHurtCamModule;
 import gemini.module.modules.render.NoRenderModule;
 import gemini.module.modules.render.ParticleBlocker;
-import gemini.module.modules.render.PearlTracker;
-import gemini.module.modules.render.PlayerTrails;
 import gemini.module.modules.render.ProjectileEsp;
 import gemini.module.modules.render.Search;
 import gemini.module.modules.render.SlimeChunks;
@@ -247,45 +209,39 @@ import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.render.TntTimer;
 import gemini.module.modules.render.Tracers;
 import gemini.module.modules.render.Trajectories;
-import gemini.module.modules.render.TunnelEsp;
 import gemini.module.modules.render.UnfocusedCpu;
+import gemini.module.modules.render.ViewModel;
+import gemini.module.modules.render.BiomeBorder;
+import gemini.module.modules.render.HarvestEsp;
 import gemini.module.modules.render.VoidEsp;
 import gemini.module.modules.render.XrayModule;
 import gemini.module.modules.render.ZoomModule;
+import gemini.module.modules.render.PopChams;
+import gemini.module.modules.render.TotemPopCounter;
 import gemini.module.modules.world.AirPlace;
 import gemini.module.modules.world.AutoBreed;
 import gemini.module.modules.world.AutoFarm;
-import gemini.module.modules.world.AutoNametag;
 import gemini.module.modules.world.AutoShearer;
 import gemini.module.modules.world.AutoSign;
-import gemini.module.modules.world.AutoTorch;
-import gemini.module.modules.world.BedDefender;
-import gemini.module.modules.world.BlockIn;
 import gemini.module.modules.world.ChestAura;
 import gemini.module.modules.world.Collisions;
 import gemini.module.modules.world.EndermanLook;
-import gemini.module.modules.world.Extinguish;
 import gemini.module.modules.world.Locate;
 import gemini.module.modules.world.MobSweeper;
 import gemini.module.modules.world.Summoner;
 import gemini.module.modules.world.Flamethrower;
-import gemini.module.modules.world.Fucker;
 import gemini.module.modules.world.Home;
 import gemini.module.modules.world.LawnMower;
 import gemini.module.modules.world.LiquidFiller;
 import gemini.module.modules.world.NukerModule;
-import gemini.module.modules.world.PacketMine;
 import gemini.module.modules.world.Platform;
 import gemini.module.modules.world.ScaffoldModule;
-import gemini.module.modules.world.SeedModule;
 import gemini.module.modules.world.SpawnProofer;
-import gemini.module.modules.world.StrongholdFinder;
+import gemini.module.modules.world.Measure;
 import gemini.module.modules.world.TickFreeze;
-import gemini.module.modules.world.TimeControlModule;
 import gemini.module.modules.world.TimerModule;
 import gemini.module.modules.world.VeinMiner;
 import gemini.module.modules.world.WaypointsModule;
-import gemini.module.modules.world.WeatherControlModule;
 import gemini.module.modules.world.WorldRules;
 import gemini.ui.HudContext;
 import gemini.ui.clickgui.Menus;
@@ -296,6 +252,7 @@ import gemini.util.Hands;
 import gemini.util.RotationManager;
 import gemini.util.Scheduler;
 import gemini.util.SingleplayerGate;
+import gemini.util.TotemPops;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -323,15 +280,21 @@ public final class ModuleManager {
    private WeakReference<ClientLevel> lastLevel = NO_LEVEL;
    private final Map<Class<?>, Module> byType = new HashMap<>();
    private final Map<String, Module> byKey = new HashMap<>();
+   /** Module aliases (old names), consulted by {@link #getByName} only when no module has that exact name. */
+   private final Map<String, Module> byAlias = new HashMap<>();
    private final EventBus bus = new EventBus(this::disableAfterFailure, new EventBus.Profiler() {
       @Override
       public boolean profiling() {
-         return SelfTest.profiling();
+         return SelfTest.profiling() || LiveProfiler.active();
       }
 
       @Override
-      public void record(Module module, long nanos) {
-         SelfTest.record(module, nanos);
+      public void record(Module module, int hook, long nanos) {
+         if (SelfTest.profiling()) {
+            SelfTest.record(module, nanos);
+         }
+
+         LiveProfiler.record(module, hook, nanos);
       }
    });
    private ConfigManager configManager;
@@ -384,6 +347,11 @@ public final class ModuleManager {
    }
 
    public boolean receivePacket(Packet<?> packet) {
+      if (SingleplayerGate.sandboxMode()) {
+         // Counted here rather than in a module so every display of totem pops reads the same numbers.
+         TotemPops.onPacket(packet);
+      }
+
       return this.bus.receivePacket(packet);
    }
 
@@ -398,10 +366,8 @@ public final class ModuleManager {
    public void init() {
       this.register(new VelocityModule());
       this.register(new AutoTotemModule());
-      this.register(new AutoGappleModule());
       this.register(new CriticalsModule());
       this.register(new ArrowDamageModule());
-      this.register(new AutoClickerModule());
       this.register(new KeepSprintModule());
       this.register(new FlightModule());
       this.register(new SprintAssist());
@@ -418,10 +384,8 @@ public final class ModuleManager {
       this.register(new NoSlowModule());
       this.register(new InventoryMoveModule());
       this.register(new NoJumpDelayModule());
-      this.register(new ElytraBoostModule());
       this.register(new AutoWalkModule());
       this.register(new FastLadderModule());
-      this.register(new InstantMineModule());
       this.register(new FastPlaceModule());
       this.register(new FastBreakModule());
       this.register(new AutoToolModule());
@@ -430,24 +394,16 @@ public final class ModuleManager {
       this.register(new AutoFishModule());
       this.register(new AutoRespawnModule());
       this.register(new AntiVoidModule());
-      this.register(new NoHungerModule());
       this.register(new RegenModule());
       this.register(new ReachModule());
       this.register(new AutoReplenishModule());
       this.register(new ChestStealerModule());
-      this.register(new TimeControlModule());
-      this.register(new WeatherControlModule());
       this.register(new WaypointsModule());
       this.register(new NukerModule());
       this.register(new ScaffoldModule());
       this.register(new TimerModule());
-      this.register(new SeedModule());
       this.register(new Fullbright());
       this.register(new ZoomModule());
-      this.register(new CoordinatesModule());
-      this.register(new NoHurtCamModule());
-      this.register(new NoBobModule());
-      this.register(new AntiBlindModule());
       this.register(new EspModule());
       this.register(new StorageEspModule());
       this.register(new NoRenderModule());
@@ -456,7 +412,6 @@ public final class ModuleManager {
       this.register(new ClickGuiModule());
       this.register(new Aim());
       this.register(new Home());
-      this.register(new Gamemode());
       this.register(new ItemMagnet());
       this.register(new SlimeChunks());
       this.register(new Fps());
@@ -471,18 +426,14 @@ public final class ModuleManager {
       this.register(new Clock());
       this.register(new LightLevel());
       this.register(new LastDeath());
-      this.register(new ChunkInfo());
       this.register(new LookingAt());
       this.register(new CompassBar());
-      this.register(new Welcome());
-      this.register(new LagNotifier());
       this.register(new CustomText());
       this.register(new PotionTimers());
       this.register(new EntityCounter());
       this.register(new ArmorHud());
       this.register(new HeldItem());
       this.register(new ItemCounter());
-      this.register(new TotemCounter());
       this.register(new InventoryViewer());
       this.register(new Keystrokes());
       this.register(new TargetHud());
@@ -504,24 +455,15 @@ public final class ModuleManager {
       this.register(new Marker());
       this.register(new ItemEsp());
       this.register(new ProjectileEsp());
-      this.register(new TunnelEsp());
       this.register(new VoidEsp());
-      this.register(new Animations());
       this.register(new HoleEsp());
       this.register(new JumpEffect());
       this.register(new DamageParticles());
       this.register(new ChinaHat());
-      this.register(new LogoffSpot());
       this.register(new TntTimer());
-      this.register(new BedPlates());
       this.register(new CrosshairPlus());
-      this.register(new EntityCulling());
-      this.register(new PearlTracker());
-      this.register(new BreakIndicators());
       this.register(new HitEffect());
       this.register(new SoundLocator());
-      this.register(new PlayerTrails());
-      this.register(new BlockCounter());
       this.register(new Freecam());
       this.register(new FreeLook());
       this.register(new CameraTweaks());
@@ -535,56 +477,36 @@ public final class ModuleManager {
       this.register(new AutoTrap());
       this.register(new AutoWeapon());
       this.register(new Hitboxes());
-      this.register(new Offhand());
       this.register(new AutoBlockModule());
-      this.register(new BlockHitModule());
       this.register(new BowSpam());
       this.register(new ArrowDodge());
-      this.register(new ProjectileAimbot());
+      this.register(new BowAimbot());
       this.register(new Quiver());
-      this.register(new AutoRod());
-      this.register(new AutoExp());
       this.register(new AutoPot());
       this.register(new TriggerBot());
       this.register(new SuperKnockback());
       this.register(new AimAssist());
-      this.register(new Backtrack());
       this.register(new HoleFiller());
       this.register(new Burrow());
-      this.register(new SelfTrap());
-      this.register(new WebAura());
       this.register(new AnchorAura());
       this.register(new BedAura());
-      this.register(new AutoSoup());
-      this.register(new AutoPearl());
       this.register(new MaceKill());
       this.register(new ShieldBreaker());
-      this.register(new WTap());
       this.register(new KeepRange());
       this.register(new ElytraFly());
       this.register(new Sneak());
-      this.register(new Slippy());
       this.register(new AutoJump());
       this.register(new EntitySpeed());
       this.register(new BoatFly());
       this.register(new ClickTp());
-      this.register(new Glide());
       this.register(new TridentBoost());
       this.register(new AutoFirework());
       this.register(new FastFall());
       this.register(new TargetStrafe());
-      this.register(new Strafe());
-      this.register(new Freeze());
-      this.register(new NoWeb());
       this.register(new AntiLevitation());
-      this.register(new TerrainSpeed());
       this.register(new HoleSnap());
-      this.register(new TimerRange());
-      this.register(new KeepY());
       this.register(new FastSwim());
-      this.register(new EdgeJump());
-      this.register(new AnchorPull());
-      this.register(new WallClimb());
+      this.register(new ElytraRecast());
       this.register(new AutoDrop());
       this.register(new AutoMount());
       this.register(new ChestSwap());
@@ -593,26 +515,17 @@ public final class ModuleManager {
       this.register(new MiddleClickExtra());
       this.register(new NoInteract());
       this.register(new Rotation());
-      this.register(new PotionSpoof());
       this.register(new ExpThrower());
       this.register(new AutoMend());
       this.register(new AntiBreak());
-      this.register(new Eagle());
-      this.register(new Tower());
       this.register(new Phase());
       this.register(new AutoSleep());
-      this.register(new InventoryCleaner());
-      this.register(new FastUse());
-      this.register(new NoRotateSet());
-      this.register(new AutoWindCharge());
       this.register(new GhostHand());
-      this.register(new SmartEat());
       this.register(new Clutch());
       this.register(new NoPush());
       this.register(new HotbarSorter());
       this.register(new AirPlace());
       this.register(new AutoBreed());
-      this.register(new AutoNametag());
       this.register(new AutoShearer());
       this.register(new LiquidFiller());
       this.register(new SpawnProofer());
@@ -623,13 +536,6 @@ public final class ModuleManager {
       this.register(new Flamethrower());
       this.register(new AutoSign());
       this.register(new Collisions());
-      this.register(new AutoTorch());
-      this.register(new Fucker());
-      this.register(new BedDefender());
-      this.register(new BlockIn());
-      this.register(new Extinguish());
-      this.register(new PacketMine());
-      this.register(new StrongholdFinder());
       this.register(new LawnMower());
       this.register(new WorldRules());
       this.register(new TickFreeze());
@@ -638,7 +544,6 @@ public final class ModuleManager {
       this.register(new Macro(3));
       this.register(new InventorySorter());
       this.register(new DurabilityAlert());
-      this.register(new AutoHeal());
       this.register(new Kits());
       this.register(new MobSweeper());
       this.register(new Summoner());
@@ -647,18 +552,16 @@ public final class ModuleManager {
       this.register(new BetterChat());
       this.register(new SoundBlocker());
       this.register(new XCarry());
-      this.register(new PacketLogger());
       this.register(new NameProtect());
-      this.register(new FlagCheck());
       this.register(new PortalMenu());
       this.register(new DeathCoords());
       this.register(new Presets());
-      this.register(new AutoGG());
-      this.register(new Notifier());
-      this.register(new Teams());
-      this.register(new Derp());
+      this.register(new AutoCity());
+      this.register(new HitCrystal());
+      this.register(new HolePush());
+      this.register(new AutoWebFill());
+      this.register(new SillyAimbot());
       this.register(new BaritonePause());
-      this.register(new BaritoneStatus());
       this.register(new AutoMineBot());
       this.register(new AutoGoto());
       this.register(new FollowBot());
@@ -667,18 +570,39 @@ public final class ModuleManager {
       this.register(new AutoExcavate());
       this.register(new AutoHighway());
       this.register(new PathRenderer());
+      this.register(new AutoBuildBot());
       this.register(new Buffs());
       this.register(new Enchanter());
-      this.register(new GiveList());
       this.register(new Platform());
       this.register(new Locate());
+      this.register(new Measure());
       this.register(new AutoSave());
       this.register(new Performance());
-      this.register(new CinematicCamera());
-      this.register(new Cleanse());
-      this.register(new FreeSlots());
-      this.register(new FoodInfo());
-      this.register(new XpInfo());
+      this.register(new CoordsCopier());
+      this.register(new ScreenshotHelper());
+      this.register(new WorldBackup());
+      this.register(new WorldNotesModule());
+      this.register(new TotemPopCounter());
+      this.register(new PopChams());
+      this.register(new Chams());
+      this.register(new BreakEsp());
+      this.register(new ViewModel());
+      this.register(new BiomeBorder());
+      this.register(new HarvestEsp());
+      this.register(new Ambience());
+      this.register(new SilentPearl());
+      this.register(new AutoRegear());
+      this.register(new MultiTask());
+      this.register(new QuickMove());
+      this.register(new CraftRepeat());
+      this.register(new ArrayListHud());
+      this.register(new DayInfo());
+      this.register(new SpawnInfo());
+      this.register(new SessionStats());
+      this.register(new WeatherForecast());
+      this.register(new MobCaps());
+      this.register(new EnderChestPreview());
+      this.register(new NotesHud());
    }
 
    public void bindConfig(ConfigManager configManager) {
@@ -696,6 +620,10 @@ public final class ModuleManager {
       } else {
          this.modules.add(module);
          this.byType.put(module.getClass(), module);
+         for (String alias : module.aliases()) {
+            this.byAlias.putIfAbsent(key(alias), module);
+         }
+
          this.bus.register(module);
       }
    }
@@ -729,7 +657,9 @@ public final class ModuleManager {
    }
 
    public Optional<Module> getByName(String name) {
-      return Optional.ofNullable(this.byKey.get(key(name)));
+      String key = key(name);
+      Module exact = this.byKey.get(key);
+      return Optional.ofNullable(exact != null ? exact : this.byAlias.get(key));
    }
 
    public <T extends Module> Optional<T> byClass(Class<T> type) {
@@ -771,6 +701,8 @@ public final class ModuleManager {
             module.applyRuntimeState();
          }
 
+         LiveProfiler.stop();
+         TotemPops.reset();
          return;
       }
 
@@ -787,6 +719,8 @@ public final class ModuleManager {
          BuiltInBaritone.stop();
          BaritoneBridge.resumeAll();
          this.lastLevel = NO_LEVEL;
+         LiveProfiler.stop();
+         TotemPops.reset();
          SelfTest.abort("you left the world");
       } else {
          if (MixinReport.shouldAnnounce()) {
@@ -800,11 +734,14 @@ public final class ModuleManager {
          if (client.level != this.lastLevel.get()) {
             boolean first = this.lastLevel.get() == null;
             this.lastLevel = new WeakReference<>(client.level);
+            TotemPops.reset();
             if (!first) {
                this.worldChanged();
             }
          }
 
+         TotemPops.tick(client.level);
+         LiveProfiler.update(this);
          Scheduler.tick();
          RotationManager.beginTick();
          Hands.beginTick();
@@ -858,7 +795,8 @@ public final class ModuleManager {
 
       try {
          for (Module module : this.modules) {
-            if (!(module instanceof ClickGuiModule) && !(module instanceof HudModule) && (module.isSavedEnabled() || module.isEnabled())) {
+            // Settings pages (ClickGUI, HUD, Aim) are always "on" and have no switch to turn them back on with.
+            if (!module.settingsOnly() && !(module instanceof ClickGuiModule) && !(module instanceof HudModule) && (module.isSavedEnabled() || module.isEnabled())) {
                module.setEnabled(false, false);
                shut++;
             }

@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /**
  * Forgiving text matching for the menus: every query character has to appear in order, but not next to each other,
- * so "kaura" finds KillAura and "nofal" finds NoFall. Scores reward prefixes, word starts and runs of consecutive
+ * so "kaura" finds Kill Aura and "nofal" finds No Fall. Scores reward prefixes, word starts and runs of consecutive
  * characters; a query with several words must match all of them.
  */
 public final class Fuzzy {
@@ -91,28 +91,64 @@ public final class Fuzzy {
       return prev == ' ' || prev == '_' || prev == '-' || prev == '.' || Character.isLowerCase(prev) && Character.isUpperCase(cur);
    }
 
+   /** A module's score and, when it only matched through one of its settings, that setting's name. */
+   public record Match(int score, String setting) {
+      public static final Match NONE = new Match(0, null);
+
+      public boolean matched() {
+         return this.score > 0;
+      }
+   }
+
    /**
     * How well a module matches: its name and aliases count fully, its description and the names of its settings
-    * a little less, so "cps" lists AutoClicker (CPS setting) under KillAura-style direct hits.
+    * a little less, so "webs ahead" lists Web Aura (through its Webs Ahead setting) below direct hits on a module name.
     */
    public static int moduleScore(String query, gemini.module.Module module) {
-      if (query == null || query.isBlank()) {
-         return 1;
+      return moduleMatch(query, module).score();
+   }
+
+   /** As {@link #moduleScore}, also telling which setting produced the match (for "matched: Range" hints). */
+   public static Match moduleMatch(String query, gemini.module.Module module) {
+      java.util.List<String> settings = new java.util.ArrayList<>();
+      for (gemini.module.setting.Setting<?> setting : module.settings()) {
+         settings.add(setting.name());
       }
 
-      int best = score(query, module.getName());
-      for (String alias : module.aliases()) {
-         best = Math.max(best, score(query, alias));
+      return match(query, module.getName(), module.aliases(), module.getDescription(), settings);
+   }
+
+   /**
+    * The matching rule behind {@link #moduleMatch}, on plain strings. {@link Match#setting()} is set only when a
+    * setting name scored strictly higher than the name, the aliases and the description did.
+    */
+   public static Match match(String query, String name, Iterable<String> aliases, String description, Iterable<String> settingNames) {
+      if (query == null || query.isBlank()) {
+         return new Match(1, null);
+      }
+
+      int best = score(query, name);
+      if (aliases != null) {
+         for (String alias : aliases) {
+            best = Math.max(best, score(query, alias));
+         }
       }
 
       // Descriptions and setting names are long, so a scattered-letter match there is almost always noise
       // ("heal" used to pull in 68 unrelated modules). They only count when the words actually appear.
-      best = Math.max(best, substringScore(query, module.getDescription()) * 3 / 5);
-      for (gemini.module.setting.Setting<?> setting : module.settings()) {
-         best = Math.max(best, substringScore(query, setting.name()) * 7 / 10);
+      best = Math.max(best, substringScore(query, description) * 3 / 5);
+      String matchedSetting = null;
+      if (settingNames != null) {
+         for (String setting : settingNames) {
+            int s = substringScore(query, setting) * 7 / 10;
+            if (s > best) {
+               best = s;
+               matchedSetting = setting;
+            }
+         }
       }
 
-      return best;
+      return best <= 0 ? Match.NONE : new Match(best, matchedSetting);
    }
 
    /** Like {@link #score} but every query word must appear in the text as written (no scattered letters). */

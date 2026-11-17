@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.ColorSetting;
@@ -11,12 +13,25 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 public final class JumpEffect extends Module {
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ring accent hue", 198));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Ring colour", 198));
    private final ArrayDeque<JumpEffect.Ring> rings = new ArrayDeque<>();
    private boolean wasOnGround = true;
 
    public JumpEffect() {
-      super("JumpEffect", "Render expanding neon ground rings when jumping.", Category.RENDER);
+      super("Jump Circles", "Draws expanding rings on the ground when you jump.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("JumpEffect");
+      return names;
+   }
+
+   @Override
+   public void onDisable() {
+      this.rings.clear();
+      this.wasOnGround = true;
    }
 
    @Override
@@ -48,15 +63,7 @@ public final class JumpEffect extends Module {
          } else {
             double r = 0.2 + t * 1.4;
             int alpha = Math.round(220.0F * (1.0F - t));
-            int segments = 20;
-
-            for (int i = 0; i < segments; i++) {
-               double a1 = i * Math.PI * 2.0 / segments;
-               double a2 = (i + 1) * Math.PI * 2.0 / segments;
-               Vec3 p1 = new Vec3(ring.center.x + Math.cos(a1) * r, ring.center.y + 0.04, ring.center.z + Math.sin(a1) * r);
-               Vec3 p2 = new Vec3(ring.center.x + Math.cos(a2) * r, ring.center.y + 0.04, ring.center.z + Math.sin(a2) * r);
-               Render3D.lineArgb(p1, p2, Render3D.alpha(baseColor, alpha), 2.0F, false);
-            }
+            Render3D.ring(ring.center.x, ring.center.y + 0.04, ring.center.z, r, 20, Render3D.alpha(baseColor, alpha), 2.0F, false);
          }
       }
    }

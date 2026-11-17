@@ -19,7 +19,7 @@ public final class Summoner extends Module {
    private final ModeSetting mob = this.addSetting(
       new ModeSetting(
          "Mob",
-         "What to summon",
+         "Mob to summon",
          "Zombie",
          "Zombie",
          "Skeleton",
@@ -42,10 +42,10 @@ public final class Summoner extends Module {
       )
    );
    private final NumberSetting count = this.addSetting(new NumberSetting("Count", "How many to summon at once", 1.0, 1.0, 16.0, 1.0));
-   private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Blocks in front of you", 4.0, 2.0, 24.0, 1.0));
+   private final NumberSetting distance = this.addSetting(new NumberSetting("Distance", "Distance in front of you, in blocks", 4.0, 2.0, 24.0, 1.0));
 
    public Summoner() {
-      super("Summoner", "Summon a chosen mob in front of you to practise against.", Category.WORLD);
+      super("Summoner", "Summons a chosen mob in front of you to practise against.", Category.WORLD);
       this.addSetting(new ActionSetting("Summon", "Summon the selected mob now", this::summon));
    }
 
@@ -79,10 +79,7 @@ public final class Summoner extends Module {
       double x = player.getX() - Math.sin(yawRad) * this.distance.get();
       double z = player.getZ() + Math.cos(yawRad) * this.distance.get();
       int y = BuiltInBaritone.findSurfaceY(client.level, Mth.floor(x), Mth.floor(z), player.getBlockY());
-      String id = this.mob.get().toLowerCase(Locale.ROOT).replace(' ', '_');
-      if ("lightning".equals(id)) {
-         id = "lightning_bolt";
-      }
+      String id = entityId(this.mob.get());
 
       int n = this.count.intValue();
       for (int i = 0; i < n; i++) {
@@ -93,6 +90,12 @@ public final class Summoner extends Module {
       }
 
       CommandManager.feedback("§bSummoner §7summoned §f" + n + " × " + this.mob.get() + "§7.");
+   }
+
+   /** The entity id (without namespace) for a "Mob" mode value. */
+   public static String entityId(String mob) {
+      String id = mob.toLowerCase(Locale.ROOT).replace(' ', '_');
+      return "lightning".equals(id) ? "lightning_bolt" : id;
    }
 
    @Override

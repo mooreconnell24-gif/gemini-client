@@ -54,6 +54,9 @@ public final class BaritoneBridge {
    private static volatile Api api;
    private static Engine owner = Engine.NONE;
    private static boolean builtInWasActive;
+   /** The module (or other caller) that asked for the running task, and the built-in engine's generation when it did. */
+   private static Object taskHolder;
+   private static int taskGeneration;
    private static boolean pathingNow;
    private static Object goalNow;
    /** The chat-control state last pushed to Baritone; null until Baritone has answered once. */
@@ -248,6 +251,12 @@ public final class BaritoneBridge {
       return pathingNow || BuiltInBaritone.isActive();
    }
 
+   /** Baritone's current goal as it describes itself (e.g. "GoalBlock{x=1,y=64,z=2}"), or null without one. */
+   public static String externalGoal() {
+      Object goal = goalNow;
+      return goal == null ? null : String.valueOf(goal);
+   }
+
    /** Whether the real Baritone was following a path at the last tick. */
    public static boolean externalPathing() {
       return pathingNow;
@@ -270,6 +279,7 @@ public final class BaritoneBridge {
 
       builtInWasActive = false;
       owner = Engine.EXTERNAL;
+      taskHolder = null;
       return true;
    }
 
@@ -281,6 +291,7 @@ public final class BaritoneBridge {
 
       owner = Engine.BUILT_IN;
       builtInWasActive = true;
+      taskHolder = null;
    }
 
    private static void cancelExternal() {
@@ -609,6 +620,39 @@ public final class BaritoneBridge {
       BuiltInBaritone.stop();
       owner = Engine.NONE;
       builtInWasActive = false;
+      taskHolder = null;
+   }
+
+   /**
+    * Marks the task that was just started as belonging to {@code holder}. Call it right after the request that
+    * started the task; any later request, from whoever, takes the mark away again.
+    */
+   public static void claimTask(Object holder) {
+      taskHolder = holder;
+      taskGeneration = BuiltInBaritone.generation();
+   }
+
+   /**
+    * Whether the task {@code holder} started is still the one in charge. False once another module or a command
+    * replaced it, once it was stopped, and (for the built-in engine) once it finished on its own.
+    */
+   public static boolean holdsTask(Object holder) {
+      return holder != null && taskHolder == holder && taskGeneration == BuiltInBaritone.generation();
+   }
+
+   /**
+    * Stops the running task only if it is the one {@code holder} started. A bot module calls this when it is
+    * switched off, so that turning off a module whose task was replaced does not cancel its successor.
+    */
+   public static boolean stopTaskOf(Object holder) {
+      boolean held = holdsTask(holder);
+      if (held) {
+         stopAll();
+      } else if (taskHolder == holder) {
+         taskHolder = null;
+      }
+
+      return held;
    }
 
    public static String statusSummary() {

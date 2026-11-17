@@ -1,0 +1,76 @@
+[
+ {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric"
+  ],
+  "environment": "client_or_server_prefers_both",
+  "id": "Zns5SSRA",
+  "project_id": "P7dR8mSH",
+  "author_id": "JZA4dW8o",
+  "featured": false,
+  "name": "[26.3] Fabric API 0.166.2+26.3",
+  "version_number": "0.166.2+26.3",
+  "changelog": "- Bump version (modmuss50)\n- Fix removed attachments reappearing after restart (#5677) (modmuss)\n- Fix ValueInput.contains throwing for empty children (#5678) (modmuss)\n- Fix test crash when resizing ",
+  "changelog_url": null,
+  "date_published": "2026-11-11T13:38:52.250683Z",
+  "downloads": 945747,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "BMb1lP1i",
+    "hashes": {
+     "sha1": "65636253571429971f25f5619692e6c1a6362028",
+     "sha512": "fb686a9fa923248328107a12498229d6951e316257f18b7d0e4cbd6885ba447ed50a44076a8a5ba47cfe2043b329db3587ab000aeab1face26b2587a5d4ba6b5"
+    },
+    "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/Zns5SSRA/fabric-api-0.166.2%2B26.3.jar",
+    "filename": "fabric-api-0.166.2+26.3.jar",
+    "primary": true,
+    "size": 1797523,
+    "file_type": null
+   }
+  ],
+  "dependencies": []
+ },
+ {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric"
+  ],
+  "environment": "client_or_server_prefers_both",
+  "id": "998R2rNP",
+  "project_id": "P7dR8mSH",
+  "author_id": "JZA4dW8o",
+  "featured": false,
+  "name": "[26.3] Fabric API 0.166.0+26.3",
+  "version_number": "0.166.0+26.3",
+  "changelog": "- Bump version (modmuss50)\n- Fix PiP initialization for secondary GuiRenderer instances (#5685) (HiWord9)\n- Fix `ItemContainerContentsStorage` having a capacity of 1 (#5679) (Jonathan Coates)\n- Data d",
+  "changelog_url": null,
+  "date_published": "2026-11-09T15:27:33.590886Z",
+  "downloads": 259501,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "Eb9GKvhh",
+    "hashes": {
+     "sha1": "7f16cfcd4ef3d225a21417907634957787b31a5f",
+     "sha512": "de0d1a502cfcfcc594e0338e91c2fcf92a1239d47904ac2c3c50980ee132c676dba6abd81cd9449cdb0383657683c286f5bfc5c1bc1609c6b13bd569d36351d2"
+    },
+    "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/998R2rNP/fabric-api-0.166.0%2B26.3.jar",
+    "filename": "fabric-api-0.166.0+26.3.jar",
+    "primary": true,
+    "size": 1797522,
+    "file_type": null
+   }
+  ],
+  "dependencies": []
+ }
+]

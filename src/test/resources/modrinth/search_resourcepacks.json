@@ -1,0 +1,163 @@
+{
+ "hits": [
+  {
+   "project_id": "50dA9Sha",
+   "project_type": "resourcepack",
+   "all_project_types": [
+    "resourcepack"
+   ],
+   "slug": "fresh-animations",
+   "author": "FreshLX",
+   "author_id": "OffNOjBf",
+   "organization": null,
+   "organization_id": null,
+   "title": "Fresh Animations",
+   "description": "Make your game like the trailers! Dynamic animated entities to freshen your Minecraft experience.",
+   "categories": [
+    "16x",
+    "entities",
+    "minecraft",
+    "models",
+    "realistic",
+    "tweaks",
+    "vanilla-like"
+   ],
+   "display_categories": [
+    "entities",
+    "minecraft",
+    "tweaks",
+    "vanilla-like"
+   ],
+   "versions": [
+    "26.1.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "downloads": 52358160,
+   "follows": 14939,
+   "icon_url": "https://cdn.modrinth.com/data/50dA9Sha/3132c10e9e3c73fde9799720fd3da5561071708c_96.webp",
+   "date_created": "2023-07-19T03:17:46.802590+00:00",
+   "date_modified": "2026-11-01T11:30:43.988747+00:00",
+   "latest_version": "xfE3qfr5",
+   "license": "LicenseRef-See-Terms-of-Use-in-Description",
+   "client_side": "required",
+   "server_side": "unsupported",
+   "environment": [
+    "unknown"
+   ],
+   "disclosure_types": [],
+   "gallery": [
+    "https://cdn.modrinth.com/data/50dA9Sha/images/2b827c8946f2bf098aefe635da69a6ac5ebf4051_350.webp"
+   ],
+   "featured_gallery": "https://cdn.modrinth.com/data/50dA9Sha/images/26e5c0a8a65d421b1111e2c68880f1d657fdc920_350.webp",
+   "color": 13608096
+  },
+  {
+   "project_id": "yfDziwn1",
+   "project_type": "resourcepack",
+   "all_project_types": [
+    "resourcepack"
+   ],
+   "slug": "translations-for-sodium",
+   "author": "robotkoer",
+   "author_id": "2avTeeAE",
+   "organization": null,
+   "organization_id": null,
+   "title": "Translations for Sodium",
+   "description": "Unofficial translations for the Sodium Minecraft mod",
+   "categories": [
+    "locale",
+    "minecraft",
+    "modded",
+    "tweaks",
+    "utility"
+   ],
+   "display_categories": [
+    "locale",
+    "minecraft",
+    "modded",
+    "utility"
+   ],
+   "versions": [
+    "26.1.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "downloads": 23447847,
+   "follows": 1692,
+   "icon_url": "https://cdn.modrinth.com/data/yfDziwn1/907581019df45903df237952ce8d10ac37134cb5_96.webp",
+   "date_created": "2023-06-01T01:01:09.345511+00:00",
+   "date_modified": "2026-11-14T05:50:05.248579+00:00",
+   "latest_version": "Coni1sOB",
+   "license": "CC0-1.0",
+   "client_side": "required",
+   "server_side": "unsupported",
+   "environment": [
+    "unknown"
+   ],
+   "disclosure_types": [],
+   "gallery": [
+    "https://cdn.modrinth.com/data/yfDziwn1/images/823a027682b4464c98fc962fffe538fac47289ec.png"
+   ],
+   "featured_gallery": "https://cdn.modrinth.com/data/yfDziwn1/images/41175c3da02a8737e1a474e47ff172e96d550149.png",
+   "color": 14089174
+  },
+  {
+   "project_id": "uvpymuxq",
+   "project_type": "resourcepack",
+   "all_project_types": [
+    "resourcepack"
+   ],
+   "slug": "better-leaves",
+   "author": "Motschen",
+   "author_id": "6YsSV9eP",
+   "organization": null,
+   "organization_id": null,
+   "title": "Motschen's Better Leaves",
+   "description": "Improves the appearance of leaves with high mod compatibility and performance!",
+   "categories": [
+    "minecraft",
+    "modded",
+    "models",
+    "realistic",
+    "tweaks",
+    "vanilla-like"
+   ],
+   "display_categories": [
+    "minecraft",
+    "models",
+    "realistic",
+    "vanilla-like"
+   ],
+   "versions": [
+    "26.1.1",
+    "26.1.2",
+    "26.2",
+    "26.3"
+   ],
+   "downloads": 21687731,
+   "follows": 5600,
+   "icon_url": "https://cdn.modrinth.com/data/uvpymuxq/fe1a61998ae57dc6ad1a4bb028334c3c3925d22f_96.webp",
+   "date_created": "2022-09-08T19:54:19.246444+00:00",
+   "date_modified": "2026-09-14T22:38:36.576279+00:00",
+   "latest_version": "w4ReEpuG",
+   "license": "MIT",
+   "client_side": "required",
+   "server_side": "unsupported",
+   "environment": [
+    "unknown"
+   ],
+   "disclosure_types": [],
+   "gallery": [
+    "https://cdn.modrinth.com/data/uvpymuxq/images/29429796c741fb6dcde86a8f4a17034135d56686_350.webp"
+   ],
+   "featured_gallery": "https://cdn.modrinth.com/data/uvpymuxq/images/769f109a7d5a753ea93c8520bbaaace9f3059ea2_350.webp",
+   "color": 675332
+  }
+ ],
+ "offset": 0,
+ "limit": 3,
+ "total_hits": 7407
+}

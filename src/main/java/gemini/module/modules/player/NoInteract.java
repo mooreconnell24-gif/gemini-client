@@ -12,7 +12,7 @@ public final class NoInteract extends Module {
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
          "Blocks",
-         "Blocks you cannot use",
+         "Blocks your clicks will not use",
          ListSetting.Kind.BLOCK,
          "chest",
          "trapped_chest",
@@ -29,12 +29,12 @@ public final class NoInteract extends Module {
       )
    );
    private final ListSetting entities = this.addSetting(
-      new ListSetting("Entities", "Mobs you cannot interact with", ListSetting.Kind.ENTITY, "villager", "wandering_trader")
+      new ListSetting("Entities", "Mobs your clicks will not interact with", ListSetting.Kind.ENTITY, "villager", "wandering_trader")
    );
-   private final BooleanSetting sneakBypass = this.addSetting(new BooleanSetting("Sneak Bypass", "Holding sneak lets the click through", true));
+   private final BooleanSetting sneakBypass = this.addSetting(new BooleanSetting("Sneak Bypass", "Hold sneak to let the click through", true));
 
    public NoInteract() {
-      super("No Interact", "Stop accidental clicks on containers and villagers.", Category.PLAYER);
+      super("No Interact", "Stops your clicks opening the chosen blocks and interacting with the chosen mobs.", Category.PLAYER);
       UseBlockCallback.EVENT
          .register(
             (UseBlockCallback)(player, level, hand, hit) -> (InteractionResult)(

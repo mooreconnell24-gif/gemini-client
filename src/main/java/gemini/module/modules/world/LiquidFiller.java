@@ -29,12 +29,12 @@ public final class LiquidFiller extends Module {
    private final PlaceSettings placing = new PlaceSettings(this, 1, 2, 4.5);
    private final ModeSetting liquid = this.addSetting(new ModeSetting("Liquid", "Which liquid gets covered", "Both", "Both", "Water", "Lava"));
    private final BooleanSetting sourcesOnly = this.addSetting(
-      new BooleanSetting("Only Sources", "Skip flowing liquid", true)
+      new BooleanSetting("Only Sources", "Only cover source blocks and leave flowing liquid alone", true)
    );
    private final ListSetting blocks = this.addSetting(
       new ListSetting(
          "Blocks",
-         "Blocks used to cover the liquid",
+         "Blocks used to cover the liquid (empty list: any plain solid block in the hotbar)",
          ListSetting.Kind.BLOCK,
          "minecraft:cobblestone",
          "minecraft:dirt",
@@ -48,7 +48,7 @@ public final class LiquidFiller extends Module {
    );
 
    public LiquidFiller() {
-      super("Liquid Filler", "Fill nearby water and lava source blocks automatically.", Category.WORLD);
+      super("Liquid Filler", "Covers nearby water and lava with blocks from your hotbar.", Category.WORLD);
    }
 
    @Override
@@ -90,6 +90,12 @@ public final class LiquidFiller extends Module {
                   cursor.set(origin.getX() + x, origin.getY() + y, origin.getZ() + z);
                   if (this.wanted(level.getFluidState(cursor))
                      && !(eye.distanceToSqr(cursor.getX() + 0.5, cursor.getY() + 0.5, cursor.getZ() + 0.5) > reach * reach)) {
+                     // A waterlogged block (slab, stairs, leaves...) holds liquid but cannot be replaced: skip it, or
+                     // it would stay first in line and every attempt would fail.
+                     if (!BlockPlacer.replaceable(level, cursor)) {
+                        continue;
+                     }
+
                      BlockPos pos = cursor.immutable();
                      if (air || BlockPlacer.findPlacement(level, pos, false) != null) {
                         targets.add(pos);
@@ -102,7 +108,7 @@ public final class LiquidFiller extends Module {
          if (targets.isEmpty()) {
             this.placing.backoff(8);
          } else {
-            targets.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(Vec3.atCenterOf(posx))));
+            targets.sort(Comparator.comparingDouble(posx -> eye.distanceToSqr(posx.getX() + 0.5, posx.getY() + 0.5, posx.getZ() + 0.5)));
             Set<Block> allowed = this.blocks.blocks();
             Predicate<ItemStack> filter = allowed.isEmpty()
                ? BlockPlacer::solidFiller

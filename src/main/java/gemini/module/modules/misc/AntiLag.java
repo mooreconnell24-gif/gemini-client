@@ -1,5 +1,7 @@
 package gemini.module.modules.misc;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -19,51 +21,61 @@ public final class AntiLag extends Module {
    private final ModeSetting mode = this.addSetting(
       new ModeSetting(
          "Mode",
-         "Dynamic adapts to FPS; Aggressive culls all effects",
+         "Dynamic limits effects harder when FPS drops below Target FPS; Always limits them harder all the time; Strict also cuts particles to a third and mutes explosion, firework and piston sounds",
          "Dynamic",
          "Dynamic",
          "Always",
-         "Aggressive"
+         "Strict"
       )
    );
    private final NumberSetting targetFps = this.addSetting(
-      new NumberSetting("Target FPS", "FPS threshold where Dynamic culling activates", 90.0, 30.0, 240.0, 10.0)
+      new NumberSetting("Target FPS", "FPS below which Dynamic mode limits effects harder", 90.0, 30.0, 240.0, 10.0)
          .showIf(() -> this.mode.is("Dynamic"))
    );
    private final NumberSetting maxParticlesTick = this.addSetting(
-      new NumberSetting("Max Particles/Tick", "Maximum particles allowed to spawn in a single tick", 55.0, 5.0, 250.0, 5.0)
+      new NumberSetting("Max Particles/Tick", "Most particles allowed to spawn in one tick", 55.0, 5.0, 250.0, 5.0)
    );
    private final NumberSetting particleRange = this.addSetting(
-      new NumberSetting("Particle Distance", "Cull particles beyond this distance in blocks", 28.0, 8.0, 96.0, 4.0)
+      new NumberSetting("Particle Distance", "Hide particles farther away than this, in blocks", 28.0, 8.0, 96.0, 4.0)
    );
    private final BooleanSetting blockExplosions = this.addSetting(
-      new BooleanSetting("Block Explosions & Fireworks", "Block explosion emitters", true)
+      new BooleanSetting("Hide Explosions", "Hide explosion and firework particles", true)
    );
    private final BooleanSetting blockSmoke = this.addSetting(
-      new BooleanSetting("Block Smoke & Campfires", "Block heavy campfire smoke", true)
+      new BooleanSetting("Hide Smoke", "Hide heavy campfire smoke", true)
    );
    private final BooleanSetting blockWeather = this.addSetting(
-      new BooleanSetting("Block Weather & Portals", "Block rain splash, dripping water, and portal particles", true)
+      new BooleanSetting("Hide Weather And Portals", "Hide rain splashes, dripping water and portal particles", true)
    );
    private final BooleanSetting packetGuard = this.addSetting(
-      new BooleanSetting("Packet Flood Guard", "Drop server packets spawning excessive particles", true)
+      new BooleanSetting("Particle Burst Guard", "Ignore single bursts that would spawn more than 150 particles at once", true)
    );
    private final BooleanSetting soundThrottle = this.addSetting(
-      new BooleanSetting("Sound Spam Filter", "Cap overlapping sounds per tick to prevent lag", true)
+      new BooleanSetting("Sound Spam Filter", "Limit how many sounds can start in one tick", true)
    );
    private final NumberSetting maxSoundsTick = this.addSetting(
-      new NumberSetting("Max Sounds/Tick", "Maximum sound instances started per tick", 14.0, 4.0, 40.0, 2.0).showIf(this.soundThrottle::get)
+      new NumberSetting("Max Sounds/Tick", "Most sounds started in one tick", 14.0, 4.0, 40.0, 2.0).showIf(this.soundThrottle::get)
    );
    private final BooleanSetting cullNametags = this.addSetting(
-      new BooleanSetting("Cull Distant Nametags", "Hide distant entity and armor stand nametags", true)
+      new BooleanSetting("Cull Distant Nametags", "Hide distant entity and armour stand name tags", true)
    );
    private int particlesThisTick;
    private int soundsThisTick;
    private long totalBlocked;
+   private long infoBlocked = -1L;
+   private String infoMode = "";
+   private String infoText = "";
 
    public AntiLag() {
-      super("AntiLag", "Boost FPS and prevent lag machines.", Category.CLIENT);
+      super("Anti Lag", "Raises FPS by limiting particles, sounds and distant name tags when there are too many.", Category.CLIENT);
       instance = this;
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("EntityCulling");
+      return names;
    }
 
    @Override
@@ -83,7 +95,7 @@ public final class AntiLag extends Module {
    }
 
    public boolean isStrictNow() {
-      if (!this.mode.is("Always") && !this.mode.is("Aggressive")) {
+      if (!this.mode.is("Always") && !this.mode.is("Strict")) {
          int fps = Minecraft.getInstance().getFps();
          return fps > 0 && fps < this.targetFps.intValue();
       } else {
@@ -93,13 +105,21 @@ public final class AntiLag extends Module {
 
    @Override
    public String info() {
-      return this.mode.get() + " · " + this.totalBlocked;
+      String mode = this.mode.get();
+      long blocked = this.totalBlocked;
+      if (blocked != this.infoBlocked || !mode.equals(this.infoMode)) {
+         this.infoBlocked = blocked;
+         this.infoMode = mode;
+         this.infoText = mode + " · " + blocked;
+      }
+
+      return this.infoText;
    }
 
    @Override
    public boolean onReceivePacket(Packet<?> packet) {
       if (!(this.packetGuard.get() && packet instanceof ClientboundLevelParticlesPacket p)
-         || p.count() <= 150 && (!this.mode.is("Aggressive") || p.count() <= 40)) {
+         || p.count() <= 150 && (!this.mode.is("Strict") || p.count() <= 40)) {
          return false;
       } else {
          this.totalBlocked++;
@@ -112,7 +132,7 @@ public final class AntiLag extends Module {
          return false;
       } else {
          boolean strict = this.isStrictNow();
-         int cap = this.mode.is("Aggressive")
+         int cap = this.mode.is("Strict")
             ? Math.max(5, this.maxParticlesTick.intValue() / 3)
             : (strict ? this.maxParticlesTick.intValue() : this.maxParticlesTick.intValue() * 2);
          if (this.particlesThisTick >= cap) {
@@ -168,7 +188,7 @@ public final class AntiLag extends Module {
             return true;
          } else {
             String path = id.getPath();
-            if (!this.mode.is("Aggressive") || !path.contains("explosion") && !path.contains("firework") && !path.contains("piston")) {
+            if (!this.mode.is("Strict") || !path.contains("explosion") && !path.contains("firework") && !path.contains("piston")) {
                this.soundsThisTick++;
                return false;
             } else {

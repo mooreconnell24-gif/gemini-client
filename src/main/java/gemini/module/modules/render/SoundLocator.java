@@ -13,20 +13,22 @@ import net.minecraft.world.phys.Vec3;
 
 public final class SoundLocator extends Module {
    public static SoundLocator instance;
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Maximum distance to locate sounds", 48.0, 12.0, 96.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest sound to mark, in blocks", 48.0, 12.0, 96.0, 4.0));
    private final BooleanSetting onlyImportant = this.addSetting(
-      new BooleanSetting("Important Only", "Only show chests, explosions, teleports, totems", true)
+      new BooleanSetting("Important Only", "Only show containers, explosions, teleports and totem pops; off also shows drinking, eating, footsteps and swimming", true)
    );
    private final ArrayDeque<SoundLocator.SoundPing> pings = new ArrayDeque<>();
 
    public SoundLocator() {
-      super("SoundLocator", "Visualize nearby explosions.", Category.RENDER);
+      super("Sound Locator", "Marks where nearby sounds come from.", Category.RENDER);
       instance = this;
    }
 
    @Override
    public void onDisable() {
-      this.pings.clear();
+      synchronized (this.pings) {
+         this.pings.clear();
+      }
    }
 
    public void recordSound(String path, double x, double y, double z) {
@@ -58,7 +60,8 @@ public final class SoundLocator extends Module {
       }
    }
 
-   private static String classifySound(String path, boolean importantOnly) {
+   /** The label for a sound id path, or null when it is not shown; "Important Only" keeps the first four kinds. */
+   static String classifySound(String path, boolean importantOnly) {
       if (path.contains("chest") || path.contains("shulker") || path.contains("barrel")) {
          return "Container";
       } else if (path.contains("explode") || path.contains("tnt")) {
@@ -67,10 +70,12 @@ public final class SoundLocator extends Module {
          return "Teleport";
       } else if (path.contains("totem")) {
          return "Totem Pop";
-      } else if (!path.contains("Drink") && !path.contains("drink") && !path.contains("burp")) {
-         return importantOnly || !path.contains("step") && !path.contains("swim") ? null : "Movement";
-      } else {
+      } else if (importantOnly) {
+         return null;
+      } else if (path.contains("drink") || path.contains("burp")) {
          return "Consumable";
+      } else {
+         return path.contains("step") || path.contains("swim") ? "Movement" : null;
       }
    }
 
@@ -87,9 +92,9 @@ public final class SoundLocator extends Module {
                it.remove();
             } else {
                int color = !ping.label.equals("Explosion") && !ping.label.equals("Totem Pop") ? -16718337 : -48043;
-               AABB box = new AABB(ping.pos.x - 0.25, ping.pos.y - 0.25, ping.pos.z - 0.25, ping.pos.x + 0.25, ping.pos.y + 0.25, ping.pos.z + 0.25);
-               Render3D.box(box, color, true, true, 1.5F, Math.round(65.0F * (1.0F - t)), true);
-               Render3D.text(ping.label, ping.pos.add(0.0, 0.55, 0.0), color, 0.78F, true);
+               Vec3 at = ping.pos;
+               Render3D.box(at.x - 0.25, at.y - 0.25, at.z - 0.25, at.x + 0.25, at.y + 0.25, at.z + 0.25, color, true, true, 1.5F, Math.round(65.0F * (1.0F - t)), true);
+               Render3D.text(ping.label, at.x, at.y + 0.55, at.z, color, 0.78F, true);
             }
          }
       }
@@ -101,6 +106,8 @@ public final class SoundLocator extends Module {
    /** Everything remembered here belongs to the world that was just left. */
    @Override
    public void onWorldChange() {
-      this.pings.clear();
+      synchronized (this.pings) {
+         this.pings.clear();
+      }
    }
 }

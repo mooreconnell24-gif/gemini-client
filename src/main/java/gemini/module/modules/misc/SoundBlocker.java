@@ -19,7 +19,7 @@ public final class SoundBlocker extends Module {
    private volatile String[] needles = new String[0];
 
    public SoundBlocker() {
-      super("Sound Blocker", "Mute annoying sounds by name.", Category.CLIENT);
+      super("Sound Blocker", "Mutes the sounds you list.", Category.CLIENT);
       instance = this;
       this.rebuild();
    }
@@ -28,7 +28,11 @@ public final class SoundBlocker extends Module {
       List<String> lowered = new ArrayList<>();
 
       for (String entry : this.sounds.get()) {
-         lowered.add(entry.toLowerCase(Locale.ROOT));
+         String needle = entry.trim().toLowerCase(Locale.ROOT);
+         // An empty line would be part of every id and mute every sound.
+         if (!needle.isEmpty()) {
+            lowered.add(needle);
+         }
       }
 
       this.needles = lowered.toArray(new String[0]);

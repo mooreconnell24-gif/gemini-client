@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -10,6 +12,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.render.ShapeSettings;
 import gemini.util.ChunkScanner;
+import gemini.util.InfoText;
 import gemini.util.VersionBridge;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,25 +38,33 @@ public final class Search extends Module {
          "minecraft:deepslate_diamond_ore"
       )
    );
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Chunks around you to search", 4.0, 1.0, 12.0, 1.0));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "How far around you to search, in chunks", 4.0, 1.0, 12.0, 1.0));
    private final NumberSetting speed = this.addSetting(new NumberSetting("Scan Speed", "Chunk columns checked per tick", 4.0, 1.0, 24.0, 1.0));
    private final NumberSetting results = this.addSetting(new NumberSetting("Max Results", "Most blocks highlighted at once", 800.0, 50.0, 5000.0, 50.0));
    private final ModeSetting colors = this.addSetting(
-      new ModeSetting("Colors", "One color per block type, or a single color", "Per Block", "Per Block", "Custom")
+      new ModeSetting("Colors", "One colour per block type, or a single colour", "Per Block", "Per Block", "Custom")
    );
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight color", 200).showIf(() -> this.colors.is("Custom")));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight colour", 200).showIf(() -> this.colors.is("Custom")));
    private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw a line from your crosshair to every result", false));
    private final ShapeSettings shape = new ShapeSettings(this, "Both", true);
    private final Map<Block, Integer> palette = new HashMap<>();
    private ChunkScanner scanner;
    private int scanSpeed = -1;
    private int resultCap = -1;
+   private final InfoText infoText = new InfoText();
 
    public Search() {
-      super("Search", "Highlight selected blocks across loaded chunks.", Category.RENDER);
+      super("Block ESP", "Highlights the blocks you choose across loaded chunks.", Category.RENDER);
       this.blocks.onChange(this::reset);
       this.speed.onChange(this::reset);
       this.results.onChange(this::reset);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Search");
+      return names;
    }
 
    private void reset() {
@@ -109,7 +120,7 @@ public final class Search extends Module {
                   int color = this.colorOf(block);
                   this.shape.block(cursor.getX(), cursor.getY(), cursor.getZ(), color);
                   if (this.tracers.get()) {
-                     Render3D.line(origin, Vec3.atCenterOf(cursor), color, 1.0F, true);
+                     Render3D.line(origin.x, origin.y, origin.z, cursor.getX() + 0.5, cursor.getY() + 0.5, cursor.getZ() + 0.5, color, 1.0F, true);
                   }
                }
             });
@@ -118,6 +129,6 @@ public final class Search extends Module {
 
    @Override
    public String info() {
-      return this.scanner == null ? null : Integer.toString(this.scanner.count());
+      return this.scanner == null ? null : this.infoText.whole(this.scanner.count(), "");
    }
 }

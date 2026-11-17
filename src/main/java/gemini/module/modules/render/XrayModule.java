@@ -12,6 +12,8 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.render.ShapeSettings;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
+import gemini.util.InfoText;
 import gemini.xray.XrayConfig;
 import gemini.xray.XrayData;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -22,7 +24,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -96,24 +97,24 @@ public final class XrayModule extends Module {
       )
    );
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Hide strips non-ores; Ghost renders translucent terrain", "Hide", "Hide", "Ghost")
+      new ModeSetting("Mode", "Hide removes every other block; Ghost makes terrain see-through", "Hide", "Hide", "Ghost")
          .onChange(this::markDirty)
    );
    private final NumberSetting opacity = this.addSetting(
-      new NumberSetting("Opacity", "World terrain opacity percentage in Ghost mode", 12.0, 2.0, 80.0, 1.0)
+      new NumberSetting("Opacity", "Terrain opacity in Ghost mode (percent)", 12.0, 2.0, 80.0, 1.0)
          .showIf(() -> this.mode.is("Ghost"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting exposedOnly = this.addSetting(
-      new BooleanSetting("Exposed Only", "Only show ores touching air or fluid (anti-antixray)", false)
+      new BooleanSetting("Exposed Only", "Only show ores touching air or a fluid", false)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
    private final BooleanSetting fullbright = this.addSetting(
-      new BooleanSetting("Fullbright", "Render Xray target blocks at full brightness", true).onChange(this::markDirty)
+      new BooleanSetting("Fullbright", "Draw the shown blocks at full brightness", true).onChange(this::markDirty)
    );
    private final BooleanSetting lava = this.addSetting(
-      new BooleanSetting("Show Lava", "Keep lava visible while Xray Hide mode is active", true)
+      new BooleanSetting("Show Lava", "Keep lava visible in Hide mode", true)
          .showIf(() -> this.mode.is("Hide"))
          .onChange(this::markDirty)
    );
@@ -122,23 +123,23 @@ public final class XrayModule extends Module {
    );
    private final BooleanSetting[] presetToggles = new BooleanSetting[PRESETS.size()];
    private final ListSetting custom = this.addSetting(
-      new ListSetting("Custom Blocks", "Extra blocks to reveal, picked from the block list", ListSetting.Kind.BLOCK).onChange(this::markDirty)
+      new ListSetting("Custom Blocks", "Extra blocks to show, picked from the block list", ListSetting.Kind.BLOCK).onChange(this::markDirty)
    );
-   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw 3D outline boxes around nearby target ores", false));
-   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines from the crosshair to the nearest targets", false));
+   private final BooleanSetting outlines = this.addSetting(new BooleanSetting("Outlines", "Draw outline boxes around nearby ores", false));
+   private final BooleanSetting tracers = this.addSetting(new BooleanSetting("Tracers", "Draw lines from the crosshair to the nearest ores", false));
    private final ShapeSettings shape = new ShapeSettings(this, "Lines", true, () -> this.outlines.get() || this.tracers.get());
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far outlines, tracers and counts look", 48.0, 8.0, 128.0, 4.0));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "How far outlines, tracers and counts look, in blocks", 48.0, 8.0, 128.0, 4.0));
    private final NumberSetting maxOutlines = this.addSetting(
       new NumberSetting("Max Outlines", "Most boxes drawn per frame, nearest first", 96.0, 8.0, 512.0, 8.0).showIf(this.outlines::get)
    );
    private final NumberSetting tracerCount = this.addSetting(
-      new NumberSetting("Tracer Count", "How many of the nearest targets get a line", 3.0, 1.0, 16.0, 1.0).showIf(this.tracers::get)
+      new NumberSetting("Tracer Count", "How many of the nearest ores get a line", 3.0, 1.0, 16.0, 1.0).showIf(this.tracers::get)
    );
-   private final BooleanSetting counts = this.addSetting(new BooleanSetting("Show Counts", "List nearby targets by type on the HUD", true));
+   private final BooleanSetting counts = this.addSetting(new BooleanSetting("Show Counts", "List nearby ores by type on the HUD", true));
    private final ModeSetting countsSide = this.addSetting(
       new ModeSetting("Counts Side", "Which edge of the screen the list sits on", "Left", "Left", "Right").showIf(this.counts::get)
    );
-   private final ActionSetting rebuild = this.addSetting(new ActionSetting("Rebuild Chunks", "Rebuild every visible chunk right now", this::rebuildNow));
+   private final ActionSetting rebuild = this.addSetting(new ActionSetting("Rebuild Chunks", "Redraw every visible chunk now", this::rebuildNow));
    private List<List<Block>> presetBlocks;
    private int reloadIn = -1;
    private int refreshIn;
@@ -149,9 +150,11 @@ public final class XrayModule extends Module {
    private int nearCount;
    private List<XrayModule.Group> groups = List.of();
    private final LongArrayList scan = new LongArrayList();
+   private int infoPercent = -1;
+   private String infoText = "";
 
    public XrayModule() {
-      super("Xray", "Render target ores and blocks through solid terrain.", Category.RENDER);
+      super("X-Ray", "Shows ores and other chosen blocks through solid terrain.", Category.RENDER);
 
       for (int i = 0; i < PRESETS.size(); i++) {
          XrayModule.Preset preset = PRESETS.get(i);
@@ -161,7 +164,17 @@ public final class XrayModule extends Module {
 
    @Override
    public String info() {
-      return this.mode.is("Ghost") ? "Ghost " + this.opacity.intValue() + "%" : "Hide";
+      if (!this.mode.is("Ghost")) {
+         return "Hide";
+      }
+
+      int percent = this.opacity.intValue();
+      if (percent != this.infoPercent) {
+         this.infoPercent = percent;
+         this.infoText = "Ghost " + percent + "%";
+      }
+
+      return this.infoText;
    }
 
    private void markDirty() {
@@ -363,6 +376,10 @@ public final class XrayModule extends Module {
          this.nearCount = valid;
          List<XrayModule.Group> sorted = new ArrayList<>(grouped.values());
          sorted.sort(Comparator.comparingDouble(groupx -> groupx.nearest));
+         for (XrayModule.Group group : sorted) {
+            group.text = group.label + "  x" + group.count + "  " + InfoText.format(group.nearest, 0) + "m";
+         }
+
          this.groups = sorted;
       } else {
          this.nearCount = 0;
@@ -379,7 +396,8 @@ public final class XrayModule extends Module {
             int limit = Math.min(this.nearCount, this.maxOutlines.intValue());
 
             for (int i = 0; i < limit; i++) {
-               this.shape.block(BlockPos.of(this.nearPositions[i]), this.nearColors[i]);
+               long packed = this.nearPositions[i];
+               this.shape.block(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed), this.nearColors[i]);
             }
          }
 
@@ -388,7 +406,10 @@ public final class XrayModule extends Module {
             int limit = Math.min(this.nearCount, this.tracerCount.intValue());
 
             for (int i = 0; i < limit; i++) {
-               this.shape.line(from, Vec3.atCenterOf(BlockPos.of(this.nearPositions[i])), this.nearColors[i]);
+               long packed = this.nearPositions[i];
+               this.shape.line(
+                  from.x, from.y, from.z, BlockPos.getX(packed) + 0.5, BlockPos.getY(packed) + 0.5, BlockPos.getZ(packed) + 0.5, this.nearColors[i]
+               );
             }
          }
       }
@@ -400,13 +421,10 @@ public final class XrayModule extends Module {
       if (this.counts.get() && !rows.isEmpty()) {
          int shown = Math.min(rows.size(), 10);
          String title = "Xray";
-         int widest = hud.font.width(title);
-         String[] lines = new String[shown];
+         int widest = UiFont.width(title);
 
          for (int i = 0; i < shown; i++) {
-            XrayModule.Group group = rows.get(i);
-            lines[i] = group.label + "  x" + group.count + "  " + String.format(Locale.ROOT, "%.0fm", group.nearest);
-            widest = Math.max(widest, hud.font.width(lines[i]) + 10);
+            widest = Math.max(widest, UiFont.width(rows.get(i).text) + 10);
          }
 
          boolean right = this.countsSide.is("Right");
@@ -414,13 +432,13 @@ public final class XrayModule extends Module {
          int y = hud.height / 2 - (shown * 10 + 14) / 2;
          hud.graphics.fill(x - 4, y - 3, x + widest + 4, y + 12 + shown * 10, -1441851872);
          hud.graphics.fill(x - 4, y - 3, x - 2, y + 12 + shown * 10, hud.accent);
-         hud.graphics.text(hud.font, title, x, y, hud.accent, hud.shadow);
+         UiFont.draw(hud.graphics, title, x, y, hud.accent, hud.shadow);
 
          for (int i = 0; i < shown; i++) {
             int rowY = y + 12 + i * 10;
             XrayModule.Group group = rows.get(i);
             hud.graphics.fill(x, rowY + 1, x + 6, rowY + 7, group.color);
-            hud.graphics.text(hud.font, lines[i], x + 10, rowY, -1511689, hud.shadow);
+            UiFont.draw(hud.graphics, group.text, x + 10, rowY, -1511689, hud.shadow);
          }
       }
    }
@@ -430,6 +448,8 @@ public final class XrayModule extends Module {
       private final int color;
       private int count;
       private double nearest = Double.MAX_VALUE;
+      /** The HUD row, built when the group is refreshed rather than every frame. */
+      private String text = "";
 
       private Group(String label, int color) {
          this.label = label;
@@ -445,5 +465,11 @@ public final class XrayModule extends Module {
    public void onWorldChange() {
       XrayData.clear();
       this.scan.clear();
+      // Outlines, tracers and counts found in the old world must not be drawn at the same coordinates in the new one.
+      this.nearCount = 0;
+      this.nearPositions = new long[0];
+      this.nearColors = new int[0];
+      this.groups = List.of();
+      this.refreshIn = 0;
    }
 }

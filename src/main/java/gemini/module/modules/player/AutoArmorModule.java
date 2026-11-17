@@ -16,6 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers.Entry;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.equipment.Equippable;
 
 public final class AutoArmorModule extends Module {
@@ -23,18 +25,21 @@ public final class AutoArmorModule extends Module {
    private static final int ARMOR_MENU_START = 5;
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between equip actions", 3.0, 0.0, 20.0, 1.0));
    private final BooleanSetting keepElytra = this.addSetting(new BooleanSetting("Keep Elytra", "Never swap your elytra for a chestplate", true));
-   private final BooleanSetting onlyInInventory = this.addSetting(new BooleanSetting("Only In Inventory", "Wait until your inventory screen is open", false));
+   private final BooleanSetting onlyInInventory = this.addSetting(new BooleanSetting("Only In Inventory", "Only equip while your inventory screen is open", false));
+   private final BooleanSetting avoidBinding = this.addSetting(
+      new BooleanSetting("Avoid Binding", "Never put on a piece with Curse of Binding, which could not be taken off again", true)
+   );
    private int cooldown;
 
    public AutoArmorModule() {
-      super("AutoArmor", "Equip the best armor from your inventory.", Category.PLAYER);
+      super("Auto Armor", "Puts on the best armour in your inventory.", Category.PLAYER);
    }
 
    @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null && client.gameMode != null && Inventories.inventoryOpenOrClosed(player) && !player.isDeadOrDying()) {
+      if (player != null && client.gameMode != null && Inventories.canClick(player) && !player.isDeadOrDying()) {
          boolean inventoryScreen = client.gui.screen() instanceof InventoryScreen;
          if ((client.gui.screen() == null || inventoryScreen) && (!this.onlyInInventory.get() || inventoryScreen)) {
             if (this.cooldown > 0) {
@@ -43,12 +48,19 @@ public final class AutoArmorModule extends Module {
                for (int i = 0; i < SLOTS.length; i++) {
                   EquipmentSlot slot = SLOTS[i];
                   ItemStack worn = player.getItemBySlot(slot);
-                  if (!this.keepElytra.get() || slot != EquipmentSlot.CHEST || !worn.is(Items.ELYTRA)) {
+                  // Curse of Binding keeps a worn piece on outside creative: every swap attempt would just bounce.
+                  boolean bound = !worn.isEmpty() && !player.isCreative() && EnchantmentHelper.has(worn, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+                  if (!bound && (!this.keepElytra.get() || slot != EquipmentSlot.CHEST || !worn.is(Items.ELYTRA))) {
                      double bestScore = score(worn, slot);
                      int bestIndex = -1;
 
                      for (int index = 0; index < 36; index++) {
-                        double value = score(player.getInventory().getItem(index), slot);
+                        ItemStack candidate = player.getInventory().getItem(index);
+                        if (this.avoidBinding.get() && EnchantmentHelper.has(candidate, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) {
+                           continue;
+                        }
+
+                        double value = score(candidate, slot);
                         if (value > bestScore) {
                            bestScore = value;
                            bestIndex = index;

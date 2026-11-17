@@ -9,22 +9,67 @@ import gemini.render.ShapeSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class BlockSelection extends Module {
-   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "Fixed color or an animated rainbow", "Custom", "Custom", "Rainbow"));
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline color", 175).showIf(() -> this.colors.is("Custom")));
+   private static final double GROW = 0.002;
+   private final ModeSetting colors = this.addSetting(new ModeSetting("Colors", "One fixed colour or a cycling rainbow", "Custom", "Custom", "Rainbow"));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline colour", 175).showIf(() -> this.colors.is("Custom")));
    private final BooleanSetting exactShape = this.addSetting(
-      new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain", true)
+      new BooleanSetting("Exact Shape", "Follow stairs, slabs and fences instead of a plain full-block box", true)
    );
    private final ShapeSettings shape = new ShapeSettings(this, "Both", false);
+   private final BooleanSetting hideVanilla = this.addSetting(
+      new BooleanSetting("Hide Vanilla", "Hide the vanilla black outline so only this one is drawn", true)
+   );
+   /** Read by the level renderer every frame; written on the client thread. */
+   private static volatile boolean replacingVanilla;
+   /** The shape of the block last looked at; looked up again only when the block or its state changes. */
+   private BlockPos shapePos;
+   private BlockState shapeState;
+   private VoxelShape cachedShape;
+   private int drawX;
+   private int drawY;
+   private int drawZ;
+   private int drawColor;
+   private final Shapes.DoubleLineConsumer drawBox = (minX, minY, minZ, maxX, maxY, maxZ) -> this.shape.box(
+      this.drawX + minX - GROW, this.drawY + minY - GROW, this.drawZ + minZ - GROW, this.drawX + maxX + GROW, this.drawY + maxY + GROW, this.drawZ + maxZ + GROW, this.drawColor
+   );
 
    public BlockSelection() {
-      super("Block Selection", "Recolor the outline of the block you are looking at.", Category.RENDER);
+      super("Block Selection", "Changes the colour of the outline on the block you are looking at.", Category.RENDER);
+   }
+
+   /** Whether the vanilla block outline should be skipped this frame. */
+   public static boolean replacesVanilla() {
+      return replacingVanilla;
+   }
+
+   @Override
+   public void onEnable() {
+      replacingVanilla = this.hideVanilla.get();
+   }
+
+   @Override
+   public void onTick() {
+      replacingVanilla = this.hideVanilla.get();
+   }
+
+   @Override
+   public void onDisable() {
+      replacingVanilla = false;
+      this.shapePos = null;
+      this.shapeState = null;
+      this.cachedShape = null;
+   }
+
+   @Override
+   public void onWorldChange() {
+      this.onDisable();
    }
 
    @Override
@@ -40,13 +85,20 @@ public final class BlockSelection extends Module {
             if (!this.exactShape.get()) {
                this.shape.block(pos, color);
             } else {
-               VoxelShape voxel = state.getShape(client.level, pos, CollisionContext.of(client.player));
-               if (voxel.isEmpty()) {
+               if (state != this.shapeState || !pos.equals(this.shapePos)) {
+                  this.shapePos = pos.immutable();
+                  this.shapeState = state;
+                  this.cachedShape = state.getShape(client.level, pos, CollisionContext.of(client.player));
+               }
+
+               if (this.cachedShape.isEmpty()) {
                   this.shape.block(pos, color);
                } else {
-                  for (AABB box : voxel.toAabbs()) {
-                     this.shape.box(box.move(pos).inflate(0.002), color);
-                  }
+                  this.drawX = pos.getX();
+                  this.drawY = pos.getY();
+                  this.drawZ = pos.getZ();
+                  this.drawColor = color;
+                  this.cachedShape.forAllBoxes(this.drawBox);
                }
             }
          }

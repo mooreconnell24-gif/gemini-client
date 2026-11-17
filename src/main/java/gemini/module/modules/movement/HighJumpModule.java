@@ -11,7 +11,7 @@ public final class HighJumpModule extends Module {
    private final NumberSetting boost = this.addSetting(new NumberSetting("Boost", "Extra jump strength", 0.4, 0.05, 1.5, 0.05));
 
    public HighJumpModule() {
-      super("HighJump", "Jump much higher than normal.", Category.MOVEMENT);
+      super("High Jump", "Makes you jump higher.", Category.MOVEMENT);
    }
 
    @Override

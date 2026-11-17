@@ -1,27 +1,28 @@
 package gemini.module.modules.combat;
 
-import gemini.util.ClientState;
+import gemini.command.CommandManager;
 import gemini.module.Category;
-import gemini.event.ActionPriority;
 import gemini.module.Module;
-import gemini.module.setting.BooleanSetting;
-import gemini.util.BlockPlacer;
+import gemini.util.ClientState;
 import gemini.util.Inventories;
-import gemini.util.RotationManager;
+import gemini.util.SpCommands;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Pos;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 
+/**
+ * Puts a block into the space you stand in. It used to fake a jump with four extra position packets in one tick,
+ * which the 26.x server answers by disconnecting the player ("Invalid move player packet"); in this single-player
+ * client the block is placed by the integrated server instead, and one item is used up as a normal placement would.
+ */
 public final class Burrow extends Module {
-   private final BooleanSetting rotate = this.addSetting(new BooleanSetting("Silent Aim", "Aim downward in packets", true));
-
    public Burrow() {
-      super("Burrow", "Lag-place obsidian or ender chest inside your feet.", Category.COMBAT);
+      super("Burrow", "Places obsidian, an ender chest or an anvil from your hotbar in the block you stand in, then turns off.", Category.COMBAT);
    }
 
    @Override
@@ -33,25 +34,23 @@ public final class Burrow extends Module {
    public void onEnable() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      ClientPacketListener conn = client.getConnection();
-      if (ClientState.ready(client) && conn != null && player.onGround()) {
+      if (ClientState.ready(client) && player.onGround()) {
          BlockPos feet = player.blockPosition();
          Predicate<ItemStack> burrowBlock = CombatHelpers.obsidianOrResistant().or(s -> s.is(Items.ANVIL) || s.is(Items.CHIPPED_ANVIL));
          int slot = Inventories.findHotbar(player, burrowBlock);
-         if (slot >= 0) {
-            double x = player.getX();
-            double y = player.getY();
-            double z = player.getZ();
-            conn.send(new Pos(x, y + 0.41999998688698, z, true, false));
-            conn.send(new Pos(x, y + 0.7531999805212, z, true, false));
-            conn.send(new Pos(x, y + 1.00133597911214, z, true, false));
-            conn.send(new Pos(x, y + 1.16610926093821, z, true, false));
-            if (this.rotate.get()) {
-               RotationManager.request(player, player.getYRot(), 90.0F, 0.0F, true, ActionPriority.COMBAT, 5.0F);
-            }
-
-            BlockPlacer.place(client, feet, burrowBlock, true, true, true, false);
-            conn.send(new Pos(x, y + 2.34, z, false, false));
+         if (slot < 0) {
+            CommandManager.feedback("§bBurrow §7needs obsidian, an ender chest or an anvil on your hotbar.");
+         } else if (!client.level.getBlockState(feet).canBeReplaced()) {
+            CommandManager.feedback("§bBurrow §7the block you stand in is not empty.");
+         } else if (player.getInventory().getItem(slot).getItem() instanceof BlockItem item) {
+            Block block = item.getBlock();
+            SpCommands.onServer(server -> {
+               if (server.level().getBlockState(feet).canBeReplaced() && server.level().setBlockAndUpdate(feet, block.defaultBlockState())) {
+                  if (!server.hasInfiniteMaterials()) {
+                     server.getInventory().getItem(slot).shrink(1);
+                  }
+               }
+            });
          }
       }
 

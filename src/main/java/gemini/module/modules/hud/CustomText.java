@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ListSetting;
@@ -22,16 +23,16 @@ public final class CustomText extends Ticked {
    private final ListSetting entries = this.addSetting(
       new ListSetting(
          "Lines",
-         "Custom HUD lines ({fps} {ping} {x} {y} {z} {speed} {health})",
+         "Lines of text; {fps} {x} {y} {z} {chunk} {speed} {facing} {biome} {health} {food} {saturation} {xp} {slots} {memory} {time} are replaced with live values",
          ListSetting.Kind.TEXT,
          "Gemini {version}",
          "{fps} FPS  ·  {x} {y} {z}"
       )
    );
-   private final BooleanSetting accentColor = this.addSetting(new BooleanSetting("Accent Color", "Tint the text with the theme accent", false));
+   private final BooleanSetting accentColor = this.addSetting(new BooleanSetting("Accent Color", "Colour the text with the theme accent", false));
 
    public CustomText() {
-      super("Custom Text", "Your own lines of text with live placeholders.", "Left Center", 6, 0, 200);
+      super("Custom Text", "Shows your own lines of text, with placeholders for live values.", "Left Center", 6, 0, 200);
    }
 
    @Override
@@ -41,7 +42,7 @@ public final class CustomText extends Ticked {
       } else {
          LocalPlayer player = hud.client.player;
          Map<String, String> values = new HashMap<>();
-         values.put("{version}", "1.0.0");
+         values.put("{version}", gemini.Gemini.VERSION);
          values.put("{fps}", Integer.toString(hud.client.getFps()));
          values.put("{x}", Integer.toString(Mth.floor(player.getX())));
          values.put("{y}", Integer.toString(Mth.floor(player.getY())));
@@ -49,6 +50,11 @@ public final class CustomText extends Ticked {
          values.put("{player}", player.getName().getString());
          values.put("{health}", String.format(Locale.ROOT, "%.1f", player.getHealth()));
          values.put("{food}", Integer.toString(player.getFoodData().getFoodLevel()));
+         values.put("{saturation}", String.format(Locale.ROOT, "%.1f", player.getFoodData().getSaturationLevel()));
+         values.put("{xp}", Integer.toString(player.experienceLevel));
+         values.put("{slots}", Integer.toString(freeSlots(player)));
+         values.put("{chunk}", (Mth.floor(player.getX()) >> 4) + " " + (Mth.floor(player.getZ()) >> 4));
+         values.put("{memory}", Long.toString((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576L));
          values.put("{facing}", HudHelpers.pretty(Direction.fromYRot(player.getYRot()).getName()));
          values.put("{speed}", String.format(Locale.ROOT, "%.1f", Math.hypot(player.getX() - player.xo, player.getZ() - player.zo) * 20.0));
          values.put("{time}", LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
@@ -59,7 +65,8 @@ public final class CustomText extends Ticked {
          values.put("{server}", server == null ? "Single-player" : server.ip);
          values.put("{online}", hud.client.getConnection() == null ? "0" : Integer.toString(hud.client.getConnection().getOnlinePlayers().size()));
          PlayerInfo info = hud.client.getConnection() == null ? null : hud.client.getConnection().getPlayerInfo(player.getUUID());
-         values.put("{ping}", info == null ? "0" : Integer.toString(info.getLatency()));
+         // Ping is only real on a remote connection; in single player it is always zero, so it stays empty.
+         values.put("{ping}", info == null || hud.client.isLocalServer() ? "" : Integer.toString(info.getLatency()));
          List<TextHudWidget.Line> lines = new ArrayList<>();
 
          for (String entry : this.entries.get()) {
@@ -69,10 +76,22 @@ public final class CustomText extends Ticked {
                text = text.replace(value.getKey(), value.getValue());
             }
 
-            lines.add(new TextHudWidget.Line(text, this.accentColor.get() ? hud.accent : -1511689));
+            lines.add(new TextHudWidget.Line(text, this.accentColor.get() ? hud.accent : HudStyle.PRIMARY));
          }
 
          return lines;
       }
+   }
+
+   /** Empty slots in the main inventory and hotbar. */
+   private static int freeSlots(LocalPlayer player) {
+      int free = 0;
+      for (int i = 0; i < 36; i++) {
+         if (player.getInventory().getItem(i).isEmpty()) {
+            free++;
+         }
+      }
+
+      return free;
    }
 }

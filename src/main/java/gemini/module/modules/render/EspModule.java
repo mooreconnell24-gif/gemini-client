@@ -20,23 +20,23 @@ import net.minecraft.world.phys.Vec3;
 
 public final class EspModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "ESP rendering style", "Glow + Box", "Glow + Box", "3D Box", "GlowBox", "Shader Glow")
+      new ModeSetting("Mode", "Outline draws a glowing outline around the model; Box draws a box; Soft Box draws a box with a soft edge; Outline + Box draws both", "Outline + Box", "Outline + Box", "Box", "Soft Box", "Outline")
    );
-   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Outline other players", true));
-   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Outline hostile mobs", true));
-   private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Outline animals and other passive mobs", false));
-   private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Outline dropped items", false));
-   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Outline distance", 64.0, 8.0, 144.0, 4.0));
-   private final ModeSetting colorMode = this.addSetting(new ModeSetting("Colors", "How outlines are colored", "Type", "Type", "Health", "Custom"));
-   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Outline color", 168).showIf(() -> this.colorMode.is("Custom")));
-   private final BooleanSetting healthBar = this.addSetting(new BooleanSetting("3D Health Bar", "Render a vertical health bar beside living entities", true));
-   private final BooleanSetting tags = this.addSetting(new BooleanSetting("Tags", "Also list outlined entities on the HUD", false));
+   private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Highlight other players", true));
+   private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Highlight hostile mobs", true));
+   private final BooleanSetting passive = this.addSetting(new BooleanSetting("Passive", "Highlight animals and other passive mobs", false));
+   private final BooleanSetting items = this.addSetting(new BooleanSetting("Items", "Highlight dropped items", false));
+   private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest entity highlighted, in blocks", 64.0, 8.0, 144.0, 4.0));
+   private final ModeSetting colorMode = this.addSetting(new ModeSetting("Colors", "How highlights are coloured", "Type", "Type", "Health", "Custom"));
+   private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight colour", 168).showIf(() -> this.colorMode.is("Custom")));
+   private final BooleanSetting healthBar = this.addSetting(new BooleanSetting("Health Bar", "Draw a vertical health bar beside living entities", true));
+   private final BooleanSetting tags = this.addSetting(new BooleanSetting("Tags", "Also list highlighted entities on the HUD", false));
    private final NumberSetting tagCount = this.addSetting(
       new NumberSetting("Max Tags", "Most entries in the HUD list", 8.0, 1.0, 20.0, 1.0).showIf(this.tags::get)
    );
 
    public EspModule() {
-      super("ESP", "Highlight entities through walls with 3D boxes.", Category.RENDER);
+      super("ESP", "Highlights entities through walls.", Category.RENDER);
    }
 
    @Override
@@ -72,38 +72,40 @@ public final class EspModule extends Module {
    }
 
    public boolean shouldGlow(Entity entity) {
-      return (this.mode.is("Shader Glow") || this.mode.is("Glow + Box")) && this.matchesTarget(entity);
+      return (this.mode.is("Outline") || this.mode.is("Outline + Box")) && this.matchesTarget(entity);
    }
 
    @Override
    public void onRender3D(float partialTick) {
-      if (!this.mode.is("Shader Glow") || this.healthBar.get()) {
+      if (!this.mode.is("Outline") || this.healthBar.get()) {
          Minecraft client = Minecraft.getInstance();
          if (client.level != null && client.player != null) {
-            boolean drawBox = !this.mode.is("Shader Glow");
-            boolean glowBox = this.mode.is("GlowBox") || this.mode.is("Glow + Box");
+            boolean drawBox = !this.mode.is("Outline");
+            boolean glowBox = this.mode.is("Soft Box") || this.mode.is("Outline + Box");
 
             for (Entity entity : client.level.entitiesForRendering()) {
                if (this.matchesTarget(entity)) {
-                  AABB box = Render3D.interpolatedBox(entity, partialTick);
-                  if (Render3D.visible(box)) {
+                  // Culled without building the interpolated box; nothing is allocated for off-screen entities.
+                  if (Render3D.entityVisible(entity, partialTick, 0.0)) {
                      int argb = 0xFF000000 | this.color(entity);
                      if (drawBox) {
                         if (glowBox) {
-                           Render3D.boxGlow(box, argb, 1.6F, 42, true);
+                           Render3D.entityBoxGlow(entity, partialTick, 0.0, argb, 1.6F, 42, true);
                         } else {
-                           Render3D.box(box, argb, true, true, 1.5F, 35, true);
+                           Render3D.entityBox(entity, partialTick, 0.0, argb, true, true, 1.5F, 35, true);
                         }
                      }
 
                      if (this.healthBar.get() && entity instanceof LivingEntity living) {
                         float ratio = Mth.clamp(living.getHealth() / Math.max(1.0F, living.getMaxHealth()), 0.0F, 1.0F);
                         int hpColor = ColorSetting.hueColor(ratio * 0.33F, 0.85F, 1.0F);
-                        Vec3 bottom = new Vec3(box.minX - 0.12, box.minY, box.minZ);
-                        Vec3 top = new Vec3(box.minX - 0.12, box.minY + (box.maxY - box.minY) * ratio, box.minZ);
-                        Vec3 fullTop = new Vec3(box.minX - 0.12, box.maxY, box.minZ);
-                        Render3D.line(bottom, fullTop, -2012212194, 2.5F, true);
-                        Render3D.line(bottom, top, hpColor, 2.5F, true);
+                        AABB bounds = entity.getBoundingBox();
+                        double x = Render3D.entityX(entity, partialTick) - entity.getX() + bounds.minX - 0.12;
+                        double y = Render3D.entityY(entity, partialTick) - entity.getY() + bounds.minY;
+                        double z = Render3D.entityZ(entity, partialTick) - entity.getZ() + bounds.minZ;
+                        double height = bounds.maxY - bounds.minY;
+                        Render3D.line(x, y, z, x, y + height, z, -2012212194, 2.5F, true);
+                        Render3D.line(x, y, z, x, y + height * ratio, z, hpColor, 2.5F, true);
                      }
                   }
                }

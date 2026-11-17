@@ -1,6 +1,7 @@
 package gemini.util;
 
 import gemini.command.CommandManager;
+import gemini.ui.HudOverlay;
 import gemini.event.ActionPriority;
 import gemini.render.Render3D;
 import gemini.util.pathing.BlockView;
@@ -147,6 +148,8 @@ public final class BuiltInBaritone {
    private BuiltInBaritone() {
    }
 
+   private static int generation;
+
    public static boolean isActive() {
       return activeTask != BuiltInBaritone.TaskKind.NONE;
    }
@@ -167,6 +170,7 @@ public final class BuiltInBaritone {
       if (goalPos == null) {
          return false;
       } else {
+         generation++;
          activeTask = BuiltInBaritone.TaskKind.GOTO;
          repathTimer = 0;
          currentPath.clear();
@@ -193,6 +197,11 @@ public final class BuiltInBaritone {
 
    public static List<BlockPos> path() {
       return Collections.unmodifiableList(currentPath);
+   }
+
+   /** How many nodes of {@link #path()} have been walked. */
+   public static int pathIndex() {
+      return pathIndex;
    }
 
    public static void configureRender(boolean enabled, int lineColor, int boxColor) {
@@ -237,7 +246,16 @@ public final class BuiltInBaritone {
       }
    }
 
+   /**
+    * Counts every task boundary: each start goes through {@link #stop()} first and each task ends with it, so two
+    * equal readings mean the same task has been running the whole time in between.
+    */
+   public static int generation() {
+      return generation;
+   }
+
    public static void stop() {
+      generation++;
       activeTask = BuiltInBaritone.TaskKind.NONE;
       goalPos = null;
       currentPath.clear();
@@ -457,9 +475,11 @@ public final class BuiltInBaritone {
          stop();
       } else if (player.blockPosition().distManhattan(goalPos) <= 1) {
          CommandManager.feedback("§bBaritone §7arrived at §f" + goalPos.getX() + " " + goalPos.getY() + " " + goalPos.getZ() + "§7.");
+         HudOverlay.toast("Baritone", "Arrived at " + goalPos.toShortString(), HudOverlay.Severity.SUCCESS);
          stop();
       } else if (failedPaths >= 12) {
          CommandManager.feedback("§bBaritone §7can't find a way to §f" + goalPos.toShortString() + "§7; stopping.");
+         HudOverlay.toast("Baritone", "No path to " + goalPos.toShortString(), HudOverlay.Severity.ERROR);
          stop();
       } else {
          followPathToGoal(client, player, level, goalPos, allowBreak);
@@ -568,6 +588,7 @@ public final class BuiltInBaritone {
    private static void tickTunnel(Minecraft client, LocalPlayer player, Level level) {
       if (tunnelRemaining <= 0) {
          CommandManager.feedback("§bBaritone §7tunnel completed.");
+         HudOverlay.toast("Baritone", "Tunnel completed", HudOverlay.Severity.SUCCESS);
          stop();
       } else {
          BlockPos feet = player.blockPosition();
@@ -577,6 +598,7 @@ public final class BuiltInBaritone {
             || touchesLava(level, aheadFeet.getX(), aheadFeet.getY(), aheadFeet.getZ())
             || touchesLava(level, aheadHead.getX(), aheadHead.getY(), aheadHead.getZ())) {
             CommandManager.feedback("§bBaritone §7tunnel stopped: lava ahead at §f" + aheadFeet.toShortString() + "§7.");
+            HudOverlay.toast("Baritone", "Tunnel stopped: lava ahead", HudOverlay.Severity.ERROR);
             stop();
          } else if (!passable(level, aheadHead)) {
             releaseControls();
@@ -658,6 +680,10 @@ public final class BuiltInBaritone {
                      excavateSkippedInPass > 0
                         ? "§bBaritone §7excavation stopped: the remaining blocks sit on lava or over a drop."
                         : "§bBaritone §7excavation finished."
+                  );
+                  HudOverlay.toast(
+                     "Baritone", excavateSkippedInPass > 0 ? "Excavation stopped: unsafe blocks left" : "Excavation finished",
+                     excavateSkippedInPass > 0 ? HudOverlay.Severity.ERROR : HudOverlay.Severity.SUCCESS
                   );
                   stop();
                   return;

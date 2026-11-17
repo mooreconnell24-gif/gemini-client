@@ -103,10 +103,12 @@ public final class GeminiMixinPlugin implements IMixinConfigPlugin {
 
    @Override
    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+      MixinReport.applied(mixinClassName);
       try {
          Set<String> handlers = new HashSet<>();
          for (MethodNode method : targetClass.methods) {
-            if (method.name.contains(HANDLER_MARK)) {
+            // MixinExtras generates "...$mixinextras$bridge$N" helpers next to a handler; they are not hooks of their own.
+            if (method.name.contains(HANDLER_MARK) && !method.name.contains("$mixinextras$")) {
                handlers.add(method.name);
             }
          }

@@ -3,6 +3,7 @@ package gemini.module.modules.movement;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.module.Targeting;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
@@ -17,20 +18,22 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class TargetStrafe extends Module {
-   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Orbit distance around target", 2.6, 1.0, 5.0, 0.2));
-   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Orbit speed multiplier", 1.05, 0.5, 2.0, 0.05));
-   private final BooleanSetting holdJump = this.addSetting(new BooleanSetting("Require Jump", "Only orbit while holding Jump", true));
-   private final BooleanSetting renderRing = this.addSetting(new BooleanSetting("Render Ring", "Draw the 3D orbit ring around the target", true));
+   private final NumberSetting radius = this.addSetting(new NumberSetting("Radius", "Distance from the target while circling, in blocks", 2.6, 1.0, 5.0, 0.2));
+   private final NumberSetting speed = this.addSetting(new NumberSetting("Speed", "Circling speed multiplier", 1.05, 0.5, 2.0, 0.05));
+   private final BooleanSetting holdJump = this.addSetting(new BooleanSetting("Require Jump", "Only circle while holding Jump", true));
+   private final BooleanSetting renderRing = this.addSetting(new BooleanSetting("Render Ring", "Draw the circle around the target", true));
+   private final Targeting targeting = Targeting.builder(this).build();
    private int dir = 1;
    private LivingEntity activeTarget;
 
    public TargetStrafe() {
-      super("TargetStrafe", "Orbit smoothly around active combat targets.", Category.MOVEMENT);
+      super("Target Strafe", "Circles around your combat target.", Category.MOVEMENT);
    }
 
    @Override
    public void onDisable() {
       this.activeTarget = null;
+      this.targeting.clear();
    }
 
    @Override
@@ -38,9 +41,10 @@ public final class TargetStrafe extends Module {
       Minecraft client = Minecraft.getInstance();
       if (!ClientState.ready(client)) {
          this.activeTarget = null;
+         this.targeting.clear();
       } else {
          LocalPlayer player = client.player;
-         this.activeTarget = findNearestTarget(client, player, 6.0);
+         this.activeTarget = this.targeting.pick(player, client.level.entitiesForRendering(), 6.0, null);
          if (this.activeTarget != null && (!this.holdJump.get() || client.options.keyJump.isDown())) {
             if (player.horizontalCollision) {
                this.dir = -this.dir;
@@ -63,6 +67,7 @@ public final class TargetStrafe extends Module {
       }
    }
 
+   /** The nearest player or hostile mob within {@code range}; TimerRange uses it to decide when to speed up. */
    static LivingEntity findNearestTarget(Minecraft client, LocalPlayer self, double range) {
       LivingEntity best = null;
       double bestD = range * range;
@@ -82,28 +87,24 @@ public final class TargetStrafe extends Module {
 
    @Override
    public void onRender3D(float partialTick) {
+      this.targeting.render(partialTick);
       if (this.renderRing.get() && this.activeTarget != null && this.activeTarget.isAlive()) {
-         Vec3 c = this.activeTarget.getPosition(partialTick);
-         double r = this.radius.get();
-         int segs = 24;
-
-         for (int i = 0; i < segs; i++) {
-            double a1 = i * Math.PI * 2.0 / segs;
-            double a2 = (i + 1) * Math.PI * 2.0 / segs;
-            Render3D.line(
-               new Vec3(c.x + Math.cos(a1) * r, c.y + 0.05, c.z + Math.sin(a1) * r),
-               new Vec3(c.x + Math.cos(a2) * r, c.y + 0.05, c.z + Math.sin(a2) * r),
-               -16722689,
-               2.0F,
-               false
-            );
-         }
+         Render3D.ring(
+            Render3D.entityX(this.activeTarget, partialTick),
+            Render3D.entityY(this.activeTarget, partialTick) + 0.05,
+            Render3D.entityZ(this.activeTarget, partialTick),
+            this.radius.get(),
+            24,
+            -16722689,
+            2.0F,
+            false
+         );
       }
    }
 
    /** Everything remembered here belongs to the world that was just left. */
    @Override
    public void onWorldChange() {
-      this.activeTarget = null;
+      this.onDisable();
    }
 }

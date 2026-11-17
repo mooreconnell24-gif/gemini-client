@@ -16,15 +16,15 @@ import net.minecraft.world.phys.Vec3;
 
 public final class HitEffect extends Module {
    private final ModeSetting style = this.addSetting(
-      new ModeSetting("Style", "3D hit burst visual", "Energy Burst", "Energy Burst", "Shockwave", "Lightning")
+      new ModeSetting("Style", "Energy Burst draws a growing box; Shockwave an expanding ring; Lightning a bolt striking the target", "Energy Burst", "Energy Burst", "Shockwave", "Lightning")
    );
-   private final BooleanSetting hitmarker = this.addSetting(new BooleanSetting("Crosshair Hitmarker", "Flash a crisp X hitmarker on your crosshair", true));
-   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Hit effect hue", 195));
+   private final BooleanSetting hitmarker = this.addSetting(new BooleanSetting("Crosshair Hitmarker", "Flash an X on your crosshair when you hit", true));
+   private final ColorSetting color = this.addSetting(new ColorSetting("Color", "Effect colour", 195));
    private final ArrayDeque<HitEffect.HitBurst> bursts = new ArrayDeque<>();
    private long lastHitMs;
 
    public HitEffect() {
-      super("HitEffect", "Show 3D impact bursts and a crosshair hitmarker.", Category.RENDER);
+      super("Hit Effect", "Shows an effect where your hits land and a hit marker on your crosshair.", Category.RENDER);
    }
 
    @Override
@@ -60,31 +60,22 @@ public final class HitEffect extends Module {
             int alpha = Math.round(235.0F * (1.0F - t));
             int c = Render3D.alpha(baseColor, alpha);
             if (mode.equals("Lightning")) {
-               Vec3 top = burst.center.add(0.0, 3.8 * (1.0F - t * 0.3F), 0.0);
-               Vec3 mid1 = burst.center.add(0.28, 2.4, -0.22);
-               Vec3 mid2 = burst.center.add(-0.24, 1.2, 0.25);
-               Render3D.lineArgb(top, mid1, c, 2.4F, true);
-               Render3D.lineArgb(mid1, mid2, c, 2.4F, true);
-               Render3D.lineArgb(mid2, burst.center, c, 2.4F, true);
+               double x = burst.center.x;
+               double y = burst.center.y;
+               double z = burst.center.z;
+               double topY = y + 3.8 * (1.0F - t * 0.3F);
+               Render3D.lineArgb(x, topY, z, x + 0.28, y + 2.4, z - 0.22, c, 2.4F, true);
+               Render3D.lineArgb(x + 0.28, y + 2.4, z - 0.22, x - 0.24, y + 1.2, z + 0.25, c, 2.4F, true);
+               Render3D.lineArgb(x - 0.24, y + 1.2, z + 0.25, x, y, z, c, 2.4F, true);
             } else if (mode.equals("Shockwave")) {
                double r = 0.25 + t * 1.45;
-               int segs = 18;
-
-               for (int i = 0; i < segs; i++) {
-                  double a1 = i * Math.PI * 2.0 / segs;
-                  double a2 = (i + 1) * Math.PI * 2.0 / segs;
-                  Render3D.lineArgb(
-                     new Vec3(burst.center.x + Math.cos(a1) * r, burst.center.y, burst.center.z + Math.sin(a1) * r),
-                     new Vec3(burst.center.x + Math.cos(a2) * r, burst.center.y, burst.center.z + Math.sin(a2) * r),
-                     c,
-                     2.0F,
-                     true
-                  );
-               }
+               Render3D.ring(burst.center.x, burst.center.y, burst.center.z, r, 18, c, 2.0F, true);
             } else {
                double s = 0.2 + t * 0.75;
-               AABB box = new AABB(burst.center.x - s, burst.center.y - s, burst.center.z - s, burst.center.x + s, burst.center.y + s, burst.center.z + s);
-               Render3D.box(box, baseColor, true, false, 1.8F, alpha / 3, true);
+               // The outline fades with the burst (it used to stay fully opaque until it vanished).
+               Render3D.boxArgb(
+                  burst.center.x - s, burst.center.y - s, burst.center.z - s, burst.center.x + s, burst.center.y + s, burst.center.z + s, c, 0, 1.8F, true
+               );
             }
          }
       }

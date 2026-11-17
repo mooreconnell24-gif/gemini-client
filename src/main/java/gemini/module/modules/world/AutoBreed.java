@@ -35,7 +35,7 @@ public final class AutoBreed extends AuraModuleBase<Animal> {
    public AutoBreed() {
       super(
          "Auto Breed",
-         "Feed nearby animals with food from your hotbar so they breed.",
+         "Feeds nearby animals with food from your hotbar so they breed.",
          Category.WORLD,
          Animal.class,
          "How far away animals are fed",
