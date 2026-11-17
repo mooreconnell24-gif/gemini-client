@@ -169,7 +169,7 @@ final class DevCheckFunctions {
          keys(false, true, false);
       }, () -> player().getY() - mark[1] > 2.0 ? null : String.format(Locale.ROOT, "rose %.2f blocks holding jump", player().getY() - mark[1])));
 
-      all.add(() -> check(modules, "Step", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:stone", ax - 2, FLOOR + 1, az + 2, ax + 2, FLOOR + 1, az + 2), 25, () -> {
+      all.add(() -> check(modules, "Step", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:stone", ax - 2, FLOOR + 1, az + 2, ax + 2, FLOOR + 1, az + 12), 25, () -> {
          markPosition();
          keys(true, false, false);
       }, () -> player().getY() - mark[1] > 0.9 ? null : String.format(Locale.ROOT, "Y changed %.2f walking into a 1-block step (step height %.2f, z moved %.2f)", player().getY() - mark[1], player().maxUpStep(), player().getZ() - mark[2])));
