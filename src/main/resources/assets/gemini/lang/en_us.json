@@ -46,5 +46,10 @@
 	"gemini.dock.keybinds.short": "Keys: %s",
 	"gemini.dock.keybinds.tooltip": "Some keys are bound to more than one action. Open the key-bind report to see which.",
 
-	"gemini.keybinds.title": "Keybind Report"
+	"gemini.keybinds.title": "Keybind Report",
+
+	"gemini.mods.title": "Mods",
+	"gemini.mods.restart": "Installed mods load next time you start Minecraft",
+	"gemini.title.mods": "Mods",
+	"gemini.title.mods.tooltip": "Find mods and resource packs on Modrinth. Installed mods load next time you start Minecraft; resource packs can be turned on right away."
 }
