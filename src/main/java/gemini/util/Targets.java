@@ -1,6 +1,5 @@
 package gemini.util;
 
-import gemini.module.modules.combat.Teams;
 import java.util.function.Predicate;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
@@ -31,14 +30,7 @@ public final class Targets {
       } else if (!invisible && living.isInvisible()) {
          return false;
       } else if (living instanceof Player player) {
-         if (!players || player.isSpectator()) {
-            return false;
-         }
-         Teams teams = Teams.instance;
-         if (teams != null && teams.isEnabled() && teams.isTeammate(self, player)) {
-            return false;
-         }
-         return true;
+         return players && !player.isSpectator();
       } else if (living instanceof TamableAnimal pet && pet.isOwnedBy(self)) {
          return false;
       } else {

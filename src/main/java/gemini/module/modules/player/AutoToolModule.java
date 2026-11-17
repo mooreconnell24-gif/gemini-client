@@ -29,7 +29,7 @@ public final class AutoToolModule extends Module {
    private final double[] damage = new double[9];
 
    public AutoToolModule() {
-      super("AutoTool", "Switches to the best tool for the block you are mining.", Category.PLAYER);
+      super("Auto Tool", "Switches to the best tool for the block you are mining.", Category.PLAYER);
    }
 
    @Override

@@ -29,7 +29,7 @@ public final class AutoArmorModule extends Module {
    private int cooldown;
 
    public AutoArmorModule() {
-      super("AutoArmor", "Puts on the best armour in your inventory.", Category.PLAYER);
+      super("Auto Armor", "Puts on the best armour in your inventory.", Category.PLAYER);
    }
 
    @Override

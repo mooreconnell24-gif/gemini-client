@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AntiLevitation extends Module {
    public AntiLevitation() {
-      super("AntiLevitation", "Stops the Levitation effect from lifting you.", Category.MOVEMENT);
+      super("Anti Levitation", "Stops the Levitation effect from lifting you.", Category.MOVEMENT);
    }
 
    @Override

@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -52,7 +54,15 @@ public final class ElytraRecast extends Module {
    private float savedPitch;
 
    public ElytraRecast() {
-      super("Elytra Recast", "Reopens your elytra after every landing so you keep bouncing along without fireworks.", Category.MOVEMENT);
+      super("Elytra Bounce", "Reopens your elytra after every landing so you keep bouncing along without fireworks.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Elytra Recast");
+      names.add("ElytraRecast");
+      return names;
    }
 
    /** The elytra is worn down to the stop threshold (items that cannot break never are). */

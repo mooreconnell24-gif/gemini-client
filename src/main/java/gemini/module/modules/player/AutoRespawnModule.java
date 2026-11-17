@@ -12,7 +12,7 @@ public final class AutoRespawnModule extends Module {
    private int waited;
 
    public AutoRespawnModule() {
-      super("AutoRespawn", "Respawns you straight away when you die.", Category.PLAYER);
+      super("Auto Respawn", "Respawns you straight away when you die.", Category.PLAYER);
    }
 
    @Override

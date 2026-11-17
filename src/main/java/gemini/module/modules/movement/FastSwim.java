@@ -15,7 +15,7 @@ public final class FastSwim extends Module {
    private int tick;
 
    public FastSwim() {
-      super("FastSwim", "Makes you swim faster in water and lava.", Category.MOVEMENT);
+      super("Fast Swim", "Makes you swim faster in water and lava.", Category.MOVEMENT);
    }
 
    @Override

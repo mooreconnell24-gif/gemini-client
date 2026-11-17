@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -28,24 +27,8 @@ public final class CombatHelpers {
       return client.gameMode.useItemOn(player, InteractionHand.MAIN_HAND, new BlockHitResult(hit, face, pos, false)).consumesAction();
    }
 
-   static boolean armorDamaged(LocalPlayer player, int percent) {
-      for (EquipmentSlot slot : ARMOR) {
-         ItemStack stack = player.getItemBySlot(slot);
-         if (!stack.isEmpty() && stack.getMaxDamage() > 0) {
-            double left = 100.0 * (stack.getMaxDamage() - stack.getDamageValue()) / stack.getMaxDamage();
-            if (left < percent) {
-               return true;
-            }
-         }
-      }
-
-      return false;
-   }
-
    private static final Predicate<ItemStack> BLAST_PROOF = stack -> stack.getItem() instanceof BlockItem bi
       && (bi.getBlock() == Blocks.OBSIDIAN || bi.getBlock() == Blocks.CRYING_OBSIDIAN || bi.getBlock() == Blocks.ENDER_CHEST);
-   private static final EquipmentSlot[] ARMOR = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-
    /** Hotbar stacks that survive a crystal: obsidian, crying obsidian, ender chests. One shared predicate. */
    static Predicate<ItemStack> obsidianOrResistant() {
       return BLAST_PROOF;

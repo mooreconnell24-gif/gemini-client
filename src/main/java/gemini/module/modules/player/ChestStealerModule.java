@@ -18,7 +18,7 @@ public final class ChestStealerModule extends Module {
    private int cooldown;
 
    public ChestStealerModule() {
-      super("ChestStealer", "Moves everything out of the chest or shulker box you open.", Category.PLAYER);
+      super("Chest Stealer", "Moves everything out of the chest or shulker box you open.", Category.PLAYER);
    }
 
    @Override

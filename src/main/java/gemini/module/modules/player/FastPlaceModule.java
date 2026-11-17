@@ -12,7 +12,7 @@ public final class FastPlaceModule extends Module {
    private final BooleanSetting blocksOnly = this.addSetting(new BooleanSetting("Blocks Only", "Only shorten the delay for blocks", false));
 
    public FastPlaceModule() {
-      super("FastPlace", "Shortens the delay between placing blocks.", Category.PLAYER);
+      super("Fast Place", "Shortens the delay between placing blocks.", Category.PLAYER);
    }
 
    public int limit(Minecraft client) {

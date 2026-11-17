@@ -4,18 +4,22 @@ import gemini.util.Swing;
 import gemini.util.BlockBreaking;
 import gemini.module.Category;
 import gemini.module.Module;
+import gemini.render.Render3D;
 import gemini.module.setting.BooleanSetting;
+import gemini.module.setting.ListSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -24,8 +28,15 @@ public final class NukerModule extends Module {
    private final NumberSetting perTick = this.addSetting(new NumberSetting("Blocks Per Tick", "Creative only: blocks started each tick", 3.0, 1.0, 12.0, 1.0));
    private final ModeSetting shape = this.addSetting(new ModeSetting("Shape", "Which blocks count: Sphere is everything in range, Flat is your feet level and the layer below, Above is your feet level and up", "Sphere", "Sphere", "Flat", "Above"));
    private final ModeSetting order = this.addSetting(new ModeSetting("Order", "Which block goes first: the nearest, or the highest (so nothing falls on you)", "Nearest", "Nearest", "Top Down"));
+   private final ModeSetting filter = this.addSetting(
+      new ModeSetting("Filter", "All breaks every block; Only Listed breaks just the listed blocks; Except Listed leaves the listed blocks alone", "All", "All", "Only Listed", "Except Listed")
+   );
+   private final ListSetting blocks = this.addSetting(
+      new ListSetting("Blocks", "Blocks the filter applies to", ListSetting.Kind.BLOCK).showIf(() -> !this.filter.is("All"))
+   );
    private final BooleanSetting exposedOnly = this.addSetting(new BooleanSetting("Exposed Only", "Skip blocks fully buried inside others", true));
    private final BooleanSetting swing = this.addSetting(new BooleanSetting("Swing", "Swing your hand while breaking", true));
+   private final BooleanSetting highlight = this.addSetting(new BooleanSetting("Highlight", "Outline the block being broken", true));
    private BlockPos current;
    /** Ticks the current block has been mined, and how many it may take before it is given up as stuck. */
    private int currentTicks;
@@ -34,7 +45,15 @@ public final class NukerModule extends Module {
    private int idle;
 
    public NukerModule() {
-      super("Nuker", "Breaks blocks all around you.", Category.WORLD);
+      super("Nuker", "Breaks the blocks around you: all of them, or only the kinds you list.", Category.WORLD);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Bed Breaker");
+      names.add("BedBreaker");
+      return names;
    }
 
    @Override
@@ -118,6 +137,19 @@ public final class NukerModule extends Module {
       }
    }
 
+   @Override
+   public void onRender3D(float partialTick) {
+      BlockPos pos = this.current;
+      if (pos != null && this.highlight.get()) {
+         Render3D.block(pos, -43691, true, true, 1.6F, 40, true);
+      }
+   }
+
+   @Override
+   public String info() {
+      return this.filter.is("All") ? this.shape.get() : this.filter.get();
+   }
+
    private List<BlockPos> collect(Minecraft client, LocalPlayer player, Vec3 eye, double reach) {
       List<BlockPos> result = new ArrayList<>();
       int r = (int)Math.ceil(reach);
@@ -127,6 +159,9 @@ public final class NukerModule extends Module {
       boolean flat = this.shape.is("Flat");
       boolean above = this.shape.is("Above");
       boolean exposedOnly = this.exposedOnly.get();
+      boolean filtered = !this.filter.is("All");
+      boolean onlyListed = this.filter.is("Only Listed");
+      Set<Block> listed = filtered ? this.blocks.blocks() : Set.of();
       BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
       for (int x = -r; x <= r; x++) {
          for (int y = -r; y <= r; y++) {
@@ -142,6 +177,7 @@ public final class NukerModule extends Module {
                   if (!state.isAir()
                      && state.getFluidState().isEmpty()
                      && !(state.getDestroySpeed(client.level, pos) < 0.0F)
+                     && (!filtered || listed.contains(state.getBlock()) == onlyListed)
                      && (!exposedOnly || exposed(client, pos))) {
                      result.add(pos.immutable());
                   }

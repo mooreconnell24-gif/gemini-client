@@ -15,7 +15,7 @@ public final class AutoReplenishModule extends Module {
    private int cooldown;
 
    public AutoReplenishModule() {
-      super("AutoReplenish", "Refills low hotbar stacks from the rest of your inventory.", Category.PLAYER);
+      super("Auto Replenish", "Refills low hotbar stacks from the rest of your inventory.", Category.PLAYER);
    }
 
    @Override

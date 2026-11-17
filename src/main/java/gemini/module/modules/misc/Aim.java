@@ -1,5 +1,7 @@
 package gemini.module.modules.misc;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -36,9 +38,16 @@ public final class Aim extends Module {
    private long lastFrame;
 
    public Aim() {
-      super("Aim", "Makes module turns speed up and settle like a hand on a mouse, and shows where silent aim is pointing.", Category.CLIENT);
+      super("Rotations", "Makes module turns speed up and settle like a hand on a mouse, and shows where silent aim is pointing.", Category.CLIENT);
       instance = this;
       this.loadState(true, this.getKeybind());
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Aim");
+      return names;
    }
 
    @Override

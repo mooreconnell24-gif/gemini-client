@@ -6,16 +6,29 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.util.MoveUtil;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class SpeedModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "How the speed boost is applied", "LowHop", "Strict", "Ground", "Bhop", "LowHop", "Strafe", "YPort")
+      new ModeSetting(
+         "Mode",
+         "Vanilla speeds up walking; Bunny Hop jumps for you as you run; Low Hop does the same with short, flat hops; Y-Port snaps back to the ground after each hop",
+         "Bunny Hop",
+         "Vanilla",
+         "Bunny Hop",
+         "Low Hop",
+         "Y-Port"
+      )
    );
-   private final NumberSetting multiplier = this.addSetting(new NumberSetting("Multiplier", "Horizontal speed multiplier", 1.25, 1.05, 4.0, 0.05));
-   private final BooleanSetting inAir = this.addSetting(new BooleanSetting("Air Boost", "Keep the boost while in the air", true));
-   private final BooleanSetting setbackPause = this.addSetting(new BooleanSetting("Setback Pause", "Pause the boost briefly after the game pulls you back", true));
+   private final NumberSetting multiplier = this.addSetting(
+      new NumberSetting("Multiplier", "Speed as a multiple of your normal walking or sprinting speed", 1.3, 1.0, 4.0, 0.05)
+   );
+   private final BooleanSetting inAir = this.addSetting(
+      new BooleanSetting("Air Control", "Keep the speed and steer freely while in the air", true).showIf(() -> this.mode.is("Vanilla"))
+   );
    private final BooleanSetting sneakStops = this.addSetting(new BooleanSetting("Pause Sneak", "Turn the boost off while sneaking", true));
    private boolean shortenedHop;
 
@@ -24,47 +37,57 @@ public final class SpeedModule extends Module {
    }
 
    @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Strafe");
+      names.add("Bhop");
+      return names;
+   }
+
+   @Override
+   public void onEnable() {
+      this.shortenedHop = false;
+   }
+
+   @Override
    public void onTick() {
       Minecraft client = Minecraft.getInstance();
       LocalPlayer player = client.player;
-      if (player != null
-         && player.input != null
-         && !player.isInWater()
-         && !player.isInLava()
-         && !player.isFallFlying()
-         && !player.getAbilities().flying
-         && !player.onClimbable()
-         && !player.isPassenger()
-         && (!this.sneakStops.get() || !player.isCrouching())) {
-         if (this.setbackPause.get() && MoveUtil.hasRecentSetback()) {
-            this.shortenedHop = false;
-            return;
-         }
+      if (player == null
+         || player.input == null
+         || player.isInWater()
+         || player.isInLava()
+         || player.isFallFlying()
+         || player.getAbilities().flying
+         || player.onClimbable()
+         || player.isPassenger()
+         || this.sneakStops.get() && player.isCrouching()) {
+         return;
+      }
 
-         if (!MoveUtil.hasInput(player)) {
-            this.shortenedHop = false;
-         } else {
-            boolean hop = !this.mode.is("Ground") && !this.mode.is("Strict");
-            if (hop && player.onGround() && client.gui.screen() == null) {
-               player.jumpFromGround();
-               this.shortenedHop = false;
-            }
+      if (!MoveUtil.hasInput(player)) {
+         this.shortenedHop = false;
+         return;
+      }
 
-            if (this.mode.is("LowHop") && !player.onGround() && !this.shortenedHop && player.getDeltaMovement().y > 0.2) {
-               player.setDeltaMovement(player.getDeltaMovement().x, 0.2, player.getDeltaMovement().z);
-               this.shortenedHop = true;
-            }
+      boolean hop = !this.mode.is("Vanilla");
+      if (hop && player.onGround() && client.gui.screen() == null) {
+         player.jumpFromGround();
+         this.shortenedHop = false;
+      }
 
-            if (this.mode.is("YPort") && !player.onGround() && player.getDeltaMovement().y < 0.15) {
-               player.setDeltaMovement(player.getDeltaMovement().x, -0.42, player.getDeltaMovement().z);
-            }
+      if (this.mode.is("Low Hop") && !player.onGround() && !this.shortenedHop && player.getDeltaMovement().y > 0.2) {
+         player.setDeltaMovement(player.getDeltaMovement().x, 0.2, player.getDeltaMovement().z);
+         this.shortenedHop = true;
+      }
 
-            boolean air = this.inAir.get() || this.mode.is("Strafe") || this.mode.is("LowHop") || this.mode.is("YPort");
-            if (player.onGround() || air) {
-               double boost = this.mode.is("Strict") ? Math.min(this.multiplier.get(), player.onGround() ? 1.32 : 1.14) : this.multiplier.get();
-               MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * boost);
-            }
-         }
+      if (this.mode.is("Y-Port") && !player.onGround() && player.getDeltaMovement().y < 0.15) {
+         player.setDeltaMovement(player.getDeltaMovement().x, -0.42, player.getDeltaMovement().z);
+      }
+
+      // The hopping modes are about keeping speed through the air, so they always steer there.
+      if (player.onGround() || hop || this.inAir.get()) {
+         MoveUtil.setHorizontal(player, MoveUtil.baseSpeed(player) * this.multiplier.get());
       }
    }
 

@@ -1,5 +1,7 @@
 package gemini.module.modules.player;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.util.Hands;
 import gemini.util.Inventories;
@@ -34,7 +36,15 @@ public final class MiddleClickExtra extends Module {
    private int restoreSlot = -1;
 
    public MiddleClickExtra() {
-      super("Middle Click Extra", "Uses an item from your offhand or hotbar when you middle-click.", Category.PLAYER);
+      super("Middle Click", "Uses an item from your offhand or hotbar when you middle-click.", Category.PLAYER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Middle Click Extra");
+      names.add("MiddleClickExtra");
+      return names;
    }
 
    @Override

@@ -92,7 +92,7 @@ public final class KillAura extends Module {
    private double eyeZ;
 
    public KillAura() {
-      super("KillAura", "Attacks nearby targets, turning to face each one first.", Category.COMBAT);
+      super("Kill Aura", "Attacks nearby targets, turning to face each one first.", Category.COMBAT);
    }
 
    @Override

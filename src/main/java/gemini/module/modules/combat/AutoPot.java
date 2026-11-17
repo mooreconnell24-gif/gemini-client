@@ -1,5 +1,7 @@
 package gemini.module.modules.combat;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.Inventories;
 import gemini.util.ClientState;
 import gemini.module.Category;
@@ -26,7 +28,15 @@ public final class AutoPot extends Module {
    private int wait;
 
    public AutoPot() {
-      super("Auto Pot", "Throws healing splash potions at your feet when your health is low.", Category.COMBAT);
+      super("Auto Potion", "Throws healing splash potions at your feet when your health is low.", Category.COMBAT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Pot");
+      names.add("AutoPot");
+      return names;
    }
 
    @Override

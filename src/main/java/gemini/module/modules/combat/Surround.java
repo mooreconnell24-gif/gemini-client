@@ -1,8 +1,10 @@
 package gemini.module.modules.combat;
 
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.PlacementModuleBase;
 import gemini.module.setting.BooleanSetting;
+import gemini.module.setting.ModeSetting;
 import gemini.util.BlockPlacer;
 import java.util.List;
 import java.util.function.Predicate;
@@ -14,6 +16,19 @@ import net.minecraft.world.item.ItemStack;
 
 public final class Surround extends PlacementModuleBase {
    private static final Direction[] SIDES = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+   private final ModeSetting cover = this.addSetting(
+      new ModeSetting(
+         "Cover",
+         "Feet places blocks around and under your feet; Head boxes in your head; Full does both, sealing you in completely",
+         "Feet",
+         "Feet",
+         "Head",
+         "Full"
+      )
+   );
+   private final BooleanSetting anyBlock = this.addSetting(
+      new BooleanSetting("Any Block", "Use any solid block from your hotbar instead of only blast-proof ones", false)
+   );
    private final BooleanSetting center = this.addSetting(new BooleanSetting("Auto Center", "Move to the centre of your block when turned on", true));
    private final BooleanSetting support = this.addSetting(
       new BooleanSetting("Support Blocks", "Place a block under a side spot that has nothing to attach to", true)
@@ -23,7 +38,22 @@ public final class Surround extends PlacementModuleBase {
    private int startY;
 
    public Surround() {
-      super("Surround", "Places obsidian around and under your feet to shield you from explosions.", Category.COMBAT, 0, 4, 4.5);
+      super("Surround", "Places obsidian around your feet, your head or both to shield you from explosions.", Category.COMBAT, 0, 4, 4.5);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("SelfTrap");
+      names.add("BlockIn");
+      names.add("Self Trap");
+      names.add("Block In");
+      return names;
+   }
+
+   @Override
+   public String info() {
+      return this.cover.get();
    }
 
    @Override
@@ -53,19 +83,30 @@ public final class Surround extends PlacementModuleBase {
    @Override
    protected void collectTargets(Minecraft client, LocalPlayer player, List<BlockPos> targets) {
       BlockPos feet = player.blockPosition();
-      targets.add(feet.below());
-      for (Direction dir : SIDES) {
-         BlockPos side = feet.relative(dir);
-         if (this.support.get() && BlockPlacer.findPlacement(client.level, side, false) == null) {
-            targets.add(side.below());
+      if (!this.cover.is("Head")) {
+         targets.add(feet.below());
+         for (Direction dir : SIDES) {
+            BlockPos side = feet.relative(dir);
+            if (this.support.get() && BlockPlacer.findPlacement(client.level, side, false) == null) {
+               targets.add(side.below());
+            }
+
+            targets.add(side);
+         }
+      }
+
+      if (!this.cover.is("Feet")) {
+         BlockPos head = feet.above();
+         for (Direction dir : SIDES) {
+            targets.add(head.relative(dir));
          }
 
-         targets.add(side);
+         targets.add(head.above());
       }
    }
 
    @Override
    protected Predicate<ItemStack> blocks() {
-      return CombatHelpers.obsidianOrResistant();
+      return this.anyBlock.get() ? BlockPlacer::solidFiller : CombatHelpers.obsidianOrResistant();
    }
 }

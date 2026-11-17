@@ -15,7 +15,7 @@ public final class FastUse extends Module {
    private int wait;
 
    public FastUse() {
-      super("FastUse", "Uses throwables, potions and experience bottles quickly while you hold use.", Category.PLAYER);
+      super("Fast Use", "Uses throwables, potions and experience bottles quickly while you hold use.", Category.PLAYER);
    }
 
    @Override

@@ -22,7 +22,7 @@ public final class AntiLagHud extends Ticked {
 
    public AntiLagHud() {
       super(
-         "AntiLag Status", "Shows whether AntiLag is on, your FPS, memory use, how many particles and sounds AntiLag has blocked and, optionally, the slowest modules.", "Top Right", 6, 40, 200
+         "Anti Lag Status", "Shows whether AntiLag is on, your FPS, memory use, how many particles and sounds AntiLag has blocked and, optionally, the slowest modules.", "Top Right", 6, 40, 200
       );
    }
 

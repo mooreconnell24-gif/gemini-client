@@ -21,7 +21,7 @@ public final class ShieldBreaker extends Module {
    private int cooldown;
 
    public ShieldBreaker() {
-      super("ShieldBreaker", "Switches to an axe and hits an enemy that is holding up a shield.", Category.COMBAT);
+      super("Shield Breaker", "Switches to an axe and hits an enemy that is holding up a shield.", Category.COMBAT);
    }
 
    @Override

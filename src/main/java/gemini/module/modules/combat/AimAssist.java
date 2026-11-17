@@ -25,7 +25,7 @@ public final class AimAssist extends Module {
    private LocalPlayer scanPlayer;
 
    public AimAssist() {
-      super("AimAssist", "Turns your camera gradually towards the nearest valid target.", Category.COMBAT);
+      super("Aim Assist", "Turns your camera gradually towards the nearest valid target.", Category.COMBAT);
    }
 
    @Override

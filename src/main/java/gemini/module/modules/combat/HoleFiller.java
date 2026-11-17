@@ -23,7 +23,7 @@ public final class HoleFiller extends PlacementModuleBase {
    private final Targeting targeting = Targeting.builder(this).box("Outline", 120).build();
 
    public HoleFiller() {
-      super("HoleFiller", "Fills nearby safe holes so enemies cannot use them, only near the chosen enemy when one is in range.", Category.COMBAT, 1, 3, 4.8);
+      super("Hole Filler", "Fills nearby safe holes so enemies cannot use them, only near the chosen enemy when one is in range.", Category.COMBAT, 1, 3, 4.8);
    }
 
    @Override

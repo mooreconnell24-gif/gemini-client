@@ -20,7 +20,7 @@ public final class SoundLocator extends Module {
    private final ArrayDeque<SoundLocator.SoundPing> pings = new ArrayDeque<>();
 
    public SoundLocator() {
-      super("SoundLocator", "Marks where nearby sounds come from.", Category.RENDER);
+      super("Sound Locator", "Marks where nearby sounds come from.", Category.RENDER);
       instance = this;
    }
 

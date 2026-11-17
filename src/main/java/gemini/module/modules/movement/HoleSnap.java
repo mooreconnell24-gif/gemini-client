@@ -1,5 +1,6 @@
 package gemini.module.modules.movement;
 
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -15,7 +16,15 @@ public final class HoleSnap extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest hole to pull into, in blocks", 4.0, 1.5, 6.0, 0.5));
 
    public HoleSnap() {
-      super("HoleSnap", "Pulls you into the nearest safe hole.", Category.MOVEMENT);
+      super("Hole Snap", "Pulls you into the nearest safe hole.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Hole Pull");
+      names.add("AnchorPull");
+      return names;
    }
 
    @Override

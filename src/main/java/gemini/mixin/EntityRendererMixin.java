@@ -2,7 +2,6 @@ package gemini.mixin;
 
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.modules.render.Chams;
-import gemini.module.modules.render.EntityCulling;
 import gemini.module.modules.render.Nametags;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -30,11 +29,6 @@ public abstract class EntityRendererMixin {
          AntiLag antiLag = AntiLag.instance;
          if (antiLag != null && antiLag.shouldCullNametag(entity, nameTagDistance)) {
             state.nameTag = null;
-         } else {
-            EntityCulling culling = EntityCulling.instance;
-            if (culling != null && culling.shouldCullNametag(entity, nameTagDistance)) {
-               state.nameTag = null;
-            }
          }
       }
    }

@@ -16,7 +16,7 @@ public final class NameProtect extends Module {
    );
 
    public NameProtect() {
-      super("NameProtect", "Replaces your account name with an alias in every chat line.", Category.CLIENT);
+      super("Name Protect", "Replaces your account name with an alias in every chat line.", Category.CLIENT);
       instance = this;
    }
 

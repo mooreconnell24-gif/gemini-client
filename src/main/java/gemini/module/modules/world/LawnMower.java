@@ -1,5 +1,7 @@
 package gemini.module.modules.world;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.util.Swing;
 import gemini.util.BlockBreaking;
@@ -40,7 +42,14 @@ public final class LawnMower extends Module {
    private int webTicks;
 
    public LawnMower() {
-      super("LawnMower", "Clears grass, ferns, dead bushes and fire around you, and optionally flowers and cobwebs.", Category.WORLD);
+      super("Lawn Mower", "Clears grass, ferns, dead bushes and fire around you, and optionally flowers and cobwebs.", Category.WORLD);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Extinguish");
+      return names;
    }
 
    @Override
