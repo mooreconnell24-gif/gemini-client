@@ -1,9 +1,10 @@
 package gemini.ui;
 
+import gemini.ui.font.FontSize;
+import gemini.ui.font.FontWeight;
 import gemini.ui.font.UiFont;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -13,10 +14,10 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Util;
 
 /**
- * A vanilla button drawn in Gemini's flat style, matching the buttons of the window menu. Being a real
- * {@link Button} it keeps vanilla focus handling (Tab, arrow keys, Enter/Space), narration, tooltips and click
- * sounds; only the look is replaced: a flat rounded card that lightens and gains a thin accent outline while
- * hovered or focused, and fades to {@link Theme#DISABLED_OPACITY} when inactive. Everything, the switch and the
+ * A vanilla button drawn in Gemini's style. Being a real {@link Button} it keeps vanilla focus handling (Tab,
+ * arrow keys, Enter/Space), narration, tooltips and click sounds; only the look is replaced: a rounded card with a
+ * hairline edge that lightens, and whose edge turns to the accent, while hovered or focused (eased, see
+ * {@link Glass.Hover}), and that fades to {@link Theme#DISABLED_OPACITY} when inactive. Everything, the switch and the
  * badge included, follows the button's alpha, so the button fades with whatever contains it. The label is
  * ellipsized to the card.
  *
@@ -40,6 +41,14 @@ public class GlassButton extends Button {
    private boolean primary;
    private boolean raised;
    private boolean leftAligned;
+   private boolean segment;
+   private boolean stacked;
+   private boolean iconOnly;
+   private GlassIcon icon;
+   private int radius = Theme.RADIUS;
+   private int tint;
+   private float slideY;
+   private final Glass.Hover state = new Glass.Hover();
    private String detail;
    private int detailWidth;
    private IntSupplier badge;
@@ -74,6 +83,8 @@ public class GlassButton extends Button {
    /** The one main action of a screen: filled with the accent colour instead of the neutral card. */
    public GlassButton primary() {
       this.primary = true;
+      this.labelWidth = -1;
+      this.fittedFor = -1;
       return this;
    }
 
@@ -84,6 +95,47 @@ public class GlassButton extends Button {
    public GlassButton raised() {
       this.raised = true;
       return this;
+   }
+
+   /** Corner radius of the card, for screens that use larger, softer buttons. */
+   public GlassButton radius(int radius) {
+      this.radius = Math.max(0, radius);
+      return this;
+   }
+
+   /** One entry of a bar (the pause-menu bar): no card at rest, a soft rounded fill under the mouse. */
+   public GlassButton segment() {
+      this.segment = true;
+      return this;
+   }
+
+   /** Colours a {@link #segment()} or {@link #plain()} button's hover state, e.g. red for a destructive action. 0 = none. */
+   public GlassButton tint(int color) {
+      this.tint = color;
+      return this;
+   }
+
+   /** Draws {@code icon} left of the label. */
+   public GlassButton icon(GlassIcon icon) {
+      this.icon = icon;
+      return this;
+   }
+
+   /** With an {@link #icon(GlassIcon) icon}: a tile with the icon above a small caption instead of beside the label. */
+   public GlassButton stacked() {
+      this.stacked = true;
+      return this;
+   }
+
+   /** Draws only the {@link #icon(GlassIcon) icon}; the label is still what the narrator reads. */
+   public GlassButton iconOnly() {
+      this.iconOnly = true;
+      return this;
+   }
+
+   /** Vertical offset in GUI units for this frame's drawing only (an entrance slide); the hit box does not move. */
+   public void setSlide(float offsetY) {
+      this.slideY = offsetY;
    }
 
    /** Puts the label at the left edge instead of in the middle (for buttons stacked in a left-hand column). */
@@ -139,57 +191,116 @@ public class GlassButton extends Button {
       float delta = this.lastFrame == 0L ? 0.0F : Math.min(0.1F, (now - this.lastFrame) / 1000.0F);
       this.lastFrame = now;
       boolean lit = this.active && this.isHoveredOrFocused();
-      this.hover = Glass.approach(this.hover, lit ? 1.0F : 0.0F, Theme.HOVER_SPEED, delta);
+      boolean pressed = this.pressedAt != 0L && now - this.pressedAt < Theme.PRESS_MS;
+      this.state.update(lit, lit && pressed, delta);
+      this.hover = this.state.hover;
       float opacity = Theme.controlOpacity(this.active, this.alpha);
       // Below this the card is invisible anyway, and text with next to no alpha is not reliably drawn faded.
       if (opacity <= 0.05F) {
          return;
       }
 
-      Font font = Minecraft.getInstance().font;
+      boolean moved = this.slideY != 0.0F;
+      if (moved) {
+         g.pose().pushMatrix();
+         g.pose().translate(0.0F, this.slideY);
+      }
+
+      this.extractCard(g, opacity);
+      this.extractLabel(g, delta, opacity);
+      if (moved) {
+         g.pose().popMatrix();
+      }
+   }
+
+   /** The card behind the label, in whichever style the button has. */
+   private void extractCard(GuiGraphicsExtractor g, float opacity) {
+      if (this.plain) {
+         return;
+      }
+
       int grow = Math.round(this.expand * this.hover);
       int x1 = this.getX() - grow;
       int x2 = this.getRight() + grow;
       int y1 = this.getY();
       int y2 = this.getBottom();
+      int r = this.radius;
       int accent = Glass.accent();
-      if (!this.plain) {
-         float press = this.pressedAt == 0L || now - this.pressedAt >= Theme.PRESS_MS ? 0.0F : 1.0F - (float)(now - this.pressedAt) / Theme.PRESS_MS;
-         float lift = Math.min(1.0F, this.hover * 0.8F + press * 0.4F);
-         if (this.primary) {
-            int fill = Glass.lerp(Glass.lerp(accent, 0xFF000000, 0.25F), accent, lift);
-            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, 230), opacity));
-            if (this.isFocused()) {
-               Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, 150), opacity));
-            }
-         } else if (this.raised) {
-            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, Math.round(RAISED_FILL + RAISED_FILL_HOVER * lift)), opacity));
-            int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, RAISED_EDGE), Glass.withAlpha(accent, 130), this.hover);
-            Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(edge, opacity));
-         } else {
-            int fill = Glass.lerp(Glass.surface(1), Glass.surface(3), lift);
-            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, Math.round(150.0F + 70.0F * lift)), opacity));
-            // No edge at rest; a thin accent outline marks only the hovered or focused button.
-            if (this.hover > 0.02F) {
-               Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(accent, Math.round(110 * this.hover)), opacity));
-            }
+      float lift = this.state.emphasis();
+      if (this.primary) {
+         // The one accent-filled control: a soft left-to-right blend of the theme's two accents, a little
+         // brighter and with a faint accent halo while hovered.
+         int from = Glass.lerp(Glass.lerp(accent, 0xFF000000, 0.14F), accent, lift);
+         int to = Glass.lerp(from, Glass.accent2(), 0.45F);
+         if (this.active && this.hover > 0.02F) {
+            Glass.shadow(g, x1, y1, x2, y2, r, 10, 2, Glass.fade(Glass.withAlpha(accent, Math.round(70.0F * this.hover)), opacity));
          }
+
+         Glass.roundGradient(g, x1, y1, x2, y2, r, Glass.fade(from, opacity), Glass.fade(to, opacity));
+         if (this.isFocused()) {
+            Glass.roundOutline(g, x1, y1, x2, y2, r, Glass.fade(Glass.withAlpha(0xFFFFFF, 150), opacity));
+         }
+      } else if (this.segment) {
+         // Part of a bar: nothing at rest, a soft fill under the mouse.
+         int tint = this.tint != 0 ? this.tint : 0xFFFFFFFF;
+         int alpha = Math.round((this.tint != 0 ? 46.0F : 22.0F) * Math.min(1.0F, lift * 1.25F));
+         if (alpha > 0) {
+            Glass.roundRect(g, x1, y1, x2, y2, r, Glass.fade(Glass.withAlpha(tint, alpha), opacity));
+         }
+      } else if (this.raised) {
+         Glass.roundRect(g, x1, y1, x2, y2, r, Glass.fade(Glass.withAlpha(0xFFFFFF, Math.round(RAISED_FILL + RAISED_FILL_HOVER * lift)), opacity));
+         int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, RAISED_EDGE), Glass.withAlpha(accent, 120), this.hover);
+         Glass.roundOutline(g, x1, y1, x2, y2, r, Glass.fade(edge, opacity));
+      } else {
+         int fill = Glass.lerp(Glass.surface(2), Glass.surface(3), lift);
+         Glass.roundRect(g, x1, y1, x2, y2, r, Glass.fade(Glass.withAlpha(fill, Math.round(200.0F + 40.0F * lift)), opacity));
+         int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, 14), Glass.withAlpha(accent, 120), this.hover);
+         Glass.roundOutline(g, x1, y1, x2, y2, r, Glass.fade(edge, opacity));
+      }
+   }
+
+   private void extractLabel(GuiGraphicsExtractor g, float delta, float opacity) {
+      int grow = this.plain ? 0 : Math.round(this.expand * this.hover);
+      int x1 = this.getX() - grow;
+      int x2 = this.getRight() + grow;
+      int y1 = this.getY();
+      int y2 = this.getBottom();
+      int accent = Glass.accent();
+      float lit = this.active ? this.hover : 0.0F;
+      int base;
+      if (this.primary && this.active) {
+         // White where it is readable on the accent (large text needs 3:1), otherwise the dark tone.
+         int fill = Glass.lerp(accent, Glass.accent2(), 0.25F);
+         base = Theme.contrast(0xFFFFFFFF, accent) >= 3.0 ? 0xFFFFFFFF : Theme.onColor(fill);
+      } else if (this.plain || this.segment) {
+         base = Glass.lerp(Glass.textDim(), this.tint != 0 ? Glass.lerp(this.tint, Glass.text(), 0.35F) : Glass.text(), lit);
+      } else {
+         base = Theme.labelColor(this.active, this.hover);
       }
 
-      int base = this.plain
-         ? Glass.lerp(Glass.textDim(), Glass.text(), this.active ? this.hover : 0.0F)
-         : (this.primary && this.active ? Glass.text() : Theme.labelColor(this.active, this.hover));
       int color = Glass.fade(base, opacity);
-      int textY = y1 + (y2 - y1 - Theme.FONT_HEIGHT) / 2 + (this.plain ? 0 : 1);
-      int pad = this.plain ? Theme.SPACE_XS : (this.leftAligned ? Theme.BUTTON_PAD : Theme.SPACE_M);
+      FontWeight weight = this.primary ? FontWeight.MEDIUM : FontWeight.REGULAR;
+      if (this.stacked && this.icon != null) {
+         // A tile: the icon over a small caption.
+         int cap = UiFont.capHeight(FontSize.SMALL);
+         int block = GlassIcon.SIZE + 5 + cap;
+         int top = y1 + (y2 - y1 - block) / 2;
+         this.icon.draw(g, (x1 + x2 - GlassIcon.SIZE) / 2, top, Glass.fade(Glass.lerp(base, accent, 0.55F * lit), opacity));
+         String caption = UiFont.ellipsize(this.label, x2 - x1 - 4, FontSize.SMALL, FontWeight.REGULAR);
+         UiFont.drawCentered(g, caption, (x1 + x2) / 2, top + GlassIcon.SIZE + 5, color, FontSize.SMALL, FontWeight.REGULAR, false);
+         return;
+      }
+
+      int textY = UiFont.centerY(y1, y2 - y1);
+      int pad = this.plain ? Theme.SPACE_XS : (this.leftAligned ? Theme.BUTTON_PAD + Math.max(0, this.radius - Theme.RADIUS) : Theme.SPACE_M);
       int right = x2 - pad;
       int count = this.badge == null ? 0 : this.badge.getAsInt();
       if (count > 0) {
          String text = count > 99 ? "99+" : Integer.toString(count);
          int bw = UiFont.width(text) + 6;
-         int by = y1 + (y2 - y1 - 10) / 2;
-         Glass.roundRect(g, right - bw, by, right, by + 10, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(this.badgeColor, 150), opacity));
-         UiFont.draw(g, text, right - bw + 3, by + 1, Glass.fade(Glass.text(), opacity), false);
+         int by = y1 + (y2 - y1 - 11) / 2;
+         Glass.roundRect(g, right - bw, by, right, by + 11, 5, Glass.fade(Glass.withAlpha(this.badgeColor, 170), opacity));
+         UiFont.draw(g, text, right - bw + 3, UiFont.centerY(by, 11), Glass.fade(Glass.text(), opacity), false);
          right -= bw + Theme.SPACE_S;
       }
 
@@ -209,37 +320,46 @@ public class GlassButton extends Button {
 
       if (this.switchState == null) {
          int left = x1 + pad;
-         String shown = this.fit(font, right - left);
-         int width = shown == this.label ? this.labelWidth() : UiFont.width(shown);
+         boolean bare = this.iconOnly && this.icon != null;
+         int iconRoom = this.icon == null ? 0 : (bare ? GlassIcon.SIZE : GlassIcon.SIZE + Theme.SPACE_S + 1);
+         String shown = bare ? "" : this.fit(right - left - iconRoom);
+         int width = bare ? 0 : (shown == this.label ? this.labelWidth() : UiFont.width(shown, FontSize.BODY, weight));
          int centre = count > 0 ? (left + right) / 2 : (x1 + x2) / 2;
-         UiFont.draw(g, shown, this.leftAligned ? left : centre - width / 2, textY, color, false);
+         int start = this.leftAligned ? left : centre - (width + iconRoom) / 2;
+         if (this.icon != null) {
+            this.icon.draw(g, start, y1 + (y2 - y1 - GlassIcon.SIZE) / 2, color);
+         }
+
+         if (!bare) {
+            UiFont.draw(g, shown, start + iconRoom, textY, color, FontSize.BODY, weight, false);
+         }
       } else {
          boolean on = this.switchState.getAsBoolean();
          this.knob = Glass.approach(this.knob, on ? 1.0F : 0.0F, 12.0F, delta);
          int switchX = right - 18;
          int left = x1 + pad;
-         UiFont.draw(g, this.fit(font, switchX - Theme.SPACE_S - left), left, textY, color, false);
+         UiFont.draw(g, this.fit(switchX - Theme.SPACE_S - left), left, textY, color, false);
          Glass.toggle(g, switchX, y1 + (y2 - y1 - 10) / 2, this.knob, accent, opacity);
       }
    }
 
    private int labelWidth() {
       if (this.labelWidth < 0) {
-         this.labelWidth = UiFont.width(this.label);
+         this.labelWidth = UiFont.width(this.label, FontSize.BODY, this.primary ? FontWeight.MEDIUM : FontWeight.REGULAR);
       }
 
       return this.labelWidth;
    }
 
    /** The label ellipsized to {@code room}, cached per width (the card grows while hovered, so it changes). */
-   private String fit(Font font, int room) {
+   private String fit(int room) {
       if (this.labelWidth() <= room) {
          return this.label;
       }
 
       if (this.fittedFor != room) {
          this.fittedFor = room;
-         this.fitted = UiFont.ellipsize(this.label, room);
+         this.fitted = UiFont.ellipsize(this.label, room, FontSize.BODY, this.primary ? FontWeight.MEDIUM : FontWeight.REGULAR);
       }
 
       return this.fitted;

@@ -96,6 +96,37 @@ class HelpTest {
       }
    }
 
+   @Test
+   void teaserIsTheFirstPointsAsPlainText() throws IOException {
+      List<Markdown.Block> blocks = Markdown.parse(bundledChangelog());
+      List<String> points = HelpContent.teaser(blocks, 3);
+      assertEquals(3, points.size());
+      for (String point : points) {
+         assertFalse(point.contains("§"), "no formatting codes: " + point);
+         assertFalse(point.isBlank());
+         assertTrue(point.length() <= 90, "the first points are short enough for the home screen card: " + point);
+      }
+
+      assertEquals(List.of("one", "two"), HelpContent.teaser(Markdown.parse("# T\n\n- **one**\n  - nested\n- `two`\n\ntext"), 5), "nested points are skipped");
+      assertTrue(HelpContent.teaser(List.of(), 3).isEmpty());
+   }
+
+   /** The README's "What's new" section is the bundled changelog, with its headings as bold lines. */
+   @Test
+   void readmeWhatsNewMatchesTheChangelog() throws IOException {
+      java.nio.file.Path readme = java.nio.file.Path.of("README.md");
+      org.junit.jupiter.api.Assumptions.assumeTrue(java.nio.file.Files.isRegularFile(readme), "run from the project directory");
+      java.util.Set<String> lines = new java.util.HashSet<>(java.nio.file.Files.readAllLines(readme, StandardCharsets.UTF_8));
+      for (String line : bundledChangelog().lines().toList()) {
+         if (line.isBlank() || line.startsWith("# ")) {
+            continue;
+         }
+
+         String expected = line.startsWith("## ") ? "**" + line.substring(3) + "**" : line;
+         assertTrue(lines.contains(expected), "README.md is missing this changelog line: " + line);
+      }
+   }
+
    // ---- wrapping -------------------------------------------------------------------------------------------
 
    @Test

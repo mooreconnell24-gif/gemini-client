@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -126,13 +125,14 @@ public final class SandboxUi {
 
    /**
     * A short notice from a Gemini screen. Gemini's own HUD toasts are only drawn in a world and sit behind (and
-    * are blurred by) an open screen, so while a screen is up or no world is loaded this uses the vanilla toast.
+    * are blurred by) an open screen, so while a screen is up or no world is loaded this uses {@link GlassToast},
+    * which is drawn over screens.
     */
    public static void notify(Minecraft client, String title, String body, HudOverlay.Severity severity) {
       if (client.player != null && client.gui.screen() == null) {
          HudOverlay.toast(title, body, severity);
       } else {
-         toast(client, title, body);
+         GlassToast.show(client, title, body, severity == null ? Glass.INFO : severity.color);
       }
    }
 
@@ -149,7 +149,7 @@ public final class SandboxUi {
    }
 
    public static void toast(Minecraft client, String title, String body) {
-      SystemToast.addOrUpdate(client.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(title), Component.literal(body));
+      GlassToast.show(client, title, body, Glass.accent());
    }
 
    private static String strip(String formatted) {
