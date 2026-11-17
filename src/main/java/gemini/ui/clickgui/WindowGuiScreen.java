@@ -719,7 +719,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       int ty = top + 21;
       if (blocked) {
          String reason = plain(module.blockedReason());
-         g.text(this.font, fit(this.font, reason, w - 18), x + 9, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         // Without a world the full reason doesn't fit the pane; the short form says the same thing.
+         String shown = this.minecraft.player == null ? "Can be switched on in a world" : reason;
+         g.text(this.font, fit(this.font, shown, w - 18), x + 9, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
          if (inside(mouseX, mouseY, x + 9, ty, w - 18, LINE)) {
             this.tip = reason + "  ·  settings changed here apply when it can run";
          }
