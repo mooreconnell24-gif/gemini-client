@@ -62,7 +62,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    private static final int LINE = 12;
    private static final String FAVORITES = "★";
    private static final String[] FILTERS = new String[]{"All", "On", "Bound", FAVORITES};
-   private static final Page[] PAGE_TABS = {Page.PROFILES, Page.KEYBINDS, Page.BARITONE};
+   private static final Page[] PAGE_TABS = {Page.PROFILES, Page.KEYBINDS, Page.BARITONE, Page.MODS};
    private static Category lastCategory = Category.COMBAT;
    private static String lastModule;
    private static String rememberedSearch = "";
@@ -83,6 +83,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    private final ProfilesPage profilesPage = new ProfilesPage(this);
    private final KeybindsPage keybindsPage = new KeybindsPage(this);
    private final BaritonePage baritonePage = new BaritonePage(this);
+   private final gemini.ui.mods.ModsPage modsPage = new gemini.ui.mods.ModsPage(this);
    private SettingControl activeControl;
    private long lastFrame = Util.getMillis();
    private float dt;
@@ -129,7 +130,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       MODULES("Modules"),
       PROFILES("Presets & Configs"),
       KEYBINDS("Keybinds"),
-      BARITONE("Baritone");
+      BARITONE("Baritone"),
+      MODS("Mods");
 
       public final String label;
 
@@ -204,6 +206,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          case PROFILES -> this.profilesPage;
          case KEYBINDS -> this.keybindsPage;
          case BARITONE -> this.baritonePage;
+         case MODS -> this.modsPage;
          default -> null;
       };
    }
@@ -506,6 +509,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             this.tip = switch (p) {
                case PROFILES -> "Saved profiles, export and import, built-in presets";
                case KEYBINDS -> "Every key bind grouped by key, with conflicts to fix";
+               case MODS -> "Find mods and resource packs on Modrinth and manage your mods folder";
                default -> "Live pathing status and bot quick starts";
             };
          }
@@ -1654,6 +1658,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          case "PROFILES" -> new String[]{"######.", "#.##.##", "#.##..#", "#.....#", "#.###.#", "#.###.#", "#######"};
          case "KEYBINDS" -> new String[]{"..###..", ".#...#.", ".#...#.", "..###..", "...#...", "...##..", "...##.."};
          case "BARITONE" -> new String[]{"#......", "##.....", "#.#....", "#..#...", "#...###", "#......", "#......"};
+         case "MODS" -> new String[]{"...#...", "...#...", ".#.#.#.", "..###..", "...#...", ".......", "#######"};
          default -> new String[]{"...#...", ".#####.", ".#...#.", "##.#.##", ".#...#.", ".#####.", "...#..."};
       };
       for (int row = 0; row < rows.length; row++) {

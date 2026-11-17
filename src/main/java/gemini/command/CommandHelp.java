@@ -39,6 +39,7 @@ public final class CommandHelp {
       new Entry("help", ".help [chat]", "Opens this guide on the Commands tab; .help chat writes the list in chat instead", Group.GEMINI, false),
       new Entry("changelog", ".changelog", "Opens the in-game guide on the What's new tab", Group.GEMINI, false),
       new Entry("gui", ".gui / .menu", "Opens the module menu in the layout chosen in the ClickGUI settings", Group.GEMINI, true),
+      new Entry("mods", ".mods", "Opens the Modrinth browser for mods and resource packs; installed mods load the next time Minecraft starts", Group.GEMINI, false),
       new Entry("version", ".version", "Shows the Gemini and Minecraft versions, and any game hook that failed to load", Group.GEMINI, false),
       new Entry("sandbox", ".sandbox [on|off]", "Turns sandbox mode on (Gemini works, single player only) or off (Gemini is off, online play allowed)", Group.GEMINI, false),
       new Entry("panic", ".panic", "Turns every module off at once (the Panic module does the same)", Group.GEMINI, true),
@@ -84,7 +85,7 @@ public final class CommandHelp {
    /** Every first word the dispatcher accepts, for "did you mean" suggestions. */
    public static final List<String> WORDS = List.of(
       "help", "changelog", "baritone", "bind", "unbind", "binds", "toggle", "modules", "set", "get", "settings", "reset", "panic", "config",
-      "sandbox", "gui", "menu", "version", "vclip", "hclip", "dismount", "drop", "leave", "disconnect", "say", "rotate", "coords", "sethome",
+      "sandbox", "gui", "menu", "mods", "version", "vclip", "hclip", "dismount", "drop", "leave", "disconnect", "say", "rotate", "coords", "sethome",
       "home", "back", "gm", "gamemode", "day", "noon", "night", "sun", "rain", "heal", "feed", "clear", "reload", "selftest"
    );
 

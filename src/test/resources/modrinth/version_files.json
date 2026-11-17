@@ -1,0 +1,90 @@
+{
+ "fb686a9fa923248328107a12498229d6951e316257f18b7d0e4cbd6885ba447ed50a44076a8a5ba47cfe2043b329db3587ab000aeab1face26b2587a5d4ba6b5": {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric"
+  ],
+  "environment": "client_or_server_prefers_both",
+  "id": "Zns5SSRA",
+  "project_id": "P7dR8mSH",
+  "author_id": "JZA4dW8o",
+  "featured": false,
+  "name": "[26.3] Fabric API 0.166.2+26.3",
+  "version_number": "0.166.2+26.3",
+  "changelog": "- Bump version (modmuss50)\n- Fix removed attachments reappearing after restart (#5677) (modmuss)\n- Fix ValueInput.contains throwing for empty children (#5678) (modmuss)\n- Fix test crash when resizing window (#5688) (modmuss)\n",
+  "changelog_url": null,
+  "date_published": "2026-11-11T13:38:52.250683Z",
+  "downloads": 945747,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "BMb1lP1i",
+    "hashes": {
+     "sha512": "fb686a9fa923248328107a12498229d6951e316257f18b7d0e4cbd6885ba447ed50a44076a8a5ba47cfe2043b329db3587ab000aeab1face26b2587a5d4ba6b5",
+     "sha1": "65636253571429971f25f5619692e6c1a6362028"
+    },
+    "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/Zns5SSRA/fabric-api-0.166.2%2B26.3.jar",
+    "filename": "fabric-api-0.166.2+26.3.jar",
+    "primary": true,
+    "size": 1797523,
+    "file_type": null
+   }
+  ],
+  "dependencies": []
+ },
+ "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606": {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric",
+   "quilt"
+  ],
+  "environment": "client_only",
+  "id": "kyy7dbrZ",
+  "project_id": "mOgUt4GM",
+  "author_id": "uF4fzWRt",
+  "featured": false,
+  "name": "v21.0.0 for 26.3",
+  "version_number": "21.0.0",
+  "changelog": "- Update deps for 26.3 release (resolves #1092)\n- Update Estonian translation, thanks Madis0\n- Use a better word for \"Credits\" in the Russian translation (resolves #1098)",
+  "changelog_url": null,
+  "date_published": "2026-09-23T21:31:03.843943Z",
+  "downloads": 4134243,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "kai5Dbms",
+    "hashes": {
+     "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606",
+     "sha1": "66ec40f1cd0c037ddca2b5fc6b4b976d479c18e8"
+    },
+    "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/kyy7dbrZ/modmenu-21.0.0.jar",
+    "filename": "modmenu-21.0.0.jar",
+    "primary": true,
+    "size": 856779,
+    "file_type": null
+   }
+  ],
+  "dependencies": [
+   {
+    "version_id": null,
+    "project_id": "eXts2L7r",
+    "file_name": null,
+    "dependency_type": "required"
+   },
+   {
+    "version_id": null,
+    "project_id": "P7dR8mSH",
+    "file_name": null,
+    "dependency_type": "required"
+   }
+  ]
+ }
+}
