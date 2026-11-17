@@ -24,13 +24,14 @@ import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.LevelSummary;
 
 /**
- * Gemini's home screen, shown in place of the vanilla title screen: the vanilla panorama, the logo, and one
- * column with the menu. Singleplayer is the main action; under it "Continue" opens the most recently played world
+ * Gemini's home screen, shown in place of the vanilla title screen: a dark backdrop with a slowly drifting network of
+ * points (see {@link NetworkField}), the logo, and one column with the menu. Singleplayer is the main action; under it "Continue" opens the most recently played world
  * directly, when there is one. Multiplayer and Realms, then Options and Quit follow, and a row of small text links
  * (the Gemini menu, the guide, quick search) ends the column. The sandbox switch sits quietly in the top-right
  * corner and the footer carries the version, the "Vanilla menu" link and Mojang's notice. A line of text only
@@ -49,6 +50,28 @@ import net.minecraft.world.level.storage.LevelSummary;
 public final class GeminiTitleScreen extends Screen {
    private static final String VERSION = "dev".equals(Gemini.VERSION) ? "dev build" : "Gemini " + Gemini.VERSION;
    private static boolean whatsNewChecked;
+   /** The soft round glow used for the depth gradient and the light behind the menu (linear filtering, see its .mcmeta). */
+   private static final Identifier GLOW = Identifier.fromNamespaceAndPath("gemini", "textures/gui/title_glow.png");
+   private static final int GLOW_SIZE = 128;
+   /** The deep navy base and the lighter navy it rises to towards the middle. */
+   private static final int BASE = 0xFF05080F;
+   private static final int LIFT = 0xFF14203A;
+   /** Peak opacity (0..255) of links and points per layer, far to near. */
+   private static final float[] LINK_ALPHA = {55.0F, 85.0F, 110.0F};
+   private static final float[] POINT_ALPHA = {120.0F, 170.0F, 215.0F};
+   /** How much of the network is left right behind the menu column: none, so the menu sits on a clean patch. */
+   private static final float CALM_FLOOR = 0.0F;
+   /** Speed of the eased mouse parallax; low, so the layers glide after the mouse. */
+   private static final float PARALLAX_SPEED = 1.6F;
+   /** Transparent margin left of the artwork in the logo texture, in texture pixels. */
+   private static final int LOGO_ART_LEFT = 12;
+   /** Per-point opacity scratch, filled each frame (no per-frame allocation). */
+   private static final float[] SHADE = new float[NetworkField.MAX_POINTS];
+   /** The network and its parallax are shared by every home screen, so it carries on after Options and back. */
+   private static NetworkField field;
+   private static float parallaxX;
+   private static float parallaxY;
+   private static float networkShown;
    private final long openedAt = Util.getMillis();
    private final List<GlassButton> fading = new ArrayList<>();
    /** The tertiary links (label key, action); they are laid out in one row in the order they are added. */
@@ -58,6 +81,7 @@ public final class GeminiTitleScreen extends Screen {
    private GlassButton menuLink;
    private GlassButton searchLink;
    private float fade;
+   private long lastFrame;
    private LevelSummary recentWorld;
    private Component credits;
    private int creditsWidth;
@@ -233,7 +257,7 @@ public final class GeminiTitleScreen extends Screen {
 
    private GlassButton main(int slot, String key, Runnable action) {
       TitleLayout l = this.layout;
-      GlassButton button = new GlassButton(l.x(slot), l.y(slot), l.w(slot), l.buttonHeight(), Component.translatable("gemini.title." + key), pressed -> action.run());
+      GlassButton button = new GlassButton(l.x(slot), l.y(slot), l.w(slot), l.buttonHeight(), Component.translatable("gemini.title." + key), pressed -> action.run()).raised();
       if (slot != TitleLayout.OPTIONS && slot != TitleLayout.QUIT) {
          button.leftAligned();
       }
@@ -359,30 +383,151 @@ public final class GeminiTitleScreen extends Screen {
    // ---- rendering -------------------------------------------------------------------------------------------
 
    /**
-    * The vanilla panorama, left sharp, with a soft shade behind the menu column (a horizontal fade from the left
-    * edge, or an even dim when the column is centred) and a little shade along the bottom for the footer text.
+    * The backdrop: a deep navy base lit a little towards the middle (darker towards the corners), a faint pool of
+    * accent light where the menu sits, and the drifting network (see {@link NetworkField}) in three depth layers
+    * with eased mouse parallax. Points and links near the menu column are dimmed so the menu reads cleanly. The
+    * network is drawn in window pixels, so its lines are one real pixel thin at every GUI scale. With the
+    * "Animations" setting off it stands still and ignores the mouse.
     */
    @Override
    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-      this.fade = Glass.animations() ? Glass.easeOutCubic((Util.getMillis() - this.openedAt) / 400.0F) : 1.0F;
-      this.extractPanorama(g, partialTick);
-      TitleLayout l = this.layout;
-      if (l.centred()) {
-         g.fill(0, 0, this.width, this.height, 0x78000000);
+      long now = Util.getMillis();
+      float delta = this.lastFrame == 0L ? 0.0F : Math.min(0.1F, (now - this.lastFrame) / 1000.0F);
+      this.lastFrame = now;
+      boolean animated = Glass.animations();
+      this.fade = animated ? Glass.easeOutCubic((now - this.openedAt) / 400.0F) : 1.0F;
+      if (animated) {
+         float targetX = this.width <= 0 ? 0.0F : Math.clamp((float)mouseX / this.width * 2.0F - 1.0F, -1.0F, 1.0F);
+         float targetY = this.height <= 0 ? 0.0F : Math.clamp((float)mouseY / this.height * 2.0F - 1.0F, -1.0F, 1.0F);
+         parallaxX = Glass.approach(parallaxX, targetX, PARALLAX_SPEED, delta);
+         parallaxY = Glass.approach(parallaxY, targetY, PARALLAX_SPEED, delta);
       } else {
-         int reach = Math.min(this.width, l.columnX() + l.columnWidth() + Math.max(80, this.width / 5));
-         int solid = l.columnX() + l.columnWidth() / 2;
-         int step = 4;
-         for (int x = 0; x < reach; x += step) {
-            float t = x <= solid ? 0.0F : (float)(x - solid) / Math.max(1, reach - solid);
-            int alpha = Math.round(175.0F * (1.0F - t * t * (3.0F - 2.0F * t)));
-            g.fill(x, 0, Math.min(reach, x + step), this.height, alpha << 24);
-         }
-
-         g.fill(0, 0, this.width, this.height, 0x28000000);
+         parallaxX = 0.0F;
+         parallaxY = 0.0F;
       }
 
-      g.fillGradient(0, this.height - 40, this.width, this.height, 0x00000000, 0x70000000);
+      // The network carries on across visits (Options and back), so it only fades in the first time.
+      networkShown = animated ? Math.min(1.0F, networkShown + delta / 0.9F) : 1.0F;
+      float shown = Glass.easeInOut(networkShown);
+      int accent = Glass.accent();
+      TitleLayout l = this.layout;
+      g.fill(0, 0, this.width, this.height, BASE);
+      // Depth: a broad, soft lift of the base towards the middle; the corners keep the darkest navy.
+      glow(g, this.width * 0.56F, this.height * 0.40F, this.width * 1.25F, this.height * 1.45F, LIFT);
+      // The menu's place: a very soft pool of accent light behind the column.
+      float poolX = l.columnX() + l.columnWidth() * 0.5F;
+      float poolTop = l.y(TitleLayout.SINGLEPLAYER);
+      float poolBottom = l.linksY() + TitleLayout.LINK_HEIGHT;
+      float poolY = (poolTop + poolBottom) * 0.5F;
+      glow(g, poolX, poolY, l.columnWidth() * 3.0F, (poolBottom - poolTop) * 2.8F, Glass.withAlpha(accent, 30));
+      this.extractNetwork(g, animated ? delta : 0.0F, shown);
+   }
+
+   /** The soft radial glow texture, tinted {@code color}, centred on ({@code cx}, {@code cy}) and {@code w} x {@code h} GUI units large. */
+   private static void glow(GuiGraphicsExtractor g, float cx, float cy, float w, float h, int color) {
+      int x = Math.round(cx - w * 0.5F);
+      int y = Math.round(cy - h * 0.5F);
+      g.blit(RenderPipelines.GUI_TEXTURED, GLOW, x, y, 0.0F, 0.0F, Math.round(w), Math.round(h), GLOW_SIZE, GLOW_SIZE, GLOW_SIZE, GLOW_SIZE, color);
+   }
+
+   private void extractNetwork(GuiGraphicsExtractor g, float delta, float shown) {
+      if (shown <= 0.01F) {
+         return;
+      }
+
+      int scale = Math.max(1, this.minecraft.getWindow().getGuiScale());
+      int pw = this.width * scale;
+      int ph = this.height * scale;
+      NetworkField f = field(pw, ph);
+      f.update(delta, parallaxX, parallaxY);
+      TitleLayout l = this.layout;
+      // The calm zone around the menu column, in window pixels.
+      float zx1 = (l.columnX() - 8) * scale;
+      float zx2 = (l.columnX() + l.columnWidth() + 8) * scale;
+      float zy1 = l.logoY() * scale;
+      float zy2 = (l.linksY() + TitleLayout.LINK_HEIGHT) * scale;
+      float soft = 36.0F * scale;
+      int count = f.count();
+      for (int i = 0; i < count; i++) {
+         SHADE[i] = NetworkField.calm(f.x(i), f.y(i), zx1, zy1, zx2, zy2, soft, CALM_FLOOR) * shown;
+      }
+
+      int accent = Glass.accent();
+      int accent2 = Glass.accent2();
+      int lineColor = Glass.lerp(accent, accent2, 0.55F);
+      g.pose().pushMatrix();
+      g.pose().scale(1.0F / scale, 1.0F / scale);
+      for (int layer = 0; layer < NetworkField.LAYERS; layer++) {
+         float reach = f.reach(layer);
+         float reachSq = reach * reach;
+         float strength = LINK_ALPHA[layer];
+         int end = f.layerEnd(layer);
+         for (int i = f.layerStart(layer); i < end; i++) {
+            float xi = f.x(i);
+            float yi = f.y(i);
+            for (int j = i + 1; j < end; j++) {
+               float dx = f.x(j) - xi;
+               float dy = f.y(j) - yi;
+               float distSq = dx * dx + dy * dy;
+               if (distSq >= reachSq || offScreen(xi, yi, f.x(j), f.y(j), pw, ph)) {
+                  continue;
+               }
+
+               int alpha = Math.round(strength * NetworkField.linkAlpha((float)Math.sqrt(distSq), reach) * Math.min(SHADE[i], SHADE[j]));
+               if (alpha >= 2) {
+                  Glass.line(g, xi, yi, f.x(j), f.y(j), Glass.withAlpha(lineColor, alpha));
+               }
+            }
+         }
+      }
+
+      float unit = Math.min(pw, ph) / 720.0F;
+      for (int layer = 0; layer < NetworkField.LAYERS; layer++) {
+         float depth = NetworkField.depth(layer);
+         int size = Math.max(1, Math.round((0.9F + 1.4F * depth) * unit));
+         int color = Glass.lerp(accent2, 0xFFFFFFFF, 0.25F + 0.45F * depth);
+         float strength = POINT_ALPHA[layer];
+         int end = f.layerEnd(layer);
+         for (int i = f.layerStart(layer); i < end; i++) {
+            int x = Math.round(f.x(i) - size * 0.5F);
+            int y = Math.round(f.y(i) - size * 0.5F);
+            if (x + size + 1 < 0 || y + size + 1 < 0 || x - 1 > pw || y - 1 > ph) {
+               continue;
+            }
+
+            int alpha = Math.round(strength * SHADE[i]);
+            if (alpha < 2) {
+               continue;
+            }
+
+            if (layer > 0) {
+               // A one-pixel halo at a quarter of the opacity softens the square into a dot.
+               g.fill(x - 1, y - 1, x + size + 1, y + size + 1, Glass.withAlpha(color, alpha / 4));
+            }
+
+            g.fill(x, y, x + size, y + size, Glass.withAlpha(color, alpha));
+         }
+      }
+
+      g.pose().popMatrix();
+   }
+
+   /** Whether a link between two points lies entirely beyond one edge of a {@code w} x {@code h} window. */
+   private static boolean offScreen(float x1, float y1, float x2, float y2, int w, int h) {
+      return x1 < 0.0F && x2 < 0.0F || y1 < 0.0F && y2 < 0.0F || x1 > w && x2 > w || y1 > h && y2 > h;
+   }
+
+   /** The shared network, sized for a {@code w} x {@code h} window. */
+   private static NetworkField field(int w, int h) {
+      if (field == null) {
+         field = new NetworkField(Util.getMillis());
+      }
+
+      if (field.width() != w || field.height() != h) {
+         field.resize(w, h);
+      }
+
+      return field;
    }
 
    @Override
@@ -393,9 +538,20 @@ public final class GeminiTitleScreen extends Screen {
 
       if (this.fade > 0.1F) {
          TitleLayout l = this.layout;
-         if (l.logoSize() > 0) {
+         if (l.logoPixels() > 0) {
+            // Drawn in window pixels at a whole ratio of the texture, so it stays sharp at every GUI scale.
+            int scale = Math.max(1, this.minecraft.getWindow().getGuiScale());
             int color = Glass.withAlpha(0xFFFFFF, Math.round(255.0F * this.fade));
-            g.blit(RenderPipelines.GUI_TEXTURED, GeminiMark.LOGO, l.logoX(), l.logoY(), 0.0F, 0.0F, l.logoSize(), l.logoSize(), TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, color);
+            int pixels = l.logoPixels();
+            // In the left column the artwork (not its transparent margin) lines up with the buttons' left edge.
+            int x = l.centred()
+               ? l.logoX() * scale + (l.logoSize() * scale - pixels) / 2
+               : l.logoX() * scale - LOGO_ART_LEFT * pixels / TitleLayout.LOGO_TEXTURE;
+            int y = l.logoY() * scale + (l.logoSize() * scale - pixels) / 2;
+            g.pose().pushMatrix();
+            g.pose().scale(1.0F / scale, 1.0F / scale);
+            g.blit(RenderPipelines.GUI_TEXTURED, GeminiMark.LOGO, x, y, 0.0F, 0.0F, pixels, pixels, TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, TitleLayout.LOGO_TEXTURE, color);
+            g.pose().popMatrix();
          }
 
          int textY = l.footerY() + 2;
