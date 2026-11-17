@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.ui.font.UiFont;
 import gemini.world.NotesText;
 import gemini.world.WorldNotes;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -82,8 +83,8 @@ public final class NotesScreen extends Screen {
    @Override
    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
       super.extractRenderState(g, mouseX, mouseY, partialTick);
-      g.centeredText(this.font, this.heading, this.width / 2, 14, Glass.TEXT);
-      g.centeredText(this.font, this.filled ? HINT : "Loading...", this.width / 2, 26, Glass.TEXT_DIM);
+      UiFont.drawCentered(g, this.heading, this.width / 2, 14, Glass.text(), true);
+      UiFont.drawCentered(g, this.filled ? HINT : "Loading...", this.width / 2, 26, Glass.textDim(), true);
    }
 
    @Override

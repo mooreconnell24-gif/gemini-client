@@ -11,6 +11,7 @@ import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.render.PlacementFade;
+import gemini.ui.font.UiFont;
 import gemini.util.BlockPlacer;
 import gemini.util.InfoText;
 import gemini.util.MoveUtil;
@@ -381,7 +382,7 @@ public final class ScaffoldModule extends Module {
       if (this.showCount.get() && hud.client.gui.screen() == null) {
          int count = this.blockCount;
          String text = this.countText.whole(count, count == 1 ? " block" : " blocks");
-         hud.graphics.text(hud.font, text, hud.width / 2 - hud.font.width(text) / 2, hud.height / 2 + 14, count > 16 ? -1 : -43691, true);
+         UiFont.draw(hud.graphics, text, hud.width / 2 - UiFont.width(text) / 2, hud.height / 2 + 14, count > 16 ? -1 : -43691, true);
       }
    }
 

@@ -9,6 +9,7 @@ import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import gemini.util.InfoText;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,7 +136,7 @@ public final class Performance extends Module {
          LiveProfiler.describe(this.profileLines, this.profilerRows.intValue(), this.profilerHook.get(), hud.accent, Glass.TEXT, Glass.TEXT_DIM);
          int widest = 0;
          for (TextHudWidget.Line line : this.profileLines) {
-            widest = Math.max(widest, hud.font.width(line.text()));
+            widest = Math.max(widest, UiFont.width(line.text()));
          }
 
          this.profileWidth = widest;
@@ -148,7 +149,7 @@ public final class Performance extends Module {
       Glass.panel(hud.graphics, x, y, x + w, y + h, Glass.RADIUS, hud.surface, hud.accent, 0.94F, 0.0F);
       for (int i = 0; i < this.profileLines.size(); i++) {
          TextHudWidget.Line line = this.profileLines.get(i);
-         hud.graphics.text(hud.font, line.text(), x + 6, y + 5 + i * 10, line.color(), false);
+         UiFont.draw(hud.graphics, line.text(), x + 6, y + 5 + i * 10, line.color(), false);
       }
    }
 

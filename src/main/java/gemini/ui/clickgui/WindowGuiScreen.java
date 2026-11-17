@@ -24,6 +24,7 @@ import gemini.ui.clickgui.window.BaritonePage;
 import gemini.ui.clickgui.window.DashboardPage;
 import gemini.ui.clickgui.window.KeybindsPage;
 import gemini.ui.clickgui.window.ProfilesPage;
+import gemini.ui.font.UiFont;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -376,13 +377,13 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
    private void drawSidebar(GuiGraphicsExtractor g, int x, int y, int h, int mouseX, int mouseY, int accent, int accent2) {
       GeminiMark.draw(g, x + 11, y + 10, 16, accent, this.open);
-      g.text(this.font, "Gemini", x + 32, y + 14, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+      UiFont.draw(g, "Gemini", x + 32, y + 14, Glass.withAlpha(Glass.text(), this.a(255)), false);
       int tabsTop = y + 34;
       if (!SingleplayerGate.allowed()) {
          // Modules can be configured anywhere, but only run in a private single-player world.
          String label = "Settings only";
-         int lw = this.font.width(label) + 8;
-         g.text(this.font, label, x + 13, tabsTop + 2, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         int lw = UiFont.width(label) + 8;
+         UiFont.draw(g, label, x + 13, tabsTop + 2, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
          if (inside(mouseX, mouseY, x + 10, tabsTop, lw, 11)) {
             this.tip = plain(SingleplayerGate.denialMessage());
          }
@@ -460,11 +461,11 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       int ty = iy + (th - 8) / 2 + 1;
-      int textColor = Glass.withAlpha(active ? Glass.TEXT : (over ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.6F) : Glass.TEXT_DIM), this.a(255));
+      int textColor = Glass.withAlpha(active ? Glass.text() : (over ? Glass.lerp(Glass.textDim(), Glass.text(), 0.6F) : Glass.textDim()), this.a(255));
       int right = x + SIDEBAR - 10;
       String name;
       if (tab instanceof Category cat) {
-         icon(g, cat.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.TEXT_DIM : Glass.TEXT_FAINT, this.a(255)));
+         icon(g, cat.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.textDim() : Glass.textFaint(), this.a(255)));
          List<Module> list = modules(cat);
          int on = 0;
          for (Module module : list) {
@@ -476,8 +477,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          // Only the number switched on, and only when there is one; the total is not worth a badge.
          if (on > 0) {
             String count = Integer.toString(on);
-            int cw = this.font.width(count);
-            g.text(this.font, count, right - cw, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+            int cw = UiFont.width(count);
+            UiFont.draw(g, count, right - cw, ty, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
             right -= cw + 4;
          }
 
@@ -488,15 +489,15 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
       } else {
          Page p = (Page)tab;
-         icon(g, p.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.TEXT_DIM : Glass.TEXT_FAINT, this.a(255)));
+         icon(g, p.name(), x + 13, iy + (th - 7) / 2, Glass.withAlpha(active || over ? Glass.textDim() : Glass.textFaint(), this.a(255)));
          name = p == Page.PROFILES ? "Presets" : p.label;
          if (p == Page.KEYBINDS && Gemini.getInstance() != null) {
             int conflicts = conflictCount();
             if (conflicts > 0) {
                // Meaningful: something to fix. Plain warning-coloured number, no pill.
                String count = Integer.toString(conflicts);
-               int cw = this.font.width(count);
-               g.text(this.font, count, right - cw, ty, Glass.withAlpha(Glass.WARN, this.a(255)), false);
+               int cw = UiFont.width(count);
+               UiFont.draw(g, count, right - cw, ty, Glass.withAlpha(Glass.WARN, this.a(255)), false);
                right -= cw + 4;
             }
          } else if (p == Page.BARITONE && gemini.util.BaritoneBridge.isActive()) {
@@ -515,7 +516,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
       }
 
-      g.text(this.font, fit(this.font, name, right - (x + 25) - 2), x + 25, ty, textColor, false);
+      UiFont.draw(g, fit(this.font, name, right - (x + 25) - 2), x + 25, ty, textColor, false);
    }
 
    /** Conflicting keys for the sidebar badge: the same cached count the title screen and the pause dock show. */
@@ -526,8 +527,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    private void sidebarButton(GuiGraphicsExtractor g, int x, int y, int w, String label, WindowGuiScreen.Kind kind, int mouseX, int mouseY, int accent, boolean active) {
       boolean over = inside(mouseX, mouseY, x, y, w, LINK_ROW);
       String text = fit(this.font, label, w - 8);
-      int color = active ? Glass.lerp(accent, 0xFFFFFFFF, 0.3F) : (over ? Glass.TEXT : Glass.TEXT_FAINT);
-      g.text(this.font, text, x + 7, y + 3, Glass.withAlpha(color, this.a(255)), false);
+      int color = active ? Glass.lerp(accent, 0xFFFFFFFF, 0.3F) : (over ? Glass.text() : Glass.textFaint());
+      UiFont.draw(g, text, x + 7, y + 3, Glass.withAlpha(color, this.a(255)), false);
       this.hit(kind, x, y, w, LINK_ROW, null);
       if (over) {
          this.tip = switch (kind) {
@@ -543,7 +544,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
    private void drawHeader(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY, int accent, int accent2, long now) {
       int filtersW = 0;
       for (String f : FILTERS) {
-         filtersW += this.font.width(f) + 12 + 3;
+         filtersW += UiFont.width(f) + 12 + 3;
       }
 
       int sx = x + 8;
@@ -554,18 +555,18 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       if (this.searchFocused) {
          Glass.roundOutline(g, sx, sy, sx + sw, sy + 16, 4, Glass.withAlpha(accent, this.a(140)));
       }
-      magnifier(g, sx + 6, sy + 4, Glass.withAlpha(this.searchFocused ? accent2 : Glass.TEXT_FAINT, this.a(255)));
+      magnifier(g, sx + 6, sy + 4, Glass.withAlpha(this.searchFocused ? accent2 : Glass.textFaint(), this.a(255)));
       boolean blink = this.searchFocused && now / 450L % 2L == 0L;
       String text = this.search.isEmpty() && !this.searchFocused ? "Search modules and settings..." : this.search + (blink ? "_" : "");
-      while (this.font.width(text) > sw - 34 && text.length() > 1) {
+      while (UiFont.width(text) > sw - 34 && text.length() > 1) {
          text = text.substring(1);
       }
 
-      g.text(this.font, text, sx + 18, sy + 4, Glass.withAlpha(this.search.isEmpty() ? Glass.TEXT_FAINT : Glass.TEXT, this.a(255)), false);
+      UiFont.draw(g, text, sx + 18, sy + 4, Glass.withAlpha(this.search.isEmpty() ? Glass.textFaint() : Glass.text(), this.a(255)), false);
       this.hit(WindowGuiScreen.Kind.SEARCH, sx, sy, sw, 16, null);
       if (!this.search.isEmpty()) {
          boolean overClear = inside(mouseX, mouseY, sx + sw - 14, sy, 14, 16);
-         g.text(this.font, "x", sx + sw - 10, sy + 4, Glass.withAlpha(overClear ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, "x", sx + sw - 10, sy + 4, Glass.withAlpha(overClear ? Glass.text() : Glass.textFaint(), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.CLEAR, sx + sw - 14, sy, 14, 16, null);
       }
 
@@ -575,7 +576,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
       int fx = sx + sw + 6;
       for (String f : FILTERS) {
-         int fw = this.font.width(f) + 12;
+         int fw = UiFont.width(f) + 12;
          boolean active = f.equals(this.filter);
          boolean over = inside(mouseX, mouseY, fx, sy, fw, 16);
          // Text toggles: only the active filter gets a soft fill.
@@ -583,7 +584,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
             Glass.roundRect(g, fx, sy, fx + fw, sy + 16, 4, Glass.withAlpha(this.surface3, this.a(255)));
          }
 
-         g.text(this.font, f, fx + 6, sy + 4, Glass.withAlpha(active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT), this.a(255)), false);
+         UiFont.draw(g, f, fx + 6, sy + 4, Glass.withAlpha(active ? Glass.text() : (over ? Glass.textDim() : Glass.textFaint()), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.FILTER, fx, sy, fw, 16, f);
          if (over) {
             this.tip = switch (f) {
@@ -604,7 +605,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       String heading = !this.search.isBlank()
          ? "Results for \"" + this.search.trim() + "\""
          : (FAVORITES.equals(this.filter) ? "Favorites" : this.category.displayName());
-      g.text(this.font, fit(this.font, heading, w - 8), x + 9, top, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
+      UiFont.draw(g, fit(this.font, heading, w - 8), x + 9, top, Glass.withAlpha(Glass.textDim(), this.a(255)), false);
       this.listViewTop = top + 14;
       this.listViewBottom = bottom - 4;
       int viewH = this.listViewBottom - this.listViewTop;
@@ -614,7 +615,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       this.listScroll = Mth.clamp(Glass.approach(this.listScroll, this.listScrollTarget, 18.0F, this.dt), 0.0F, maxScroll);
       if (this.shown.isEmpty()) {
          String empty = this.search.isBlank() ? "Nothing matches this filter." : "No module or setting matches your search.";
-         g.text(this.font, empty, x + (w - this.font.width(empty)) / 2, this.listViewTop + 20, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, empty, x + (w - UiFont.width(empty)) / 2, this.listViewTop + 20, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
          return;
       }
 
@@ -670,9 +671,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       ClickGuiModule style = style();
       boolean starred = style != null && style.isFavorite(module);
       if (starred || hover > 0.3F) {
-         int starW = this.font.width(FAVORITES);
+         int starW = UiFont.width(FAVORITES);
          int starAlpha = starred ? 255 : Math.round(140.0F * hover);
-         g.text(this.font, FAVORITES, right - starW, y + 6, Glass.withAlpha(starred ? accent2 : Glass.TEXT_FAINT, this.a(starAlpha)), false);
+         UiFont.draw(g, FAVORITES, right - starW, y + 6, Glass.withAlpha(starred ? accent2 : Glass.textFaint(), this.a(starAlpha)), false);
          this.hit(WindowGuiScreen.Kind.STAR, right - starW - 3, y, starW + 6, CARD_H, module, this.listViewTop, this.listViewBottom);
          right -= starW + 6;
       }
@@ -680,22 +681,22 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       String key = this.binding == module ? "..." : (module.getKeybind() == -1 ? null : GeminiKeys.displayName(module.getKeybind()));
       if (key != null && !"NONE".equals(key)) {
          String label = module.isHoldBind() ? key + " hold" : key;
-         int kw = this.font.width(label) + 6;
-         g.text(this.font, label, right - kw + 3, y + 5, Glass.withAlpha(this.binding == module ? accent2 : Glass.TEXT_FAINT, this.a(255)), false);
+         int kw = UiFont.width(label) + 6;
+         UiFont.draw(g, label, right - kw + 3, y + 5, Glass.withAlpha(this.binding == module ? accent2 : Glass.textFaint(), this.a(255)), false);
          right -= kw + 6;
       }
 
-      int nameColor = blocked ? Glass.TEXT_FAINT : (module.isEnabled() ? Glass.TEXT : (over ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.7F) : Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.4F)));
+      int nameColor = blocked ? Glass.textFaint() : (module.isEnabled() ? Glass.text() : (over ? Glass.lerp(Glass.textDim(), Glass.text(), 0.7F) : Glass.lerp(Glass.textDim(), Glass.text(), 0.4F)));
       int textX = x + 9;
-      g.text(this.font, fit(this.font, module.getName(), right - textX - 6), textX, y + 5, Glass.withAlpha(nameColor, this.a(255)), false);
+      UiFont.draw(g, fit(this.font, module.getName(), right - textX - 6), textX, y + 5, Glass.withAlpha(nameColor, this.a(255)), false);
       Fuzzy.Match match = searchMode ? this.matches.get(module) : null;
       if (match != null && match.setting() != null) {
          // the search found this module through one of its settings: say which
          String hint = "Setting: " + match.setting();
-         g.text(this.font, fit(this.font, hint, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
+         UiFont.draw(g, fit(this.font, hint, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.textDim(), this.a(255)), false);
       } else {
          String description = searchMode ? module.getCategory().displayName() + "  ·  " + module.getDescription() : module.getDescription();
-         g.text(this.font, fit(this.font, description, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, fit(this.font, description, x + w - 38 - textX), textX, y + 16, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
       }
    }
 
@@ -707,12 +708,12 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       Module module = this.selected;
       if (module == null) {
          String text = "Select a module to see its settings";
-         g.text(this.font, text, x + (w - this.font.width(text)) / 2, top + 30, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, text, x + (w - UiFont.width(text)) / 2, top + 30, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
          return;
       }
 
       boolean blocked = blocked(module);
-      g.text(this.font, fit(this.font, module.getName(), w - 50), x + 9, top + 6, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+      UiFont.draw(g, fit(this.font, module.getName(), w - 50), x + 9, top + 6, Glass.withAlpha(Glass.text(), this.a(255)), false);
       if (!(module instanceof ClickGuiModule)) {
          float on = this.anim(this.enableAnim, module, (blocked ? module.isSavedEnabled() : module.isEnabled()) ? 1.0F : 0.0F, 12.0F);
          int sx = x + w - 27;
@@ -725,7 +726,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          String reason = plain(module.blockedReason());
          // Without a world the full reason doesn't fit the pane; the short form says the same thing.
          String shown = this.minecraft.player == null ? "Can be switched on in a world" : reason;
-         g.text(this.font, fit(this.font, shown, w - 18), x + 9, ty, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, fit(this.font, shown, w - 18), x + 9, ty, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
          if (inside(mouseX, mouseY, x + 9, ty, w - 18, LINE)) {
             this.tip = reason + "  ·  settings changed here apply when it can run";
          }
@@ -735,7 +736,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
       List<String> lines = wrap(this.font, module.getDescription(), w - 18);
       for (int i = 0; i < Math.min(2, lines.size()); i++) {
-         g.text(this.font, lines.get(i), x + 9, ty, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
+         UiFont.draw(g, lines.get(i), x + 9, ty, Glass.withAlpha(Glass.textDim(), this.a(255)), false);
          ty += LINE;
       }
 
@@ -824,19 +825,19 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          String label = expanded ? "Fewer settings" : "More settings (" + hiddenCount + ")";
          boolean over = inside(mouseX, mouseY, x + 4, ry, w - 8, 18) && mouseY >= this.settingsViewTop && mouseY < this.settingsViewBottom;
          if (expanded) {
-            triDown(g, x + 12, ry + 7, 3, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)));
+            triDown(g, x + 12, ry + 7, 3, Glass.withAlpha(over ? Glass.text() : Glass.textFaint(), this.a(255)));
          } else {
-            triRight(g, x + 12, ry + 6, 3, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)));
+            triRight(g, x + 12, ry + 6, 3, Glass.withAlpha(over ? Glass.text() : Glass.textFaint(), this.a(255)));
          }
 
-         g.text(this.font, label, x + 20, ry + 5, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
+         UiFont.draw(g, label, x + 20, ry + 5, Glass.withAlpha(over ? Glass.text() : Glass.textDim(), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.MORE, x + 4, ry, w - 8, 18, module, this.settingsViewTop, this.settingsViewBottom);
       }
 
       g.disableScissor();
       if (settings.isEmpty() && !bindable) {
          String text = "This module has no settings";
-         g.text(this.font, text, x + (w - this.font.width(text)) / 2, this.settingsViewTop + 12, Glass.withAlpha(Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, text, x + (w - UiFont.width(text)) / 2, this.settingsViewTop + 12, Glass.withAlpha(Glass.textFaint(), this.a(255)), false);
       }
 
       this.scrollbar(g, x + w - 4, this.settingsViewTop, viewH, contentHeight, this.settingsScroll, accent);
@@ -849,7 +850,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          this.tip = "Click and press a key to bind  ·  right-click clears  ·  Bind Mode picks Toggle or Hold";
       }
 
-      g.text(this.font, "Keybind", x + 8, y + 6, Glass.withAlpha(Glass.TEXT_DIM, this.a(255)), false);
+      UiFont.draw(g, "Keybind", x + 8, y + 6, Glass.withAlpha(Glass.textDim(), this.a(255)), false);
       String key;
       if (this.binding == module) {
          key = "Press a key...";
@@ -860,9 +861,9 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
          }
       }
 
-      int kw = this.font.width(key) + 10;
+      int kw = UiFont.width(key) + 10;
       Glass.roundRect(g, x + w - 8 - kw, y + 4, x + w - 8, y + 16, 3, Glass.withAlpha(this.binding == module ? accent2 : this.surface3, this.a(this.binding == module ? 120 : 255)));
-      g.text(this.font, key, x + w - 8 - kw + 5, y + 6, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+      UiFont.draw(g, key, x + w - 8 - kw + 5, y + 6, Glass.withAlpha(Glass.text(), this.a(255)), false);
       this.hit(WindowGuiScreen.Kind.BIND, x, y, w, 20, module, this.settingsViewTop, this.settingsViewBottom);
    }
 
@@ -884,37 +885,37 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
 
       int left = x + 8;
       int right = x + w - 8;
-      int label = Glass.withAlpha(!setting.isDefault() && !(setting instanceof ActionSetting) ? Glass.TEXT : Glass.TEXT_DIM, this.a(255));
+      int label = Glass.withAlpha(!setting.isDefault() && !(setting instanceof ActionSetting) ? Glass.text() : Glass.textDim(), this.a(255));
       if (setting instanceof BooleanSetting bool) {
          float on = this.settingAnim(setting, bool.get() ? 1.0F : 0.0F);
-         g.text(this.font, fit(this.font, setting.name(), right - left - 34), left, y + 6, label, false);
+         UiFont.draw(g, fit(this.font, setting.name(), right - left - 34), left, y + 6, label, false);
          Glass.toggle(g, right - 18, y + 5, on, Glass.lerp(accent, accent2, 0.35F), this.open);
          this.hit(WindowGuiScreen.Kind.BOOL, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ModeSetting mode) {
          String value = mode.get();
-         int pillW = Math.min(right - left - 56, this.font.width(value) + 28);
+         int pillW = Math.min(right - left - 56, UiFont.width(value) + 28);
          int pillL = right - pillW;
-         g.text(this.font, fit(this.font, setting.name(), pillL - left - 10), left, y + 6, label, false);
+         UiFont.draw(g, fit(this.font, setting.name(), pillL - left - 10), left, y + 6, label, false);
          if (over) {
             Glass.roundRect(g, pillL, y + 3, right, y + 16, 3, Glass.withAlpha(this.surface3, this.a(255)));
          }
 
-         g.text(this.font, "<", pillL + 5, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)), false);
-         g.text(this.font, ">", right - 10, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_FAINT, this.a(255)), false);
+         UiFont.draw(g, "<", pillL + 5, y + 6, Glass.withAlpha(over ? Glass.text() : Glass.textFaint(), this.a(255)), false);
+         UiFont.draw(g, ">", right - 10, y + 6, Glass.withAlpha(over ? Glass.text() : Glass.textFaint(), this.a(255)), false);
          String shownValue = fit(this.font, value, pillW - 22);
-         g.text(this.font, shownValue, pillL + (pillW - this.font.width(shownValue)) / 2, y + 6, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+         UiFont.draw(g, shownValue, pillL + (pillW - UiFont.width(shownValue)) / 2, y + 6, Glass.withAlpha(Glass.text(), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.MODE, pillL, y, pillW, h, setting, this.settingsViewTop, this.settingsViewBottom);
          this.hit(WindowGuiScreen.Kind.MODE, x, y, pillL - x, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ListSetting list) {
          String value = list.size() + (list.size() == 1 ? " entry  >" : " entries  >");
-         int valueW = this.font.width(value);
-         g.text(this.font, fit(this.font, setting.name(), right - left - valueW - 12), left, y + 6, label, false);
-         g.text(this.font, value, right - valueW, y + 6, Glass.withAlpha(over ? Glass.TEXT : Glass.TEXT_DIM, this.a(255)), false);
+         int valueW = UiFont.width(value);
+         UiFont.draw(g, fit(this.font, setting.name(), right - left - valueW - 12), left, y + 6, label, false);
+         UiFont.draw(g, value, right - valueW, y + 6, Glass.withAlpha(over ? Glass.text() : Glass.textDim(), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.LIST, x, y, w, h, setting, this.settingsViewTop, this.settingsViewBottom);
       } else if (setting instanceof ActionSetting) {
          Glass.roundRect(g, left, y + 2, right, y + h - 2, 4, Glass.withAlpha(over ? Glass.lerp(this.surface3, 0xFFFFFFFF, 0.06F) : this.surface3, this.a(255)));
          String text = fit(this.font, setting.name(), right - left - 8);
-         g.text(this.font, text, left + (right - left - this.font.width(text)) / 2, y + (h - 8) / 2, Glass.withAlpha(Glass.TEXT, this.a(255)), false);
+         UiFont.draw(g, text, left + (right - left - UiFont.width(text)) / 2, y + (h - 8) / 2, Glass.withAlpha(Glass.text(), this.a(255)), false);
          this.hit(WindowGuiScreen.Kind.ACTION, left, y + 2, right - left, h - 4, setting, this.settingsViewTop, this.settingsViewBottom);
       }
    }
@@ -980,9 +981,8 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       }
 
       text = plain(text);
-      g.text(
-         this.font, fit(this.font, text, w - 16), x + 8, y + 6,
-         Glass.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : Glass.TEXT_FAINT, this.a(255)), false
+      UiFont.draw(g, fit(this.font, text, w - 16), x + 8, y + 6,
+         Glass.withAlpha(flashing || this.binding != null || this.bindingMenu ? accent2 : Glass.textFaint(), this.a(255)), false
       );
    }
 
@@ -1617,7 +1617,7 @@ public final class WindowGuiScreen extends Screen implements DashboardPage.Host 
       for (String word : text.split("\\s+")) {
          if (line.length() == 0) {
             line.append(word);
-         } else if (font.width(line + " " + word) <= maxWidth) {
+         } else if (UiFont.width(line + " " + word) <= maxWidth) {
             line.append(' ').append(word);
          } else {
             lines.add(line.toString());

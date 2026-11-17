@@ -4,6 +4,7 @@ import gemini.module.HudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -121,10 +122,10 @@ public final class PotionTimers extends HudWidget {
          this.icons[i] = Hud.getMobEffectSprite(effect.getEffect());
          this.names[i] = name;
          this.times[i] = net.minecraft.world.effect.MobEffectUtil.formatDuration(effect, 1.0F, tickRate).getString();
-         this.timeWidths[i] = font.width(this.times[i]);
+         this.timeWidths[i] = UiFont.width(this.times[i]);
          this.fractions[i] = HudFormat.remaining(duration, seen == null ? 0 : seen);
          this.barColors[i] = type.getCategory() == MobEffectCategory.HARMFUL ? Glass.withAlpha(Glass.ERROR, 230) : Glass.withAlpha(Glass.lerp(hud.accent, 0xFFFFFFFF, 0.45F), 220);
-         this.textW = Math.max(this.textW, font.width(name) + 10 + this.timeWidths[i]);
+         this.textW = Math.max(this.textW, UiFont.width(name) + 10 + this.timeWidths[i]);
       }
    }
 
@@ -150,8 +151,8 @@ public final class PotionTimers extends HudWidget {
       for (int i = 0; i < this.count; i++) {
          int y = HudStyle.PAD_Y + i * ROW;
          g.blitSprite(RenderPipelines.GUI_TEXTURED, this.icons[i], HudStyle.PAD_X, y, ICON, ICON);
-         g.text(font, this.names[i], textX, y + 1, Glass.TEXT, hud.shadow);
-         g.text(font, this.times[i], right - this.timeWidths[i], y + 1, timeColor, hud.shadow);
+         UiFont.draw(g, this.names[i], textX, y + 1, Glass.TEXT, hud.shadow);
+         UiFont.draw(g, this.times[i], right - this.timeWidths[i], y + 1, timeColor, hud.shadow);
          HudStyle.bar(g, textX, y + 13, right, y + 15, this.fractions[i], this.barColors[i], backdrop, 1.0F);
       }
    }

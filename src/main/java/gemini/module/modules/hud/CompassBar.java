@@ -5,6 +5,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
@@ -91,14 +92,14 @@ public final class CompassBar extends HudWidget {
             String label = NAMES[degree / 45];
             boolean cardinal = degree % 90 == 0;
             int labelColor = cardinal ? Glass.TEXT : tickColor;
-            g.text(font, label, x - (font.width(label) - 1) / 2, LABEL_Y, Glass.fade(labelColor, visible), hud.shadow && visible > 0.6F);
+            UiFont.draw(g, label, x - (UiFont.width(label) - 1) / 2, LABEL_Y, Glass.fade(labelColor, visible), hud.shadow && visible > 0.6F);
          }
       }
 
       // The heading, centred above a small caret that marks where you look.
       String heading = DEGREES[heading(yaw)];
       int cx = Math.round(center);
-      g.text(font, heading, cx - (font.width(heading) - 1) / 2, 0, Glass.TEXT, hud.shadow);
+      UiFont.draw(g, heading, cx - (UiFont.width(heading) - 1) / 2, 0, Glass.TEXT, hud.shadow);
       g.fill(cx - 2, TICKS_Y - 3, cx + 3, TICKS_Y - 2, hud.accent2);
       g.fill(cx - 1, TICKS_Y - 2, cx + 2, TICKS_Y - 1, hud.accent2);
       g.fill(cx, TICKS_Y - 1, cx + 1, TICKS_Y + 5, hud.accent2);

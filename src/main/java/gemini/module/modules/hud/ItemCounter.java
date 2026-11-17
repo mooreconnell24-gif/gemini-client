@@ -6,6 +6,7 @@ import gemini.module.setting.ListSetting;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.player.LocalPlayer;
@@ -66,14 +67,14 @@ public final class ItemCounter extends HudWidget {
          this.icons.add(new ItemStack(item));
          this.counts.add(text);
          this.empty.add(amount <= 0);
-         this.countW = Math.max(this.countW, hud.font.width(text));
+         this.countW = Math.max(this.countW, UiFont.width(text));
       }
    }
 
    @Override
    protected int widgetWidth(HudContext hud) {
       this.rebuild(hud);
-      return this.icons.isEmpty() ? 0 : 2 * HudStyle.PAD_X + 16 + 8 + Math.max(this.countW, hud.font.width("00"));
+      return this.icons.isEmpty() ? 0 : 2 * HudStyle.PAD_X + 16 + 8 + Math.max(this.countW, UiFont.width("00"));
    }
 
    @Override
@@ -88,7 +89,7 @@ public final class ItemCounter extends HudWidget {
          hud.graphics.item(this.icons.get(i), HudStyle.PAD_X, y);
          String text = this.counts.get(i);
          int color = this.empty.get(i) ? Glass.ERROR : Glass.TEXT;
-         hud.graphics.text(hud.font, text, w - HudStyle.PAD_X - hud.font.width(text), y + 4, color, hud.shadow);
+         UiFont.draw(hud.graphics, text, w - HudStyle.PAD_X - UiFont.width(text), y + 4, color, hud.shadow);
       }
    }
 }

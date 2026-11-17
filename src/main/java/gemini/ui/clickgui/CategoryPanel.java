@@ -21,6 +21,7 @@ import gemini.ui.UiMath;
 import gemini.ui.clickgui.controls.ColorPicker;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.clickgui.controls.SettingControl;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -521,7 +522,7 @@ public final class CategoryPanel {
       }
 
       hairline(graphics, x + 6, top + HEADER - 1, x + w - 6, this.faded(0xFFFFFF, 20));
-      this.text(graphics, font, this.category.displayName(), x + 8, top + 7, Glass.TEXT);
+      this.text(graphics, font, this.category.displayName(), x + 8, top + 7, Glass.text());
       int activeInCat = 0;
       for (CategoryPanel.Row r : this.visible) {
          if (r.module.isEnabled()) {
@@ -533,13 +534,13 @@ public final class CategoryPanel {
       int chevronX = x + w - 14;
       if (activeInCat > 0) {
          String count = Integer.toString(activeInCat);
-         this.text(graphics, font, count, chevronX - 6 - font.width(count), top + 7, Glass.TEXT_DIM);
+         this.text(graphics, font, count, chevronX - 6 - UiFont.width(count), top + 7, Glass.textDim());
       }
 
       if (this.collapseAnim < 0.5F) {
-         triRight(graphics, chevronX, top + 11, 4, this.faded(Glass.TEXT_DIM));
+         triRight(graphics, chevronX, top + 11, 4, this.faded(Glass.textDim()));
       } else {
-         triDown(graphics, chevronX - 2, top + 9, 4, this.faded(Glass.TEXT_FAINT));
+         triDown(graphics, chevronX - 2, top + 9, 4, this.faded(Glass.textFaint()));
       }
 
       String hovered = null;
@@ -685,10 +686,10 @@ public final class CategoryPanel {
 
       // from the right: the switch, then the key (or what the search matched), then the name
       int switchX = x + w - 8 - 18;
-      Glass.toggle(graphics, switchX, y + 4, row.enableAnim, blocked ? Glass.TEXT_FAINT : accent, this.alpha);
+      Glass.toggle(graphics, switchX, y + 4, row.enableAnim, blocked ? Glass.textFaint() : accent, this.alpha);
       int right = switchX - 5;
       String hint = null;
-      int hintColor = Glass.TEXT_FAINT;
+      int hintColor = Glass.textFaint();
       if (binding) {
          hint = "press a key";
          hintColor = accent;
@@ -705,23 +706,23 @@ public final class CategoryPanel {
       int nameX = x + 14 + Math.round(row.hoverAnim * 2.0F);
       ClickGuiModule style = style();
       String name = style != null && style.isFavorite(module) ? "★ " + module.getName() : module.getName();
-      int nameW = font.width(name);
+      int nameW = UiFont.width(name);
       if (hint != null) {
          int room = right - nameX - Math.min(nameW, 52) - 6;
          if (room >= 14) {
             String shownHint = Controls.fit(font, hint, room);
-            this.text(graphics, font, shownHint, right - font.width(shownHint), y + 5, hintColor);
-            right -= font.width(shownHint) + 5;
+            this.text(graphics, font, shownHint, right - UiFont.width(shownHint), y + 5, hintColor);
+            right -= UiFont.width(shownHint) + 5;
          }
       }
 
       if (row.expand > 0.5F) {
          triDown(graphics, x + 9, y + 8, 3, this.faded(accent2));
       } else {
-         triRight(graphics, x + 8, y + 9, 3, this.faded(over ? Glass.TEXT_DIM : Glass.TEXT_FAINT));
+         triRight(graphics, x + 8, y + 9, 3, this.faded(over ? Glass.textDim() : Glass.textFaint()));
       }
 
-      int nameColor = module.isEnabled() ? Glass.TEXT : (blocked ? Glass.TEXT_FAINT : (over ? Glass.TEXT : Glass.TEXT_DIM));
+      int nameColor = module.isEnabled() ? Glass.text() : (blocked ? Glass.textFaint() : (over ? Glass.text() : Glass.textDim()));
       this.text(graphics, font, Controls.fit(font, name, Math.max(20, right - nameX)), nameX, y + 5, nameColor);
       String description = module.getDescription();
       if (row.match != null && row.match.setting() != null) {
@@ -745,19 +746,19 @@ public final class CategoryPanel {
          Glass.roundRect(graphics, x + 4, y, x + w - 4, y + item.h - 1, 3, this.faded(0xFFFFFF, 18));
       }
 
-      this.text(graphics, font, "Keybind", x + 10, y + 5, Glass.TEXT_DIM);
+      this.text(graphics, font, "Keybind", x + 10, y + 5, Glass.textDim());
       String key = binding ? "press a key..." : GeminiKeys.displayName(module.getKeybind());
       if (module.isHoldBind() && !binding && !"NONE".equals(key)) {
          key = key + " (hold)";
       }
 
-      int keyW = font.width(key);
+      int keyW = UiFont.width(key);
       int right = x + w - 10;
       if (binding) {
          Glass.roundRect(graphics, right - keyW - 6, y + 2, right, y + 14, 3, this.faded(accent, 110));
       }
 
-      this.text(graphics, font, key, right - keyW - 3, y + 5, binding || over ? Glass.TEXT : Glass.TEXT_DIM);
+      this.text(graphics, font, key, right - keyW - 3, y + 5, binding || over ? Glass.text() : Glass.textDim());
    }
 
    /** Switches, mode pills, list links and action buttons; numbers and colours are {@link SettingControl}s. */
@@ -768,7 +769,7 @@ public final class CategoryPanel {
 
       int left = x + 10;
       int right = x + w - 10;
-      int labelColor = !setting.isDefault() && !(setting instanceof ActionSetting) ? Glass.TEXT : Glass.TEXT_DIM;
+      int labelColor = !setting.isDefault() && !(setting instanceof ActionSetting) ? Glass.text() : Glass.textDim();
       if (setting instanceof BooleanSetting bool) {
          this.text(graphics, font, Controls.fit(font, setting.name(), right - left - 24), left, y + 5, labelColor);
          float target = bool.get() ? 1.0F : 0.0F;
@@ -777,18 +778,18 @@ public final class CategoryPanel {
          Glass.toggle(graphics, right - 18, y + 4, anim, accent, this.alpha);
       } else if (setting instanceof ModeSetting mode) {
          String value = mode.get();
-         int valueW = font.width(value);
+         int valueW = UiFont.width(value);
          this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 14), left, y + 5, labelColor);
-         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.TEXT : Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.5F));
+         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.text() : Glass.lerp(Glass.textDim(), Glass.text(), 0.5F));
       } else if (setting instanceof ListSetting list) {
          String value = list.size() + (list.size() == 1 ? " entry  ›" : " entries  ›");
-         int valueW = font.width(value);
+         int valueW = UiFont.width(value);
          this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 8), left, y + 5, labelColor);
-         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.TEXT : Glass.TEXT_DIM);
+         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.text() : Glass.textDim());
       } else if (setting instanceof ActionSetting) {
          Glass.roundRect(graphics, left - 2, y + 2, right + 2, y + h - 2, 3, this.faded(over ? 0xFF2C3444 : 0xFF202634, 230));
          String label = Controls.fit(font, setting.name(), right - left - 8);
-         this.text(graphics, font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2, over ? Glass.TEXT : Glass.TEXT_DIM);
+         this.text(graphics, font, label, x + (w - UiFont.width(label)) / 2, y + (h - 8) / 2, over ? Glass.text() : Glass.textDim());
       }
    }
 
@@ -810,7 +811,7 @@ public final class CategoryPanel {
    }
 
    private void drawGrip(GuiGraphicsExtractor graphics, int right, int bottom, int accent, boolean active) {
-      int color = this.faded(active ? accent : Glass.TEXT_FAINT);
+      int color = this.faded(active ? accent : Glass.textFaint());
       for (int i = 0; i < 3; i++) {
          int off = 3 + i * 3;
          graphics.fill(right - off - 1, bottom - 3, right - off, bottom - 2, color);

@@ -3,6 +3,7 @@ package gemini.module;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 
@@ -17,6 +18,8 @@ import net.minecraft.client.gui.Font;
 public abstract class TextHudWidget extends HudWidget {
    private List<TextHudWidget.Line> cached;
    private int measured = -1;
+   /** {@link UiFont#generation()} at the last measurement: the font or GUI scale changing makes widths stale. */
+   private int measuredGeneration = -1;
    /** Column widths of the cached rows: labels, values, units, and the widest plain row. */
    private int labelW;
    private int valueW;
@@ -52,14 +55,14 @@ public abstract class TextHudWidget extends HudWidget {
 
       for (int i = 0; i < n; i++) {
          TextHudWidget.Line line = lines.get(i);
-         int vw = font.width(line.text());
+         int vw = UiFont.width(line.text());
          this.valueWidths[i] = vw;
          if (line.isRow()) {
             this.anyLabel |= !line.label().isEmpty();
-            this.labelW = Math.max(this.labelW, font.width(line.label()));
+            this.labelW = Math.max(this.labelW, UiFont.width(line.label()));
             this.valueW = Math.max(this.valueW, vw);
             if (!line.unit().isEmpty()) {
-               this.unitW = Math.max(this.unitW, HudStyle.UNIT_GAP + font.width(line.unit()));
+               this.unitW = Math.max(this.unitW, HudStyle.UNIT_GAP + UiFont.width(line.unit()));
             }
          } else {
             this.plainW = Math.max(this.plainW, vw);
@@ -75,7 +78,9 @@ public abstract class TextHudWidget extends HudWidget {
    @Override
    protected int widgetWidth(HudContext hud) {
       List<TextHudWidget.Line> lines = this.lines(hud);
-      if (lines != this.cached || this.measured < 0) {
+      int generation = UiFont.generation();
+      if (lines != this.cached || this.measured < 0 || generation != this.measuredGeneration) {
+         this.measuredGeneration = generation;
          this.cached = lines;
          this.measureLines(hud.font, lines);
          this.measured = Math.max(this.plainW, this.rowsWidth());
@@ -108,18 +113,18 @@ public abstract class TextHudWidget extends HudWidget {
          TextHudWidget.Line line = lines.get(i);
          int vw = this.valueWidths[i];
          if (!line.isRow()) {
-            hud.graphics.text(font, line.text(), x, y, line.color(), hud.shadow);
+            UiFont.draw(hud.graphics, line.text(), x, y, line.color(), hud.shadow);
          } else {
             if (!line.label().isEmpty()) {
-               hud.graphics.text(font, line.label(), x, y, labelColor, hud.shadow);
+               UiFont.draw(hud.graphics, line.label(), x, y, labelColor, hud.shadow);
             }
 
             int vx = right ? valueX + this.valueW - vw : valueX;
-            hud.graphics.text(font, line.text(), vx, y, line.color(), hud.shadow);
+            UiFont.draw(hud.graphics, line.text(), vx, y, line.color(), hud.shadow);
             if (!line.unit().isEmpty()) {
                // Units follow their own value when values are left-aligned, and form a column otherwise.
                int ux = right ? valueX + this.valueW + HudStyle.UNIT_GAP : vx + vw + HudStyle.UNIT_GAP;
-               hud.graphics.text(font, line.unit(), ux, y, unitColor, hud.shadow);
+               UiFont.draw(hud.graphics, line.unit(), ux, y, unitColor, hud.shadow);
             }
          }
 

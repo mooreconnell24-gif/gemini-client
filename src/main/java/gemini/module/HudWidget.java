@@ -11,6 +11,7 @@ import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
 import gemini.ui.UiMath;
 import gemini.ui.clickgui.Menus;
+import gemini.ui.font.UiFont;
 import java.util.List;
 import net.minecraft.util.Mth;
 
@@ -369,7 +370,7 @@ public abstract class HudWidget extends Module {
       boolean visible = w > 0 && h > 0 && this.shouldRenderContent(hud);
       if (!visible && Menus.isMenu(hud.client.gui.screen())) {
          this.measuredPreview = true;
-         w = hud.font.width(this.getName()) + 12;
+         w = UiFont.width(this.getName()) + 12;
          h = 16;
          visible = true;
       }
@@ -518,7 +519,7 @@ public abstract class HudWidget extends Module {
       hud.graphics.pose().scale(s, s);
       if (this.measuredPreview) {
          HudStyle.card(hud.graphics, 0, 0, w, h, HudStyle.SOFT, hud.surface, 0.8F);
-         hud.graphics.text(hud.font, this.getName(), HudStyle.PAD_X, (h - 8) / 2, Glass.TEXT_DIM, false);
+         UiFont.draw(hud.graphics, this.getName(), HudStyle.PAD_X, (h - 8) / 2, Glass.TEXT_DIM, false);
       } else {
          if (this.hasBackground()) {
             Glass.hudCard(hud.graphics, 0, 0, w, h, this.backdrop, hud.surface);

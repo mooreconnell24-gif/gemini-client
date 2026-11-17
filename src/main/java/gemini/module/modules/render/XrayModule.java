@@ -12,6 +12,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.render.Render3D;
 import gemini.render.ShapeSettings;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import gemini.util.InfoText;
 import gemini.xray.XrayConfig;
 import gemini.xray.XrayData;
@@ -420,10 +421,10 @@ public final class XrayModule extends Module {
       if (this.counts.get() && !rows.isEmpty()) {
          int shown = Math.min(rows.size(), 10);
          String title = "Xray";
-         int widest = hud.font.width(title);
+         int widest = UiFont.width(title);
 
          for (int i = 0; i < shown; i++) {
-            widest = Math.max(widest, hud.font.width(rows.get(i).text) + 10);
+            widest = Math.max(widest, UiFont.width(rows.get(i).text) + 10);
          }
 
          boolean right = this.countsSide.is("Right");
@@ -431,13 +432,13 @@ public final class XrayModule extends Module {
          int y = hud.height / 2 - (shown * 10 + 14) / 2;
          hud.graphics.fill(x - 4, y - 3, x + widest + 4, y + 12 + shown * 10, -1441851872);
          hud.graphics.fill(x - 4, y - 3, x - 2, y + 12 + shown * 10, hud.accent);
-         hud.graphics.text(hud.font, title, x, y, hud.accent, hud.shadow);
+         UiFont.draw(hud.graphics, title, x, y, hud.accent, hud.shadow);
 
          for (int i = 0; i < shown; i++) {
             int rowY = y + 12 + i * 10;
             XrayModule.Group group = rows.get(i);
             hud.graphics.fill(x, rowY + 1, x + 6, rowY + 7, group.color);
-            hud.graphics.text(hud.font, group.text, x + 10, rowY, -1511689, hud.shadow);
+            UiFont.draw(hud.graphics, group.text, x + 10, rowY, -1511689, hud.shadow);
          }
       }
    }

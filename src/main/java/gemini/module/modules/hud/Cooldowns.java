@@ -4,6 +4,7 @@ import gemini.module.HudWidget;
 import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
@@ -79,7 +80,7 @@ public final class Cooldowns extends HudWidget {
 
          int widest = 0;
          for (String name : this.names) {
-            widest = Math.max(widest, hud.font.width(name));
+            widest = Math.max(widest, UiFont.width(name));
          }
 
          this.nameW = widest;
@@ -103,7 +104,7 @@ public final class Cooldowns extends HudWidget {
    @Override
    protected int widgetWidth(HudContext hud) {
       this.rebuild(hud);
-      return this.count == 0 ? 0 : 2 * HudStyle.PAD_X + ICON + 6 + this.nameW + 10 + hud.font.width("0.0s");
+      return this.count == 0 ? 0 : 2 * HudStyle.PAD_X + ICON + 6 + this.nameW + 10 + UiFont.width("0.0s");
    }
 
    @Override
@@ -123,21 +124,21 @@ public final class Cooldowns extends HudWidget {
       int backdrop = this.backdrop();
       int textX = HudStyle.PAD_X + ICON + 6;
       int right = w - HudStyle.PAD_X;
-      int unitW = font.width("s");
+      int unitW = UiFont.width("s");
       for (int row = 0; row < this.count; row++) {
          int i = this.active[row];
          ItemStack stack = this.stacks[i];
          int y = HudStyle.PAD_Y + row * ROW;
          float pct = player.getCooldowns().getCooldownPercent(stack, hud.partialTick);
          g.item(stack, HudStyle.PAD_X, y);
-         g.text(font, this.names[i], textX, y, Glass.TEXT, hud.shadow);
+         UiFont.draw(g, this.names[i], textX, y, Glass.TEXT, hud.shadow);
          String time = this.times[i];
          if (!time.isEmpty()) {
             // Value white, its unit faint, right-aligned together.
             int unit = this.inSeconds[i] ? unitW : 0;
-            g.text(font, time, right - unit - font.width(time), y, Glass.TEXT, hud.shadow);
+            UiFont.draw(g, time, right - unit - UiFont.width(time), y, Glass.TEXT, hud.shadow);
             if (unit > 0) {
-               g.text(font, "s", right - unitW, y, HudStyle.unit(backdrop), hud.shadow);
+               UiFont.draw(g, "s", right - unitW, y, HudStyle.unit(backdrop), hud.shadow);
             }
          }
 

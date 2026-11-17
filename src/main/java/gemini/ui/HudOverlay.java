@@ -6,11 +6,11 @@ import gemini.module.HudWidget;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
 import gemini.module.modules.misc.ClickGuiModule;
-import gemini.module.modules.render.CoordinatesModule;
 import gemini.module.modules.render.EspModule;
 import gemini.module.modules.render.HudModule;
 import gemini.module.modules.render.StorageEspModule;
 import gemini.module.modules.world.WaypointsModule;
+import gemini.ui.font.UiFont;
 import gemini.util.BaritoneBridge;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayDeque;
@@ -26,13 +26,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
 
@@ -76,10 +74,6 @@ public final class HudOverlay {
    /** Per-tick caches of the text panels so a frame only draws. */
    private int panelTick = Integer.MIN_VALUE;
    private final List<String> waypointLines = new ArrayList<>();
-   private final List<String> coordLines = new ArrayList<>();
-   private final IntList coordColors = new IntList();
-   private boolean coordsRight;
-   private boolean coordsBottom;
    private final List<Entity> espShown = new ArrayList<>();
    private final List<String> espLines = new ArrayList<>();
    private final IntList espColors = new IntList();
@@ -105,7 +99,7 @@ public final class HudOverlay {
       WARNING("WARN", Glass.WARN, "!"),
       ERROR("ALERT", Glass.ERROR, "✖"),
       ENABLED("ON", Glass.OK, "+"),
-      DISABLED("OFF", Glass.TEXT_FAINT, "-");
+      DISABLED("OFF", Glass.textFaint(), "-");
 
       public final String badge;
       public final int color;
@@ -232,12 +226,11 @@ public final class HudOverlay {
             if (hud == null || hud.watermark()) {
                // Generous estimate of the watermark card: logo, the name and the stats line plus padding.
                float size = hud == null ? 1.0F : hud.watermarkSize();
-               watermarkRight = Math.round((48 + client.font.width("Gemini") + this.metaLineWidth) * size);
+               watermarkRight = Math.round((48 + UiFont.width("Gemini") + this.metaLineWidth) * size);
             }
 
             this.refreshPanels(client);
             this.drawWaypoints(graphics, client, accent, topLeftY, shadow);
-            this.drawCoordinates(graphics, client, width, height, shadow);
             this.drawEspTags(graphics, client, width, shadow);
             this.drawStorage(graphics, client, accent, width, height, shadow);
             float partial = deltaTracker.getGameTimeDeltaPartialTick(false);
@@ -311,19 +304,19 @@ public final class HudOverlay {
       int max = Math.min(TOAST_MAX_W, width - 12);
       if (toggle) {
          toast.shownBody = toast.severity == Severity.ENABLED ? "on" : "off";
-         int stateW = font.width(toast.shownBody);
-         toast.shownTitle = Theme.fit(toast.title, max - TOAST_TEXT_X - HudStyle.PAD_X - stateW - 6, font::width);
-         toast.cardW = TOAST_TEXT_X + font.width(toast.shownTitle) + 6 + stateW + HudStyle.PAD_X;
+         int stateW = UiFont.width(toast.shownBody);
+         toast.shownTitle = UiFont.ellipsize(toast.title, max - TOAST_TEXT_X - HudStyle.PAD_X - stateW - 6);
+         toast.cardW = TOAST_TEXT_X + UiFont.width(toast.shownTitle) + 6 + stateW + HudStyle.PAD_X;
          toast.height = TOAST_H_LINE;
          toast.oneLine = true;
          return;
       }
 
       boolean hasBody = !toast.body.isEmpty();
-      int natural = Math.max(font.width(toast.title), hasBody ? font.width(toast.body) : 0) + TOAST_TEXT_X + HudStyle.PAD_X;
+      int natural = Math.max(UiFont.width(toast.title), hasBody ? UiFont.width(toast.body) : 0) + TOAST_TEXT_X + HudStyle.PAD_X;
       toast.cardW = Math.max(Math.min(72, max), Math.min(natural, max));
-      toast.shownTitle = Theme.fit(toast.title, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X, font::width);
-      toast.shownBody = hasBody ? Theme.fit(toast.body, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X, font::width) : "";
+      toast.shownTitle = UiFont.ellipsize(toast.title, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X);
+      toast.shownBody = hasBody ? UiFont.ellipsize(toast.body, toast.cardW - TOAST_TEXT_X - HudStyle.PAD_X) : "";
       toast.height = hasBody ? TOAST_H : TOAST_H_LINE;
       toast.oneLine = !hasBody;
    }
@@ -342,14 +335,14 @@ public final class HudOverlay {
          // The font treats a near-zero alpha as opaque, so text is skipped while the card is all but invisible.
          if (toast.oneLine) {
             int ty = y + (h - 8) / 2;
-            g.text(font, toast.shownTitle, x + TOAST_TEXT_X, ty, Glass.withAlpha(Glass.TEXT, textAlpha), false);
+            UiFont.draw(g, toast.shownTitle, x + TOAST_TEXT_X, ty, Glass.withAlpha(Glass.text(), textAlpha), false);
             if (!toast.shownBody.isEmpty()) {
-               int stateColor = toast.severity == Severity.ENABLED ? Glass.OK : Glass.TEXT_DIM;
-               g.text(font, toast.shownBody, x + cardW - HudStyle.PAD_X - font.width(toast.shownBody), ty, Glass.withAlpha(stateColor, textAlpha), false);
+               int stateColor = toast.severity == Severity.ENABLED ? Glass.OK : Glass.textDim();
+               UiFont.draw(g, toast.shownBody, x + cardW - HudStyle.PAD_X - UiFont.width(toast.shownBody), ty, Glass.withAlpha(stateColor, textAlpha), false);
             }
          } else {
-            g.text(font, toast.shownTitle, x + TOAST_TEXT_X, y + 4, Glass.withAlpha(Glass.TEXT, textAlpha), false);
-            g.text(font, toast.shownBody, x + TOAST_TEXT_X, y + 4 + HudStyle.LINE, Glass.withAlpha(Glass.TEXT_DIM, textAlpha), false);
+            UiFont.draw(g, toast.shownTitle, x + TOAST_TEXT_X, y + 4, Glass.withAlpha(Glass.text(), textAlpha), false);
+            UiFont.draw(g, toast.shownBody, x + TOAST_TEXT_X, y + 4 + HudStyle.LINE, Glass.withAlpha(Glass.textDim(), textAlpha), false);
          }
       }
    }
@@ -391,13 +384,13 @@ public final class HudOverlay {
          }
 
          this.metaLineCache = String.join(" \u00b7 ", meta);
-         this.metaLineWidth = font.width(this.metaLineCache);
+         this.metaLineWidth = UiFont.width(this.metaLineCache);
          this.metaLineTick = tick;
          this.metaLineStyle = wmStyle;
       }
 
       String name = "Gemini";
-      int nameWidth = font.width(name);
+      int nameWidth = UiFont.width(name);
       boolean hasMeta = !this.metaLineCache.isEmpty();
       int backdrop = "Text".equals(wmStyle) ? HudStyle.NONE : this.backdrop;
       boolean textShadow = HudStyle.shadow(backdrop, shadow);
@@ -415,9 +408,9 @@ public final class HudOverlay {
       }
 
       int textY = y + HudStyle.PAD_Y;
-      graphics.text(font, name, textX, textY, Glass.TEXT, textShadow);
+      UiFont.draw(graphics, name, textX, textY, Glass.text(), textShadow);
       if (hasMeta) {
-         graphics.text(font, this.metaLineCache, textX + nameWidth + 6, textY, HudStyle.label(backdrop), textShadow);
+         UiFont.draw(graphics, this.metaLineCache, textX + nameWidth + 6, textY, HudStyle.label(backdrop), textShadow);
       }
 
       return y + boxH + 4;
@@ -520,27 +513,20 @@ public final class HudOverlay {
       }
    }
 
-   /** Gemini's own text panels (waypoints, coordinates, ESP list, storage list), measured where they are drawn. */
+   /** Gemini's own text panels (waypoints, ESP list, storage list), measured where they are drawn. */
    private void reservePanels(HudFlow flow, Font font, int width, int height, int topLeftY) {
       if (!this.waypointLines.isEmpty()) {
          flow.reserve(0, topLeftY, maxWidth(font, this.waypointLines) + 6, 2 + this.waypointLines.size() * LINE);
       }
 
-      if (!this.coordLines.isEmpty()) {
-         int w = maxWidth(font, this.coordLines) + 6;
-         int h = this.coordLines.size() * LINE;
-         int y = this.coordsBottom ? height - 6 - h - 10 : 38;
-         flow.reserve(this.coordsRight ? width - w : 0, y, w, h);
-      }
-
       if (!this.espLines.isEmpty()) {
-         flow.reserve(width / 2 + 88, 22, Math.max(font.width("ESP"), maxWidth(font, this.espLines)) + 4, 12 + this.espLines.size() * LINE);
+         flow.reserve(width / 2 + 88, 22, Math.max(UiFont.width("ESP"), maxWidth(font, this.espLines)) + 4, 12 + this.espLines.size() * LINE);
       }
 
       if (!this.storageLines.isEmpty()) {
          int y = height / 2 - 40;
          int rows = Math.min(this.storageLines.size() + 1, Math.max(1, (height - 40 - y) / LINE + 1));
-         int w = Math.max(font.width("Storage"), maxWidth(font, this.storageLines)) + 8;
+         int w = Math.max(UiFont.width("Storage"), maxWidth(font, this.storageLines)) + 8;
          flow.reserve(width - w, y, w, rows * LINE);
       }
    }
@@ -548,7 +534,7 @@ public final class HudOverlay {
    private static int maxWidth(Font font, List<String> lines) {
       int widest = 0;
       for (int i = 0; i < lines.size(); i++) {
-         widest = Math.max(widest, font.width(lines.get(i)));
+         widest = Math.max(widest, UiFont.width(lines.get(i)));
       }
 
       return widest;
@@ -568,14 +554,14 @@ public final class HudOverlay {
       }
 
       Font font = client.font;
-      int widest = font.width(objective.getDisplayName());
+      int widest = UiFont.width(objective.getDisplayName());
       int rows = 0;
       for (net.minecraft.world.scores.PlayerScoreEntry entry : client.level.getScoreboard().listPlayerScores(objective)) {
          if (entry.isHidden()) {
             continue;
          }
 
-         widest = Math.max(widest, font.width(entry.ownerName()) + 12 + font.width(Integer.toString(entry.value())));
+         widest = Math.max(widest, UiFont.width(entry.ownerName()) + 12 + UiFont.width(Integer.toString(entry.value())));
          if (++rows >= 15) {
             break;
          }
@@ -604,8 +590,6 @@ public final class HudOverlay {
       this.panelTick = tick;
       this.measureSidebar(client);
       this.waypointLines.clear();
-      this.coordLines.clear();
-      this.coordColors.clear();
       this.espLines.clear();
       this.espColors.clear();
       this.storageLines.clear();
@@ -622,11 +606,6 @@ public final class HudOverlay {
                this.waypointLines.add("o " + waypoint.name() + "  " + (int)Math.sqrt(dx * dx + dz * dz) + "m");
             }
          }
-      }
-
-      CoordinatesModule coords = this.modules.byClass(CoordinatesModule.class).orElse(null);
-      if (coords != null && coords.isEnabled()) {
-         this.buildCoordinates(client, player, coords);
       }
 
       EspModule esp = this.modules.byClass(EspModule.class).orElse(null);
@@ -663,64 +642,11 @@ public final class HudOverlay {
       }
    }
 
-   private void buildCoordinates(Minecraft client, LocalPlayer player, CoordinatesModule coords) {
-      BlockPos pos = player.blockPosition();
-      this.coordLines.add(pos.getX() + "  " + pos.getY() + "  " + pos.getZ());
-      this.coordColors.add(-1511689);
-      if (coords.showNether() && client.level != null) {
-         boolean nether = client.level.dimension() == Level.NETHER;
-         boolean overworld = client.level.dimension() == Level.OVERWORLD;
-         if (nether || overworld) {
-            double factor = nether ? 8.0 : 0.125;
-            this.coordLines.add((nether ? "Overworld " : "Nether ") + Math.round(player.getX() * factor) + "  " + Math.round(player.getZ() * factor));
-            this.coordColors.add(-6641995);
-         }
-      }
-
-      if (coords.showDirection()) {
-         String biome = "";
-         if (coords.showBiome() && client.level != null) {
-            biome = "  ·  " + biomeName(client, pos);
-         }
-
-         this.coordLines.add(facing(player.getYRot()) + biome);
-         this.coordColors.add(0);
-      } else if (coords.showBiome() && client.level != null) {
-         this.coordLines.add(biomeName(client, pos));
-         this.coordColors.add(0);
-      }
-
-      String position = coords.position();
-      this.coordsRight = position.endsWith("Right");
-      this.coordsBottom = position.startsWith("Bottom");
-   }
-
-   private static String biomeName(Minecraft client, BlockPos pos) {
-      return client.level.getBiome(pos).unwrapKey().map(key -> key.identifier().getPath().replace('_', ' ')).orElse("");
-   }
-
    private void drawWaypoints(GuiGraphicsExtractor graphics, Minecraft client, int accent, int startY, boolean shadow) {
       int y = startY + 2;
       for (int i = 0; i < this.waypointLines.size(); i++) {
-         graphics.text(client.font, this.waypointLines.get(i), 4, y, accent, shadow);
+         UiFont.draw(graphics, this.waypointLines.get(i), 4, y, accent, shadow);
          y += LINE;
-      }
-   }
-
-   private void drawCoordinates(GuiGraphicsExtractor graphics, Minecraft client, int width, int height, boolean shadow) {
-      List<String> lines = this.coordLines;
-      if (lines.isEmpty()) {
-         return;
-      }
-
-      Font font = client.font;
-      int accent = Glass.accent();
-      int y = this.coordsBottom ? height - 6 - lines.size() * LINE - 10 : 38;
-      for (int i = 0; i < lines.size(); i++) {
-         String line = lines.get(i);
-         int x = this.coordsRight ? width - 4 - font.width(line) : 4;
-         int color = this.coordColors.get(i);
-         graphics.text(font, line, x, y + i * LINE, color == 0 ? accent : color, shadow);
       }
    }
 
@@ -730,10 +656,10 @@ public final class HudOverlay {
       }
 
       int x = width / 2 + 90;
-      graphics.text(client.font, "ESP", x, 24, -6641995, false);
+      UiFont.draw(graphics, "ESP", x, 24, -6641995, false);
       int y = 34;
       for (int i = 0; i < this.espLines.size(); i++) {
-         graphics.text(client.font, this.espLines.get(i), x, y, this.espColors.get(i), shadow);
+         UiFont.draw(graphics, this.espLines.get(i), x, y, this.espColors.get(i), shadow);
          y += LINE;
       }
    }
@@ -745,26 +671,15 @@ public final class HudOverlay {
 
       int y = height / 2 - 40;
       String title = "Storage";
-      graphics.text(client.font, title, width - 6 - client.font.width(title), y, accent, shadow);
+      UiFont.draw(graphics, title, width - 6 - UiFont.width(title), y, accent, shadow);
       y += LINE;
       for (int i = 0; i < this.storageLines.size(); i++) {
          String label = this.storageLines.get(i);
-         graphics.text(client.font, label, width - 6 - client.font.width(label), y, -2761496, shadow);
+         UiFont.draw(graphics, label, width - 6 - UiFont.width(label), y, -2761496, shadow);
          y += LINE;
          if (y > height - 40) {
             break;
          }
-      }
-   }
-
-   private static String facing(float yaw) {
-      float wrapped = Mth.wrapDegrees(yaw);
-      if (wrapped >= -45.0F && wrapped < 45.0F) {
-         return "South";
-      } else if (wrapped >= 45.0F && wrapped < 135.0F) {
-         return "West";
-      } else {
-         return wrapped >= -135.0F && wrapped < -45.0F ? "East" : "North";
       }
    }
 

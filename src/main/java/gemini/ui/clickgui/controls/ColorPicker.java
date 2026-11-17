@@ -4,6 +4,7 @@ import gemini.input.Keys;
 import gemini.module.setting.ColorSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.font.UiFont;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
@@ -131,14 +132,14 @@ public final class ColorPicker extends SettingControl {
       // collapsed row: name, hex, swatch
       int swatchL = right - 14;
       String code = this.setting.hex();
-      int codeW = font.width(code);
+      int codeW = UiFont.width(code);
       int nameRoom = swatchL - 4 - left;
-      boolean showCode = nameRoom - codeW - 6 >= font.width(this.setting.name()) || nameRoom - codeW - 6 > 40;
+      boolean showCode = nameRoom - codeW - 6 >= UiFont.width(this.setting.name()) || nameRoom - codeW - 6 > 40;
       Controls.text(
-         g, font, Controls.fit(font, this.setting.name(), showCode ? nameRoom - codeW - 6 : nameRoom), left, y + 5, this.setting.isDefault() ? Glass.TEXT_DIM : Glass.TEXT, this.opacity
+         g, font, Controls.fit(font, this.setting.name(), showCode ? nameRoom - codeW - 6 : nameRoom), left, y + 5, this.setting.isDefault() ? Glass.textDim() : Glass.text(), this.opacity
       );
       if (showCode) {
-         Controls.text(g, font, code, swatchL - 4 - codeW, y + 5, Glass.TEXT_FAINT, this.opacity);
+         Controls.text(g, font, code, swatchL - 4 - codeW, y + 5, Glass.textFaint(), this.opacity);
       }
 
       Controls.checker(g, swatchL, y + 4, right, y + 13, 3, this.opacity);
@@ -225,7 +226,7 @@ public final class ColorPicker extends SettingControl {
       Glass.roundRect(g, bx, by, bx + bw, by + LINE_H, 3, Glass.fade(fill, fade));
       Glass.roundOutline(g, bx, by, bx + bw, by + LINE_H, 3, Glass.fade(Glass.withAlpha(active || over ? accent : 0xFFFFFF, active || over ? 200 : 40), fade));
       String text = Controls.fit(font, label, bw - 2);
-      Controls.text(g, font, text, bx + (bw - font.width(text)) / 2, by + 3, active || over ? Glass.TEXT : Glass.TEXT_DIM, fade);
+      Controls.text(g, font, text, bx + (bw - UiFont.width(text)) / 2, by + 3, active || over ? Glass.text() : Glass.textDim(), fade);
    }
 
    /** Left edges of the three sync buttons plus the right end, sized by their labels. */
@@ -235,7 +236,7 @@ public final class ColorPicker extends SettingControl {
       int[] widths = new int[SYNC.length];
       int textTotal = 0;
       for (int i = 0; i < SYNC.length; i++) {
-         widths[i] = font.width(SYNC[i]);
+         widths[i] = UiFont.width(SYNC[i]);
          textTotal += widths[i];
       }
 

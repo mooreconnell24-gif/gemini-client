@@ -5,6 +5,7 @@ import gemini.input.BindWarnings;
 import gemini.module.ModuleManager;
 import gemini.ui.clickgui.ClickGuiScreen;
 import gemini.ui.clickgui.Menus;
+import gemini.ui.font.UiFont;
 import gemini.ui.help.HelpScreen;
 import gemini.util.SingleplayerGate;
 import java.util.List;
@@ -13,7 +14,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.PauseScreen;
@@ -63,8 +63,8 @@ public final class PauseDock {
             brief[i] = Component.translatable("gemini.dock." + KEYS[i] + ".short");
          }
 
-         fullWidths[i] = font.width(full[i]);
-         briefWidths[i] = font.width(brief[i]);
+         fullWidths[i] = UiFont.width(full[i]);
+         briefWidths[i] = UiFont.width(brief[i]);
       }
 
       DockLayout layout = DockLayout.compute(screen.width, screen.height, fullWidths, briefWidths);
@@ -74,13 +74,12 @@ public final class PauseDock {
       for (int i = 0; i < count; i++) {
          int action = i;
          Component label = layout.shortLabels() ? brief[i] : full[i];
-         Tooltip tooltip = Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip"));
+         Tooltip tooltip = UiFont.tooltip(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip"));
          if (i < FIRST_LINK) {
-            // The real vanilla button, so the group reads as part of the pause menu rather than something stuck on it.
-            buttons[i] = Button.builder(label, pressed -> run(action, client, screen))
-               .bounds(layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight())
-               .tooltip(tooltip)
-               .build();
+            // Gemini's own button, so its label is in the UI font like every other Gemini surface.
+            GlassButton button = new GlassButton(layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), label, pressed -> run(action, client, screen));
+            button.setTooltip(tooltip);
+            buttons[i] = button;
          } else {
             GlassButton link = new GlassButton(layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), label, pressed -> run(action, client, screen))
                .plain();

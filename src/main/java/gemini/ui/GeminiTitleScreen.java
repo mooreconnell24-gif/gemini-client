@@ -6,6 +6,7 @@ import gemini.diags.MixinReport;
 import gemini.input.GeminiKeys;
 import gemini.ui.clickgui.Menus;
 import gemini.ui.clickgui.WindowGuiScreen;
+import gemini.ui.font.UiFont;
 import gemini.ui.help.HelpScreen;
 import gemini.ui.palette.PaletteScreen;
 import gemini.util.SingleplayerGate;
@@ -199,7 +200,7 @@ public final class GeminiTitleScreen extends Screen {
       if (hasContinue) {
          GlassButton resume = this.main(TitleLayout.CONTINUE, "continue", this::continueWorld).detail(this.recentWorld.getLevelName());
          resume.setTooltip(
-            Tooltip.create(
+            UiFont.tooltip(
                Component.translatable("gemini.title.continue.tooltip", this.recentWorld.getLevelName(), TitleLayout.lastPlayed(Util.getEpochMillis() - this.recentWorld.getLastPlayed()))
             )
          );
@@ -216,7 +217,7 @@ public final class GeminiTitleScreen extends Screen {
       if (!online) {
          multiplayer.active = false;
          realms.active = false;
-         Tooltip disabled = Tooltip.create(Component.translatable("title.multiplayer.disabled"));
+         Tooltip disabled = UiFont.tooltip(Component.translatable("title.multiplayer.disabled"));
          multiplayer.setTooltip(disabled);
          realms.setTooltip(disabled);
       }
@@ -262,7 +263,7 @@ public final class GeminiTitleScreen extends Screen {
          button.leftAligned();
       }
 
-      button.setTooltip(Tooltip.create(Component.translatable("gemini.title." + key + ".tooltip")));
+      button.setTooltip(UiFont.tooltip(Component.translatable("gemini.title." + key + ".tooltip")));
       this.fading.add(button);
       return this.addRenderableWidget(button);
    }
@@ -279,7 +280,7 @@ public final class GeminiTitleScreen extends Screen {
       int[] widths = new int[count];
       for (int i = 0; i < count; i++) {
          labels[i] = Component.translatable("gemini.title." + this.linkKeys.get(i));
-         widths[i] = this.font.width(labels[i]) + 2 * Theme.SPACE_XS;
+         widths[i] = UiFont.width(labels[i]) + 2 * Theme.SPACE_XS;
       }
 
       int[] x = l.linkX(widths);
@@ -291,7 +292,7 @@ public final class GeminiTitleScreen extends Screen {
          links[i] = this.addRenderableWidget(
             new GlassButton(x[i] + indent, l.linksY(), widths[i], TitleLayout.LINK_HEIGHT, labels[i], pressed -> action.run()).plain()
          );
-         links[i].setTooltip(Tooltip.create(Component.translatable("gemini.title." + this.linkKeys.get(i) + ".tooltip")));
+         links[i].setTooltip(UiFont.tooltip(Component.translatable("gemini.title." + this.linkKeys.get(i) + ".tooltip")));
          this.fading.add(links[i]);
       }
 
@@ -301,17 +302,17 @@ public final class GeminiTitleScreen extends Screen {
    /** Footer: the version and the vanilla-menu link on the left, Mojang's notice on the right; the sandbox switch top right. */
    private void addFooter(TitleLayout l) {
       int textY = l.footerY() + 2;
-      int versionWidth = this.font.width(VERSION);
+      int versionWidth = UiFont.width(VERSION);
       Component vanillaLabel = Component.translatable("gemini.title.vanilla");
       int vanillaX = TitleLayout.EDGE + versionWidth + Theme.SPACE_L;
       GlassButton vanilla = this.addRenderableWidget(
-         new GlassButton(vanillaX, textY - 2, this.font.width(vanillaLabel) + 2 * Theme.SPACE_XS, TitleLayout.FOOTER_HEIGHT, vanillaLabel, button -> this.openVanilla())
+         new GlassButton(vanillaX, textY - 2, UiFont.width(vanillaLabel) + 2 * Theme.SPACE_XS, TitleLayout.FOOTER_HEIGHT, vanillaLabel, button -> this.openVanilla())
             .plain()
       );
-      vanilla.setTooltip(Tooltip.create(Component.translatable("gemini.title.vanilla.tooltip")));
+      vanilla.setTooltip(UiFont.tooltip(Component.translatable("gemini.title.vanilla.tooltip")));
       this.fading.add(vanilla);
       Component sandboxLabel = Component.translatable("gemini.title.sandbox");
-      int switchWidth = this.font.width(sandboxLabel) + 2 * Theme.SPACE_XS + Theme.SPACE_S + 18;
+      int switchWidth = UiFont.width(sandboxLabel) + 2 * Theme.SPACE_XS + Theme.SPACE_S + 18;
       GlassButton sandbox = this.addRenderableWidget(
          new GlassButton(
                this.width - TitleLayout.EDGE - switchWidth,
@@ -324,10 +325,10 @@ public final class GeminiTitleScreen extends Screen {
             )
             .plain()
       );
-      sandbox.setTooltip(Tooltip.create(SandboxUi.tooltip()));
+      sandbox.setTooltip(UiFont.tooltip(SandboxUi.tooltip()));
       this.fading.add(sandbox);
       this.credits = Component.translatable("title.credits");
-      this.creditsWidth = this.font.width(this.credits);
+      this.creditsWidth = UiFont.width(this.credits);
       this.creditsX = this.width - TitleLayout.EDGE - this.creditsWidth;
       // Leave the notice out when it would run into the vanilla-menu link.
       if (this.creditsX < vanilla.getRight() + 8) {
@@ -340,13 +341,13 @@ public final class GeminiTitleScreen extends Screen {
       boolean on = SingleplayerGate.sandboxMode();
       this.menuLink.active = on;
       this.searchLink.active = on;
-      this.menuLink.setTooltip(Tooltip.create(Component.translatable(on ? "gemini.title.menu.tooltip" : "gemini.title.disabled.tooltip")));
-      this.searchLink.setTooltip(Tooltip.create(Component.translatable(on ? "gemini.title.search.tooltip" : "gemini.title.disabled.tooltip")));
+      this.menuLink.setTooltip(UiFont.tooltip(Component.translatable(on ? "gemini.title.menu.tooltip" : "gemini.title.disabled.tooltip")));
+      this.searchLink.setTooltip(UiFont.tooltip(Component.translatable(on ? "gemini.title.search.tooltip" : "gemini.title.disabled.tooltip")));
    }
 
    private void toggleSandbox(net.minecraft.client.gui.components.Button button) {
       SandboxUi.toggleSandbox(this.minecraft);
-      button.setTooltip(Tooltip.create(SandboxUi.tooltip()));
+      button.setTooltip(UiFont.tooltip(SandboxUi.tooltip()));
       this.applySandboxState();
    }
 
@@ -555,13 +556,13 @@ public final class GeminiTitleScreen extends Screen {
          }
 
          int textY = l.footerY() + 2;
-         g.text(this.font, VERSION, TitleLayout.EDGE, textY, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
+         UiFont.draw(g, VERSION, TitleLayout.EDGE, textY, Glass.fade(Glass.textFaint(), this.fade), false);
          if (this.credits != null) {
-            g.text(this.font, this.credits, this.creditsX, textY, Glass.fade(Glass.TEXT_FAINT, this.fade), false);
+            UiFont.draw(g, this.credits, this.creditsX, textY, Glass.fade(Glass.textFaint(), this.fade), false);
          }
 
          if (this.problem != null) {
-            g.text(this.font, this.problem, TitleLayout.EDGE, l.footerY() - 12, Glass.fade(Glass.ERROR, this.fade), false);
+            UiFont.draw(g, this.problem, TitleLayout.EDGE, l.footerY() - 12, Glass.fade(Glass.ERROR, this.fade), false);
          }
       }
 

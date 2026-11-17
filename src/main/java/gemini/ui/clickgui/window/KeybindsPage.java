@@ -6,6 +6,7 @@ import gemini.module.Module;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
+import gemini.ui.font.UiFont;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Util;
@@ -84,15 +85,15 @@ public final class KeybindsPage extends DashboardPage {
          this.rebuild(now);
       }
 
-      this.text(g, this.title(), x + 10, y + 9, Glass.TEXT);
+      this.text(g, this.title(), x + 10, y + 9, Glass.text());
       String summary = this.conflicts == 0
          ? "No conflicts"
          : this.conflicts + (this.conflicts == 1 ? " conflict" : " conflicts");
-      int sx = x + 14 + this.font().width(this.title());
-      int sw = this.chip(g, sx, y + 7, summary, Glass.withAlpha(this.conflicts == 0 ? Glass.OK : Glass.ERROR, 120), Glass.TEXT);
+      int sx = x + 14 + UiFont.width(this.title());
+      int sw = this.chip(g, sx, y + 7, summary, Glass.withAlpha(this.conflicts == 0 ? Glass.OK : Glass.ERROR, 120), Glass.text());
       String filter = onlyConflicts ? "Only conflicts: on" : "Only conflicts: off";
       int fw = this.buttonWidth(filter);
-      this.textFit(g, this.bound + " bound modules", sx + sw + 6, y + 9, x + w - 16 - fw - (sx + sw + 6), Glass.TEXT_FAINT);
+      this.textFit(g, this.bound + " bound modules", sx + sw + 6, y + 9, x + w - 16 - fw - (sx + sw + 6), Glass.textFaint());
       this.button(g, x + w - 10 - fw, y + 6, fw, 14, filter, mouseX, mouseY, onlyConflicts ? TONE_ACCENT : TONE_NEUTRAL, null,
          "Hide keys that only one module uses", (b, mx, my, d) -> {
             onlyConflicts = !onlyConflicts;
@@ -111,7 +112,7 @@ public final class KeybindsPage extends DashboardPage {
          String empty = onlyConflicts && this.bound > 0
             ? "No conflicts: every key does one thing."
             : "No module has a key bind yet. Middle-click a module card to bind it.";
-         this.text(g, empty, x + (w - this.font().width(empty)) / 2, top + 24, Glass.TEXT_FAINT);
+         this.text(g, empty, x + (w - UiFont.width(empty)) / 2, top + 24, Glass.textFaint());
          return;
       }
 
@@ -134,7 +135,7 @@ public final class KeybindsPage extends DashboardPage {
       int border = group.modules().size() > 1 ? Glass.ERROR : (group.vanillaClash() ? Glass.WARN : Glass.accent());
       Glass.panel(g, x, y, x + w, y + h, Glass.RADIUS, Glass.surface(1), border, this.host.fade(), group.conflict() ? 0.35F : 0.0F);
       String keyName = GeminiKeys.displayName(group.key());
-      int kx = x + 6 + this.chip(g, x + 6, y + 4, keyName, Glass.withAlpha(Glass.surface(3), 255), Glass.TEXT) + 6;
+      int kx = x + 6 + this.chip(g, x + 6, y + 4, keyName, Glass.withAlpha(Glass.surface(3), 255), Glass.text()) + 6;
       String state;
       int stateColor;
       if (group.modules().size() > 1) {
@@ -145,7 +146,7 @@ public final class KeybindsPage extends DashboardPage {
          stateColor = Glass.WARN;
       } else {
          state = "no conflict";
-         stateColor = Glass.TEXT_FAINT;
+         stateColor = Glass.textFaint();
       }
 
       this.textFit(g, state, kx, y + 6, x + w - kx - 6, stateColor);
@@ -169,7 +170,7 @@ public final class KeybindsPage extends DashboardPage {
 
       boolean capturing = module != null && this.host.bindingModule() == module;
       if (module == null) {
-         this.textFit(g, name, x + 6, y + 5, w - 12, Glass.TEXT_FAINT);
+         this.textFit(g, name, x + 6, y + 5, w - 12, Glass.textFaint());
          return;
       }
 
@@ -196,10 +197,10 @@ public final class KeybindsPage extends DashboardPage {
             });
       }
 
-      int dot = module.isEnabled() ? Glass.OK : Glass.TEXT_FAINT;
+      int dot = module.isEnabled() ? Glass.OK : Glass.textFaint();
       Glass.roundRect(g, x + 6, y + 6, x + 10, y + 10, 2, this.c(dot));
       int nameRight = x + w - 8 - total;
-      this.textFit(g, name, x + 14, y + 5, nameRight - x - 14, group.conflict() ? Glass.TEXT : Glass.TEXT_DIM);
+      this.textFit(g, name, x + 14, y + 5, nameRight - x - 14, group.conflict() ? Glass.text() : Glass.textDim());
       if (over && !inside(mouseX, mouseY, x + w - 4 - total, y, total, ROW_H)) {
          this.host.tip(module.getCategory().displayName() + "  ·  " + module.getDescription());
       }

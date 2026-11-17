@@ -7,6 +7,7 @@ import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
 import gemini.ui.GeminiMark;
 import gemini.ui.HudContext;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,11 +44,11 @@ public final class KeybindList extends HudWidget {
          return 0;
       }
 
-      int max = hud.font.width("Keybinds") + 28;
+      int max = UiFont.width("Keybinds") + 28;
 
       for (Module m : this.boundModules()) {
          String key = "[" + GeminiKeys.displayName(m.getKeybind()) + "]";
-         max = Math.max(max, hud.font.width(m.getName()) + hud.font.width(key) + 22);
+         max = Math.max(max, UiFont.width(m.getName()) + UiFont.width(key) + 22);
       }
 
       return Math.max(106, max);
@@ -61,18 +62,18 @@ public final class KeybindList extends HudWidget {
 
    @Override
    protected void paint(HudContext hud, int w, int h) {
-      hud.graphics.text(hud.font, "Keybinds", 6, 4, hud.accent, hud.shadow);
+      UiFont.draw(hud.graphics, "Keybinds", 6, 4, hud.accent, hud.shadow);
       hud.graphics.fill(4, 14, w - 4, 15, GeminiMark.withAlpha(hud.accent, 90));
       List<Module> list = this.boundModules();
       if (list.isEmpty()) {
-         hud.graphics.text(hud.font, "None bound", 6, 18, -6641995, false);
+         UiFont.draw(hud.graphics, "None bound", 6, 18, -6641995, false);
       } else {
          int y = 18;
 
          for (Module m : list) {
             String key = "[" + GeminiKeys.displayName(m.getKeybind()) + "]";
-            hud.graphics.text(hud.font, m.getName(), 6, y, m.isEnabled() ? -1 : -6641995, hud.shadow);
-            hud.graphics.text(hud.font, key, w - 6 - hud.font.width(key), y, m.isEnabled() ? hud.accent2 : -6641995, false);
+            UiFont.draw(hud.graphics, m.getName(), 6, y, m.isEnabled() ? -1 : -6641995, hud.shadow);
+            UiFont.draw(hud.graphics, key, w - 6 - UiFont.width(key), y, m.isEnabled() ? hud.accent2 : -6641995, false);
             y += 11;
          }
       }

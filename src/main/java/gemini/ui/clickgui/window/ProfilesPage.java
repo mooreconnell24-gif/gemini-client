@@ -12,6 +12,7 @@ import gemini.ui.Glass;
 import gemini.ui.HudOverlay;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.clickgui.controls.TextField;
+import gemini.ui.font.UiFont;
 import java.nio.file.Path;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -369,10 +370,10 @@ public final class ProfilesPage extends DashboardPage {
          this.shareName.setText(active == null ? "my-settings" : active);
       }
 
-      this.text(g, this.title(), x + 10, y + 9, Glass.TEXT);
+      this.text(g, this.title(), x + 10, y + 9, Glass.text());
       String status = active == null ? "No profile loaded or saved yet" : "Active profile: " + active;
-      int statusW = this.font().width(status);
-      this.text(g, status, x + w - 10 - statusW, y + 9, active == null ? Glass.TEXT_FAINT : Glass.accent2());
+      int statusW = UiFont.width(status);
+      this.text(g, status, x + w - 10 - statusW, y + 9, active == null ? Glass.textFaint() : Glass.accent2());
       int top = y + 24;
       int bottom = y + h - 4;
       int inner = w - 24;
@@ -407,9 +408,9 @@ public final class ProfilesPage extends DashboardPage {
 
    private void section(GuiGraphicsExtractor g, int x, int y, int w, int h, String title, String note) {
       this.card(g, x, y, x + w, y + h, 0.0F);
-      this.text(g, title, x + 8, y + 6, Glass.TEXT);
+      this.text(g, title, x + 8, y + 6, Glass.text());
       if (note != null) {
-         this.textFit(g, note, x + 14 + this.font().width(title), y + 6, w - 22 - this.font().width(title), Glass.TEXT_FAINT);
+         this.textFit(g, note, x + 14 + UiFont.width(title), y + 6, w - 22 - UiFont.width(title), Glass.textFaint());
       }
    }
 
@@ -442,7 +443,7 @@ public final class ProfilesPage extends DashboardPage {
       });
       int ry = y + 20;
       if (this.entries.isEmpty()) {
-         this.text(g, "No saved profiles yet: name one above and press Save.", x + 10, ry + 9, Glass.TEXT_FAINT);
+         this.text(g, "No saved profiles yet: name one above and press Save.", x + 10, ry + 9, Glass.textFaint());
          return y + h;
       }
 
@@ -490,11 +491,11 @@ public final class ProfilesPage extends DashboardPage {
       int textRight = x + w - 10 - total;
       int tx = x + 8;
       if (entry.active()) {
-         tx += this.chip(g, tx, y + 3, "ACTIVE", Glass.withAlpha(Glass.accent(), 150), Glass.TEXT) + 4;
+         tx += this.chip(g, tx, y + 3, "ACTIVE", Glass.withAlpha(Glass.accent(), 150), Glass.text()) + 4;
       }
 
-      this.textFit(g, name, tx, y + 5, textRight - tx, Glass.TEXT);
-      this.textFit(g, "modified " + ProfileList.ago(System.currentTimeMillis(), entry.modified()), x + 8, y + 17, textRight - x - 8, Glass.TEXT_FAINT);
+      this.textFit(g, name, tx, y + 5, textRight - tx, Glass.text());
+      this.textFit(g, "modified " + ProfileList.ago(System.currentTimeMillis(), entry.modified()), x + 8, y + 17, textRight - x - 8, Glass.textFaint());
       if (over && !inside(mouseX, mouseY, x + w - 6 - total, y, total, ROW_H)) {
          this.host.tip("Double-click to load  ·  " + name + ".json");
       }
@@ -504,7 +505,7 @@ public final class ProfilesPage extends DashboardPage {
       int h = 80 + this.previewHeight() + (this.exports.isEmpty() ? 0 : 14 + this.exports.size() * 16);
       this.section(g, x, y, w, h, "Export & import", "share your settings as a code, a file or text");
       int fy = y + 22;
-      this.text(g, "Name", x + 8, fy + 3, Glass.TEXT_DIM);
+      this.text(g, "Name", x + 8, fy + 3, Glass.textDim());
       this.field(g, this.shareName, x + 38, fy, w - 46, "Export or import name...", mouseX, mouseY, true);
       int by = y + 41;
       int bx = x + 8;
@@ -529,10 +530,10 @@ public final class ProfilesPage extends DashboardPage {
 
       if (!this.exports.isEmpty()) {
          int ry = y + 80 + this.previewHeight();
-         this.text(g, "Files in gemini_exports", x + 8, ry, Glass.TEXT_FAINT);
+         this.text(g, "Files in gemini_exports", x + 8, ry, Glass.textFaint());
          ry += 12;
          for (String file : this.exports) {
-            this.textFit(g, file + ".json", x + 14, ry + 3, w - 90, Glass.TEXT_DIM);
+            this.textFit(g, file + ".json", x + 14, ry + 3, w - 90, Glass.textDim());
             String label = "Import";
             int bw = this.buttonWidth(label);
             this.button(g, x + w - 8 - bw, ry, bw, 13, label, mouseX, mouseY, TONE_NEUTRAL, null, "Store this file as the profile " + file, true,
@@ -573,7 +574,7 @@ public final class ProfilesPage extends DashboardPage {
       String id = ConfigManager.profileId(this.shareName.text());
       this.textFit(g, "Preview of the " + this.pendingSource + (id == null ? "" : " · saves as " + id), x + 6, y + 5, w - 12, Glass.INFO);
       int ly = y + 18;
-      this.textFit(g, (diff.empty() ? "" : "Loading it changes: ") + diff.summary(), x + 6, ly, w - 12, Glass.TEXT);
+      this.textFit(g, (diff.empty() ? "" : "Loading it changes: ") + diff.summary(), x + 6, ly, w - 12, Glass.text());
       ly += PREVIEW_LINE;
       if (!diff.switchedOn().isEmpty()) {
          this.textFit(g, "On: " + gemini.config.ProfileDiff.names(diff.switchedOn(), 12), x + 10, ly, w - 16, Glass.OK);
@@ -581,12 +582,12 @@ public final class ProfilesPage extends DashboardPage {
       }
 
       if (!diff.switchedOff().isEmpty()) {
-         this.textFit(g, "Off: " + gemini.config.ProfileDiff.names(diff.switchedOff(), 12), x + 10, ly, w - 16, Glass.TEXT_DIM);
+         this.textFit(g, "Off: " + gemini.config.ProfileDiff.names(diff.switchedOff(), 12), x + 10, ly, w - 16, Glass.textDim());
          ly += PREVIEW_LINE;
       }
 
       if (!diff.rebound().isEmpty()) {
-         this.textFit(g, "Key binds: " + gemini.config.ProfileDiff.names(diff.rebound(), 12), x + 10, ly, w - 16, Glass.TEXT_DIM);
+         this.textFit(g, "Key binds: " + gemini.config.ProfileDiff.names(diff.rebound(), 12), x + 10, ly, w - 16, Glass.textDim());
          ly += PREVIEW_LINE;
       }
 
@@ -642,9 +643,9 @@ public final class ProfilesPage extends DashboardPage {
       String blocked = presets.canActivate() ? null : plain(presets.blockedReason());
       if (setting(presets, "Disable Others") instanceof BooleanSetting others) {
          String label = "Turn others off";
-         int lw = this.font().width(label);
+         int lw = UiFont.width(label);
          int sx = x + w - 8 - 18;
-         this.text(g, label, sx - 6 - lw, y + 6, Glass.TEXT_DIM);
+         this.text(g, label, sx - 6 - lw, y + 6, Glass.textDim());
          Glass.toggle(g, sx, y + 5, others.get() ? 1.0F : 0.0F, Glass.accent(), this.host.fade());
          this.host.hit(sx - 6 - lw, y + 3, lw + 24, 14, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> {
             others.toggle();
@@ -670,13 +671,13 @@ public final class ProfilesPage extends DashboardPage {
       }
 
       String note = blocked == null ? "Presets switch modules on; your profiles are untouched." : "Needs a single-player world: " + blocked;
-      this.textFit(g, note, x + 8, by + 20, w - 16, blocked == null ? Glass.TEXT_FAINT : Glass.WARN);
+      this.textFit(g, note, x + 8, by + 20, w - 16, blocked == null ? Glass.textFaint() : Glass.WARN);
       return y + h;
    }
 
    private void drawReset(GuiGraphicsExtractor g, int x, int y, int w, int mouseX, int mouseY) {
       this.section(g, x, y, w, 40, "Reset", null);
-      this.textFit(g, "Every setting of every module back to its default.", x + 8, y + 22, w - 110, Glass.TEXT_FAINT);
+      this.textFit(g, "Every setting of every module back to its default.", x + 8, y + 22, w - 110, Glass.textFaint());
       boolean confirm = this.confirming("reset");
       String label = confirm ? "Click to confirm" : "Reset all";
       int bw = this.buttonWidth(label);

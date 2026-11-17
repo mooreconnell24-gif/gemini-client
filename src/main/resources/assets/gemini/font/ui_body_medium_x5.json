@@ -1,0 +1,18 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "gemini:inter_medium.ttf",
+      "size": 9.6,
+      "oversample": 5.0,
+      "shift": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "type": "reference",
+      "id": "minecraft:default"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import gemini.module.setting.NumberSetting;
 import gemini.module.setting.Setting;
 import gemini.ui.Glass;
 import gemini.ui.UiMath;
+import gemini.ui.font.UiFont;
 import java.util.OptionalDouble;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -69,13 +70,13 @@ public final class NumberSlider extends SettingControl {
          Glass.roundRect(g, x + 4, y, x + w - 4, y + HEIGHT - 1, 3, Glass.fade(Glass.withAlpha(0xFFFFFF, Math.round(18.0F * this.hover)), this.opacity));
       }
 
-      int labelColor = this.setting.isDefault() ? Glass.TEXT_DIM : Glass.TEXT;
+      int labelColor = this.setting.isDefault() ? Glass.textDim() : Glass.text();
       if (this.field.focused()) {
          Controls.text(g, font, Controls.fit(font, this.setting.name(), right - left - FIELD_W - 4), left, y + 3, labelColor, this.opacity);
          this.field.render(g, font, right - FIELD_W, y + 1, FIELD_W, 11, "", true, accent2, this.opacity, dt);
       } else {
          String value = this.setting.display();
-         int valueW = font.width(value);
+         int valueW = UiFont.width(value);
          Controls.text(g, font, Controls.fit(font, this.setting.name(), right - left - valueW - 6), left, y + 3, labelColor, this.opacity);
          Controls.text(g, font, value, right - valueW, y + 3, Glass.lerp(accent2, 0xFFFFFFFF, this.hover * 0.4F), this.opacity);
       }

@@ -17,6 +17,7 @@ import gemini.ui.Theme;
 import gemini.ui.clickgui.ClickGuiScreen;
 import gemini.ui.clickgui.WindowGuiScreen;
 import gemini.ui.clickgui.controls.Controls;
+import gemini.ui.font.UiFont;
 import gemini.ui.help.HelpScreen;
 import gemini.util.SingleplayerGate;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public final class PaletteScreen extends Screen {
    private float open;
    private long lastFrame;
    private String status;
-   private int statusColor = Glass.TEXT_DIM;
+   private int statusColor = Glass.textDim();
    private long statusUntil;
    private int hoverRow = -1;
    private int hoverKind = -1;
@@ -218,7 +219,7 @@ public final class PaletteScreen extends Screen {
 
       module.toggle();
       saveConfig();
-      this.say(module.getName() + (module.isSavedEnabled() ? " on" : " off"), module.isSavedEnabled() ? Glass.OK : Glass.TEXT_DIM);
+      this.say(module.getName() + (module.isSavedEnabled() ? " on" : " off"), module.isSavedEnabled() ? Glass.OK : Glass.textDim());
    }
 
    private void run(Action action) {
@@ -431,35 +432,35 @@ public final class PaletteScreen extends Screen {
       // A small magnifier: ring plus handle.
       int mx = x + 6;
       int my = y + 5;
-      Glass.roundOutline(g, mx, my, mx + 7, my + 7, 3, Glass.fade(Glass.TEXT_FAINT, a));
-      g.fill(mx + 6, my + 6, mx + 8, my + 8, Glass.fade(Glass.TEXT_FAINT, a));
+      Glass.roundOutline(g, mx, my, mx + 7, my + 7, 3, Glass.fade(Glass.textFaint(), a));
+      g.fill(mx + 6, my + 6, mx + 8, my + 8, Glass.fade(Glass.textFaint(), a));
       int textX = x + 18;
       int room = w - 18 - Theme.SPACE_M;
       String right = SingleplayerGate.allowed() && this.minecraft.player != null ? null : "settings only";
       if (right != null) {
-         int rw = this.font.width(right) + 8;
+         int rw = UiFont.width(right) + 8;
          int rx = x + w - rw - 4;
-         Controls.text(g, this.font, right, rx + 4, y + 5, Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, right, rx + 4, y + 5, Glass.textFaint(), a);
          room -= rw + Theme.SPACE_S;
       }
 
       boolean blink = now / 450L % 2L == 0L;
       if (this.query.isEmpty()) {
-         Controls.text(g, this.font, Controls.fit(this.font, "Search modules, settings, commands and pages...", room), textX, y + 5, Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, Controls.fit(this.font, "Search modules, settings, commands and pages...", room), textX, y + 5, Glass.textFaint(), a);
          if (blink) {
-            g.fill(textX - 1, y + 4, textX, y + 14, Glass.fade(Glass.TEXT, a));
+            g.fill(textX - 1, y + 4, textX, y + 14, Glass.fade(Glass.text(), a));
          }
       } else {
          // Keep the end of a long query (where the caret is) in view.
          String shown = this.query;
-         while (shown.length() > 1 && this.font.width(shown) > room - 4) {
+         while (shown.length() > 1 && UiFont.width(shown) > room - 4) {
             shown = shown.substring(1);
          }
 
-         Controls.text(g, this.font, shown, textX, y + 5, Glass.TEXT, a);
+         Controls.text(g, this.font, shown, textX, y + 5, Glass.text(), a);
          if (blink) {
-            int cx = textX + this.font.width(shown) + 1;
-            g.fill(cx, y + 4, cx + 1, y + 14, Glass.fade(Glass.TEXT, a));
+            int cx = textX + UiFont.width(shown) + 1;
+            g.fill(cx, y + 4, cx + 1, y + 14, Glass.fade(Glass.text(), a));
          }
       }
    }
@@ -470,7 +471,7 @@ public final class PaletteScreen extends Screen {
       int cursor = x;
       for (int i = 0; i < kinds.length; i++) {
          String label = kinds[i].label;
-         int w = this.font.width(label) + 10;
+         int w = UiFont.width(label) + 10;
          boolean active = kinds[i] == this.kind;
          boolean over = Glass.inside(mouseX, mouseY, cursor, y, cursor + w, y + PaletteLayout.KINDS_HEIGHT);
          if (over) {
@@ -481,16 +482,16 @@ public final class PaletteScreen extends Screen {
             Glass.roundRect(g, cursor, y, cursor + w, y + PaletteLayout.KINDS_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.surface(3), 255), a));
          }
 
-         Controls.text(g, this.font, label, cursor + 5, y + 2, active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT), a);
+         Controls.text(g, this.font, label, cursor + 5, y + 2, active ? Glass.text() : (over ? Glass.textDim() : Glass.textFaint()), a);
          cursor += w + Theme.SPACE_XS + 1;
       }
 
       String count = this.results.size() >= MAX_RESULTS ? MAX_RESULTS + "+" : Integer.toString(this.results.size());
       String hint = count + (this.results.size() == 1 ? " result" : " results") + "  ·  Tab";
-      int hw = this.font.width(hint);
+      int hw = UiFont.width(hint);
       int right = this.layout.x() + this.layout.width() - Theme.SPACE_L;
       if (cursor + Theme.SPACE_M + hw <= right) {
-         Controls.text(g, this.font, hint, right - hw, y + 2, Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, hint, right - hw, y + 2, Glass.textFaint(), a);
       }
    }
 
@@ -500,10 +501,10 @@ public final class PaletteScreen extends Screen {
       if (this.results.isEmpty()) {
          String empty = this.query.isEmpty() ? "Nothing here." : "No " + (this.kind == PaletteRanking.Kind.ALL ? "results" : this.kind.label.toLowerCase()) + " for \"" + this.query + "\"";
          String text = Controls.fit(this.font, empty, w - 16);
-         Controls.text(g, this.font, text, x + (w - this.font.width(text)) / 2, y + PaletteLayout.ROW_HEIGHT, Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, text, x + (w - UiFont.width(text)) / 2, y + PaletteLayout.ROW_HEIGHT, Glass.textFaint(), a);
          if (this.kind != PaletteRanking.Kind.ALL) {
             String tip = "Tab shows all kinds";
-            Controls.text(g, this.font, tip, x + (w - this.font.width(tip)) / 2, y + PaletteLayout.ROW_HEIGHT + Theme.LINE + 2, Glass.TEXT_FAINT, a * 0.8F);
+            Controls.text(g, this.font, tip, x + (w - UiFont.width(tip)) / 2, y + PaletteLayout.ROW_HEIGHT + Theme.LINE + 2, Glass.textFaint(), a * 0.8F);
          }
 
          return;
@@ -554,10 +555,10 @@ public final class PaletteScreen extends Screen {
       }
 
       int textY = y + (h - Theme.FONT_HEIGHT) / 2;
-      int bw = this.font.width("PAGE") + 6;
+      int bw = UiFont.width("PAGE") + 6;
       // The kind as a small dim word in a fixed-width column; no coloured pill.
       String b = badge;
-      Controls.text(g, this.font, b, x + 6, textY, Glass.TEXT_FAINT, a);
+      Controls.text(g, this.font, b, x + 6, textY, Glass.textFaint(), a);
       int left = x + 6 + bw + Theme.SPACE_M;
       int right = x + w - Theme.SPACE_M;
       Object payload = candidate.payload();
@@ -576,10 +577,10 @@ public final class PaletteScreen extends Screen {
          int key = module.getKeybind();
          if (key > 0) {
             String label = GeminiKeys.displayName(key);
-            int kw = this.font.width(label) + 6;
+            int kw = UiFont.width(label) + 6;
             if (right - kw > left + 40) {
                Glass.roundRect(g, right - kw, textY - 1, right, textY + 9, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.surface(3), 255), a));
-               Controls.text(g, this.font, label, right - kw + 3, textY, Glass.TEXT_DIM, a);
+               Controls.text(g, this.font, label, right - kw + 3, textY, Glass.textDim(), a);
                right -= kw + Theme.SPACE_S;
             }
          }
@@ -592,21 +593,21 @@ public final class PaletteScreen extends Screen {
       }
 
       int nameRoom = right - left;
-      int nameWidth = Math.min(this.font.width(name), extra == null ? nameRoom : Math.max(nameRoom * 3 / 5, nameRoom - this.font.width(extra) - Theme.SPACE_M));
+      int nameWidth = Math.min(UiFont.width(name), extra == null ? nameRoom : Math.max(nameRoom * 3 / 5, nameRoom - UiFont.width(extra) - Theme.SPACE_M));
       String shownName = Controls.fit(this.font, name, nameWidth);
-      int color = dim ? Glass.TEXT_DIM : (selected ? Glass.TEXT : Theme.labelColor(true, over ? 1.0F : 0.4F));
+      int color = dim ? Glass.textDim() : (selected ? Glass.text() : Theme.labelColor(true, over ? 1.0F : 0.4F));
       Controls.text(g, this.font, shownName, left, textY, color, a);
       if (extra != null) {
-         int ex = left + this.font.width(shownName) + Theme.SPACE_M;
+         int ex = left + UiFont.width(shownName) + Theme.SPACE_M;
          String shownExtra = Controls.fit(this.font, extra, right - ex);
-         Controls.text(g, this.font, shownExtra, ex, textY, result.setting() != null ? Glass.TEXT_DIM : Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, shownExtra, ex, textY, result.setting() != null ? Glass.textDim() : Glass.textFaint(), a);
       }
    }
 
    private void extractFooter(GuiGraphicsExtractor g, int x, int y, int w, float a, long now) {
       g.fill(x, y - 2, x + w, y - 1, Glass.fade(0x14FFFFFF, a));
       String line1;
-      int color1 = Glass.TEXT_DIM;
+      int color1 = Glass.textDim();
       if (this.status != null && now < this.statusUntil) {
          line1 = this.status;
          color1 = this.statusColor;
@@ -619,7 +620,7 @@ public final class PaletteScreen extends Screen {
 
       Controls.text(g, this.font, Controls.fit(this.font, line1, w), x, y + 2, color1, a);
       String keys = this.keysHint();
-      Controls.text(g, this.font, Controls.fit(this.font, keys, w), x, y + 2 + Theme.LINE, Glass.TEXT_FAINT, a);
+      Controls.text(g, this.font, Controls.fit(this.font, keys, w), x, y + 2 + Theme.LINE, Glass.textFaint(), a);
    }
 
    private String keysHint() {

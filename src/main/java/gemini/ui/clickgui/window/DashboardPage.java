@@ -7,6 +7,7 @@ import gemini.ui.Glass;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.clickgui.controls.SettingControl;
 import gemini.ui.clickgui.controls.TextField;
+import gemini.ui.font.UiFont;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.client.gui.Font;
@@ -330,7 +331,7 @@ public abstract class DashboardPage {
       String shown = Controls.fit(this.font(), label, w - 6);
       // The same hover/disabled label rule as GlassButton and the panel rows.
       int color = gemini.ui.Theme.labelColor(enabled, over ? 1.0F : 0.6F);
-      this.text(g, shown, x + (w - this.font().width(shown)) / 2, y + (h - 8) / 2 + 1, color);
+      this.text(g, shown, x + (w - UiFont.width(shown)) / 2, y + (h - 8) / 2 + 1, color);
       Click action = enabled ? click : (b, mx, my, d) -> this.host.notice(disabledReason);
       if (clip) {
          this.host.hit(x, y, w, h, this.viewTop, this.viewBottom, null, action);
@@ -347,12 +348,12 @@ public abstract class DashboardPage {
 
    /** Button width that fits its label. */
    protected int buttonWidth(String label) {
-      return this.font().width(label) + 14;
+      return UiFont.width(label) + 14;
    }
 
    /** A small pill with text, e.g. a key name or a status; returns its width. */
    protected int chip(GuiGraphicsExtractor g, int x, int y, String label, int color, int textColor) {
-      int w = this.font().width(label) + 8;
+      int w = UiFont.width(label) + 8;
       Glass.roundRect(g, x, y, x + w, y + 11, gemini.ui.Theme.RADIUS_SMALL, this.c(color));
       this.text(g, label, x + 4, y + 2, textColor);
       return w;

@@ -1,5 +1,6 @@
 package gemini.ui;
 
+import gemini.ui.font.UiFont;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
@@ -107,7 +108,7 @@ public class GlassButton extends Button {
 
    /** Width a badge needs, for callers that size the button: a two-digit count plus padding and gap. */
    public static int badgeRoom(Font font) {
-      return font.width("99") + 6 + Theme.SPACE_S;
+      return UiFont.width("99") + 6 + Theme.SPACE_S;
    }
 
    @Override
@@ -176,8 +177,8 @@ public class GlassButton extends Button {
       }
 
       int base = this.plain
-         ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, this.active ? this.hover : 0.0F)
-         : (this.primary && this.active ? Glass.TEXT : Theme.labelColor(this.active, this.hover));
+         ? Glass.lerp(Glass.textDim(), Glass.text(), this.active ? this.hover : 0.0F)
+         : (this.primary && this.active ? Glass.text() : Theme.labelColor(this.active, this.hover));
       int color = Glass.fade(base, opacity);
       int textY = y1 + (y2 - y1 - Theme.FONT_HEIGHT) / 2 + (this.plain ? 0 : 1);
       int pad = this.plain ? Theme.SPACE_XS : (this.leftAligned ? Theme.BUTTON_PAD : Theme.SPACE_M);
@@ -185,23 +186,23 @@ public class GlassButton extends Button {
       int count = this.badge == null ? 0 : this.badge.getAsInt();
       if (count > 0) {
          String text = count > 99 ? "99+" : Integer.toString(count);
-         int bw = font.width(text) + 6;
+         int bw = UiFont.width(text) + 6;
          int by = y1 + (y2 - y1 - 10) / 2;
          Glass.roundRect(g, right - bw, by, right, by + 10, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(this.badgeColor, 150), opacity));
-         g.text(font, text, right - bw + 3, by + 1, Glass.fade(Glass.TEXT, opacity), false);
+         UiFont.draw(g, text, right - bw + 3, by + 1, Glass.fade(Glass.text(), opacity), false);
          right -= bw + Theme.SPACE_S;
       }
 
       if (this.detail != null && this.switchState == null) {
          if (this.detailWidth < 0) {
-            this.detailWidth = font.width(this.detail);
+            this.detailWidth = UiFont.width(this.detail);
          }
 
          int room = Math.max(0, (right - x1 - pad) - this.labelWidth() - Theme.SPACE_L);
-         String shownDetail = this.detailWidth <= room ? this.detail : Theme.fit(this.detail, room, font::width);
+         String shownDetail = this.detailWidth <= room ? this.detail : UiFont.ellipsize(this.detail, room);
          if (!shownDetail.isEmpty()) {
-            int dw = shownDetail == this.detail ? this.detailWidth : font.width(shownDetail);
-            g.text(font, shownDetail, right - dw, textY, Glass.fade(Glass.TEXT_FAINT, opacity), false);
+            int dw = shownDetail == this.detail ? this.detailWidth : UiFont.width(shownDetail);
+            UiFont.draw(g, shownDetail, right - dw, textY, Glass.fade(Glass.textFaint(), opacity), false);
             right -= dw + Theme.SPACE_L;
          }
       }
@@ -209,22 +210,22 @@ public class GlassButton extends Button {
       if (this.switchState == null) {
          int left = x1 + pad;
          String shown = this.fit(font, right - left);
-         int width = shown == this.label ? this.labelWidth() : font.width(shown);
+         int width = shown == this.label ? this.labelWidth() : UiFont.width(shown);
          int centre = count > 0 ? (left + right) / 2 : (x1 + x2) / 2;
-         g.text(font, shown, this.leftAligned ? left : centre - width / 2, textY, color, false);
+         UiFont.draw(g, shown, this.leftAligned ? left : centre - width / 2, textY, color, false);
       } else {
          boolean on = this.switchState.getAsBoolean();
          this.knob = Glass.approach(this.knob, on ? 1.0F : 0.0F, 12.0F, delta);
          int switchX = right - 18;
          int left = x1 + pad;
-         g.text(font, this.fit(font, switchX - Theme.SPACE_S - left), left, textY, color, false);
+         UiFont.draw(g, this.fit(font, switchX - Theme.SPACE_S - left), left, textY, color, false);
          Glass.toggle(g, switchX, y1 + (y2 - y1 - 10) / 2, this.knob, accent, opacity);
       }
    }
 
    private int labelWidth() {
       if (this.labelWidth < 0) {
-         this.labelWidth = Minecraft.getInstance().font.width(this.label);
+         this.labelWidth = UiFont.width(this.label);
       }
 
       return this.labelWidth;
@@ -238,7 +239,7 @@ public class GlassButton extends Button {
 
       if (this.fittedFor != room) {
          this.fittedFor = room;
-         this.fitted = Theme.fit(this.label, room, font::width);
+         this.fitted = UiFont.ellipsize(this.label, room);
       }
 
       return this.fitted;

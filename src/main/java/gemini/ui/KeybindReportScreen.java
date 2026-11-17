@@ -7,6 +7,7 @@ import gemini.input.KeybindConflicts;
 import gemini.input.KeybindReport;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
+import gemini.ui.font.UiFont;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,14 +90,14 @@ public final class KeybindReportScreen extends Screen {
       int shared = 0;
       this.keyColumn = 30;
       for (Integer key : modulesByKey.keySet()) {
-         this.keyColumn = Math.max(this.keyColumn, this.font.width(GeminiKeys.displayName(key)) + 10);
+         this.keyColumn = Math.max(this.keyColumn, UiFont.width(GeminiKeys.displayName(key)) + 10);
       }
 
       this.keyColumn = Math.min(this.keyColumn, this.panelWidth / 3);
       int textWidth = this.panelWidth - 16 - this.keyColumn - 6;
       for (Map.Entry<Integer, List<String>> entry : modulesByKey.entrySet()) {
          List<String> clash = conflicts.get(entry.getKey());
-         this.wrap(GeminiKeys.displayName(entry.getKey()), String.join(", ", entry.getValue()), textWidth, clash == null ? Glass.TEXT : Glass.WARN);
+         this.wrap(GeminiKeys.displayName(entry.getKey()), String.join(", ", entry.getValue()), textWidth, clash == null ? Glass.text() : Glass.WARN);
          if (clash != null) {
             shared++;
             List<String> outside = clash.stream().filter(name -> !entry.getValue().contains(name)).toList();
@@ -107,7 +108,7 @@ public final class KeybindReportScreen extends Screen {
       this.clean = shared == 0;
       if (bound == 0) {
          this.summary = "No modules have a keybind yet.";
-         this.wrap("", "Middle-click a module in the menu or use .bind <module> <key>.", this.panelWidth - 16, Glass.TEXT_DIM);
+         this.wrap("", "Middle-click a module in the menu or use .bind <module> <key>.", this.panelWidth - 16, Glass.textDim());
       } else {
          this.summary = bound + (bound == 1 ? " module bound, " : " modules bound, ") + (shared == 0 ? "no conflicts" : shared + (shared == 1 ? " shared key" : " shared keys"));
       }
@@ -117,10 +118,10 @@ public final class KeybindReportScreen extends Screen {
    private void wrap(String key, String text, int maxWidth, int color) {
       String rest = text;
       String label = key;
-      while (this.font.width(rest) > maxWidth) {
+      while (UiFont.width(rest) > maxWidth) {
          int cut = -1;
          for (int i = rest.indexOf(' '); i >= 0; i = rest.indexOf(' ', i + 1)) {
-            if (this.font.width(rest.substring(0, i)) > maxWidth) {
+            if (UiFont.width(rest.substring(0, i)) > maxWidth) {
                break;
             }
 
@@ -162,8 +163,8 @@ public final class KeybindReportScreen extends Screen {
       int x2 = x1 + this.panelWidth;
       int y2 = y1 + this.panelHeight;
       Glass.panel(g, x1, y1, x2, y2, 1.0F, 0.25F);
-      g.text(this.font, this.title, x1 + 8, y1 + 8, Glass.TEXT, false);
-      g.text(this.font, this.summary, x1 + 8, y1 + 20, this.clean ? Glass.OK : Glass.WARN, false);
+      UiFont.draw(g, this.title, x1 + 8, y1 + 8, Glass.text(), false);
+      UiFont.draw(g, this.summary, x1 + 8, y1 + 20, this.clean ? Glass.OK : Glass.WARN, false);
       Glass.gradientBar(g, x1 + 8, y1 + 31, x2 - 8, y1 + 32, Glass.withAlpha(Glass.accent(), 160), Glass.withAlpha(Glass.accent2(), 40));
       int top = this.listTop();
       int bottom = this.listBottom();
@@ -177,10 +178,10 @@ public final class KeybindReportScreen extends Screen {
 
          Row row = this.rows.get(i);
          if (!row.key().isEmpty()) {
-            g.text(this.font, row.key(), x1 + 8, y + 1, Glass.accent2(), false);
+            UiFont.draw(g, row.key(), x1 + 8, y + 1, Glass.accent2(), false);
          }
 
-         g.text(this.font, row.text(), x1 + 8 + this.keyColumn, y + 1, row.color(), false);
+         UiFont.draw(g, row.text(), x1 + 8 + this.keyColumn, y + 1, row.color(), false);
       }
 
       g.disableScissor();
