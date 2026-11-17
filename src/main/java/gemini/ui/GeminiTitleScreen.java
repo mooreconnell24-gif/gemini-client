@@ -57,8 +57,8 @@ public final class GeminiTitleScreen extends Screen {
    private static final int BASE = 0xFF05080F;
    private static final int LIFT = 0xFF14203A;
    /** Peak opacity (0..255) of links and points per layer, far to near. */
-   private static final float[] LINK_ALPHA = {55.0F, 85.0F, 110.0F};
-   private static final float[] POINT_ALPHA = {120.0F, 170.0F, 215.0F};
+   private static final float[] LINK_ALPHA = {38.0F, 72.0F, 105.0F};
+   private static final float[] POINT_ALPHA = {100.0F, 170.0F, 220.0F};
    /** How much of the network is left right behind the menu column: none, so the menu sits on a clean patch. */
    private static final float CALM_FLOOR = 0.0F;
    /** Speed of the eased mouse parallax; low, so the layers glide after the mouse. */

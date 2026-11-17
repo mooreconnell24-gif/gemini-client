@@ -23,8 +23,9 @@ public final class NetworkField {
    public static final int LAYERS = 3;
    public static final int MAX_POINTS = 320;
    /**
-    * Area (physical pixels) of the domain per point. The domain includes the margin, so this keeps the density on
-    * screen the same at every size: about 290 points (130 of them on screen) at 1280x720, 130 at 854x480.
+    * Area of the domain per point on a window whose short side is 720 pixels. The domain includes the margin, and
+    * the area per point grows with the square of the short side (as the link reach does), so the picture is the
+    * same at every window size: about 290 points, 130 of them on screen, on any 16:9 window.
     */
    static final float AREA_PER_POINT = 7_000.0F;
    /** Share of the points in each layer, far to near. */
@@ -69,15 +70,17 @@ public final class NetworkField {
    // ---- pure maths ------------------------------------------------------------------------------------------
 
    /**
-    * How many points a window of this physical size gets: proportional to the area of its domain (the window plus
-    * the {@link #margin}), at least 12, at most {@link #MAX_POINTS}.
+    * How many points a window of this physical size gets: the area of its domain (the window plus the
+    * {@link #margin}) measured in units of the short side, so it depends on the window's shape, not its
+    * resolution; at least 12, at most {@link #MAX_POINTS}.
     */
    public static int pointsFor(int width, int height) {
       float w = Math.max(1, width);
       float h = Math.max(1, height);
       float m = margin(w, h);
       float area = (w + 2.0F * m) * (h + 2.0F * m);
-      return Math.max(12, Math.min(MAX_POINTS, Math.round(area / AREA_PER_POINT)));
+      float unit = Math.min(w, h) / 720.0F;
+      return Math.max(12, Math.min(MAX_POINTS, Math.round(area / (AREA_PER_POINT * unit * unit))));
    }
 
    /**

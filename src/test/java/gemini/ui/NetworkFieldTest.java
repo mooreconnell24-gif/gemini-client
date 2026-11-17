@@ -168,12 +168,13 @@ class NetworkFieldTest {
    }
 
    @Test
-   void pointCountFollowsTheArea() {
-      int big = NetworkField.pointsFor(1280, 720);
-      int small = NetworkField.pointsFor(854, 480);
-      assertTrue(big > small);
-      assertTrue(big <= NetworkField.MAX_POINTS);
-      assertTrue(NetworkField.pointsFor(10, 10) >= 12);
-      assertEquals(NetworkField.MAX_POINTS, NetworkField.pointsFor(7680, 4320));
+   void pointCountFollowsTheShapeNotTheResolution() {
+      int hd = NetworkField.pointsFor(1280, 720);
+      assertTrue(Math.abs(hd - NetworkField.pointsFor(854, 480)) <= hd / 30, "same picture at 854x480");
+      assertTrue(Math.abs(hd - NetworkField.pointsFor(1920, 1080)) <= hd / 30, "same picture at 1920x1080");
+      assertTrue(NetworkField.pointsFor(2560, 1080) > hd, "a wider window shows more of the field");
+      assertTrue(hd <= NetworkField.MAX_POINTS);
+      assertEquals(NetworkField.MAX_POINTS, NetworkField.pointsFor(7680, 720), "capped");
+      assertTrue(NetworkField.pointsFor(1, 1) >= 12);
    }
 }
