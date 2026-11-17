@@ -202,6 +202,7 @@ public final class GeminiTitleScreen extends Screen {
       this.link("menu", () -> this.minecraft.gui.setScreen(Menus.create()));
       this.link("guide", () -> HelpScreen.open(HelpScreen.Tab.WHATS_NEW, this));
       this.link("search", () -> this.minecraft.gui.setScreen(new PaletteScreen(this)));
+      this.link("mods", () -> gemini.ui.mods.ModBrowserScreen.open(this));
       GlassButton[] links = this.addLinks(l);
       this.menuLink = links[this.linkKeys.indexOf("menu")];
       this.searchLink = links[this.linkKeys.indexOf("search")];
