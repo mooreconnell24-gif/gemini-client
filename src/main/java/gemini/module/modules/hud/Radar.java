@@ -120,7 +120,7 @@ public final class Radar extends HudWidget {
                int py = -(int)Math.round(fw / maxR * half);
                if (inside(px, py, dotLimit, round)) {
                   boolean player = entity instanceof Player;
-                  int color = player ? Glass.lerp(hud.accent, 0xFFFFFFFF, 0.3F) : (entity instanceof Enemy ? Glass.withAlpha(Glass.ERROR, 230) : Glass.withAlpha(Glass.TEXT_DIM, 200));
+                  int color = player ? hud.accent | 0xFF000000 : (entity instanceof Enemy ? Glass.withAlpha(hud.theme.error, 235) : Glass.withAlpha(hud.textDim, 210));
                   // Players get a 3x3 dot; everything else is a crisp 2x2.
                   int grow = player ? 2 : 1;
                   g.fill(c + px - 1, c + py - 1, c + px + grow, c + py + grow, color);
@@ -136,7 +136,7 @@ public final class Radar extends HudWidget {
       }
 
       // You, at the centre: a small chevron pointing ahead.
-      int you = Glass.TEXT;
+      int you = hud.text;
       g.fill(c, c - 3, c + 1, c - 2, you);
       g.fill(c - 1, c - 2, c + 2, c - 1, you);
       g.fill(c - 2, c - 1, c + 3, c, you);

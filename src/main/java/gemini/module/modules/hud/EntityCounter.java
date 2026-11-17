@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -46,7 +47,7 @@ public final class EntityCounter extends Ticked {
 
       for (int i = 0; i < Math.min(sorted.size(), this.entries.intValue()); i++) {
          Entry<EntityType<?>, Integer> entry = sorted.get(i);
-         lines.add(new TextHudWidget.Line(entry.getKey().getDescription().getString() + " x" + entry.getValue(), -1511689));
+         lines.add(new TextHudWidget.Line(entry.getKey().getDescription().getString() + " x" + entry.getValue(), HudStyle.PRIMARY));
       }
 
       return lines;

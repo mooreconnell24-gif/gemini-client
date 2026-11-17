@@ -1,5 +1,6 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.TextHudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.NumberSetting;
@@ -11,7 +12,7 @@ import java.util.List;
 
 /** Shows the open world's notes (by default only the open to-dos) from World Notes. Rebuilt only when they change. */
 public final class NotesHud extends Ticked {
-   private static final int TITLE_COLOR = -6641995;
+   private static final int TITLE_COLOR = HudStyle.SECONDARY;
    private final BooleanSetting todosOnly = this.addSetting(
       new BooleanSetting("Only To-dos", "Show only the open to-dos ([ ] lines) instead of every line of the notes", true).onChange(this::invalidate)
    );

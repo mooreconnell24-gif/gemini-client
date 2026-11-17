@@ -3,7 +3,6 @@ package gemini.module.modules.hud;
 import gemini.module.HudWidget;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ListSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import gemini.ui.HudStyle;
 import gemini.ui.font.UiFont;
@@ -88,8 +87,8 @@ public final class ItemCounter extends HudWidget {
          int y = HudStyle.PAD_Y + i * ROW;
          hud.graphics.item(this.icons.get(i), HudStyle.PAD_X, y);
          String text = this.counts.get(i);
-         int color = this.empty.get(i) ? Glass.ERROR : Glass.TEXT;
-         UiFont.draw(hud.graphics, text, w - HudStyle.PAD_X - UiFont.width(text), y + 4, color, hud.shadow);
+         int color = this.empty.get(i) ? hud.theme.error : hud.text;
+         UiFont.draw(hud.graphics, text, w - HudStyle.PAD_X - UiFont.width(text), UiFont.centerY(y, 16), color, hud.shadow);
       }
    }
 }
