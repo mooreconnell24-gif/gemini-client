@@ -46,21 +46,21 @@ public final class WorldRules extends Module {
       );
       this.addSetting(new ActionSetting("Set Time", "Set the world to the chosen time of day now; switch Daylight Cycle off to keep it there", () -> {
          String value = time.is("Custom") ? Integer.toString(timeTicks.intValue()) : time.get().toLowerCase(Locale.ROOT);
-         report(SpCommands.run("time set " + value), "time set to §f" + time.get());
+         report(SpCommands.run("time set " + value), "The time is now §f" + time.get());
       }));
       ModeSetting weather = this.addSetting(new ModeSetting("Weather", "Weather the Set Weather button sets", "Clear", "Clear", "Rain", "Thunder"));
       this.addSetting(new ActionSetting("Set Weather", "Set the chosen weather now; switch Weather Cycle off to keep it", () -> {
-         report(SpCommands.run("weather " + weather.get().toLowerCase(Locale.ROOT)), "weather set to §f" + weather.get());
+         report(SpCommands.run("weather " + weather.get().toLowerCase(Locale.ROOT)), "The weather is now §f" + weather.get());
       }));
       ModeSetting gameMode = this.addSetting(
          new ModeSetting("Game Mode", "Game mode the Set Game Mode button switches you to", "Creative", "Survival", "Creative", "Adventure", "Spectator")
       );
       this.addSetting(new ActionSetting("Set Game Mode", "Switch to the chosen game mode now", () -> {
-         report(SpCommands.gamemode(gameMode.get()), "game mode set to §f" + gameMode.get());
+         report(SpCommands.gamemode(gameMode.get()), "Your game mode is now §f" + gameMode.get());
       }));
       this.addSetting(new ActionSetting("Show Seed", "Write the world seed in chat", () -> {
          MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
-         report(server != null, server == null ? "" : "seed §f" + server.overworld().getSeed());
+         report(server != null, server == null ? "" : "World seed: §f" + server.overworld().getSeed());
       }));
       this.rule("Keep Inventory", "Keep your items and XP when you die", false, false, "keep_inventory");
       this.rule("Daylight Cycle", "Let the sun move; off freezes the time of day", true, true, "advance_time");
@@ -96,7 +96,7 @@ public final class WorldRules extends Module {
    }
 
    private static void report(boolean worked, String message) {
-      CommandManager.feedback(worked ? "§bWorld Tools §7" + message : "§cWorld Tools §7needs a single-player world.");
+      CommandManager.feedback(worked ? "§7" + message : "§cWorld Tools §7needs a single-player world.");
    }
 
    private void sendDifficulty(boolean force) {

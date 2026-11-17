@@ -55,7 +55,7 @@ public abstract class ClientPacketListenerMixin {
       Minecraft client = Minecraft.getInstance();
       if (client.isSameThread() && Gemini.getInstance() != null && client.player != null && packet.id() == client.player.getId()) {
          VelocityModule velocity = Gemini.getInstance().modules().byClass(VelocityModule.class).orElse(null);
-         if (velocity != null && velocity.isEnabled() && velocity.roll()) {
+         if (velocity != null && velocity.isEnabled()) {
             if (velocity.jumpOnHit() && client.player.onGround() && !client.player.isInWater()) {
                client.player.jumpFromGround();
             }
@@ -86,7 +86,7 @@ public abstract class ClientPacketListenerMixin {
       Minecraft client = Minecraft.getInstance();
       if (client.isSameThread() && Gemini.getInstance() != null && client.player != null && !packet.playerKnockback().isEmpty()) {
          VelocityModule velocity = Gemini.getInstance().modules().byClass(VelocityModule.class).orElse(null);
-         if (velocity != null && velocity.isEnabled() && velocity.roll()) {
+         if (velocity != null && velocity.isEnabled() && velocity.explosions()) {
             Vec3 knockback = (Vec3)packet.playerKnockback().get();
             client.player.setDeltaMovement(client.player.getDeltaMovement().subtract(knockback));
             double horizontal = velocity.horizontalPercent();

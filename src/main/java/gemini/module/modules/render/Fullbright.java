@@ -11,7 +11,7 @@ import net.minecraft.world.effect.MobEffects;
 
 public final class Fullbright extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Effect gives night vision without the effect icon; Gamma raises brightness to the slider maximum", "Effect", "Effect", "Gamma")
+      new ModeSetting("Mode", "Night Vision lights everything evenly, without the effect icon; Gamma raises the brightness option to its maximum and keeps shadows", "Night Vision", "Night Vision", "Gamma")
    );
    private double previousGamma = 0.5;
    private boolean gammaApplied;

@@ -26,6 +26,9 @@ public final class AutoArmorModule extends Module {
    private final NumberSetting delay = this.addSetting(new NumberSetting("Delay", "Ticks between equip actions", 3.0, 0.0, 20.0, 1.0));
    private final BooleanSetting keepElytra = this.addSetting(new BooleanSetting("Keep Elytra", "Never swap your elytra for a chestplate", true));
    private final BooleanSetting onlyInInventory = this.addSetting(new BooleanSetting("Only In Inventory", "Only equip while your inventory screen is open", false));
+   private final BooleanSetting avoidBinding = this.addSetting(
+      new BooleanSetting("Avoid Binding", "Never put on a piece with Curse of Binding, which could not be taken off again", true)
+   );
    private int cooldown;
 
    public AutoArmorModule() {
@@ -52,7 +55,12 @@ public final class AutoArmorModule extends Module {
                      int bestIndex = -1;
 
                      for (int index = 0; index < 36; index++) {
-                        double value = score(player.getInventory().getItem(index), slot);
+                        ItemStack candidate = player.getInventory().getItem(index);
+                        if (this.avoidBinding.get() && EnchantmentHelper.has(candidate, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) {
+                           continue;
+                        }
+
+                        double value = score(candidate, slot);
                         if (value > bestScore) {
                            bestScore = value;
                            bestIndex = index;

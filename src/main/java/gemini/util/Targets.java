@@ -78,9 +78,4 @@ public final class Targets {
 
       return best;
    }
-
-   /** The nearest player or (optionally) hostile mob in range: the shared target pick of the combat modules. */
-   public static LivingEntity nearestEnemy(LocalPlayer self, Iterable<Entity> entities, double range, boolean mobs) {
-      return nearest(self, entities, LivingEntity.class, range, living -> isCandidate(self, living, true, mobs, false, true));
-   }
 }

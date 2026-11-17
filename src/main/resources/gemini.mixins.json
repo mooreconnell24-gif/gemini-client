@@ -9,6 +9,7 @@
 		"BlockStateBaseMixin",
 		"CameraMixin",
 		"ChatComponentMixin",
+		"ClientClockInstanceMixin",
 		"ClientCommonPacketListenerImplMixin",
 		"ClientLevelMixin",
 		"ClientPacketListenerMixin",
