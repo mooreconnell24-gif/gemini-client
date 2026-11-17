@@ -1,0 +1,90 @@
+{
+ "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606": {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric",
+   "quilt"
+  ],
+  "environment": "client_only",
+  "id": "xckkBHD5",
+  "project_id": "mOgUt4GM",
+  "author_id": "uF4fzWRt",
+  "featured": false,
+  "name": "v21.0.1 for 26.3",
+  "version_number": "21.0.1",
+  "changelog": "- Update Uzbek translations (uz_uz.json) to the new alphabet (thanks, itsbilolbek)\n- Reset ModMenu config when malformed (resolves #1079)\n- Allow opening contributor homepages, thanks LostLuma\n- Display more of long versions in compact mod list (thanks, Jab125)\n- Use root locale for NumberFormat (thanks, Jab125; resolves #893)",
+  "changelog_url": null,
+  "date_published": "2026-11-12T11:08:13.487894Z",
+  "downloads": 480471,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "mcNoeZJ4",
+    "hashes": {
+     "sha1": "884ab621735264187ccbfc87017cf55bb54d47ee",
+     "sha512": "d00d52d5342728da13a6237f76c50fc5fd1c62d8112ae4e07726bbc64d2019a76130d6b2968765df81c6499225588eacee6681eebc13c0ada3cad91fc8ab2984"
+    },
+    "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/xckkBHD5/modmenu-21.0.1.jar",
+    "filename": "modmenu-21.0.1.jar",
+    "primary": true,
+    "size": 862761,
+    "file_type": null
+   }
+  ],
+  "dependencies": [
+   {
+    "version_id": null,
+    "project_id": "P7dR8mSH",
+    "file_name": null,
+    "dependency_type": "required"
+   },
+   {
+    "version_id": null,
+    "project_id": "eXts2L7r",
+    "file_name": null,
+    "dependency_type": "required"
+   }
+  ]
+ },
+ "fb686a9fa923248328107a12498229d6951e316257f18b7d0e4cbd6885ba447ed50a44076a8a5ba47cfe2043b329db3587ab000aeab1face26b2587a5d4ba6b5": {
+  "game_versions": [
+   "26.3"
+  ],
+  "loaders": [
+   "fabric"
+  ],
+  "environment": "client_or_server_prefers_both",
+  "id": "Zns5SSRA",
+  "project_id": "P7dR8mSH",
+  "author_id": "JZA4dW8o",
+  "featured": false,
+  "name": "[26.3] Fabric API 0.166.2+26.3",
+  "version_number": "0.166.2+26.3",
+  "changelog": "- Bump version (modmuss50)\n- Fix removed attachments reappearing after restart (#5677) (modmuss)\n- Fix ValueInput.contains throwing for empty children (#5678) (modmuss)\n- Fix test crash when resizing window (#5688) (modmuss)\n",
+  "changelog_url": null,
+  "date_published": "2026-11-11T13:38:52.250683Z",
+  "downloads": 945747,
+  "version_type": "release",
+  "status": "listed",
+  "requested_status": null,
+  "files": [
+   {
+    "id": "BMb1lP1i",
+    "hashes": {
+     "sha1": "65636253571429971f25f5619692e6c1a6362028",
+     "sha512": "fb686a9fa923248328107a12498229d6951e316257f18b7d0e4cbd6885ba447ed50a44076a8a5ba47cfe2043b329db3587ab000aeab1face26b2587a5d4ba6b5"
+    },
+    "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/Zns5SSRA/fabric-api-0.166.2%2B26.3.jar",
+    "filename": "fabric-api-0.166.2+26.3.jar",
+    "primary": true,
+    "size": 1797523,
+    "file_type": null
+   }
+  ],
+  "dependencies": []
+ }
+}
