@@ -29,6 +29,11 @@ class TextExcerptTest {
    }
 
    @Test
+   void dropsEmojiTheFontCannotDraw() {
+      assertEquals(List.of("✔ Fast", "Works"), TextExcerpt.paragraphs("✔️ Fast\n\n🚀 Works", 100));
+   }
+
+   @Test
    void cutsAtAWord() {
       List<String> out = TextExcerpt.paragraphs("one two three four five six seven", 14);
       assertEquals(List.of("one two three..."), out);

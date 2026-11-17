@@ -987,6 +987,7 @@ public final class ModsPage extends DashboardPage {
             this.host.notice("Can't update " + entry.name() + ": " + (plan.problems().isEmpty() ? "nothing to install" : plan.problems().get(0)));
          } else {
             ModBrowser.Job job = browser.install(key, entry.name(), ProjectType.MOD, plan, entry.path());
+            this.updateStatus = null;
             this.updates = new HashMap<>(this.updates);
             this.updates.remove(entry.path().toAbsolutePath().normalize());
             this.watch(job);

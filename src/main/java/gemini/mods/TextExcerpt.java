@@ -15,6 +15,8 @@ public final class TextExcerpt {
    private static final Pattern TAG = Pattern.compile("<[^>]{0,400}>");
    private static final Pattern EMPHASIS = Pattern.compile("(\\*\\*|__|\\*|`|~~)");
    private static final Pattern BARE_URL = Pattern.compile("https?://\\S+");
+   /** Emoji (outside the font) and the joiners and variation selectors that go with them. */
+   private static final Pattern PICTOGRAPH = Pattern.compile("[\\x{1F000}-\\x{1FAFF}\\x{FE00}-\\x{FE0F}\\x{200D}\\x{20E3}]");
 
    private TextExcerpt() {
    }
@@ -47,7 +49,8 @@ public final class TextExcerpt {
 
          line = line.replaceFirst("^#{1,6}\\s*", "").replaceFirst("^>\\s*", "").replaceFirst("^([-*+]|\\d+\\.)\\s+", "");
          line = EMPHASIS.matcher(line).replaceAll("");
-         line = BARE_URL.matcher(line).replaceAll("").strip();
+         line = BARE_URL.matcher(line).replaceAll("");
+         line = PICTOGRAPH.matcher(line).replaceAll("").strip();
          if (line.isEmpty()) {
             used = flush(paragraph, out, used, maxChars);
             if (used >= maxChars) {
