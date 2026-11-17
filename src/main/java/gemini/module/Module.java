@@ -216,8 +216,10 @@ public abstract class Module {
          this.savedEnabled = enabled;
          this.applyRuntimeState();
          if (notify && Minecraft.getInstance().player != null && this.isListed()) {
-            HudOverlay.pushNotification(this.name, this.savedEnabled ? "Module enabled" : "Module disabled", this.savedEnabled);
-            CommandManager.feedback("§b" + this.name + " §7" + (this.savedEnabled ? "§aenabled" : "§cdisabled"));
+            // One message per toggle: the toast, or the chat line when toasts are switched off.
+            if (!HudOverlay.pushNotification(this.name, this.savedEnabled ? "Module enabled" : "Module disabled", this.savedEnabled)) {
+               CommandManager.feedback("§b" + this.name + " §7" + (this.savedEnabled ? "§aenabled" : "§cdisabled"));
+            }
          }
 
          if (persist) {

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.PauseScreen;
@@ -20,8 +21,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 /**
- * A small Gemini group on the Esc menu: buttons for the module menu, the HUD editor and the guide, then Panic as a
- * plain text link, and a "key conflicts" link only while there are conflicting key binds. Everything else (presets,
+ * A small Gemini group on the Esc menu: plain vanilla buttons for the module menu, the HUD editor and the guide,
+ * then Panic as a small text link, and a "key conflicts" link only while there are conflicting key binds. Everything else (presets,
  * the key-bind report, quick search) is one click further, inside the module menu.
  *
  * <p>It is added from Fabric's screen-init hook (see {@link SandboxUi#onScreenInit}) and only where Gemini may
@@ -67,19 +68,26 @@ public final class PauseDock {
       }
 
       DockLayout layout = DockLayout.compute(screen.width, screen.height, fullWidths, briefWidths);
-      GlassButton[] buttons = new GlassButton[count];
+      AbstractWidget[] buttons = new AbstractWidget[count];
       List<AbstractWidget> widgets = Screens.getWidgets(screen);
       widgets.add(new Fader(buttons));
       for (int i = 0; i < count; i++) {
          int action = i;
-         buttons[i] = new GlassButton(
-            layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), layout.shortLabels() ? brief[i] : full[i], pressed -> run(action, client, screen)
-         );
-         if (i >= FIRST_LINK) {
-            buttons[i].plain();
+         Component label = layout.shortLabels() ? brief[i] : full[i];
+         Tooltip tooltip = Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip"));
+         if (i < FIRST_LINK) {
+            // The real vanilla button, so the group reads as part of the pause menu rather than something stuck on it.
+            buttons[i] = Button.builder(label, pressed -> run(action, client, screen))
+               .bounds(layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight())
+               .tooltip(tooltip)
+               .build();
+         } else {
+            GlassButton link = new GlassButton(layout.x()[i], layout.y()[i], layout.w()[i], layout.buttonHeight(), label, pressed -> run(action, client, screen))
+               .plain();
+            link.setTooltip(tooltip);
+            buttons[i] = link;
          }
 
-         buttons[i].setTooltip(Tooltip.create(Component.translatable("gemini.dock." + KEYS[i] + ".tooltip")));
          widgets.add(buttons[i]);
       }
    }
@@ -118,11 +126,11 @@ public final class PauseDock {
     * e.g. after Open to LAN. It is never active, so it takes no focus, clicks or narration.
     */
    private static final class Fader extends AbstractWidget {
-      private final GlassButton[] buttons;
+      private final AbstractWidget[] buttons;
       private float shown = 1.0F;
       private long lastFrame;
 
-      Fader(GlassButton[] buttons) {
+      Fader(AbstractWidget[] buttons) {
          super(0, 0, 0, 0, Component.empty());
          this.buttons = buttons;
          this.active = false;
@@ -135,7 +143,7 @@ public final class PauseDock {
          this.lastFrame = now;
          boolean allowed = SingleplayerGate.allowed();
          this.shown = Glass.approach(this.shown, allowed ? 1.0F : 0.0F, 10.0F, delta);
-         for (GlassButton button : this.buttons) {
+         for (AbstractWidget button : this.buttons) {
             if (button != null) {
                button.visible = allowed || this.shown > 0.05F;
                button.active = allowed;

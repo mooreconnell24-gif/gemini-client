@@ -223,16 +223,14 @@ public final class HelpScreen extends Screen {
       int y1 = l.panelY();
       int x2 = x1 + l.panelWidth();
       int y2 = y1 + l.panelHeight();
-      Glass.panel(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.surface(0), Glass.accent(), a, 0.0F);
-      Glass.gradientBar(g, x1 + Theme.RADIUS_LARGE, y1, x2 - Theme.RADIUS_LARGE, y1 + 1, Glass.fade(Glass.accent(), a), Glass.fade(Glass.accent2(), a));
-      String version = "dev".equals(Gemini.VERSION) ? "dev build" : "v" + Gemini.VERSION;
-      int versionWidth = this.font.width(version);
-      Controls.text(g, this.font, Controls.fit(this.font, "Gemini guide", l.panelWidth() - versionWidth - 3 * Theme.SPACE_L - 8), x1 + Theme.SPACE_L, y1 + 8, Glass.TEXT, a);
-      Controls.text(g, this.font, version, x2 - Theme.SPACE_L - versionWidth, y1 + 8, Glass.TEXT_FAINT, a);
+      // One flat card with a faint edge; the version is in the "What's new" heading, so the title is just the name.
+      Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(0), 235), a));
+      Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(0xFFFFFF, 22), a));
+      Controls.text(g, this.font, Controls.fit(this.font, "Guide", l.panelWidth() - 2 * Theme.SPACE_L), x1 + Theme.SPACE_L, y1 + 8, Glass.TEXT_DIM, a);
       this.extractTabs(g, mouseX, mouseY, a);
       this.extractDocument(g, a);
-      if (this.tab == Tab.WHATS_NEW || this.tab == Tab.COMMANDS) {
-         String hint = this.tab == Tab.WHATS_NEW ? "Opens once after each update" : "Quick search: " + GeminiKeys.paletteHint();
+      if (this.tab == Tab.COMMANDS) {
+         String hint = "Quick search: " + GeminiKeys.paletteHint();
          Controls.text(g, this.font, Controls.fit(this.font, hint, l.panelWidth() / 2), x1 + Theme.SPACE_L, l.footerY() + Theme.SPACE_S + 4, Glass.TEXT_FAINT, a);
       }
 
@@ -253,14 +251,13 @@ public final class HelpScreen extends Screen {
             this.hoveredTab = i;
          }
 
-         int fill = active ? Glass.withAlpha(Glass.accent(), 120) : Glass.withAlpha(Glass.surface(over ? 3 : 1), 230);
-         Glass.roundRect(g, x, y, x + w, y + HelpLayout.TAB_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(fill, a));
+         // Text tabs: only the active one gets a soft fill.
          if (active) {
-            Glass.roundOutline(g, x, y, x + w, y + HelpLayout.TAB_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.accent2(), 170), a));
+            Glass.roundRect(g, x, y, x + w, y + HelpLayout.TAB_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.surface(3), 255), a));
          }
 
          String label = Controls.fit(this.font, l.shortTabs() ? tabs[i].brief : tabs[i].label, w - 6);
-         int color = active ? Glass.TEXT : Theme.labelColor(true, over ? 1.0F : 0.0F);
+         int color = active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT);
          Controls.text(g, this.font, label, x + (w - this.font.width(label)) / 2, y + 3, color, a);
       }
    }
@@ -288,12 +285,12 @@ public final class HelpScreen extends Screen {
                Controls.text(g, this.font, piece.text(), 0, 0, Glass.TEXT, a);
                g.pose().popMatrix();
             }
-            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.accent2(), a);
+            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT, a);
             case H3, CELL_KEY -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT, a);
             case BODY, BULLET, CELL -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_DIM, a);
-            case BULLET_MARK -> Controls.text(g, this.font, piece.text(), x, y, Glass.accent(), a);
+            case BULLET_MARK -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_FAINT, a);
             case TABLE_HEADER -> Controls.text(g, this.font, piece.text(), x, y, Glass.TEXT_FAINT, a);
-            case RULE -> Glass.gradientBar(g, x, y, x + piece.width(), y + 1, Glass.fade(Glass.withAlpha(Glass.accent(), 120), a), Glass.fade(Glass.withAlpha(Glass.accent2(), 10), a));
+            case RULE -> g.fill(x, y, x + piece.width(), y + 1, Glass.fade(0x18FFFFFF, a));
             case STRIPE -> Glass.roundRect(g, x, y, x + piece.width(), y + piece.height(), Theme.RADIUS_SMALL, Glass.fade(0x0CFFFFFF, a));
          }
       }
@@ -306,7 +303,7 @@ public final class HelpScreen extends Screen {
          int thumbY = top + Math.round((track - thumb) * (this.scroll / max));
          int sx = l.panelX() + l.panelWidth() - Theme.SPACE_S - 2;
          Glass.roundRect(g, sx, top, sx + 2, bottom, 1, Glass.fade(0x14FFFFFF, a));
-         Glass.roundRect(g, sx, thumbY, sx + 2, thumbY + thumb, 1, Glass.fade(Glass.withAlpha(Glass.accent(), 190), a));
+         Glass.roundRect(g, sx, thumbY, sx + 2, thumbY + thumb, 1, Glass.fade(0x50FFFFFF, a));
       }
    }
 

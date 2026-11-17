@@ -512,10 +512,16 @@ public final class CategoryPanel {
       boolean overPanel = hoverable && inside(mouseX, mouseY, x, top, w, bottom - top);
       float emphasisTarget = this.drag == CategoryPanel.Drag.MOVE || this.drag == CategoryPanel.Drag.RESIZE ? 1.0F : (overHeader ? 0.7F : (overPanel ? 0.3F : 0.0F));
       this.emphasis = Glass.approach(this.emphasis, look.glow() ? emphasisTarget : 0.0F, 12.0F, this.dt);
-      Glass.panel(graphics, x, top, x + w, bottom, Glass.RADIUS, look.body(), panelAccent, look.opacity() * this.alpha, this.emphasis);
-      Glass.roundRect(graphics, x + 1, top + 1, x + w - 1, top + HEADER, Glass.RADIUS - 1, this.faded(look.header(), Math.round(150.0F * look.opacity())));
-      Glass.gradientBar(graphics, x + 4, top + HEADER - 1, x + w - 4, top + HEADER, this.faded(panelAccent, 190), this.faded(accent2, 190));
-      this.text(graphics, font, this.category.displayName().toUpperCase(Locale.ROOT), x + 8, top + 7, Glass.TEXT);
+      if (look.glow()) {
+         Glass.panel(graphics, x, top, x + w, bottom, Glass.RADIUS, look.body(), panelAccent, look.opacity() * this.alpha, this.emphasis);
+      } else {
+         // The default look: a flat card with a faint edge; no accent border, sheen or halo.
+         Glass.roundRect(graphics, x, top, x + w, bottom, Glass.RADIUS, this.faded(look.body(), Math.round(225.0F * look.opacity())));
+         Glass.roundOutline(graphics, x, top, x + w, bottom, Glass.RADIUS, this.faded(0xFFFFFF, 16));
+      }
+
+      hairline(graphics, x + 6, top + HEADER - 1, x + w - 6, this.faded(0xFFFFFF, 20));
+      this.text(graphics, font, this.category.displayName(), x + 8, top + 7, Glass.TEXT);
       int activeInCat = 0;
       for (CategoryPanel.Row r : this.visible) {
          if (r.module.isEnabled()) {
@@ -523,13 +529,17 @@ public final class CategoryPanel {
          }
       }
 
-      String count = activeInCat > 0 ? activeInCat + "/" + this.visible.size() : Integer.toString(this.visible.size());
+      // Only the number switched on, and only when there is one: the total is not worth a label.
       int chevronX = x + w - 14;
-      this.text(graphics, font, count, chevronX - 6 - font.width(count), top + 7, activeInCat > 0 ? accent2 : Glass.TEXT_FAINT);
+      if (activeInCat > 0) {
+         String count = Integer.toString(activeInCat);
+         this.text(graphics, font, count, chevronX - 6 - font.width(count), top + 7, Glass.TEXT_DIM);
+      }
+
       if (this.collapseAnim < 0.5F) {
-         triRight(graphics, chevronX, top + 11, 4, this.faded(accent2));
+         triRight(graphics, chevronX, top + 11, 4, this.faded(Glass.TEXT_DIM));
       } else {
-         triDown(graphics, chevronX - 2, top + 9, 4, this.faded(panelAccent));
+         triDown(graphics, chevronX - 2, top + 9, 4, this.faded(Glass.TEXT_FAINT));
       }
 
       String hovered = null;
@@ -660,24 +670,17 @@ public final class CategoryPanel {
       Module module = row.module;
       boolean blocked = !module.canActivate() && !(module instanceof ClickGuiModule);
       boolean binding = bindingModule == module;
-      if (row.enableAnim > 0.01F) {
-         int activeColor = Glass.lerp(panelAccent, accent2, 0.3F);
-         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(activeColor, Math.round(70.0F * row.enableAnim)));
-         Glass.roundRect(graphics, x + 3, y + 3, x + 5, y + ROW - 3, 1, this.faded(accent2, Math.round(255.0F * row.enableAnim)));
-      }
-
+      // A switched-on module is told apart by its switch and its bright name; rows get no tint or bar.
       if (row.hoverAnim > 0.01F) {
-         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(0xFFFFFF, Math.round(22.0F * row.hoverAnim)));
-         Glass.roundOutline(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(accent2, Math.round(90.0F * row.hoverAnim)));
+         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(0xFFFFFF, Math.round(16.0F * row.hoverAnim)));
       }
 
       if (module == this.highlighted) {
-         Glass.roundOutline(graphics, x + 2, y, x + w - 2, y + ROW, 3, this.faded(accent2, 235));
-         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(accent2, 34));
+         Glass.roundRect(graphics, x + 3, y + 1, x + w - 3, y + ROW - 1, 3, this.faded(accent, 40));
       }
 
       if (binding) {
-         Glass.roundOutline(graphics, x + 2, y, x + w - 2, y + ROW, 3, this.faded(accent, Math.round(120.0F + 135.0F * Glass.pulse(900L))));
+         Glass.roundOutline(graphics, x + 2, y, x + w - 2, y + ROW, 3, this.faded(accent, 200));
       }
 
       // from the right: the switch, then the key (or what the search matched), then the name
@@ -750,12 +753,11 @@ public final class CategoryPanel {
 
       int keyW = font.width(key);
       int right = x + w - 10;
-      Glass.roundRect(graphics, right - keyW - 6, y + 2, right, y + 14, 3, this.faded(accent, binding ? 110 : (over ? 60 : 30)));
       if (binding) {
-         Glass.roundOutline(graphics, right - keyW - 6, y + 2, right, y + 14, 3, this.faded(accent, Math.round(120.0F + 135.0F * Glass.pulse(900L))));
+         Glass.roundRect(graphics, right - keyW - 6, y + 2, right, y + 14, 3, this.faded(accent, 110));
       }
 
-      this.text(graphics, font, key, right - keyW - 3, y + 5, binding || over ? Glass.TEXT : accent2);
+      this.text(graphics, font, key, right - keyW - 3, y + 5, binding || over ? Glass.TEXT : Glass.TEXT_DIM);
    }
 
    /** Switches, mode pills, list links and action buttons; numbers and colours are {@link SettingControl}s. */
@@ -777,17 +779,14 @@ public final class CategoryPanel {
          String value = mode.get();
          int valueW = font.width(value);
          this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 14), left, y + 5, labelColor);
-         Glass.roundRect(graphics, right - valueW - 8, y + 2, right, y + 14, 3, this.faded(accent, over ? 80 : 36));
-         Glass.roundOutline(graphics, right - valueW - 8, y + 2, right, y + 14, 3, this.faded(accent, over ? 200 : 70));
-         this.text(graphics, font, value, right - valueW - 4, y + 5, over ? Glass.TEXT : accent2);
+         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.TEXT : Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, 0.5F));
       } else if (setting instanceof ListSetting list) {
          String value = list.size() + (list.size() == 1 ? " entry  ›" : " entries  ›");
          int valueW = font.width(value);
          this.text(graphics, font, Controls.fit(font, setting.name(), right - left - valueW - 8), left, y + 5, labelColor);
-         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.TEXT : accent2);
+         this.text(graphics, font, value, right - valueW, y + 5, over ? Glass.TEXT : Glass.TEXT_DIM);
       } else if (setting instanceof ActionSetting) {
-         Glass.roundRect(graphics, left - 2, y + 2, right + 2, y + h - 2, 3, over ? this.faded(accent, 110) : this.faded(0xFF161C28, 220));
-         Glass.roundOutline(graphics, left - 2, y + 2, right + 2, y + h - 2, 3, this.faded(accent, over ? 230 : 90));
+         Glass.roundRect(graphics, left - 2, y + 2, right + 2, y + h - 2, 3, this.faded(over ? 0xFF2C3444 : 0xFF202634, 230));
          String label = Controls.fit(font, setting.name(), right - left - 8);
          this.text(graphics, font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2, over ? Glass.TEXT : Glass.TEXT_DIM);
       }
@@ -799,7 +798,7 @@ public final class CategoryPanel {
       int[] thumb = this.thumbBounds(vpTop);
       boolean active = this.drag == CategoryPanel.Drag.SCROLLBAR
          || hoverable && mouseX >= trackX - 1 && mouseX <= trackX + 4 && mouseY >= thumb[0] && mouseY <= thumb[1];
-      Glass.roundRect(graphics, trackX, thumb[0], trackX + 3, thumb[1], 1, this.faded(accent, active ? 235 : 150));
+      Glass.roundRect(graphics, trackX, thumb[0], trackX + 3, thumb[1], 1, this.faded(active ? accent : 0xFFFFFF, active ? 220 : 60));
    }
 
    private int[] thumbBounds(int vpTop) {
@@ -1261,5 +1260,10 @@ public final class CategoryPanel {
       private Row(Module module) {
          this.module = module;
       }
+   }
+
+   /** A one-pixel horizontal rule. */
+   private static void hairline(GuiGraphicsExtractor graphics, int x1, int y, int x2, int color) {
+      graphics.fill(x1, y, x2, y + 1, color);
    }
 }
