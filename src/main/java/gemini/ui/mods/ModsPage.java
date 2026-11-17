@@ -404,7 +404,7 @@ public final class ModsPage extends DashboardPage {
       this.textFit(g, hit.description(), textX, y + 15, x + w - 4 - textX, Glass.TEXT_DIM);
       this.host.hit(x, y, w, ROW - 2, this.viewTop, this.viewBottom, null, (b, mx, my, d) -> this.select(hit));
       if (over) {
-         this.host.tip(hit.downloads() + " downloads");
+         this.host.tip(String.format(java.util.Locale.ROOT, "%,d downloads", hit.downloads()));
       }
    }
 
