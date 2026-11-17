@@ -2,18 +2,18 @@
 
 ## Menus and screens
 
-- **Title screen.** Gemini replaces the title screen with its own: Singleplayer, Multiplayer, Realms, Gemini (opens the module menu), Options and Quit, with small links for quick search, this guide and presets. The sandbox switch is in the bottom-right corner. "Vanilla menu" in the bottom-left corner switches back to the normal title screen; its "Gemini menu" button switches back again. The bottom line only shows something when it matters: the active profile, key-bind conflicts, or game hooks that failed to load.
-- **Pause menu.** Module menu, Edit HUD and Guide buttons in the bottom-left corner (above the Game Menu title on small windows), plus a Panic link. A "key conflicts" link appears only while two actions share a key.
-- **Window menu.** The sidebar lists the categories with the number of modules switched on, plus three pages: **Presets & Configs** (load, save, overwrite, delete, export and import profiles; built-in presets), **Keybinds** (every bound key; conflicts in red, clashes with vanilla controls in amber; Rebind, Clear and Toggle/Hold buttons) and **Baritone** (current task, goal, progress and ETA; Pause, Resume and Cancel; quick starts for the bot modules). It also opens from the title screen, so you can set Gemini up before loading a world.
+- **Title screen.** The vanilla panorama with the logo and one menu column on the left: Singleplayer, then **Continue**, which opens the world you played last straight away, then Multiplayer, Realms, Options and Quit, and small links to the Gemini menu, this guide and quick search. The sandbox switch is in the top-right corner; "Vanilla menu" in the bottom-left corner switches back to the normal title screen, and its "Gemini menu" button switches back again. A line of text only appears if a game hook failed to load.
+- **Pause menu.** Module menu, Edit HUD and Guide as normal Minecraft buttons in the bottom-left corner (above the Game Menu title on small windows), plus a Panic link. A "key conflicts" link appears only while two actions share a key.
+- **Window menu.** The sidebar lists the categories (with the number of modules switched on, when there are any) and three pages: **Presets** (load, save, overwrite, delete, export and import profiles; built-in presets), **Keybinds** (every bound key; conflicts in red, clashes with vanilla controls in amber; Rebind, Clear and Toggle/Hold buttons) and **Baritone** (current task, goal, progress and ETA; Pause, Resume and Cancel; quick starts for the bot modules). Modules with many settings show the main ones and a **More settings** row for the rest. It also opens from the title screen, so you can set Gemini up before loading a world.
 - **Panel menu.** Panels snap to the grid and to each other. Right-click a module for its settings, middle-click to bind a key. Search also matches setting names and says which one matched; the arrow keys and Enter move through the results.
 - **Setting controls.** Colour picker with a saturation/brightness square, hue and opacity sliders, hex input, copy and paste, and Static/Rainbow/Pulse. Hold Shift on a slider for fine steps, double-click it to type a value. Lists have icons, search and category filters.
 - **HUD editor.** Widgets snap to the screen centre, to other widgets' edges and centres, and to equal gaps. Arrow keys nudge the selected widget by 1 px (Shift: 10 px).
-- **Notifications** stack in a corner of your choice (HUD > Toast Position) and can be switched off (HUD > Toasts).
+- **Notifications** stack in a corner of your choice (HUD > Toast Position) and can be switched off (HUD > Toasts). Switching a module on or off shows one short line ("Sprint on"); the chat line is only written when notifications are off.
 
 ## Look
 
 - One calm default look: flat dark panels, thin borders, no glow, gradients or pulsing. Glass Glow and Particles in the ClickGUI settings are now off by default.
-- **Watermark** shows "Gemini", the version and FPS on one line. Ping is shown only on a real connection, never in single player. Speed is off by default. Styles are now called Card, Compact and Text (were Nextgen Card, LiquidBounce Pill and Minimal).
+- **Watermark** is a small "Gemini" label with FPS. Ping is shown only on a real connection, never in single player. Speed is off by default. Styles are now called Card, Compact and Text (were Nextgen Card, LiquidBounce Pill and Minimal), and HUD > Watermark switches it off.
 - **ArrayList** uses the theme accent by default, without outline. The "Astolfo" colour mode is now called "Pink-Blue Wave".
 - The default menu theme is now called "Blue" (was "LiquidBounce"), and "Neon" is now "Purple".
 

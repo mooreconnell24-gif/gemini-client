@@ -41,9 +41,13 @@ public final class ClickGuiScreen extends Screen {
    private static final int TOP_BAR = 54;
    private static final int FOOTER = 30;
    private static final String DEFAULT_TIP = "LMB toggle   RMB settings   MMB bind   Shift+RMB favourite   Shift+drag HUD widgets";
-   private static final String[] CHIPS = {
-      "All", "Active Only", "Keybound", "Favorites", "Collapse all", "Expand all", "Reset layout", "Edit HUD", "Save Preset", "Load Preset", "Window layout"
-   };
+   /** The chips always shown: the filters and the two other screens. */
+   private static final String[] CHIPS = {"All", "Active Only", "Keybound", "Favorites", "Edit HUD", "Window layout"};
+   /** Occasional actions, behind the "More" chip so the bar stays short. */
+   private static final String[] MORE_CHIPS = {"Collapse all", "Expand all", "Reset layout", "Save Preset", "Load Preset"};
+   private static final String MORE = "More";
+   private static final String LESS = "Less";
+   private static boolean moreChips;
    private static String rememberedSearch = "";
    /** 0 while the menu is closed, 1 once it is fully open; it eases both ways. */
    public float animationProgress = 0.0F;
@@ -54,7 +58,6 @@ public final class ClickGuiScreen extends Screen {
    private boolean closing;
    private String search = "";
    private boolean searchFocused;
-   private float searchGlow;
    private String filterMode = "All";
    private Module highlighted;
    private Module bindingModule;
@@ -145,11 +148,28 @@ public final class ClickGuiScreen extends Screen {
       int x = 56;
       int y = 35;
 
+      // The row has to end before the search box on the right.
+      int limit = this.vw - 16 - this.searchWidth() - 8;
       for (String label : CHIPS) {
-         int w = this.font.width(label) + 12;
-         this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
-         x += w + 4;
+         x = this.addChip(label, x, y);
       }
+
+      x = this.addChip(moreChips ? LESS : MORE, x + 6, y);
+      if (moreChips) {
+         for (String label : MORE_CHIPS) {
+            if (x + this.font.width(label) + 12 > limit) {
+               break;
+            }
+
+            x = this.addChip(label, x, y);
+         }
+      }
+   }
+
+   private int addChip(String label, int x, int y) {
+      int w = this.font.width(label) + 12;
+      this.chips.add(new ClickGuiScreen.Chip(label, x, y, w, 13));
+      return x + w + 4;
    }
 
    private MouseButtonEvent scaled(MouseButtonEvent event) {
@@ -212,7 +232,7 @@ public final class ClickGuiScreen extends Screen {
       graphics.pose().scale(zoom, zoom);
       if (dim) {
          graphics.fill(0, 0, this.vw, TOP_BAR, this.faded(surface, 205));
-         Glass.gradientBar(graphics, 0, TOP_BAR - 1, this.vw, TOP_BAR, this.faded(accent, 190), this.faded(accentB, 190));
+         graphics.fill(0, TOP_BAR - 1, this.vw, TOP_BAR, this.faded(0xFFFFFF, 18));
       }
 
       if (style == null || style.particles()) {
@@ -226,16 +246,14 @@ public final class ClickGuiScreen extends Screen {
       }
 
       if (open > 0.5F) {
-         GeminiMark.draw(graphics, 14, 9, 34, accent, pulse);
+         GeminiMark.draw(graphics, 14, 13, 20, accent, pulse);
       }
 
-      this.text(graphics, "Gemini", 56, 11, Glass.TEXT);
-      int enabled = Gemini.getInstance().modules().getEnabledModules().size();
-      int total = Gemini.getInstance().modules().getModules().size();
-      String meta = this.hudEditMode
-         ? "v" + Gemini.VERSION + "  ·  Editing the HUD: drag to move, arrow keys nudge 1px (Shift: 10px), Edit HUD to finish"
-         : "v" + Gemini.VERSION + "  ·  " + Minecraft.getInstance().getFps() + " FPS  ·  " + enabled + "/" + total + " modules active";
-      this.text(graphics, meta, 56, 22, this.hudEditMode ? accentB : Glass.TEXT_FAINT);
+      this.text(graphics, "Gemini", 40, 19, Glass.TEXT);
+      if (this.hudEditMode) {
+         // Only the HUD editor needs instructions up here; the module menu explains itself.
+         this.text(graphics, "Drag to move  ·  arrow keys nudge 1px (Shift: 10px)", 40, 30, Glass.TEXT_DIM);
+      }
       this.drawSearch(graphics, mouseX, mouseY, accent, accentB, now, delta);
       this.drawChips(graphics, mouseX, mouseY, accent, accentB);
 
@@ -344,10 +362,9 @@ public final class ClickGuiScreen extends Screen {
       int searchW = this.searchWidth();
       int searchX = this.vw - 16 - searchW;
       boolean over = inside(mouseX, mouseY, searchX, 28, searchW, 16);
-      this.searchGlow = Glass.approach(this.searchGlow, this.searchFocused ? 1.0F : (over ? 0.5F : 0.0F), 14.0F, delta);
-      String stats = "Ctrl+F search  ·  ↑↓ Enter";
-      this.text(graphics, stats, this.vw - 16 - this.font.width(stats), 12, Glass.TEXT_FAINT);
-      Glass.panel(graphics, searchX, 27, searchX + searchW, 45, Glass.RADIUS, Glass.surface(1), this.searchFocused ? accentB : accent, this.fade, this.searchGlow);
+      Glass.roundRect(graphics, searchX, 27, searchX + searchW, 45, Glass.RADIUS, this.faded(Glass.surface(this.searchFocused || over ? 2 : 1), 220));
+      // The one field on the bar keeps a faint edge; focus tints it with the accent.
+      Glass.roundOutline(graphics, searchX, 27, searchX + searchW, 45, Glass.RADIUS, this.searchFocused ? this.faded(accent, 150) : this.faded(0xFFFFFF, 24));
       int textRight = searchX + searchW - 8;
       if (!this.search.isEmpty()) {
          boolean overClear = inside(mouseX, mouseY, searchX + searchW - 16, 28, 16, 16);
@@ -376,9 +393,11 @@ public final class ClickGuiScreen extends Screen {
       for (ClickGuiScreen.Chip chip : this.chips) {
          boolean activeChip = "Edit HUD".equals(chip.label) && this.hudEditMode || chip.label.equals(this.filterMode);
          boolean over = chip.contains(mouseX, mouseY);
-         int fill = activeChip ? this.faded(accentB, 130) : (over ? this.faded(accent, 95) : this.faded(Glass.surface(2), 200));
-         Glass.roundRect(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, fill);
-         Glass.roundOutline(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, this.faded(activeChip ? accentB : (over ? accent : 0xFFFFFF), activeChip || over ? 220 : 36));
+         // Plain text; the active one gets a soft fill, hover only brightens the label.
+         if (activeChip) {
+            Glass.roundRect(graphics, chip.x, chip.y, chip.x + chip.w, chip.y + chip.h, 4, this.faded(accent, 110));
+         }
+
          this.text(graphics, chip.label, chip.x + 6, chip.y + 3, over || activeChip ? Glass.TEXT : Glass.TEXT_DIM);
       }
    }
@@ -431,12 +450,12 @@ public final class ClickGuiScreen extends Screen {
 
       int ty = Mth.clamp(this.tooltipAnchorY - 2, TOP_BAR + 4, Math.max(TOP_BAR + 4, this.vh - FOOTER - cardH - 4));
       float show = this.tooltipProgress * this.fade;
-      Glass.panel(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.surface(1), accent, show, 0.45F);
-      Glass.roundRect(graphics, tx + 2, ty + 3, tx + 4, ty + cardH - 3, 1, Glass.fade(accentB, show));
+      Glass.roundRect(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.fade(Glass.withAlpha(Glass.surface(1), 235), show));
+      Glass.roundOutline(graphics, tx, ty, tx + cardW, ty + cardH, Glass.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, 20), show));
       Controls.text(graphics, this.font, this.tooltipTitle, tx + 8, ty + 5, Glass.TEXT, show);
       if (badge) {
          String label = "[" + this.tooltipKeyBadge + "]";
-         Controls.text(graphics, this.font, label, tx + cardW - 6 - this.font.width(label), ty + 5, accentB, show);
+         Controls.text(graphics, this.font, label, tx + cardW - 6 - this.font.width(label), ty + 5, Glass.TEXT_DIM, show);
       }
 
       int lineY = ty + 16;
@@ -572,14 +591,15 @@ public final class ClickGuiScreen extends Screen {
       int bindX = 14;
       int bindY = this.vh - FOOTER + 4;
       boolean overBind = inside(mouseX, mouseY, bindX, bindY, bindWidth, 18);
-      Glass.panel(graphics, bindX, bindY, bindX + bindWidth, bindY + 18, Glass.RADIUS, Glass.surface(1), accent, this.fade, this.bindingMenu ? 1.0F : (overBind ? 0.5F : 0.0F));
-      this.text(graphics, bindLabel, bindX + 9, bindY + 5, this.bindingMenu ? Glass.TEXT : accent);
-      String hint = "Wheel scroll · Shift+drag HUD";
-      int hintW = this.font.width(hint);
+      if (this.bindingMenu) {
+         Glass.roundRect(graphics, bindX, bindY, bindX + bindWidth, bindY + 18, Glass.RADIUS, this.faded(accent, 110));
+      }
+
+      this.text(graphics, bindLabel, bindX + 9, bindY + 5, this.bindingMenu || overBind ? Glass.TEXT : Glass.TEXT_DIM);
       boolean flashing = this.flashText != null && now < this.flashUntil;
       if (tooltips || flashing) {
          String tip = this.hoveredDescription.replaceAll("§.", "");
-         int maxWidth = Math.max(120, this.vw - (bindX + bindWidth + 12) - hintW - 22);
+         int maxWidth = Math.max(120, this.vw - (bindX + bindWidth + 12) - 22);
          if (this.font.width(tip) <= maxWidth) {
             this.text(graphics, tip, bindX + bindWidth + 12, bindY + 5, flashing ? accentB : Glass.TEXT_DIM);
          } else {
@@ -591,7 +611,6 @@ public final class ClickGuiScreen extends Screen {
          }
       }
 
-      this.text(graphics, hint, this.vw - 14 - hintW, bindY + 5, Glass.TEXT_FAINT);
    }
 
    // ---- mouse ----------------------------------------------------------------------------------------------
@@ -712,6 +731,11 @@ public final class ClickGuiScreen extends Screen {
    private void runChip(ClickGuiScreen.Chip chip) {
       String label = chip.label;
       switch (label) {
+         case MORE:
+         case LESS:
+            moreChips = !moreChips;
+            this.buildChips();
+            return;
          case "All":
          case "Active Only":
          case "Keybound":
