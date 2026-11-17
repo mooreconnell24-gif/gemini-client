@@ -36,6 +36,10 @@ public class GlassButton extends Button {
    private long pressedAt;
    private int expand;
    private boolean plain;
+   private boolean primary;
+   private boolean leftAligned;
+   private String detail;
+   private int detailWidth;
    private IntSupplier badge;
    private int badgeColor = Glass.ERROR;
 
@@ -58,6 +62,25 @@ public class GlassButton extends Button {
    /** Draws only the label, without a card: for small secondary actions that should not compete with the main buttons. */
    public GlassButton plain() {
       this.plain = true;
+      return this;
+   }
+
+   /** The one main action of a screen: filled with the accent colour instead of the neutral card. */
+   public GlassButton primary() {
+      this.primary = true;
+      return this;
+   }
+
+   /** Puts the label at the left edge instead of in the middle (for buttons stacked in a left-hand column). */
+   public GlassButton leftAligned() {
+      this.leftAligned = true;
+      return this;
+   }
+
+   /** A short dim text on the right side of the card, e.g. the name of the world a "Continue" button opens. */
+   public GlassButton detail(String text) {
+      this.detail = text == null || text.isEmpty() ? null : text;
+      this.detailWidth = -1;
       return this;
    }
 
@@ -117,16 +140,29 @@ public class GlassButton extends Button {
       int accent = Glass.accent();
       if (!this.plain) {
          float press = this.pressedAt == 0L || now - this.pressedAt >= Theme.PRESS_MS ? 0.0F : 1.0F - (float)(now - this.pressedAt) / Theme.PRESS_MS;
-         int fill = Glass.lerp(Glass.surface(1), Glass.surface(3), Math.min(1.0F, this.hover * 0.8F + press * 0.4F));
-         Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, 235), opacity));
-         // A faint edge at rest; the accent outline only marks the hovered or focused button.
-         int edge = Glass.lerp(Glass.withAlpha(0xFFFFFF, 18), Glass.withAlpha(accent, 120), this.hover);
-         Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(edge, opacity));
+         float lift = Math.min(1.0F, this.hover * 0.8F + press * 0.4F);
+         if (this.primary) {
+            int fill = Glass.lerp(Glass.lerp(accent, 0xFF000000, 0.25F), accent, lift);
+            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, 230), opacity));
+            if (this.isFocused()) {
+               Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(0xFFFFFF, 150), opacity));
+            }
+         } else {
+            int fill = Glass.lerp(Glass.surface(1), Glass.surface(3), lift);
+            Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(fill, Math.round(150.0F + 70.0F * lift)), opacity));
+            // No edge at rest; a thin accent outline marks only the hovered or focused button.
+            if (this.hover > 0.02F) {
+               Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS, Glass.fade(Glass.withAlpha(accent, Math.round(110 * this.hover)), opacity));
+            }
+         }
       }
 
-      int color = Glass.fade(this.plain ? Glass.lerp(Glass.TEXT_FAINT, Glass.TEXT, this.active ? this.hover : 0.0F) : Theme.labelColor(this.active, this.hover), opacity);
+      int base = this.plain
+         ? Glass.lerp(Glass.TEXT_DIM, Glass.TEXT, this.active ? this.hover : 0.0F)
+         : (this.primary && this.active ? Glass.TEXT : Theme.labelColor(this.active, this.hover));
+      int color = Glass.fade(base, opacity);
       int textY = y1 + (y2 - y1 - Theme.FONT_HEIGHT) / 2 + (this.plain ? 0 : 1);
-      int pad = this.plain ? Theme.SPACE_XS : Theme.SPACE_M;
+      int pad = this.plain ? Theme.SPACE_XS : (this.leftAligned ? Theme.BUTTON_PAD : Theme.SPACE_M);
       int right = x2 - pad;
       int count = this.badge == null ? 0 : this.badge.getAsInt();
       if (count > 0) {
@@ -138,12 +174,26 @@ public class GlassButton extends Button {
          right -= bw + Theme.SPACE_S;
       }
 
+      if (this.detail != null && this.switchState == null) {
+         if (this.detailWidth < 0) {
+            this.detailWidth = font.width(this.detail);
+         }
+
+         int room = Math.max(0, (right - x1 - pad) - this.labelWidth() - Theme.SPACE_L);
+         String shownDetail = this.detailWidth <= room ? this.detail : Theme.fit(this.detail, room, font::width);
+         if (!shownDetail.isEmpty()) {
+            int dw = shownDetail == this.detail ? this.detailWidth : font.width(shownDetail);
+            g.text(font, shownDetail, right - dw, textY, Glass.fade(Glass.TEXT_FAINT, opacity), false);
+            right -= dw + Theme.SPACE_L;
+         }
+      }
+
       if (this.switchState == null) {
          int left = x1 + pad;
          String shown = this.fit(font, right - left);
          int width = shown == this.label ? this.labelWidth() : font.width(shown);
          int centre = count > 0 ? (left + right) / 2 : (x1 + x2) / 2;
-         g.text(font, shown, centre - width / 2, textY, color, false);
+         g.text(font, shown, this.leftAligned ? left : centre - width / 2, textY, color, false);
       } else {
          boolean on = this.switchState.getAsBoolean();
          this.knob = Glass.approach(this.knob, on ? 1.0F : 0.0F, 12.0F, delta);

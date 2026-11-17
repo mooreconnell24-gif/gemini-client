@@ -415,7 +415,8 @@ public final class PaletteScreen extends Screen {
       int x2 = l.x() + l.width();
       g.pose().pushMatrix();
       g.pose().translate(0.0F, -lift);
-      Glass.panel(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.surface(0), Glass.accent(), a, 0.35F);
+      Glass.roundRect(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(0), 240), a));
+      Glass.roundOutline(g, x1, l.y(), x2, l.y() + l.height(), Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(0xFFFFFF, 24), a));
       this.extractField(g, x1 + Theme.SPACE_L, l.fieldY(), l.width() - 2 * Theme.SPACE_L, a, now);
       this.extractKinds(g, x1 + Theme.SPACE_L, l.kindsY(), mouseX, mouseY + lift, a);
       this.extractRows(g, x1 + Theme.SPACE_S, l.listY(), l.width() - 2 * Theme.SPACE_S, mouseX, mouseY + lift, a, delta);
@@ -427,20 +428,18 @@ public final class PaletteScreen extends Screen {
    private void extractField(GuiGraphicsExtractor g, int x, int y, int w, float a, long now) {
       int accent = Glass.accent();
       Glass.roundRect(g, x, y, x + w, y + PaletteLayout.FIELD_HEIGHT, Theme.RADIUS, Glass.fade(Glass.withAlpha(Glass.surface(2), 255), a));
-      Glass.roundOutline(g, x, y, x + w, y + PaletteLayout.FIELD_HEIGHT, Theme.RADIUS, Glass.fade(Glass.withAlpha(accent, 170), a));
       // A small magnifier: ring plus handle.
       int mx = x + 6;
       int my = y + 5;
-      Glass.roundOutline(g, mx, my, mx + 7, my + 7, 3, Glass.fade(Glass.accent2(), a));
-      g.fill(mx + 6, my + 6, mx + 8, my + 8, Glass.fade(Glass.accent2(), a));
+      Glass.roundOutline(g, mx, my, mx + 7, my + 7, 3, Glass.fade(Glass.TEXT_FAINT, a));
+      g.fill(mx + 6, my + 6, mx + 8, my + 8, Glass.fade(Glass.TEXT_FAINT, a));
       int textX = x + 18;
       int room = w - 18 - Theme.SPACE_M;
-      String right = SingleplayerGate.allowed() && this.minecraft.player != null ? null : "configure only";
+      String right = SingleplayerGate.allowed() && this.minecraft.player != null ? null : "settings only";
       if (right != null) {
          int rw = this.font.width(right) + 8;
          int rx = x + w - rw - 4;
-         Glass.roundRect(g, rx, y + 4, rx + rw, y + 14, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.WARN, 56), a));
-         Controls.text(g, this.font, right, rx + 4, y + 5, Glass.WARN, a);
+         Controls.text(g, this.font, right, rx + 4, y + 5, Glass.TEXT_FAINT, a);
          room -= rw + Theme.SPACE_S;
       }
 
@@ -478,9 +477,11 @@ public final class PaletteScreen extends Screen {
             this.hoverKind = i;
          }
 
-         int fill = active ? Glass.withAlpha(Glass.accent(), 130) : Glass.withAlpha(Glass.surface(over ? 3 : 1), 220);
-         Glass.roundRect(g, cursor, y, cursor + w, y + PaletteLayout.KINDS_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(fill, a));
-         Controls.text(g, this.font, label, cursor + 5, y + 2, active ? Glass.TEXT : Theme.labelColor(true, over ? 1.0F : 0.0F), a);
+         if (active) {
+            Glass.roundRect(g, cursor, y, cursor + w, y + PaletteLayout.KINDS_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.surface(3), 255), a));
+         }
+
+         Controls.text(g, this.font, label, cursor + 5, y + 2, active ? Glass.TEXT : (over ? Glass.TEXT_DIM : Glass.TEXT_FAINT), a);
          cursor += w + Theme.SPACE_XS + 1;
       }
 
@@ -524,7 +525,7 @@ public final class PaletteScreen extends Screen {
          int thumb = Math.max(10, track * rows / this.results.size());
          int thumbY = y + (track - thumb) * this.scroll / Math.max(1, this.results.size() - rows);
          int sx = x + w + 1;
-         Glass.roundRect(g, sx, thumbY, sx + 2, thumbY + thumb, 1, Glass.fade(Glass.withAlpha(Glass.accent(), 170), a));
+         Glass.roundRect(g, sx, thumbY, sx + 2, thumbY + thumb, 1, Glass.fade(0x50FFFFFF, a));
       }
    }
 
@@ -532,10 +533,7 @@ public final class PaletteScreen extends Screen {
       PaletteRanking.Candidate candidate = result.candidate();
       int h = PaletteLayout.ROW_HEIGHT - 2;
       if (selected || over) {
-         Glass.roundRect(g, x, y, x + w, y + h, Theme.RADIUS, Glass.fade(selected ? Glass.withAlpha(Glass.accent(), 60) : 0x10FFFFFF, a));
-         if (selected) {
-            g.fill(x, y + 4, x + 2, y + h - 4, Glass.fade(Glass.accent2(), a));
-         }
+         Glass.roundRect(g, x, y, x + w, y + h, Theme.RADIUS, Glass.fade(selected ? Glass.withAlpha(Glass.surface(3), 255) : 0x0CFFFFFF, a));
       }
 
       String badge;
@@ -557,9 +555,9 @@ public final class PaletteScreen extends Screen {
 
       int textY = y + (h - Theme.FONT_HEIGHT) / 2;
       int bw = this.font.width("PAGE") + 6;
-      Glass.roundRect(g, x + 6, textY - 1, x + 6 + bw, textY + 9, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(badgeColor, 50), a));
+      // The kind as a small dim word in a fixed-width column; no coloured pill.
       String b = badge;
-      Controls.text(g, this.font, b, x + 6 + (bw - this.font.width(b)) / 2, textY, Glass.lerp(badgeColor, 0xFFFFFFFF, 0.3F), a);
+      Controls.text(g, this.font, b, x + 6, textY, Glass.TEXT_FAINT, a);
       int left = x + 6 + bw + Theme.SPACE_M;
       int right = x + w - Theme.SPACE_M;
       Object payload = candidate.payload();
@@ -601,12 +599,12 @@ public final class PaletteScreen extends Screen {
       if (extra != null) {
          int ex = left + this.font.width(shownName) + Theme.SPACE_M;
          String shownExtra = Controls.fit(this.font, extra, right - ex);
-         Controls.text(g, this.font, shownExtra, ex, textY, result.setting() != null ? Glass.accent2() : Glass.TEXT_FAINT, a);
+         Controls.text(g, this.font, shownExtra, ex, textY, result.setting() != null ? Glass.TEXT_DIM : Glass.TEXT_FAINT, a);
       }
    }
 
    private void extractFooter(GuiGraphicsExtractor g, int x, int y, int w, float a, long now) {
-      Glass.gradientBar(g, x, y - 2, x + w, y - 1, Glass.fade(Glass.withAlpha(Glass.accent(), 90), a), Glass.fade(Glass.withAlpha(Glass.accent2(), 0), a));
+      g.fill(x, y - 2, x + w, y - 1, Glass.fade(0x14FFFFFF, a));
       String line1;
       int color1 = Glass.TEXT_DIM;
       if (this.status != null && now < this.statusUntil) {

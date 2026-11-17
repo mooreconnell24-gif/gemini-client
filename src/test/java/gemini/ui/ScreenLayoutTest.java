@@ -18,82 +18,131 @@ class ScreenLayoutTest {
    private static final int[] FULL = {66, 48, 30, 28, 90};
    private static final int[] SHORT = {42, 18, 30, 28, 42};
 
+   /** GUI scale for each entry of {@link #SIZES} when the window is 1280x720 or 1920x1080 (the others use 2). */
+   private static int scaleFor(int[] size) {
+      if (size[0] * 4 == 1280 || size[0] * 4 == 1920) {
+         return 4;
+      }
+
+      return size[0] * 3 == 1280 || size[0] * 3 == 1920 ? 3 : 2;
+   }
+
    @Test
-   void titleButtonsStayBetweenHeaderAndFooter() {
+   void titleMenuStaysOnScreenAndAboveTheFooter() {
       for (int[] size : SIZES) {
-         TitleLayout layout = TitleLayout.compute(size[0], size[1]);
-         String at = size[0] + "x" + size[1];
-         assertTrue(layout.buttonHeight() >= 16, "buttons stay readable at " + at);
-         for (int i = 0; i < TitleLayout.BUTTONS; i++) {
-            assertTrue(layout.buttonX(i) >= 4, "left edge at " + at);
-            assertTrue(layout.buttonX(i) + layout.buttonW(i) <= size[0] - 4, "right edge at " + at);
-            assertTrue(layout.buttonY(i) >= layout.headerY() + layout.logoSize() + 4, "below the header at " + at);
-            assertTrue(layout.buttonY(i) + layout.buttonHeight() <= layout.linksY() - 4, "above the links at " + at);
+         for (boolean resume : new boolean[]{false, true}) {
+            TitleLayout layout = TitleLayout.compute(size[0], size[1], scaleFor(size), resume);
+            String at = size[0] + "x" + size[1] + (resume ? " with Continue" : "");
+            assertTrue(layout.buttonHeight() >= 16, "buttons stay readable at " + at);
+            for (int i = 0; i < TitleLayout.SLOTS; i++) {
+               if (!layout.has(i)) {
+                  continue;
+               }
+
+               assertTrue(layout.x(i) >= 4, "left edge at " + at);
+               assertTrue(layout.x(i) + layout.w(i) <= size[0] - 4, "right edge at " + at);
+               assertTrue(layout.y(i) >= layout.logoY() + layout.logoSize(), "below the logo at " + at);
+            }
+
+            assertTrue(layout.linksY() >= layout.menuBottom(), "links under the menu at " + at);
+            assertTrue(layout.linksY() + TitleLayout.LINK_HEIGHT <= layout.footerY(), "links above the footer at " + at);
+            assertEquals(size[1], layout.footerY() + TitleLayout.FOOTER_HEIGHT, "footer on the bottom edge at " + at);
+            assertTrue(layout.logoY() >= TitleLayout.EDGE, "logo below the top edge at " + at);
          }
-
-         assertTrue(layout.linksY() + TitleLayout.LINK_HEIGHT <= layout.footerY() - 4, "links above the footer at " + at);
-
-         assertTrue(layout.footerY() + TitleLayout.FOOTER_HEIGHT <= layout.statusY(), "footer above the status bar at " + at);
-         assertEquals(size[1], layout.statusY() + TitleLayout.STATUS_HEIGHT, "status bar on the bottom edge at " + at);
       }
    }
 
    @Test
-   void titleButtonsNeverOverlap() {
+   void titleSlotsNeverOverlap() {
       for (int[] size : SIZES) {
-         TitleLayout layout = TitleLayout.compute(size[0], size[1]);
-         for (int i = 0; i < TitleLayout.BUTTONS; i++) {
-            for (int j = i + 1; j < TitleLayout.BUTTONS; j++) {
-               boolean apartX = layout.buttonX(i) + layout.buttonW(i) <= layout.buttonX(j) || layout.buttonX(j) + layout.buttonW(j) <= layout.buttonX(i);
-               boolean apartY = layout.buttonY(i) + layout.buttonHeight() <= layout.buttonY(j) || layout.buttonY(j) + layout.buttonHeight() <= layout.buttonY(i);
-               assertTrue(apartX || apartY, "buttons " + i + " and " + j + " at " + size[0] + "x" + size[1]);
+         TitleLayout layout = TitleLayout.compute(size[0], size[1], scaleFor(size), true);
+         for (int i = 0; i < TitleLayout.SLOTS; i++) {
+            for (int j = i + 1; j < TitleLayout.SLOTS; j++) {
+               boolean apartX = layout.x(i) + layout.w(i) <= layout.x(j) || layout.x(j) + layout.w(j) <= layout.x(i);
+               boolean apartY = layout.y(i) + layout.buttonHeight() <= layout.y(j) || layout.y(j) + layout.buttonHeight() <= layout.y(i);
+               assertTrue(apartX || apartY, "slots " + i + " and " + j + " at " + size[0] + "x" + size[1]);
             }
          }
       }
    }
 
    @Test
-   void titleUsesOneColumnOnlyWhenItFits() {
-      assertEquals(2, TitleLayout.compute(320, 180).columns());
-      assertEquals(1, TitleLayout.compute(427, 240).columns());
-      assertEquals(1, TitleLayout.compute(960, 540).columns());
-      assertEquals(200, TitleLayout.compute(960, 540).buttonWidth());
+   void continueOnlyWhenThereIsARecentWorld() {
+      TitleLayout without = TitleLayout.compute(640, 360, 2, false);
+      TitleLayout with = TitleLayout.compute(640, 360, 2, true);
+      assertFalse(without.has(TitleLayout.CONTINUE));
+      assertTrue(with.has(TitleLayout.CONTINUE));
+      assertEquals(with.y(TitleLayout.SINGLEPLAYER) + with.buttonHeight() + 4, with.y(TitleLayout.CONTINUE), "Continue sits right under Singleplayer");
+   }
+
+   @Test
+   void titleGroupsAreSetApartByExtraSpace() {
+      TitleLayout l = TitleLayout.compute(640, 360, 2, false);
+      int inGroup = l.y(TitleLayout.REALMS) - (l.y(TitleLayout.MULTIPLAYER) + l.buttonHeight());
+      int betweenGroups = l.y(TitleLayout.MULTIPLAYER) - (l.y(TitleLayout.SINGLEPLAYER) + l.buttonHeight());
+      assertTrue(betweenGroups > inGroup, "groups read as groups");
+   }
+
+   @Test
+   void titleColumnSitsLeftOnWideScreensAndCentredOnNarrowOnes() {
+      TitleLayout wide = TitleLayout.compute(640, 360, 2, true);
+      assertFalse(wide.centred());
+      assertTrue(wide.columnX() + wide.columnWidth() < 640 / 2 + 40, "the panorama stays visible on the right");
+      TitleLayout narrow = TitleLayout.compute(320, 240, 4, true);
+      assertTrue(narrow.centred());
+      assertEquals(320 - narrow.columnX() - narrow.columnWidth(), narrow.columnX(), "centred");
+   }
+
+   @Test
+   void logoIsDrawnAtAWholeRatioOfItsTexture() {
+      assertEquals(80, TitleLayout.compute(640, 360, 2, true).logoSize(), "native size at GUI scale 2");
+      for (int[] size : SIZES) {
+         int scale = scaleFor(size);
+         int logo = TitleLayout.compute(size[0], size[1], scale, true).logoSize();
+         if (logo > 0) {
+            int pixels = logo * scale;
+            assertTrue(Math.abs(pixels - 160) <= 3 || Math.abs(pixels - 80) <= 3 || Math.abs(pixels - 40) <= 3, logo + " at scale " + scale);
+         }
+      }
+   }
+
+   @Test
+   void optionsAndQuitShareTheLastRow() {
+      TitleLayout l = TitleLayout.compute(960, 540, 2, true);
+      assertEquals(l.y(TitleLayout.OPTIONS), l.y(TitleLayout.QUIT));
+      assertEquals(l.x(TitleLayout.SINGLEPLAYER), l.x(TitleLayout.OPTIONS));
+      assertEquals(l.x(TitleLayout.SINGLEPLAYER) + l.columnWidth(), l.x(TitleLayout.QUIT) + l.w(TitleLayout.QUIT), "the pair spans the column");
    }
 
    @Test
    void titleLayoutSurvivesTinyWindows() {
-      TitleLayout layout = TitleLayout.compute(160, 120);
-      assertTrue(layout.buttonHeight() >= 10);
-      assertTrue(layout.buttonWidth() >= 40);
+      TitleLayout layout = TitleLayout.compute(160, 120, 1, true);
+      assertTrue(layout.buttonHeight() >= 16);
+      assertTrue(layout.columnWidth() >= 100);
    }
 
    @Test
-   void titleSplitsIntoTwoColumnsOfThree() {
-      TitleLayout layout = TitleLayout.compute(320, 180);
-      assertEquals(2, layout.columns());
-      assertEquals(3, layout.rows());
-      assertEquals(layout.buttonX(0), layout.buttonX(2), "first column holds buttons 0-2");
-      assertTrue(layout.buttonX(3) > layout.buttonX(2), "button 3 starts the second column");
-   }
-
-   @Test
-   void optionsAndQuitShareTheLastRowInOneColumn() {
-      TitleLayout layout = TitleLayout.compute(960, 540);
-      assertEquals(layout.buttonY(4), layout.buttonY(5));
-      assertEquals(layout.buttonX(0), layout.buttonX(4));
-      assertEquals(layout.buttonX(0) + layout.buttonWidth(), layout.buttonX(5) + layout.buttonW(5), "the pair spans the column");
-      assertTrue(layout.buttonY(4) > layout.buttonY(3));
-   }
-
-   @Test
-   void linksAreCentredInOneRow() {
-      TitleLayout layout = TitleLayout.compute(854, 480);
-      int[] widths = {70, 34, 44};
+   void linksStartUnderTheColumnAndFitInIt() {
+      TitleLayout layout = TitleLayout.compute(854, 480, 2, false);
+      int[] widths = {40, 34, 40, 30};
       int[] x = layout.linkX(widths);
-      int left = x[0];
-      int right = x[2] + widths[2];
-      assertTrue(Math.abs((854 - right) - left) <= 1, "centred");
+      assertEquals(layout.columnX(), x[0], "left-aligned with the column");
       assertEquals(x[0] + widths[0] + TitleLayout.LINK_SPACING, x[1]);
+      TitleLayout narrow = TitleLayout.compute(320, 180, 4, false);
+      int[] wide = {56, 56, 56};
+      int[] nx = narrow.linkX(wide);
+      assertTrue(nx[2] + wide[2] <= narrow.columnX() + narrow.columnWidth() + 1, "links squeeze into a narrow column");
+   }
+
+   @Test
+   void lastPlayedReadsNaturally() {
+      assertEquals("just now", TitleLayout.lastPlayed(20_000L));
+      assertEquals("1 minute ago", TitleLayout.lastPlayed(61_000L));
+      assertEquals("5 minutes ago", TitleLayout.lastPlayed(5 * 60_000L));
+      assertEquals("2 hours ago", TitleLayout.lastPlayed(2 * 3_600_000L + 5_000L));
+      assertEquals("yesterday", TitleLayout.lastPlayed(30 * 3_600_000L));
+      assertEquals("3 days ago", TitleLayout.lastPlayed(3 * 86_400_000L));
+      assertEquals("just now", TitleLayout.lastPlayed(-5_000L), "clock skew");
    }
 
    @Test
