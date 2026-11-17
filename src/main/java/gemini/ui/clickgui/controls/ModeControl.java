@@ -138,11 +138,16 @@ public final class ModeControl extends SettingControl {
       Widgets.rowHover(g, x, y, w, row, Math.max(this.hover.hover, this.expand * 0.6F), this.opacity);
       String value = UiFont.ellipsize(this.setting.get(), Math.max(24, (right - left) / 2 + 8), FontSize.SMALL, FontWeight.MEDIUM);
       int valueW = UiFont.width(value, FontSize.SMALL, FontWeight.MEDIUM);
-      int chipL = right - valueW - 20;
+      // in a narrow column the arrow gives way to the name
+      boolean arrow = !this.compact || UiFont.width(this.setting.name()) + valueW + 26 <= right - left;
+      int chipL = right - valueW - (arrow ? 20 : 12);
       int chipT = y + (row - 14) / 2;
       Glass.roundRect(g, chipL, chipT, right, chipT + 14, 4, Glass.fade(this.hover.fill(Widgets.raised(), Widgets.raisedHover()), this.opacity));
       Controls.text(g, value, chipL + 6, UiFont.centerY(chipT, 14, FontSize.SMALL), Glass.text(), this.opacity, FontSize.SMALL, FontWeight.MEDIUM);
-      Widgets.icon(g, Icons.Icon.CHEVRON_DOWN, right - 12, chipT + 3, 8, this.open ? this.accent() : Glass.textDim(), this.opacity);
+      if (arrow) {
+         Widgets.icon(g, Icons.Icon.CHEVRON_DOWN, right - 12, chipT + 3, 8, this.open ? this.accent() : Glass.textDim(), this.opacity);
+      }
+
       Controls.text(g, null, UiFont.ellipsize(this.setting.name(), chipL - left - 6), left, textY, label, this.opacity);
       int shown = this.listShown();
       if (shown <= 0) {

@@ -221,7 +221,12 @@ public final class ClickGuiScreen extends Screen {
       }
 
       ClickGuiModule style = this.style();
-      Glass.backdrop(graphics, style == null || style.dim() ? 0.5F : 0.0F, this.fade);
+      if (this.hudEditMode && this.minecraft.level != null) {
+         // the HUD editor shows the widgets being moved, so the game behind stays sharp and only dims a little
+         graphics.fill(0, 0, this.width, this.height, this.faded(Glass.lerp(0xFF000000, Glass.surface(0), 0.5F), style == null || style.dim() ? 60 : 0));
+      } else {
+         Glass.backdrop(graphics, style == null || style.dim() ? 0.5F : 0.0F, this.fade);
+      }
    }
 
    private void text(GuiGraphicsExtractor graphics, String text, int x, int y, int color) {
@@ -277,7 +282,7 @@ public final class ClickGuiScreen extends Screen {
       // In the HUD editor it shrinks to the chips, so it does not sit on the widgets along the top edge.
       int barRight = this.hudEditMode ? this.chipsRight() + 8 : this.vw - GAP;
       Glass.shadow(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, 14, 4, 0.36F * this.fade);
-      Glass.roundRect(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, Glass.fade(Glass.surface(1), this.fade * (style == null ? 0.9F : style.opacity())));
+      Glass.roundRect(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, Glass.fade(Glass.surface(1), this.fade * (style == null ? 0.9F : style.opacity()) * (this.hudEditMode ? 0.55F : 1.0F)));
       Glass.roundOutline(graphics, GAP, BAR_TOP, barRight, BAR_BOTTOM, 8, this.faded(Glass.text(), 18));
       GeminiMark.draw(graphics, GAP + 9, BAR_TOP + 7, 16, accent, open);
       Controls.text(graphics, "Gemini", GAP + 31, UiFont.centerY(BAR_TOP, BAR_BOTTOM - BAR_TOP, FontSize.LARGE), Glass.text(), this.fade, FontSize.LARGE, FontWeight.BOLD);
