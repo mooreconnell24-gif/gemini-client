@@ -1,0 +1,69 @@
+{
+ "client_side": "required",
+ "server_side": "unsupported",
+ "game_versions": [
+  "26.4-snapshot-3",
+  "26.4-snapshot-6",
+  "26.4-snapshot-8"
+ ],
+ "environment": [
+  "client_only"
+ ],
+ "id": "mOgUt4GM",
+ "slug": "modmenu",
+ "project_type": "mod",
+ "team": "VMz4FpgB",
+ "organization": "ASjenmjH",
+ "title": "Mod Menu",
+ "description": "Adds a mod menu to view the list of mods you have installed.",
+ "body": "# Mod Menu\n![Screenshot of the Mods screen, showing a list of a few mods on the left side below a search bar and filters button, where Mod Menu is selected. On the right side of the screen, it shows more details about the mod, such as authors, a description, links, credits, and a button to configure the mod.](https://cdn.modrinth.com/data/mOgUt4GM/images/155dd2b006883b168b1279ec0ff21e753946518b.png)\n\nMod Menu lets you view the mods you have installed and, if supported by the mod, enables quick and easy access to the mod's config screens.\n\nMod Menu also supports some more advanced features, such as translatable mod names and descriptions, support for [QuickText formatting](https://placeholders.pb4.eu/user/quicktext/) in mod descriptions thanks to [Patbox](https://ko-fi.com/patbox)'s [Text Placeholder API](https://modrinth.com/mod/placeholder-api), filters library mods out from regular mods, a mod update checker for mods hosted on Modrinth or that provide their own update sources, and deep configuration for all the features we provide.\n\n### Supported Platforms\nMod Menu is currently available for Fabric or Quilt on Minecraft: Java Edition 1.14 or newer.\n\n## Developers\nMod Menu includes a number of APIs for developers to improve how their mod appears in Mod Menu. These come in the form of language keys, JSON metadata, and even a Java API.\n\n### Translation API\nYou can translate your mod's name, summary, and description all without touching any Java code. Simply add translation key",
+ "body_url": null,
+ "published": "2020-11-06T05:11:04.725058Z",
+ "updated": "2026-11-15T12:10:26.008721Z",
+ "approved": "2020-11-06T05:11:04.725058Z",
+ "queued": null,
+ "status": "approved",
+ "requested_status": null,
+ "moderator_message": null,
+ "license": {
+  "id": "MIT",
+  "name": "MIT License",
+  "url": null
+ },
+ "downloads": 161919043,
+ "followers": 28254,
+ "categories": [
+  "utility"
+ ],
+ "additional_categories": [],
+ "loaders": [
+  "fabric",
+  "quilt"
+ ],
+ "versions": [
+  "xckkBHD5",
+  "Et3yic6q",
+  "mGUdgq3l"
+ ],
+ "icon_url": "https://cdn.modrinth.com/data/mOgUt4GM/5a20ed1450a0e1e79a1fe04e61bb4e5878bf1d20.png",
+ "raw_icon_url": "https://cdn.modrinth.com/data/mOgUt4GM/5a20ed1450a0e1e79a1fe04e61bb4e5878bf1d20.png",
+ "issues_url": "https://github.com/TerraformersMC/ModMenu/issues",
+ "source_url": "https://github.com/TerraformersMC/ModMenu",
+ "wiki_url": "https://github.com/TerraformersMC/ModMenu/wiki",
+ "discord_url": "https://discord.gg/jEGF5fb",
+ "donation_urls": [],
+ "gallery": [
+  {
+   "url": "https://cdn.modrinth.com/data/mOgUt4GM/images/70fd54b0579f2de3ac45fa9650aca2ec8ff0882b_350.webp",
+   "raw_url": "https://cdn.modrinth.com/data/mOgUt4GM/images/ec97a9f09bc750dd7895414eac14f6252ca47621.png",
+   "featured": true,
+   "title": "Mod Menu Banner",
+   "description": "Fancy ModMenu banner",
+   "created": "2023-11-03T21:09:55.559800Z",
+   "ordering": 0
+  }
+ ],
+ "color": 1330428,
+ "thread_id": "mOgUt4GM",
+ "monetization_status": "monetized"
+}

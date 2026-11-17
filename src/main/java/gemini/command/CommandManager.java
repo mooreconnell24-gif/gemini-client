@@ -175,6 +175,9 @@ public final class CommandManager {
                      case "sandbox":
                         this.handleSandbox(parts);
                         break;
+                     case "mods":
+                        this.openMods();
+                        break;
                      case "gui":
                      case "menu":
                         this.openGui();
@@ -1174,6 +1177,10 @@ public final class CommandManager {
       } else {
          feedback("§e" + missed.size() + " hook(s) found no target: §7" + String.join(", ", missed));
       }
+   }
+
+   private void openMods() {
+      gemini.ui.mods.ModBrowserScreen.open(null);
    }
 
    private void openGui() {

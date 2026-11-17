@@ -1,0 +1,127 @@
+[
+ {
+  "client_side": "optional",
+  "server_side": "optional",
+  "game_versions": [
+   "26.4-snapshot-7",
+   "26.4-snapshot-8",
+   "26w14a"
+  ],
+  "environment": [
+   "client_or_server_prefers_both"
+  ],
+  "id": "P7dR8mSH",
+  "slug": "fabric-api",
+  "project_type": "mod",
+  "team": "BZoBsPo6",
+  "organization": null,
+  "title": "Fabric API",
+  "description": "Lightweight and modular API providing common hooks and intercompatibility measures utilized by mods using the Fabric toolchain.",
+  "body": "# Fabric API\n\nEssential hooks for modding with Fabric.\n\nFabric API is the library for essential hooks and interoperability mechanisms for Fabric mods. Examples include:\n\n- Exposing functionality that is useful but difficult to access for many mods such as particles, biomes and dimensions\n- Adding ev",
+  "body_url": null,
+  "published": "2021-01-22T11:04:41.419169Z",
+  "updated": "2026-11-11T13:44:09.177173Z",
+  "approved": "2021-01-22T11:04:41.419169Z",
+  "queued": null,
+  "status": "approved",
+  "requested_status": null,
+  "moderator_message": null,
+  "license": {
+   "id": "Apache-2.0",
+   "name": "Apache License 2.0",
+   "url": null
+  },
+  "downloads": 288623306,
+  "followers": 37892,
+  "categories": [
+   "library"
+  ],
+  "additional_categories": [],
+  "loaders": [
+   "fabric"
+  ],
+  "versions": [
+   "9mx5Zplf",
+   "Zns5SSRA",
+   "wW9iRH4q"
+  ],
+  "icon_url": "https://cdn.modrinth.com/data/P7dR8mSH/icon.png",
+  "raw_icon_url": "https://cdn.modrinth.com/data/P7dR8mSH/icon.png",
+  "issues_url": "https://github.com/FabricMC/fabric-api/issues",
+  "source_url": "https://github.com/FabricMC/fabric-api",
+  "wiki_url": "https://docs.fabricmc.net/",
+  "discord_url": "https://discord.gg/v6v4pMv",
+  "donation_urls": [],
+  "gallery": [],
+  "color": 12367004,
+  "thread_id": "P7dR8mSH",
+  "monetization_status": "monetized"
+ },
+ {
+  "client_side": "optional",
+  "server_side": "optional",
+  "game_versions": [
+   "26.3",
+   "26.3-pre-3",
+   "26w14a"
+  ],
+  "environment": [
+   "client_or_server"
+  ],
+  "id": "eXts2L7r",
+  "slug": "placeholder-api",
+  "project_type": "mod",
+  "team": "tA4rMuIL",
+  "organization": null,
+  "title": "Text Placeholder API",
+  "description": "Placeholder and Text manipulation library for your Minecraft mods.",
+  "body": "# About Placeholder API\n\nIt's a small, JIJ-able API that allows creation and parsing placeholders within strings and Minecraft Text Components.\nPlaceholder API uses a simple format of `%modid:type%` or `%modid:type data%` (`%modid:type/data%` prior to 1.19).\nIt also includes simple, general usage te",
+  "body_url": null,
+  "published": "2023-05-07T07:16:09.821727Z",
+  "updated": "2026-09-09T09:23:44.714312Z",
+  "approved": "2023-05-07T21:31:58.154280Z",
+  "queued": "2023-05-07T07:55:46.627995Z",
+  "status": "approved",
+  "requested_status": "approved",
+  "moderator_message": null,
+  "license": {
+   "id": "LGPL-3.0-only",
+   "name": "GNU Lesser General Public License v3.0 only",
+   "url": null
+  },
+  "downloads": 75759723,
+  "followers": 1914,
+  "categories": [
+   "library"
+  ],
+  "additional_categories": [
+   "management"
+  ],
+  "loaders": [
+   "fabric",
+   "quilt"
+  ],
+  "versions": [
+   "tvuIahw6",
+   "NDqH16LT",
+   "lXytLqWj"
+  ],
+  "icon_url": "https://cdn.modrinth.com/data/eXts2L7r/e9c9990896e6422bffc5f73d2c41b8f077348f83.png",
+  "raw_icon_url": "https://cdn.modrinth.com/data/eXts2L7r/e9c9990896e6422bffc5f73d2c41b8f077348f83.png",
+  "issues_url": "https://github.com/Patbox/TextPlaceholderAPI/issues",
+  "source_url": "https://github.com/Patbox/TextPlaceholderAPI",
+  "wiki_url": "https://placeholders.pb4.eu/",
+  "discord_url": "https://pb4.eu/discord",
+  "donation_urls": [
+   {
+    "id": "ko-fi",
+    "platform": "Ko-fi",
+    "url": "https://ko-fi.com/patbox"
+   }
+  ],
+  "gallery": [],
+  "color": 1842204,
+  "thread_id": "eXts2L7r",
+  "monetization_status": "monetized"
+ }
+]

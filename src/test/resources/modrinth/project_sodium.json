@@ -1,0 +1,64 @@
+{
+ "client_side": "required",
+ "server_side": "unsupported",
+ "game_versions": [
+  "26.3-rc-1",
+  "26.3-rc-2"
+ ],
+ "environment": [
+  "client_only"
+ ],
+ "id": "AANobbMI",
+ "slug": "sodium",
+ "project_type": "mod",
+ "team": "4reLOAKe",
+ "organization": "LjcZDkRW",
+ "title": "Sodium",
+ "description": "A high-performance rendering engine replacement for Minecraft, which greatly improves frame rates and reduces micro-stutter.",
+ "body": "**This mod is the result of thousands of hours of development, and is made possible thanks to players like you.** If you would like to show a token of your appreciation for my work, and help support t",
+ "body_url": null,
+ "published": "2021-01-03T00:53:34.185936Z",
+ "updated": "2026-11-12T01:12:30.162066Z",
+ "approved": "2021-01-03T00:53:34.185936Z",
+ "queued": null,
+ "status": "approved",
+ "requested_status": null,
+ "moderator_message": null,
+ "license": {
+  "id": "LicenseRef-Polyform-Shield-1.0.0",
+  "name": "",
+  "url": "https://github.com/CaffeineMC/sodium/blob/dev/LICENSE.md"
+ },
+ "downloads": 253432855,
+ "followers": 42872,
+ "categories": [
+  "optimization"
+ ],
+ "additional_categories": [],
+ "loaders": [
+  "fabric",
+  "neoforge",
+  "quilt"
+ ],
+ "versions": [
+  "v7Lw0h1m",
+  "CT6qQx01"
+ ],
+ "icon_url": "https://cdn.modrinth.com/data/AANobbMI/295862f4724dc3f78df3447ad6072b2dcd3ef0c9_96.webp",
+ "raw_icon_url": "https://cdn.modrinth.com/data/AANobbMI/icon.png",
+ "issues_url": "https://github.com/CaffeineMC/sodium/issues",
+ "source_url": "https://github.com/CaffeineMC/sodium",
+ "wiki_url": "https://github.com/CaffeineMC/sodium/wiki",
+ "discord_url": "https://caffeinemc.net/discord",
+ "donation_urls": [
+  {
+   "id": "ko-fi",
+   "platform": "Ko-fi",
+   "url": "https://caffeinemc.net/donate"
+  }
+ ],
+ "gallery": [],
+ "color": 8703084,
+ "thread_id": "AANobbMI",
+ "monetization_status": "monetized"
+}
