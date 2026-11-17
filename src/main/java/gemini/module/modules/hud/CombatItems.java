@@ -58,7 +58,7 @@ public final class CombatItems extends HudWidget {
          hud.graphics.item(this.icons()[i], x, HudStyle.PAD_Y);
          String label = this.texts[i];
          // Counts are centred under their icon; an item you have none of is dimmed rather than coloured.
-         int color = count > 0 ? gemini.ui.Glass.TEXT : HudStyle.unit(backdrop);
+         int color = count > 0 ? hud.text : HudStyle.unit(backdrop);
          UiFont.draw(hud.graphics, label, x + (16 - UiFont.width(label) + 1) / 2, HudStyle.PAD_Y + 18, color, hud.shadow);
       }
    }

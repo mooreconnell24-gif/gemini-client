@@ -9,7 +9,7 @@ import net.minecraft.client.Options;
 
 /**
  * WASD, jump and the mouse buttons as key caps. Each cap is its own tile on the HUD backdrop (no card around the
- * group) and fills with light when pressed: quickly on the way down, a little slower on the way up, so a tap is
+ * group) and fills with the theme accent when pressed: quickly on the way down, a little slower on the way up, so a tap is
  * still visible.
  */
 public final class Keystrokes extends HudWidget {
@@ -51,7 +51,7 @@ public final class Keystrokes extends HudWidget {
    }
 
    private void key(HudContext hud, int idx, int x, int y, int width, int height, String label, boolean down) {
-      HudStyle.keycap(hud.graphics, hud.font, x, y, width, height, label, this.animate(hud, idx, down), this.backdrop(), hud.surface, hud.shadow);
+      HudStyle.keycap(hud.graphics, x, y, width, height, label, this.animate(hud, idx, down), this.backdrop(), hud.surface, hud.accent, hud.shadow);
    }
 
    @Override
@@ -66,8 +66,8 @@ public final class Keystrokes extends HudWidget {
       if (this.space.get()) {
          // A short bar stands for the space key, like the mark printed on a real one.
          float press = this.animate(hud, 4, options.keyJump.isDown());
-         HudStyle.keycap(hud.graphics, hud.font, 0, below, w, SPACE_H, null, press, this.backdrop(), hud.surface, hud.shadow);
-         int barColor = Glass.lerp(Glass.TEXT_DIM, 0xFF141821, press);
+         HudStyle.keycap(hud.graphics, 0, below, w, SPACE_H, null, press, this.backdrop(), hud.surface, hud.accent, hud.shadow);
+         int barColor = Glass.lerp(hud.textDim, gemini.ui.Theme.onColor(hud.accent), press) | 0xFF000000;
          int mid = below + SPACE_H / 2;
          hud.graphics.fill(w / 2 - 8, mid, w / 2 + 8, mid + 1, barColor);
          below += SPACE_H + GAP;

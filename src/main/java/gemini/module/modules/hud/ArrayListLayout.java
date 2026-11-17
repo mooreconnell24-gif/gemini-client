@@ -77,6 +77,7 @@ public final class ArrayListLayout<K> {
    private final List<Row<K>> rows = new ArrayList<>();
    private final Map<K, Row<K>> byKey = new IdentityHashMap<>();
    private final Measure measure;
+   private final Measure infoMeasure;
    private final Decorator<K> decorator;
    private final Comparator<Row<K>> byWidth = (a, b) -> {
       int c = Integer.compare(b.width, a.width);
@@ -95,7 +96,13 @@ public final class ArrayListLayout<K> {
    private int sorts;
 
    public ArrayListLayout(Measure measure, Decorator<K> decorator) {
+      this(measure, measure, decorator);
+   }
+
+   /** As the two-argument form, with the info suffix measured separately (it may be drawn in another weight). */
+   public ArrayListLayout(Measure measure, Measure infoMeasure, Decorator<K> decorator) {
       this.measure = measure;
+      this.infoMeasure = infoMeasure;
       this.decorator = decorator;
    }
 
@@ -202,7 +209,7 @@ public final class ArrayListLayout<K> {
       row.label = label == null ? "" : label;
       row.info = info == null || info.isEmpty() ? null : info;
       row.labelWidth = this.measure.width(row.label);
-      row.width = row.labelWidth + (row.info == null ? 0 : INFO_GAP + this.measure.width(row.info));
+      row.width = row.labelWidth + (row.info == null ? 0 : INFO_GAP + this.infoMeasure.width(row.info));
       row.sortName = row.label.toLowerCase(Locale.ROOT);
       row.dirty = false;
    }
@@ -246,6 +253,34 @@ public final class ArrayListLayout<K> {
    public float height(float rowHeight) {
       float total = 0.0F;
       for (int i = 0; i < this.rows.size(); i++) {
+         total += rowHeight * this.rows.get(i).anim;
+      }
+
+      return total;
+   }
+
+   /**
+    * How many rows, from the top of the order, fit in {@code maxHeight} when each takes {@code rowHeight} at full
+    * size: the list is cut there instead of running off the screen. Rows that are sliding in or out count for the
+    * part of their height that is open. Always at least one row when there is one.
+    */
+   public int fitCount(float rowHeight, float maxHeight) {
+      float total = 0.0F;
+      for (int i = 0; i < this.rows.size(); i++) {
+         total += rowHeight * this.rows.get(i).anim;
+         if (total > maxHeight && i > 0) {
+            return i;
+         }
+      }
+
+      return this.rows.size();
+   }
+
+   /** Height of the first {@code count} rows (see {@link #fitCount}). */
+   public float height(float rowHeight, int count) {
+      float total = 0.0F;
+      int n = Math.min(count, this.rows.size());
+      for (int i = 0; i < n; i++) {
          total += rowHeight * this.rows.get(i).anim;
       }
 

@@ -4,7 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import gemini.ui.Glass;
+import gemini.ui.HudStyle;
+import gemini.ui.Theme;
 import org.junit.jupiter.api.Test;
 
 /** The number formats, the cooldown clock and the small geometry helpers behind the HUD widgets. */
@@ -66,11 +67,12 @@ class HudVisualLogicTest {
 
    @Test
    void healthColourSlidesFromGreenThroughAmberToRed() {
-      assertEquals(Glass.OK, TargetHud.healthColor(1.0F));
-      assertEquals(Glass.WARN, TargetHud.healthColor(0.5F));
-      assertEquals(Glass.ERROR, TargetHud.healthColor(0.0F));
-      assertEquals(Glass.ERROR, TargetHud.healthColor(-2.0F));
-      assertEquals(Glass.OK, TargetHud.healthColor(3.0F));
+      Theme.Palette theme = Theme.current();
+      assertEquals(theme.ok | 0xFF000000, HudStyle.health(1.0F));
+      assertEquals(theme.warn | 0xFF000000, HudStyle.health(0.5F));
+      assertEquals(theme.error | 0xFF000000, HudStyle.health(0.0F));
+      assertEquals(theme.error | 0xFF000000, HudStyle.health(-2.0F));
+      assertEquals(theme.ok | 0xFF000000, HudStyle.health(3.0F));
    }
 
    @Test

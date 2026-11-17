@@ -1,5 +1,7 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
+import gemini.ui.Glass;
 import gemini.module.TextHudWidget;
 import gemini.ui.HudContext;
 import java.util.List;
@@ -23,8 +25,8 @@ public final class LightLevel extends Ticked {
       int effective = Math.min(level.getMaxLocalRawBrightness(pos), 15);
       boolean spawnable = block <= blockLimit && effective <= skyLimit;
       return List.of(
-         TextHudWidget.Line.row("Light", Integer.toString(effective), "sky " + sky + "  block " + block, spawnable ? gemini.ui.Glass.WARN : gemini.ui.Glass.TEXT),
-         TextHudWidget.Line.row("Monsters", spawnable ? "can spawn" : "too bright", "", spawnable ? gemini.ui.Glass.WARN : gemini.ui.Glass.TEXT)
+         TextHudWidget.Line.row("Light", Integer.toString(effective), "sky " + sky + "  block " + block, spawnable ? Glass.WARN : HudStyle.PRIMARY),
+         TextHudWidget.Line.row("Monsters", spawnable ? "can spawn" : "too bright", "", spawnable ? Glass.WARN : HudStyle.PRIMARY)
       );
    }
 }

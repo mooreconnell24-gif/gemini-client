@@ -1,12 +1,12 @@
 package gemini.module.modules.hud;
 
+import gemini.ui.HudStyle;
 import gemini.module.LiveProfiler;
 import gemini.module.TextHudWidget;
 import gemini.module.modules.misc.AntiLag;
 import gemini.module.setting.BooleanSetting;
 import gemini.module.setting.ModeSetting;
 import gemini.module.setting.NumberSetting;
-import gemini.ui.Glass;
 import gemini.ui.HudContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +40,11 @@ public final class AntiLagHud extends Ticked {
       long blocked = antiLag == null ? 0L : antiLag.totalBlocked();
       boolean active = antiLag != null && antiLag.isEnabled();
       List<TextHudWidget.Line> lines = new ArrayList<>(this.profiler.get() ? 4 + 3 * (this.rows.intValue() + 1) : 2);
-      lines.add(new TextHudWidget.Line("AntiLag " + (active ? "on" : "off") + "  ·  " + fps + " FPS", active ? Glass.TEXT : Glass.TEXT_DIM));
+      lines.add(new TextHudWidget.Line("AntiLag " + (active ? "on" : "off") + "  ·  " + fps + " FPS", active ? HudStyle.PRIMARY : HudStyle.SECONDARY));
       // AntiLag counts the particles and sounds it dropped; "lag spikes" was not what the number meant.
-      lines.add(new TextHudWidget.Line(blocked > 0 ? "Blocked " + blocked + " particles and sounds  ·  Memory " + usedPct + "%" : "Memory " + usedPct + "%", Glass.TEXT_DIM));
+      lines.add(new TextHudWidget.Line(blocked > 0 ? "Blocked " + blocked + " particles and sounds  ·  Memory " + usedPct + "%" : "Memory " + usedPct + "%", HudStyle.SECONDARY));
       if (this.profiler.get()) {
-         LiveProfiler.describe(lines, this.rows.intValue(), this.hook.get(), hud.accent2, Glass.TEXT, Glass.TEXT_DIM);
+         LiveProfiler.describe(lines, this.rows.intValue(), this.hook.get(), hud.accent2, HudStyle.PRIMARY, HudStyle.SECONDARY);
       }
 
       return lines;

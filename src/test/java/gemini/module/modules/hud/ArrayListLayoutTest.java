@@ -169,4 +169,62 @@ class ArrayListLayoutTest {
       this.poll(this.flight, null, this.esp, null);
       assertEquals(measures + 2, this.measured);
    }
+
+   @Test
+   void onlyAsManyRowsAsFitAreCounted() {
+      List<Key> keys = new ArrayList<>();
+      for (int i = 0; i < 40; i++) {
+         keys.add(new Key("Module" + i));
+      }
+
+      this.layout.beginPoll();
+      for (Key key : keys) {
+         this.layout.offer(key, key.name, 0, null, 0);
+      }
+
+      this.layout.endPoll();
+      this.layout.advance(0.05F, null);
+      assertEquals(40, this.layout.size());
+      assertEquals(40, this.layout.fitCount(10.0F, 1000.0F), "everything fits on a tall screen");
+      assertEquals(12, this.layout.fitCount(10.0F, 120.0F));
+      assertEquals(12, this.layout.fitCount(10.0F, 125.0F), "a row that would be cut is left off");
+      assertEquals(1, this.layout.fitCount(10.0F, 3.0F), "never fewer than one row");
+      assertEquals(120.0F, this.layout.height(10.0F, 12), 1.0E-4F);
+      assertEquals(this.layout.height(10.0F), this.layout.height(10.0F, 99), 1.0E-4F);
+   }
+
+   @Test
+   void rowsStillSlidingCountForTheirOpenHeight() {
+      this.layout.beginPoll();
+      this.layout.offer(this.flight, "Flight", 0, null, 0);
+      this.layout.offer(this.esp, "ESP", 0, null, 0);
+      this.layout.offer(this.killAura, "KillAura", 0, null, 0);
+      this.layout.endPoll();
+      // one glide step: every row is half open
+      this.layout.advance(0.05F, this.half);
+      assertEquals(3, this.layout.fitCount(10.0F, 15.0F));
+      assertEquals(2, this.layout.fitCount(10.0F, 14.0F));
+      assertEquals(0, new ArrayListLayout<Key>(String::length, null).fitCount(10.0F, 100.0F));
+   }
+
+   @Test
+   void suffixCanBeMeasuredInItsOwnWeight() {
+      ArrayListLayout<Key> twoFonts = new ArrayListLayout<>(text -> text.length() * 7, text -> text.length() * 5, new ArrayListLayout.Decorator<>() {
+         @Override
+         public String label(Key key, String raw) {
+            return raw;
+         }
+
+         @Override
+         public String info(Key key, String raw) {
+            return raw;
+         }
+      });
+      twoFonts.beginPoll();
+      twoFonts.offer(this.flight, "Flight", 0, "Fast", 0);
+      twoFonts.endPoll();
+      ArrayListLayout.Row<Key> row = twoFonts.rows().get(0);
+      assertEquals(6 * 7, row.labelWidth);
+      assertEquals(6 * 7 + ArrayListLayout.INFO_GAP + 4 * 5, row.width);
+   }
 }
