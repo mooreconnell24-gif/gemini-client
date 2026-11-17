@@ -20,7 +20,7 @@ import java.util.function.BiConsumer;
  * {@code modules} object and must tolerate anything in it: configs are hand-edited.
  */
 public final class ConfigMigrations {
-   public static final int CURRENT_VERSION = 12;
+   public static final int CURRENT_VERSION = 13;
    static final Set<String> REMOVED_IN_V5 = Set.of(
       "Disabler", "PingSpoof", "AntiBot", "AntiStaff", "FakeLag", "ResetVL", "Spammer", "AutoLeave", "AntiAFK", "Blink"
    );
@@ -33,7 +33,8 @@ public final class ConfigMigrations {
       new Step(9, ConfigMigrations::toV9),
       new Step(10, ConfigMigrations::toV10),
       new Step(11, ConfigMigrations::toV11),
-      new Step(12, ConfigMigrations::toV12)
+      new Step(12, ConfigMigrations::toV12),
+      new Step(13, ConfigMigrations::toV13)
    );
    /** Modules removed in version 12 with nothing to carry over (multiplayer-only, or a duplicate of a command or widget). */
    static final List<String> REMOVED_IN_V12 = List.of(
@@ -123,6 +124,38 @@ public final class ConfigMigrations {
     * moves over only when the survivor has none; and the merged module's settings are taken only when it was on
     * or the survivor was not, so a module that was running keeps behaving the way it did.
     */
+   /** The reworked HUD: ArrayList, watermark and Target HUD settings under their new names and values. */
+   private static void toV13(JsonObject modules, List<String> notes) {
+      JsonObject list = settingsOf(modules, "ArrayList");
+      if (list != null) {
+         String colors = stringSetting(list, "Colors");
+         if ("Wave".equals(colors)) {
+            putSetting(list, "Wave", new JsonPrimitive(true));
+         }
+
+         Boolean background = booleanSetting(list, "Background");
+         if (background != null && !background && findKey(list, "Backdrop") == null) {
+            putSetting(list, "Backdrop", new JsonPrimitive("None"));
+         }
+      }
+
+      remapMode(modules, "ArrayList", "Colors", Set.of("Accent"), "Static Accent", notes);
+      remapMode(modules, "ArrayList", "Colors", Set.of("Wave", "Pink-Blue Wave", "Static Gradient"), "Theme Gradient", notes);
+      renameSetting(modules, "ArrayList", "Colors", "Color Mode", notes);
+      remapMode(modules, "ArrayList", "Side Bar", Set.of("Auto"), "Screen Edge", notes);
+      renameSetting(modules, "ArrayList", "Side Bar", "Bar", notes);
+      renameSetting(modules, "ArrayList", "Show Info", "Suffix", notes);
+      for (String gone : new String[]{"Background", "Gradient Start", "Gradient End", "Color Speed", "Color Spread", "Opacity", "Blur", "Outline", "Tag Style", "Show Keys", "Line Spacing", "Text Shadow", "Animations"}) {
+         dropSetting(modules, "ArrayList", gone, notes);
+      }
+
+      remapMode(modules, "HUD", "Watermark Style", Set.of("Card", "Compact"), "Bar", notes);
+      remapMode(modules, "HUD", "Watermark Style", Set.of("Text"), "Simple", notes);
+      dropSetting(modules, "HUD", "Logo", notes);
+      dropSetting(modules, "HUD", "Ping", notes);
+      remapMode(modules, "Target HUD", "Style", Set.of("Modern Glass", "Neon"), "Card", notes);
+   }
+
    private static void toV12(JsonObject modules, List<String> notes) {
       renamedSettingsV12(modules, notes);
       renamedModulesV12(modules, notes);

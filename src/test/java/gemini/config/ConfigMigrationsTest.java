@@ -150,12 +150,12 @@ class ConfigMigrationsTest {
       JsonObject settings = settings(root, "ArrayList");
       assertEquals("Bottom Left", settings.get("Corner").getAsString());
       assertEquals("Width", settings.get("Sort").getAsString());
-      assertEquals("Rainbow", settings.get("Colors").getAsString());
-      assertEquals("None", settings.get("Side Bar").getAsString());
-      assertFalse(settings.get("Outline").getAsBoolean());
-      assertFalse(settings.get("Show Info").getAsBoolean());
-      assertEquals(0.4, settings.get("Opacity").getAsDouble());
-      assertFalse(settings.get("Text Shadow").getAsBoolean());
+      assertEquals("Rainbow", settings.get("Color Mode").getAsString());
+      assertEquals("None", settings.get("Bar").getAsString());
+      assertFalse(settings.has("Outline"), "dropped by the HUD rework");
+      assertFalse(settings.get("Suffix").getAsBoolean());
+      assertFalse(settings.has("Opacity"), "dropped by the HUD rework");
+      assertFalse(settings.has("Text Shadow"), "dropped by the HUD rework");
       JsonObject hud = settings(root, "HUD");
       for (String old : ConfigMigrations.OLD_LIST_SETTINGS) {
          assertFalse(hud.has(old), "the HUD module no longer carries " + old);
@@ -163,7 +163,7 @@ class ConfigMigrationsTest {
 
       assertTrue(hud.get("Watermark").getAsBoolean(), "unrelated HUD settings stay");
       assertTrue(hud.has("Text Shadow"), "the HUD keeps its own text shadow switch");
-      assertEquals(1, notes.size());
+      assertTrue(notes.stream().anyMatch(note -> note.contains("ArrayList")), "the move to the widget is reported");
    }
 
    @Test
@@ -173,7 +173,7 @@ class ConfigMigrationsTest {
       JsonObject widget = root.getAsJsonObject("modules").getAsJsonObject("ArrayList");
       assertFalse(widget.get("enabled").getAsBoolean());
       assertEquals("Top Right", settings(root, "ArrayList").get("Corner").getAsString());
-      assertEquals("Wave", settings(root, "ArrayList").get("Colors").getAsString());
+      assertEquals("Theme Gradient", settings(root, "ArrayList").get("Color Mode").getAsString());
    }
 
    @Test
@@ -251,8 +251,8 @@ class ConfigMigrationsTest {
          "ArrayList", module(true, -1, "Colors", "\"Astolfo\""),
          "ClickGUI", module(true, -1, "Theme", "\"Neon\""));
       ConfigMigrations.migrate(root);
-      assertEquals("Compact", settings(root, "HUD").get("Watermark Style").getAsString());
-      assertEquals("Pink-Blue Wave", settings(root, "ArrayList").get("Colors").getAsString());
+      assertEquals("Bar", settings(root, "HUD").get("Watermark Style").getAsString());
+      assertEquals("Theme Gradient", settings(root, "ArrayList").get("Color Mode").getAsString());
       assertEquals("Purple", settings(root, "ClickGUI").get("Theme").getAsString());
    }
 
@@ -261,7 +261,7 @@ class ConfigMigrationsTest {
       // A 3.2.0 config: v9 moves the list to the ArrayList widget, then v11 renames the colour mode.
       JsonObject root = config(8, "HUD", module(true, -1, "Watermark Style", "\"Nextgen Card\""));
       ConfigMigrations.migrate(root);
-      assertEquals("Card", settings(root, "HUD").get("Watermark Style").getAsString());
+      assertEquals("Bar", settings(root, "HUD").get("Watermark Style").getAsString());
    }
 
    @Test
@@ -724,5 +724,32 @@ class ConfigMigrationsTest {
       assertEquals(8.0, settings(root, "Regen").get("Amount").getAsDouble());
       assertEquals(1.0, settings(root, "Speed").get("Multiplier").getAsDouble());
       assertEquals(ConfigMigrations.CURRENT_VERSION, ConfigMigrations.versionOf(root));
+   }
+
+   @Test
+   void reworkedHudSettingsCarryOver() {
+      JsonObject root = config(12,
+         "ArrayList", module(true, -1, "Colors", "\"Wave\"", "Side Bar", "\"Auto\"", "Show Info", "false", "Background", "false", "Opacity", "0.5"),
+         "HUD", module(true, -1, "Watermark Style", "\"Text\"", "Ping", "true"),
+         "Target HUD", module(true, -1, "Style", "\"Neon\""));
+      ConfigMigrations.migrate(root);
+      JsonObject list = settings(root, "ArrayList");
+      assertEquals("Theme Gradient", list.get("Color Mode").getAsString());
+      assertTrue(list.get("Wave").getAsBoolean());
+      assertEquals("Screen Edge", list.get("Bar").getAsString());
+      assertFalse(list.get("Suffix").getAsBoolean());
+      assertEquals("None", list.get("Backdrop").getAsString());
+      assertFalse(list.has("Colors"));
+      assertFalse(list.has("Opacity"));
+      assertEquals("Simple", settings(root, "HUD").get("Watermark Style").getAsString());
+      assertFalse(settings(root, "HUD").has("Ping"));
+      assertEquals("Card", settings(root, "Target HUD").get("Style").getAsString());
+   }
+
+   @Test
+   void oldWatermarkNamesReachTheNewStyles() {
+      JsonObject root = config(10, "HUD", module(true, -1, "Watermark Style", "\"LiquidBounce Pill\""));
+      ConfigMigrations.migrate(root);
+      assertEquals("Bar", settings(root, "HUD").get("Watermark Style").getAsString());
    }
 }
