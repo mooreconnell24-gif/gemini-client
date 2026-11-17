@@ -73,7 +73,8 @@ public final class WorldBackup extends Module {
 
    private void openScreen() {
       Minecraft client = Minecraft.getInstance();
-      client.gui.setScreen(new BackupsScreen(client.gui.screen(), this.keep::intValue));
+      // Queued: from a chat command the chat screen closes after this runs and would replace the new screen.
+      client.schedule(() -> client.gui.setScreen(new BackupsScreen(client.gui.screen(), this.keep::intValue)));
    }
 
    @Override

@@ -155,8 +155,8 @@ public final class Measure extends Module {
          double mx = (x1 + x2) * 0.5;
          double my = (y1 + y2) * 0.5;
          double mz = (z1 + z2) * 0.5;
-         Render3D.text(m.distanceLabel(), mx, my + 0.75, mz, argb, 0.45F, walls);
-         Render3D.text(m.sizeLabel(), mx, my + 0.45, mz, argb, 0.35F, walls);
+         // One line above the midpoint: two stacked billboards overlap when the camera is close.
+         Render3D.text(m.label(), mx, my + 0.9, mz, argb, 0.3F, walls);
       }
    }
 

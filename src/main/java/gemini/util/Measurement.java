@@ -16,6 +16,7 @@ public final class Measurement {
    public final int bz;
    private String distanceLabel;
    private String sizeLabel;
+   private String label;
 
    public Measurement(int ax, int ay, int az, int bx, int by, int bz) {
       this.ax = ax;
@@ -89,6 +90,15 @@ public final class Measurement {
       }
 
       return this.sizeLabel;
+   }
+
+   /** The label drawn in the world: "9.2 m   5 x 3 x 9 = 135 blocks", or just "1 block" for a single block. */
+   public String label() {
+      if (this.label == null) {
+         this.label = this.volume() == 1L ? "1 block" : this.distanceLabel() + "   " + this.sizeLabel();
+      }
+
+      return this.label;
    }
 
    /** One line for chat or the clipboard with everything measured. */

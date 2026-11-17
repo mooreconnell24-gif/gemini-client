@@ -72,7 +72,7 @@ public final class WorldNotesModule extends Module {
    public boolean onCommand(String[] args) {
       if (args.length == 0) {
          // ".notes" on its own opens the pad (after the chat screen has closed).
-         Minecraft.getInstance().execute(this::open);
+         Minecraft.getInstance().schedule(this::open);
          return true;
       }
 

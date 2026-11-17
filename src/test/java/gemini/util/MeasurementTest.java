@@ -31,6 +31,8 @@ class MeasurementTest {
       assertEquals(Math.sqrt(16 + 64), m.horizontal(), 1.0E-9);
       assertEquals("5 x 3 x 9 = 135 blocks", m.sizeLabel());
       assertEquals("9.2 m", m.distanceLabel());
+      assertEquals("9.2 m   5 x 3 x 9 = 135 blocks", m.label());
+      assertEquals("1 block", new Measurement(1, 1, 1, 1, 1, 1).label());
    }
 
    @Test
