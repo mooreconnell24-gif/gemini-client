@@ -61,7 +61,12 @@ public final class Platform extends Module {
    }
 
    private String id() {
-      return "minecraft:" + this.block.get().toLowerCase(Locale.ROOT).replace(' ', '_');
+      return blockId(this.block.get());
+   }
+
+   /** The block id for a "Block" mode value, e.g. "Smooth Stone" becomes "minecraft:smooth_stone". */
+   public static String blockId(String mode) {
+      return "minecraft:" + mode.toLowerCase(Locale.ROOT).replace(' ', '_');
    }
 
    private String area() {

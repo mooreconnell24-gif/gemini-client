@@ -50,7 +50,8 @@ public final class AutoSave extends Module {
    private void saveNow() {
       if (!SingleplayerGate.allowed()) {
          CommandManager.feedback(SingleplayerGate.denialMessage());
-      } else if (SpCommands.run(this.flush.get() ? "save-all flush" : "save-all")) {
+      } else if (SpCommands.saveWorld(this.flush.get())) {
+         // Not "/save-all": that command is only registered on dedicated servers, so in single player it never ran.
          this.saves++;
          if (this.notify.get()) {
             CommandManager.feedback("§bAuto Save §7world saved.");
