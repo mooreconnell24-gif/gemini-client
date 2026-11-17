@@ -4,7 +4,7 @@ import java.util.Locale;
 
 /**
  * Forgiving text matching for the menus: every query character has to appear in order, but not next to each other,
- * so "kaura" finds KillAura and "nofal" finds NoFall. Scores reward prefixes, word starts and runs of consecutive
+ * so "kaura" finds Kill Aura and "nofal" finds No Fall. Scores reward prefixes, word starts and runs of consecutive
  * characters; a query with several words must match all of them.
  */
 public final class Fuzzy {
@@ -102,7 +102,7 @@ public final class Fuzzy {
 
    /**
     * How well a module matches: its name and aliases count fully, its description and the names of its settings
-    * a little less, so "cps" lists AutoClicker (CPS setting) under KillAura-style direct hits.
+    * a little less, so "webs ahead" lists Web Aura (through its Webs Ahead setting) below direct hits on a module name.
     */
    public static int moduleScore(String query, gemini.module.Module module) {
       return moduleMatch(query, module).score();

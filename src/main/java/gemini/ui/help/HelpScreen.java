@@ -6,6 +6,7 @@ import gemini.input.GeminiKeys;
 import gemini.input.Keys;
 import gemini.ui.Glass;
 import gemini.ui.GlassButton;
+import gemini.ui.GlassWindow;
 import gemini.ui.Theme;
 import gemini.ui.clickgui.controls.Controls;
 import gemini.ui.font.FontSize;
@@ -25,15 +26,15 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Util;
 
 /**
  * The in-game guide: What's new (from {@code assets/gemini/changelog.md}), Controls, Commands (from
- * {@link CommandHelp}, the list {@code .help} prints) and About. Glass card, keyboard-first: Tab / Left / Right or
+ * {@link CommandHelp}, the list {@code .help} prints) and About. One window in the shared chrome (see
+ * {@link GlassWindow}), keyboard-first: Tab / Left / Right or
  * 1-4 switch tabs, the arrow keys, Page Up / Down, Home / End and the wheel scroll.
  *
- * <p>It opens by itself once after an update (see {@link #maybeShowWhatsNew}) and from the title screen, the pause
- * dock, the window menu, {@code .help} and {@code .changelog}.
+ * <p>It opens by itself once after an update (see {@link #maybeShowWhatsNew}) and from the home screen, the pause
+ * bar, the module menu, {@code .help} and {@code .changelog}.
  */
 public final class HelpScreen extends Screen {
    private static final String CHANGELOG = "/assets/gemini/changelog.md";
@@ -44,8 +45,9 @@ public final class HelpScreen extends Screen {
    private DocLayout.Result doc = new DocLayout.Result(List.of(), 0);
    private float scroll;
    private float scrollTarget;
-   private float open;
-   private long lastFrame;
+   private final GlassWindow window = new GlassWindow();
+   private final float[] tabHover = new float[Tab.values().length];
+   private GlassButton done;
    private int hoveredTab = -1;
 
    public enum Tab {
@@ -79,7 +81,7 @@ public final class HelpScreen extends Screen {
 
    /**
     * Opens "What's new" over {@code parent} if this version's changelog has not been shown yet. Returns whether it
-    * did. Called by the title screen when it first appears.
+    * did. Called by the home screen when it first appears.
     */
    public static boolean maybeShowWhatsNew(Screen parent) {
       Gemini gemini = Gemini.getInstance();
@@ -114,6 +116,13 @@ public final class HelpScreen extends Screen {
       }
 
       return changelogCache;
+   }
+
+   /**
+    * The first {@code count} points of the changelog as plain text, for the home screen's "what's new" card.
+    */
+   public static List<String> teaser(int count) {
+      return HelpContent.teaser(changelog(), count);
    }
 
    private List<Markdown.Block> blocks() {
@@ -199,42 +208,47 @@ public final class HelpScreen extends Screen {
       this.layout = HelpLayout.compute(this.width, this.height, full, brief);
       HelpLayout l = this.layout;
       int doneWidth = Math.min(64, l.panelWidth() / 3);
-      this.addRenderableWidget(
+      this.done = this.addRenderableWidget(
          new GlassButton(
-               l.panelX() + l.panelWidth() - Theme.SPACE_L - doneWidth,
-               l.footerY() + Theme.SPACE_S,
+               l.contentX() + l.contentWidth() + Theme.SPACE_S - doneWidth,
+               l.footerY() + Theme.SPACE_L,
                doneWidth,
                Theme.BUTTON_HEIGHT_SMALL,
                CommonComponents.GUI_DONE,
                button -> this.onClose()
             )
-            .expand(0)
+            .primary()
       );
       this.rebuild();
    }
 
    @Override
+   public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+      this.window.frame();
+      this.window.backdrop(g, this.width, this.height, mouseX, mouseY);
+   }
+
+   @Override
    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-      long now = Util.getMillis();
-      float delta = this.lastFrame == 0L ? 0.0F : Math.min(0.1F, (now - this.lastFrame) / 1000.0F);
-      this.lastFrame = now;
-      this.open = Glass.approach(this.open, 1.0F, Theme.FADE_SPEED, delta);
+      float delta = this.window.delta();
       this.scroll = Glass.approach(this.scroll, this.scrollTarget, 16.0F, delta);
       HelpLayout l = this.layout;
-      float a = this.open;
+      float a = this.window.open();
       int x1 = l.panelX();
       int y1 = l.panelY();
       int x2 = x1 + l.panelWidth();
       int y2 = y1 + l.panelHeight();
-      // One flat card with a faint edge; the version is in the "What's new" heading, so the title is just the name.
-      Glass.roundRect(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(Glass.surface(0), 235), a));
-      Glass.roundOutline(g, x1, y1, x2, y2, Theme.RADIUS_LARGE, Glass.fade(Glass.withAlpha(0xFFFFFF, 22), a));
-      Controls.text(g, this.font, Controls.fit(this.font, "Guide", l.panelWidth() - 2 * Theme.SPACE_L), x1 + Theme.SPACE_L, y1 + 8, Glass.textDim(), a);
+      this.done.setAlpha(a);
+      // The version is in the "What's new" heading, so the title is just the name.
+      this.window.frame(g, x1, y1, x2, y2);
+      UiFont.draw(g, "Guide", l.contentX(), y1 + (HelpLayout.HEADER_HEIGHT - UiFont.capHeight(FontSize.LARGE)) / 2 + 1, Glass.fade(Glass.text(), a), FontSize.LARGE, FontWeight.BOLD, false);
       this.extractTabs(g, mouseX, mouseY, a);
       this.extractDocument(g, a);
-      if (this.tab == Tab.COMMANDS) {
-         String hint = "Quick search: " + GeminiKeys.paletteHint();
-         Controls.text(g, this.font, Controls.fit(this.font, hint, l.panelWidth() / 2), x1 + Theme.SPACE_L, l.footerY() + Theme.SPACE_S + 4, Glass.textFaint(), a);
+      this.window.divider(g, x1 + 1, x2 - 1, l.footerY());
+      String hint = this.tab == Tab.COMMANDS ? "Quick search: " + GeminiKeys.paletteHint() : "Tab switches pages";
+      int hintRoom = this.done.getX() - Theme.SPACE_L - l.contentX();
+      if (hintRoom > 60) {
+         Controls.text(g, this.font, UiFont.ellipsize(hint, hintRoom), l.contentX(), UiFont.centerY(this.done.getY(), this.done.getHeight()), Glass.textFaint(), a);
       }
 
       super.extractRenderState(g, mouseX, mouseY, partialTick);
@@ -254,14 +268,8 @@ public final class HelpScreen extends Screen {
             this.hoveredTab = i;
          }
 
-         // Text tabs: only the active one gets a soft fill.
-         if (active) {
-            Glass.roundRect(g, x, y, x + w, y + HelpLayout.TAB_HEIGHT, Theme.RADIUS_SMALL, Glass.fade(Glass.withAlpha(Glass.surface(3), 255), a));
-         }
-
-         String label = Controls.fit(this.font, l.shortTabs() ? tabs[i].brief : tabs[i].label, w - 6);
-         int color = active ? Glass.text() : (over ? Glass.textDim() : Glass.textFaint());
-         Controls.text(g, this.font, label, x + (w - UiFont.width(label)) / 2, y + 3, color, a);
+         this.tabHover[i] = Glass.approach(this.tabHover[i], over ? 1.0F : 0.0F, Theme.HOVER_SPEED, this.window.delta());
+         this.window.tab(g, x, y, w, l.shortTabs() ? tabs[i].brief : tabs[i].label, active, this.tabHover[i]);
       }
    }
 
@@ -284,7 +292,7 @@ public final class HelpScreen extends Screen {
             case H1 -> {
                UiFont.draw(g, piece.text(), x, y, Glass.fade(Glass.text(), a), FontSize.LARGE, FontWeight.BOLD, false);
             }
-            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.text(), a);
+            case H2 -> Controls.text(g, this.font, piece.text(), x, y, Glass.lerp(Glass.text(), Glass.accent2(), 0.55F), a);
             case H3, CELL_KEY -> Controls.text(g, this.font, piece.text(), x, y, Glass.text(), a);
             case BODY, BULLET, CELL -> Controls.text(g, this.font, piece.text(), x, y, Glass.textDim(), a);
             case BULLET_MARK -> Controls.text(g, this.font, piece.text(), x, y, Glass.textFaint(), a);
@@ -297,12 +305,7 @@ public final class HelpScreen extends Screen {
       g.disableScissor();
       float max = this.maxScroll();
       if (max > 0.0F) {
-         int track = bottom - top;
-         int thumb = Math.max(14, Math.round(track * (track / (track + max))));
-         int thumbY = top + Math.round((track - thumb) * (this.scroll / max));
-         int sx = l.panelX() + l.panelWidth() - Theme.SPACE_S - 2;
-         Glass.roundRect(g, sx, top, sx + 2, bottom, 1, Glass.fade(0x14FFFFFF, a));
-         Glass.roundRect(g, sx, thumbY, sx + 2, thumbY + thumb, 1, Glass.fade(0x50FFFFFF, a));
+         this.window.scrollbar(g, l.panelX() + l.panelWidth() - Theme.SPACE_S - 3, top, bottom, this.scroll, max);
       }
    }
 

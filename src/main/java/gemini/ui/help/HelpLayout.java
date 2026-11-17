@@ -1,5 +1,6 @@
 package gemini.ui.help;
 
+import gemini.ui.GlassWindow;
 import gemini.ui.Theme;
 
 /**
@@ -22,13 +23,16 @@ public record HelpLayout(
    int contentHeight,
    int footerY
 ) {
-   public static final int MAX_WIDTH = 460;
+   public static final int MAX_WIDTH = 480;
    public static final int MAX_HEIGHT = 340;
-   public static final int HEADER_HEIGHT = 22;
-   public static final int TAB_HEIGHT = 14;
-   public static final int FOOTER_HEIGHT = Theme.BUTTON_HEIGHT_SMALL + Theme.SPACE_L;
+   /** Room for the title above the tabs. */
+   public static final int HEADER_HEIGHT = GlassWindow.HEADER_COMPACT;
+   public static final int TAB_HEIGHT = GlassWindow.TAB_HEIGHT;
+   public static final int FOOTER_HEIGHT = GlassWindow.FOOTER;
+   /** Padding between the card's edge and its content: roomy on a normal window, tighter on a very small one. */
+   public static final int PAD = GlassWindow.PAD;
    private static final int TAB_GAP = 3;
-   private static final int TAB_PAD = 12;
+   private static final int TAB_PAD = 16;
 
    public static HelpLayout compute(int width, int height, int[] fullTabWidths, int[] shortTabWidths) {
       int pw = Math.max(120, Math.min(MAX_WIDTH, width - 2 * Theme.EDGE));
@@ -36,7 +40,8 @@ public record HelpLayout(
       int px = (width - pw) / 2;
       int py = (height - ph) / 2;
       int count = fullTabWidths.length;
-      int inner = pw - 2 * Theme.SPACE_L;
+      int pad = pw < 220 ? Theme.SPACE_L : PAD;
+      int inner = pw - 2 * pad;
       int full = 0;
       int brief = 0;
       for (int i = 0; i < count; i++) {
@@ -49,7 +54,7 @@ public record HelpLayout(
       int[] tabWidth = new int[count];
       int[] tabX = new int[count];
       boolean share = useShort && brief + gaps > inner;
-      int cursor = px + Theme.SPACE_L;
+      int cursor = px + pad;
       for (int i = 0; i < count; i++) {
          tabWidth[i] = share ? (inner - gaps) / Math.max(1, count) : (useShort ? shortTabWidths[i] : fullTabWidths[i]) + TAB_PAD;
          tabX[i] = cursor;
@@ -57,11 +62,11 @@ public record HelpLayout(
       }
 
       int tabsY = py + HEADER_HEIGHT;
-      int contentY = tabsY + TAB_HEIGHT + Theme.SPACE_M;
+      int contentY = tabsY + TAB_HEIGHT + Theme.SPACE_L;
       int footerY = py + ph - FOOTER_HEIGHT;
-      int contentX = px + Theme.SPACE_L;
-      int contentWidth = pw - 2 * Theme.SPACE_L - Theme.SPACE_S; // room for the scrollbar
-      int contentHeight = Math.max(0, footerY - Theme.SPACE_XS - contentY);
+      int contentX = px + pad;
+      int contentWidth = pw - 2 * pad - Theme.SPACE_S; // room for the scrollbar
+      int contentHeight = Math.max(0, footerY - Theme.SPACE_S - contentY);
       return new HelpLayout(px, py, pw, ph, tabsY, tabX, tabWidth, useShort, contentX, contentY, contentWidth, contentHeight, footerY);
    }
 }
