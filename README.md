@@ -73,7 +73,7 @@ Everything runs locally. There is no account system, API key, cloud service or t
 **HUD**
 
 - **ArrayList** sits on the right edge, sorted by width, with a coloured edge bar; entries slide in and out. It is a widget you can move like the others.
-- **Watermark** is one compact line with the name and FPS. Ping is shown only on a real connection.
+- **Watermark** has three styles: Simple (the name with an accent first letter and the version), Bar (name, FPS, time and world on a small card) and Logo.
 - **Target HUD** is a card with the target's head, name and an animated health bar.
 - **Notifications** stack in the bottom-right corner with an icon and a bar that shows the time left. HUD > **Toast Position** moves them and HUD > **Toasts** switches them off.
 - Potion timers, armour and the other widgets use the same cards and follow the theme. Widgets placed automatically never overlap: when they do not all fit, they shrink a step.

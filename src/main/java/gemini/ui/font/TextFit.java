@@ -103,7 +103,13 @@ public final class TextFit {
 
       if (truncated && !lines.isEmpty()) {
          int last = lines.size() - 1;
-         lines.set(last, ellipsize(lines.get(last) + ellipsis + ellipsis, maxWidth, width, ellipsis));
+         // Exactly one ellipsis: shorten the line until it fits with it.
+         String line = lines.get(last).stripTrailing();
+         while (!line.isEmpty() && width.applyAsInt(line + ellipsis) > maxWidth) {
+            line = line.substring(0, line.length() - 1).stripTrailing();
+         }
+
+         lines.set(last, line + ellipsis);
       }
 
       return lines;
