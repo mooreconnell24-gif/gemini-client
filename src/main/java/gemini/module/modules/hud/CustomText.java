@@ -22,7 +22,7 @@ public final class CustomText extends Ticked {
    private final ListSetting entries = this.addSetting(
       new ListSetting(
          "Lines",
-         "Lines of text; {fps} {ping} {x} {y} {z} {speed} {health} are replaced with live values",
+         "Lines of text; {fps} {x} {y} {z} {chunk} {speed} {facing} {biome} {health} {food} {saturation} {xp} {slots} {memory} {time} are replaced with live values",
          ListSetting.Kind.TEXT,
          "Gemini {version}",
          "{fps} FPS  ·  {x} {y} {z}"
@@ -49,6 +49,11 @@ public final class CustomText extends Ticked {
          values.put("{player}", player.getName().getString());
          values.put("{health}", String.format(Locale.ROOT, "%.1f", player.getHealth()));
          values.put("{food}", Integer.toString(player.getFoodData().getFoodLevel()));
+         values.put("{saturation}", String.format(Locale.ROOT, "%.1f", player.getFoodData().getSaturationLevel()));
+         values.put("{xp}", Integer.toString(player.experienceLevel));
+         values.put("{slots}", Integer.toString(freeSlots(player)));
+         values.put("{chunk}", (Mth.floor(player.getX()) >> 4) + " " + (Mth.floor(player.getZ()) >> 4));
+         values.put("{memory}", Long.toString((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576L));
          values.put("{facing}", HudHelpers.pretty(Direction.fromYRot(player.getYRot()).getName()));
          values.put("{speed}", String.format(Locale.ROOT, "%.1f", Math.hypot(player.getX() - player.xo, player.getZ() - player.zo) * 20.0));
          values.put("{time}", LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
@@ -75,5 +80,17 @@ public final class CustomText extends Ticked {
 
          return lines;
       }
+   }
+
+   /** Empty slots in the main inventory and hotbar. */
+   private static int freeSlots(LocalPlayer player) {
+      int free = 0;
+      for (int i = 0; i < 36; i++) {
+         if (player.getInventory().getItem(i).isEmpty()) {
+            free++;
+         }
+      }
+
+      return free;
    }
 }

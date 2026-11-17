@@ -1,5 +1,6 @@
 package gemini.module.modules.combat;
 
+import java.util.List;
 import gemini.util.ClientState;
 import gemini.util.Swing;
 
@@ -84,6 +85,13 @@ public final class AutoBlockModule extends Module {
    public AutoBlockModule() {
       super("Auto Block", "Raises your shield just before an attack would hit you.", Category.COMBAT);
       this.sinceAttack.defaultReturnValue(-1);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("BlockHit");
+      return names;
    }
 
    @Override
@@ -322,7 +330,7 @@ public final class AutoBlockModule extends Module {
          this.raisedByUs = false;
          client.options.keyUse.setDown(false);
       } else {
-         if (this.raisedByUs && !BlockHitModule.wantsShield()) {
+         if (this.raisedByUs) {
             if (player.isUsingItem() && player.getUseItem().is(Items.SHIELD)) {
                client.gameMode.releaseUsingItem(player);
             }

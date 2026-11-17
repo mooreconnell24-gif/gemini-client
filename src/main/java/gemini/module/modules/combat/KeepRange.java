@@ -25,7 +25,7 @@ public final class KeepRange extends Module {
    private boolean backingUp;
 
    public KeepRange() {
-      super("KeepRange", "Walks you backwards when your target gets closer than the set distance.", Category.COMBAT);
+      super("Keep Range", "Walks you backwards when your target gets closer than the set distance.", Category.COMBAT);
    }
 
    @Override

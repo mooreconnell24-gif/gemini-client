@@ -13,8 +13,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * A module that keeps a set of block positions filled: Surround, SelfTrap, BlockIn, HoleFiller, WebAura,
- * BedDefender. They all ran the same tick: wait until the player can act and no screen is open, respect the
+ * A module that keeps a set of block positions filled: Surround, Hole Filler, Web Aura.
+ * They all ran the same tick: wait until the player can act and no screen is open, respect the
  * placement delay, work out the positions, hand them to {@link PlaceSettings}. That loop lives here; a module
  * only says which positions it wants and which hotbar blocks may fill them.
  *

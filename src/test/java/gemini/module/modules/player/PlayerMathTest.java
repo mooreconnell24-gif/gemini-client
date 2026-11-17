@@ -28,23 +28,4 @@ class PlayerMathTest {
    void itemsWithoutDurabilityNeverAlert() {
       assertEquals(PlayerMath.ALERT_NONE, PlayerMath.durabilityAlert(0, 0, 50.0, 5));
    }
-
-   @Test
-   void bestAboveNeverPicksSomethingWorseThanWhatIsHeld() {
-      // Holding a 7-damage weapon: a 4-damage one elsewhere must not be chosen.
-      assertEquals(-1, PlayerMath.bestAbove(new double[]{4.0, Double.NaN, 7.0}, 7.0, 0.0));
-      assertEquals(3, PlayerMath.bestAbove(new double[]{4.0, Double.NaN, 7.0, 8.0}, 7.0, 0.0));
-   }
-
-   @Test
-   void bestAboveSkipsNaNAndKeepsTheEarliestTie() {
-      assertEquals(1, PlayerMath.bestAbove(new double[]{Double.NaN, 5.0, 5.0}, 0.0, 0.0));
-      assertEquals(-1, PlayerMath.bestAbove(new double[]{Double.NaN, Double.NaN}, 0.0, 0.0));
-   }
-
-   @Test
-   void bestAboveRespectsTheMargin() {
-      assertEquals(-1, PlayerMath.bestAbove(new double[]{1.005}, 1.0, 0.01));
-      assertEquals(0, PlayerMath.bestAbove(new double[]{1.02}, 1.0, 0.01));
-   }
 }

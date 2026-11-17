@@ -14,7 +14,7 @@ public final class AirJumpModule extends Module {
    private int used;
 
    public AirJumpModule() {
-      super("AirJump", "Lets you jump again while in the air.", Category.MOVEMENT);
+      super("Air Jump", "Lets you jump again while in the air.", Category.MOVEMENT);
    }
 
    @Override

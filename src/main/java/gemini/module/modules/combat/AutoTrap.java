@@ -30,7 +30,7 @@ public final class AutoTrap extends Module {
    private final List<BlockPos> currentPlan = new ArrayList<>();
 
    public AutoTrap() {
-      super("AutoTrap", "Surrounds the chosen enemy with obsidian, aiming at where it is moving.", Category.COMBAT);
+      super("Auto Trap", "Surrounds the chosen enemy with obsidian, aiming at where it is moving.", Category.COMBAT);
    }
 
    @Override

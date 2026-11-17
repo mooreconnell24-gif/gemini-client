@@ -14,7 +14,7 @@ public final class LongJumpModule extends Module {
    private boolean wasOnGround = true;
 
    public LongJumpModule() {
-      super("LongJump", "Makes your jumps go farther.", Category.MOVEMENT);
+      super("Long Jump", "Makes your jumps go farther.", Category.MOVEMENT);
    }
 
    @Override

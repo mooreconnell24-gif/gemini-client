@@ -31,7 +31,7 @@ public final class AntiVoidModule extends Module {
    private int cooldown;
 
    public AntiVoidModule() {
-      super("AntiVoid", "Stops you falling into the void.", Category.PLAYER);
+      super("Anti Void", "Stops you falling into the void.", Category.PLAYER);
    }
 
    @Override

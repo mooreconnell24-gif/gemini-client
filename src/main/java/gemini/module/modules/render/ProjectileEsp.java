@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -33,6 +35,14 @@ public final class ProjectileEsp extends Module {
 
    public ProjectileEsp() {
       super("Projectile ESP", "Highlights arrows, fireballs, primed TNT, falling anvils and thrown items, with their paths.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("PearlTracker");
+      names.add("Pearl Tracker");
+      return names;
    }
 
    @Override

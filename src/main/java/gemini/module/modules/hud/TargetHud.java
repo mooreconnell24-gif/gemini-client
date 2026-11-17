@@ -79,7 +79,7 @@ public final class TargetHud extends HudWidget {
    private final Vector2f screen = new Vector2f();
 
    public TargetHud() {
-      super("TargetHUD", "Shows a card for your current target with its health, distance, totem pops, armour and who is likely to win.", "Bottom Center", 90, 68);
+      super("Target HUD", "Shows a card for your current target with its health, distance, totem pops, armour and who is likely to win.", "Bottom Center", 90, 68);
    }
 
    @Override

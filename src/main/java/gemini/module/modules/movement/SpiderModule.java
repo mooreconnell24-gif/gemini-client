@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.InfoText;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -15,6 +17,13 @@ public final class SpiderModule extends Module {
 
    public SpiderModule() {
       super("Spider", "Lets you climb up walls.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("WallClimb");
+      return names;
    }
 
    @Override

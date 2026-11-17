@@ -2,7 +2,7 @@ package gemini.mixin;
 
 import gemini.Gemini;
 import gemini.module.modules.combat.Hitboxes;
-import gemini.module.modules.movement.NoWeb;
+import gemini.module.modules.movement.NoSlowModule;
 import gemini.module.modules.render.EspModule;
 import gemini.module.modules.render.FreeLook;
 import gemini.module.modules.render.Freecam;
@@ -90,7 +90,7 @@ public abstract class EntityMixin {
       require = 0
    )
    private void gemini$noWeb(BlockState state, Vec3 multiplier, CallbackInfo ci) {
-      if ((Object)this == Minecraft.getInstance().player && NoWeb.cancels(state)) {
+      if ((Object)this == Minecraft.getInstance().player && NoSlowModule.cancels(state)) {
          ci.cancel();
       }
    }

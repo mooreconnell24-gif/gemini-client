@@ -12,7 +12,7 @@ public final class AutoWalkModule extends Module {
    private final BooleanSetting jump = this.addSetting(new BooleanSetting("Auto Jump", "Jump over blocks in the way", true));
 
    public AutoWalkModule() {
-      super("AutoWalk", "Walks forward without you holding the key.", Category.MOVEMENT);
+      super("Auto Walk", "Walks forward without you holding the key.", Category.MOVEMENT);
    }
 
    @Override

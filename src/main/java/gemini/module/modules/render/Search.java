@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -52,10 +54,17 @@ public final class Search extends Module {
    private final InfoText infoText = new InfoText();
 
    public Search() {
-      super("Search", "Highlights the blocks you choose across loaded chunks.", Category.RENDER);
+      super("Block ESP", "Highlights the blocks you choose across loaded chunks.", Category.RENDER);
       this.blocks.onChange(this::reset);
       this.speed.onChange(this::reset);
       this.results.onChange(this::reset);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Search");
+      return names;
    }
 
    private void reset() {

@@ -24,7 +24,7 @@ public final class HitEffect extends Module {
    private long lastHitMs;
 
    public HitEffect() {
-      super("HitEffect", "Shows an effect where your hits land and a hit marker on your crosshair.", Category.RENDER);
+      super("Hit Effect", "Shows an effect where your hits land and a hit marker on your crosshair.", Category.RENDER);
    }
 
    @Override

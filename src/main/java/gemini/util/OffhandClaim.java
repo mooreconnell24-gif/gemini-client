@@ -2,44 +2,32 @@ package gemini.util;
 
 import gemini.Gemini;
 import gemini.module.modules.combat.AutoTotemModule;
-import gemini.module.modules.combat.Offhand;
 import net.minecraft.client.player.LocalPlayer;
 
 public final class OffhandClaim {
    private OffhandClaim() {
    }
 
+   /** Whether Auto Totem needs the offhand for a totem right now. */
    public static boolean totemOwns(LocalPlayer player) {
-      if (player == null) {
-         return false;
-      } else {
-         Gemini gemini = Gemini.getInstance();
-         if (gemini == null) {
-            return false;
-         } else {
-            AutoTotemModule totem = gemini.modules().byClass(AutoTotemModule.class).orElse(null);
-            if (totem != null && totem.isEnabled() && totem.wantsOffhand(player)) {
-               return true;
-            } else {
-               Offhand offhand = gemini.modules().byClass(Offhand.class).orElse(null);
-               return offhand != null && offhand.isEnabled() && offhand.wantsTotem(player);
-            }
-         }
-      }
+      AutoTotemModule totem = totem(player);
+      return totem != null && totem.wantsTotem(player);
    }
 
+   /** Whether Auto Totem holds the offhand at all: for a totem, or for the item it keeps there. */
    public static boolean combatOwns(LocalPlayer player) {
-      if (totemOwns(player)) {
-         return true;
-      } else {
-         Gemini gemini = Gemini.getInstance();
-         if (gemini != null && player != null) {
-            Offhand offhand = gemini.modules().byClass(Offhand.class).orElse(null);
-            // Offhand only holds the slot while it has put something there; an empty offhand is free for others.
-            return offhand != null && offhand.isEnabled() && !player.getOffhandItem().isEmpty();
-         } else {
-            return false;
-         }
+      AutoTotemModule totem = totem(player);
+      // The preferred item only holds the slot while it is there; an empty offhand is free for others.
+      return totem != null && (totem.wantsTotem(player) || totem.keepsItem() && !player.getOffhandItem().isEmpty());
+   }
+
+   private static AutoTotemModule totem(LocalPlayer player) {
+      Gemini gemini = Gemini.getInstance();
+      if (player == null || gemini == null) {
+         return null;
       }
+
+      AutoTotemModule totem = gemini.modules().byClass(AutoTotemModule.class).orElse(null);
+      return totem != null && totem.isEnabled() ? totem : null;
    }
 }

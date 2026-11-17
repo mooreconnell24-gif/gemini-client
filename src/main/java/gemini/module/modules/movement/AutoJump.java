@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -15,6 +17,15 @@ public final class AutoJump extends Module {
 
    public AutoJump() {
       super("Auto Jump", "Jumps for you while you walk, either over obstacles or all the time.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Auto Hop");
+      names.add("KeepY");
+      names.add("Bhop");
+      return names;
    }
 
    @Override

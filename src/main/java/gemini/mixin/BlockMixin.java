@@ -1,6 +1,5 @@
 package gemini.mixin;
 
-import gemini.module.modules.movement.Slippy;
 import gemini.xray.XrayConfig;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
@@ -22,19 +21,6 @@ public abstract class BlockMixin {
       XrayConfig config = XrayConfig.current();
       if (config != null && config.isTarget(state)) {
          cir.setReturnValue(!config.isVisible(neighbor) || !neighbor.isSolidRender());
-      }
-   }
-
-   @Inject(
-      method = {"getFriction"},
-      at = {@At("RETURN")},
-      cancellable = true,
-      require = 0
-   )
-   private void gemini$slippy(CallbackInfoReturnable<Float> cir) {
-      Slippy slippy = Slippy.instance;
-      if (slippy != null && slippy.isEnabled()) {
-         cir.setReturnValue(slippy.override((Block)(Object)this, (Float)cir.getReturnValue()));
       }
    }
 }

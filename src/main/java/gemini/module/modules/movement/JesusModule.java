@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -31,12 +33,12 @@ public final class JesusModule extends Module {
    private static volatile boolean active;
    private final ModeSetting waterMode = this.addSetting(
       new ModeSetting(
-         "Water", "Solid lets you walk on water; Bob floats you up and down; Dolphin makes you leap", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Water", "Solid lets you walk on water; Bob floats you up and down; Dolphin makes you leap", "Solid", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final ModeSetting lavaMode = this.addSetting(
       new ModeSetting(
-         "Lava", "Solid lets you walk on lava; Bob floats you up and down; Dolphin makes you leap", "Bob", "Solid", "Bob", "Dolphin", "Off"
+         "Lava", "Solid lets you walk on lava; Bob floats you up and down; Dolphin makes you leap", "Solid", "Solid", "Bob", "Dolphin", "Off"
       )
    );
    private final BooleanSetting flowing = this.addSetting(
@@ -73,6 +75,14 @@ public final class JesusModule extends Module {
 
    public JesusModule() {
       super("Jesus", "Lets you walk on water and lava, or float and leap through it.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Water Walk");
+      names.add("Liquid Walk");
+      return names;
    }
 
    public static boolean active() {

@@ -77,7 +77,7 @@ public final class AutoCrystal extends Module {
 
    public AutoCrystal() {
       super(
-         "AutoCrystal",
+         "Auto Crystal",
          "Places and breaks end crystals near the chosen enemy, moving on to the next enemy when no crystal can hurt it enough.",
          Category.COMBAT
       );

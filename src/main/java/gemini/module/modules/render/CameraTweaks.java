@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -14,8 +16,16 @@ public final class CameraTweaks extends Module {
    );
 
    public CameraTweaks() {
-      super("Camera Tweaks", "Moves the third-person camera farther out and lets it pass through walls.", Category.RENDER);
+      super("Camera Clip", "Moves the third-person camera farther out and lets it pass through walls.", Category.RENDER);
       instance = this;
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Camera Tweaks");
+      names.add("CameraTweaks");
+      return names;
    }
 
    public float distanceOr(float vanilla) {

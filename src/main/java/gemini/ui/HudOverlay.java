@@ -6,7 +6,6 @@ import gemini.module.HudWidget;
 import gemini.module.Module;
 import gemini.module.ModuleManager;
 import gemini.module.modules.misc.ClickGuiModule;
-import gemini.module.modules.render.CoordinatesModule;
 import gemini.module.modules.render.EspModule;
 import gemini.module.modules.render.HudModule;
 import gemini.module.modules.render.StorageEspModule;
@@ -27,13 +26,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
 
@@ -77,10 +74,6 @@ public final class HudOverlay {
    /** Per-tick caches of the text panels so a frame only draws. */
    private int panelTick = Integer.MIN_VALUE;
    private final List<String> waypointLines = new ArrayList<>();
-   private final List<String> coordLines = new ArrayList<>();
-   private final IntList coordColors = new IntList();
-   private boolean coordsRight;
-   private boolean coordsBottom;
    private final List<Entity> espShown = new ArrayList<>();
    private final List<String> espLines = new ArrayList<>();
    private final IntList espColors = new IntList();
@@ -238,7 +231,6 @@ public final class HudOverlay {
 
             this.refreshPanels(client);
             this.drawWaypoints(graphics, client, accent, topLeftY, shadow);
-            this.drawCoordinates(graphics, client, width, height, shadow);
             this.drawEspTags(graphics, client, width, shadow);
             this.drawStorage(graphics, client, accent, width, height, shadow);
             float partial = deltaTracker.getGameTimeDeltaPartialTick(false);
@@ -521,17 +513,10 @@ public final class HudOverlay {
       }
    }
 
-   /** Gemini's own text panels (waypoints, coordinates, ESP list, storage list), measured where they are drawn. */
+   /** Gemini's own text panels (waypoints, ESP list, storage list), measured where they are drawn. */
    private void reservePanels(HudFlow flow, Font font, int width, int height, int topLeftY) {
       if (!this.waypointLines.isEmpty()) {
          flow.reserve(0, topLeftY, maxWidth(font, this.waypointLines) + 6, 2 + this.waypointLines.size() * LINE);
-      }
-
-      if (!this.coordLines.isEmpty()) {
-         int w = maxWidth(font, this.coordLines) + 6;
-         int h = this.coordLines.size() * LINE;
-         int y = this.coordsBottom ? height - 6 - h - 10 : 38;
-         flow.reserve(this.coordsRight ? width - w : 0, y, w, h);
       }
 
       if (!this.espLines.isEmpty()) {
@@ -605,8 +590,6 @@ public final class HudOverlay {
       this.panelTick = tick;
       this.measureSidebar(client);
       this.waypointLines.clear();
-      this.coordLines.clear();
-      this.coordColors.clear();
       this.espLines.clear();
       this.espColors.clear();
       this.storageLines.clear();
@@ -623,11 +606,6 @@ public final class HudOverlay {
                this.waypointLines.add("o " + waypoint.name() + "  " + (int)Math.sqrt(dx * dx + dz * dz) + "m");
             }
          }
-      }
-
-      CoordinatesModule coords = this.modules.byClass(CoordinatesModule.class).orElse(null);
-      if (coords != null && coords.isEnabled()) {
-         this.buildCoordinates(client, player, coords);
       }
 
       EspModule esp = this.modules.byClass(EspModule.class).orElse(null);
@@ -664,64 +642,11 @@ public final class HudOverlay {
       }
    }
 
-   private void buildCoordinates(Minecraft client, LocalPlayer player, CoordinatesModule coords) {
-      BlockPos pos = player.blockPosition();
-      this.coordLines.add(pos.getX() + "  " + pos.getY() + "  " + pos.getZ());
-      this.coordColors.add(-1511689);
-      if (coords.showNether() && client.level != null) {
-         boolean nether = client.level.dimension() == Level.NETHER;
-         boolean overworld = client.level.dimension() == Level.OVERWORLD;
-         if (nether || overworld) {
-            double factor = nether ? 8.0 : 0.125;
-            this.coordLines.add((nether ? "Overworld " : "Nether ") + Math.round(player.getX() * factor) + "  " + Math.round(player.getZ() * factor));
-            this.coordColors.add(-6641995);
-         }
-      }
-
-      if (coords.showDirection()) {
-         String biome = "";
-         if (coords.showBiome() && client.level != null) {
-            biome = "  ·  " + biomeName(client, pos);
-         }
-
-         this.coordLines.add(facing(player.getYRot()) + biome);
-         this.coordColors.add(0);
-      } else if (coords.showBiome() && client.level != null) {
-         this.coordLines.add(biomeName(client, pos));
-         this.coordColors.add(0);
-      }
-
-      String position = coords.position();
-      this.coordsRight = position.endsWith("Right");
-      this.coordsBottom = position.startsWith("Bottom");
-   }
-
-   private static String biomeName(Minecraft client, BlockPos pos) {
-      return client.level.getBiome(pos).unwrapKey().map(key -> key.identifier().getPath().replace('_', ' ')).orElse("");
-   }
-
    private void drawWaypoints(GuiGraphicsExtractor graphics, Minecraft client, int accent, int startY, boolean shadow) {
       int y = startY + 2;
       for (int i = 0; i < this.waypointLines.size(); i++) {
          UiFont.draw(graphics, this.waypointLines.get(i), 4, y, accent, shadow);
          y += LINE;
-      }
-   }
-
-   private void drawCoordinates(GuiGraphicsExtractor graphics, Minecraft client, int width, int height, boolean shadow) {
-      List<String> lines = this.coordLines;
-      if (lines.isEmpty()) {
-         return;
-      }
-
-      Font font = client.font;
-      int accent = Glass.accent();
-      int y = this.coordsBottom ? height - 6 - lines.size() * LINE - 10 : 38;
-      for (int i = 0; i < lines.size(); i++) {
-         String line = lines.get(i);
-         int x = this.coordsRight ? width - 4 - UiFont.width(line) : 4;
-         int color = this.coordColors.get(i);
-         UiFont.draw(graphics, line, x, y + i * LINE, color == 0 ? accent : color, shadow);
       }
    }
 
@@ -755,17 +680,6 @@ public final class HudOverlay {
          if (y > height - 40) {
             break;
          }
-      }
-   }
-
-   private static String facing(float yaw) {
-      float wrapped = Mth.wrapDegrees(yaw);
-      if (wrapped >= -45.0F && wrapped < 45.0F) {
-         return "South";
-      } else if (wrapped >= 45.0F && wrapped < 135.0F) {
-         return "West";
-      } else {
-         return wrapped >= -135.0F && wrapped < -45.0F ? "East" : "North";
       }
    }
 

@@ -1,5 +1,7 @@
 package gemini.module.modules.movement;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.util.ClientState;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -29,6 +31,13 @@ public final class ElytraFly extends Module {
 
    public ElytraFly() {
       super("Elytra Fly", "Lets you fly freely with an elytra instead of gliding.", Category.MOVEMENT);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("ElytraBoost");
+      return names;
    }
 
    @Override

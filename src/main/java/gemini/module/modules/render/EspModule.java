@@ -20,7 +20,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class EspModule extends Module {
    private final ModeSetting mode = this.addSetting(
-      new ModeSetting("Mode", "Glow + Box draws the glowing outline and boxes; 3D Box draws plain boxes; GlowBox draws boxes with a soft edge; Shader Glow draws only the vanilla glowing outline", "Glow + Box", "Glow + Box", "3D Box", "GlowBox", "Shader Glow")
+      new ModeSetting("Mode", "Outline draws a glowing outline around the model; Box draws a box; Soft Box draws a box with a soft edge; Outline + Box draws both", "Outline + Box", "Outline + Box", "Box", "Soft Box", "Outline")
    );
    private final BooleanSetting players = this.addSetting(new BooleanSetting("Players", "Highlight other players", true));
    private final BooleanSetting hostile = this.addSetting(new BooleanSetting("Hostile", "Highlight hostile mobs", true));
@@ -29,7 +29,7 @@ public final class EspModule extends Module {
    private final NumberSetting range = this.addSetting(new NumberSetting("Range", "Farthest entity highlighted, in blocks", 64.0, 8.0, 144.0, 4.0));
    private final ModeSetting colorMode = this.addSetting(new ModeSetting("Colors", "How highlights are coloured", "Type", "Type", "Health", "Custom"));
    private final ColorSetting custom = this.addSetting(new ColorSetting("Color", "Highlight colour", 168).showIf(() -> this.colorMode.is("Custom")));
-   private final BooleanSetting healthBar = this.addSetting(new BooleanSetting("3D Health Bar", "Draw a vertical health bar beside living entities", true));
+   private final BooleanSetting healthBar = this.addSetting(new BooleanSetting("Health Bar", "Draw a vertical health bar beside living entities", true));
    private final BooleanSetting tags = this.addSetting(new BooleanSetting("Tags", "Also list highlighted entities on the HUD", false));
    private final NumberSetting tagCount = this.addSetting(
       new NumberSetting("Max Tags", "Most entries in the HUD list", 8.0, 1.0, 20.0, 1.0).showIf(this.tags::get)
@@ -72,16 +72,16 @@ public final class EspModule extends Module {
    }
 
    public boolean shouldGlow(Entity entity) {
-      return (this.mode.is("Shader Glow") || this.mode.is("Glow + Box")) && this.matchesTarget(entity);
+      return (this.mode.is("Outline") || this.mode.is("Outline + Box")) && this.matchesTarget(entity);
    }
 
    @Override
    public void onRender3D(float partialTick) {
-      if (!this.mode.is("Shader Glow") || this.healthBar.get()) {
+      if (!this.mode.is("Outline") || this.healthBar.get()) {
          Minecraft client = Minecraft.getInstance();
          if (client.level != null && client.player != null) {
-            boolean drawBox = !this.mode.is("Shader Glow");
-            boolean glowBox = this.mode.is("GlowBox") || this.mode.is("Glow + Box");
+            boolean drawBox = !this.mode.is("Outline");
+            boolean glowBox = this.mode.is("Soft Box") || this.mode.is("Outline + Box");
 
             for (Entity entity : client.level.entitiesForRendering()) {
                if (this.matchesTarget(entity)) {

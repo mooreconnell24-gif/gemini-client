@@ -55,11 +55,6 @@ public final class MoveUtil {
       return current + (target - current) * clamped;
    }
 
-   public static void smoothVelocity(LocalPlayer player, double factor) {
-      Vec3 motion = player.getDeltaMovement();
-      player.setDeltaMovement(motion.x * factor, motion.y, motion.z * factor);
-   }
-
    public static boolean hasInput(LocalPlayer player) {
       if (player.input == null) {
          return false;

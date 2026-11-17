@@ -3,6 +3,7 @@ package gemini.module.modules.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import gemini.module.Category;
+import net.minecraft.world.entity.Entity;
 import gemini.module.Module;
 import gemini.module.setting.ActionSetting;
 import gemini.module.setting.NumberSetting;
@@ -22,8 +23,8 @@ import org.joml.Matrix4f;
  * positive X moves either item outward.
  *
  * <p>The eat and swing scales blend the pose before and after vanilla's eat/drink and swing transforms: 0 skips
- * the motion, 1 is vanilla, values in between shorten it. Swing speed itself is the Animations module's job; the
- * two compose (Animations changes how long a swing lasts, this how far it moves). The bare-hand punch is not
+ * the motion, 1 is vanilla, values in between shorten it. "Swing Duration" changes how long a swing
+ * lasts and "Swing Motion" how far it moves; the two compose. The bare-hand punch is not
  * scaled; only item swings are.
  */
 public final class ViewModel extends Module {
@@ -49,13 +50,34 @@ public final class ViewModel extends Module {
    private final NumberSetting swingScale = this.track(
       this.addSetting(new NumberSetting("Swing Motion", "Item swing movement: 0 = no swing, 1 = vanilla", 1.0, 0.0, 1.0, 0.05))
    );
+   private final NumberSetting swingDuration = this.track(
+      this.addSetting(new NumberSetting("Swing Duration", "Ticks your arm swing takes; 6 leaves it to the game (which shortens it with Haste)", 6.0, 1.0, 20.0, 1.0))
+   );
    private final Matrix4f savedPose = new Matrix4f();
    private final Matrix3f savedNormal = new Matrix3f();
 
    public ViewModel() {
-      super("View Model", "Moves, rotates and scales the items in your hands in first person, and tones down the eating and swing motion.", Category.RENDER);
+      super("View Model", "Moves, rotates and scales the items in your hands in first person, and changes the eating and swing animations.", Category.RENDER);
       this.addSetting(new ActionSetting("Reset", "Put every view model setting back to vanilla", this::resetAll));
       instance = this;
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Animations");
+      return names;
+   }
+
+   /** The length of {@code entity}'s arm swing in ticks, or -1 to leave it to the game. Only your own swing changes. */
+   public static int swingDuration(Entity entity) {
+      ViewModel module = instance;
+      if (module == null || !module.isEnabled() || entity != Minecraft.getInstance().player) {
+         return -1;
+      }
+
+      int ticks = module.swingDuration.intValue();
+      return ticks == 6 ? -1 : ticks;
    }
 
    private NumberSetting track(NumberSetting setting) {

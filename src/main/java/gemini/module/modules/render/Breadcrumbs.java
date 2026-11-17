@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.module.Category;
 import gemini.module.Module;
 import gemini.module.setting.BooleanSetting;
@@ -23,6 +25,15 @@ public final class Breadcrumbs extends Module {
 
    public Breadcrumbs() {
       super("Breadcrumbs", "Draws a line along the path you have walked.", Category.RENDER);
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("PlayerTrails");
+      names.add("Player Trails");
+      names.add("Trail");
+      return names;
    }
 
    @Override
