@@ -1,5 +1,7 @@
 package gemini.module.modules.render;
 
+import java.util.List;
+import java.util.ArrayList;
 import gemini.command.CommandManager;
 import gemini.module.Category;
 import gemini.module.Module;
@@ -45,6 +47,13 @@ public final class TotemPopCounter extends Module {
             TotemPopCounter.this.died(entity, pops);
          }
       });
+   }
+
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Notifier");
+      return names;
    }
 
    private int policy() {

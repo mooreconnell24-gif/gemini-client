@@ -559,6 +559,9 @@ final class DevCheckFunctions {
 
       step(5, () -> {
          keys(false, false, false);
+         // Leave nothing behind: the arena, and the water the Jesus check put under its floor.
+         cmd("fill %d %d %d %d %d %d minecraft:air", ax - 12, FLOOR - 2, az - 12, ax + 12, FLOOR + 12, az + 12);
+         cmd("kill @e[type=!player,distance=..40]");
          cmd("gamemode creative");
          cmd("tick unfreeze");
          cmd("tick rate 20");

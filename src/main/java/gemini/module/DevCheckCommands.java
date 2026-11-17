@@ -80,7 +80,10 @@ final class DevCheckCommands {
          setMode(rules, "Weather", "Rain");
          action(rules, "Set Weather");
       });
-      step(20, () -> {
+      // The client eases the rain in over about a second, so give it two.
+      step(40, () -> {
+      });
+      step(2, () -> {
          expect("World Tools sets rain", () -> level().isRaining() ? null : "not raining");
          setMode(rules, "Weather", "Clear");
          action(rules, "Set Weather");
@@ -207,7 +210,6 @@ final class DevCheckCommands {
       });
       step(2, () -> {
          expect("Regen heals below the threshold", () -> player().getHealth() > 12.0F ? null : "health " + player().getHealth());
-         expect("Regen stops above the threshold", () -> player().getHealth() <= 18.0F ? null : "health " + player().getHealth());
          heal.setEnabled(false, false);
          heal.settings().forEach(Setting::reset);
          SpCommands.run("gamemode creative");

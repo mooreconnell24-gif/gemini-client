@@ -93,6 +93,15 @@ public final class ScaffoldModule extends Module {
    }
 
    @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Tower");
+      names.add("BlockCounter");
+      names.add("Block Counter");
+      return names;
+   }
+
+   @Override
    public void onEnable() {
       LocalPlayer player = Minecraft.getInstance().player;
       this.startY = player == null ? 0 : Mth.floor(player.getY() - 0.01);

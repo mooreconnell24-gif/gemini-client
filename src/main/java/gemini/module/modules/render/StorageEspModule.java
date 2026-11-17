@@ -52,6 +52,14 @@ public final class StorageEspModule extends Module {
       super("Storage ESP", "Highlights chests, barrels, shulker boxes, ender chests and other storage blocks.", Category.RENDER);
    }
 
+   @Override
+   public List<String> aliases() {
+      List<String> names = new ArrayList<>(super.aliases());
+      names.add("Stash Finder");
+      names.add("StashFinder");
+      return names;
+   }
+
    public List<StorageEspModule.Hit> hits() {
       return this.hudList.get() ? this.hits : List.of();
    }
