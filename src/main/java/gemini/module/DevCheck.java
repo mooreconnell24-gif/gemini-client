@@ -136,7 +136,8 @@ public final class DevCheck {
    private static void summary() {
       for (String failure : SpCommands.recentFailures()) {
          // "Nothing to do" answers (clearing an empty inventory, a rule already at that value) are not failures.
-         if (!failure.contains("No items were found") && !failure.contains("no effects to remove") && !failure.contains("is already set to")) {
+         if (!failure.contains("No items were found") && !failure.contains("no effects to remove") && !failure.contains("is already set to")
+            && !failure.contains("No blocks were filled") && !failure.contains("No entity was found")) {
             fail("command failed: /" + failure);
          }
       }

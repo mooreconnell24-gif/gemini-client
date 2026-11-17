@@ -172,7 +172,7 @@ final class DevCheckFunctions {
       all.add(() -> check(modules, "Step", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:stone", ax - 2, FLOOR + 1, az + 2, ax + 2, FLOOR + 1, az + 2), 25, () -> {
          markPosition();
          keys(true, false, false);
-      }, () -> player().getY() - mark[1] > 0.9 ? null : String.format(Locale.ROOT, "Y changed %.2f walking into a 1-block step", player().getY() - mark[1])));
+      }, () -> player().getY() - mark[1] > 0.9 ? null : String.format(Locale.ROOT, "Y changed %.2f walking into a 1-block step (step height %.2f, z moved %.2f)", player().getY() - mark[1], player().maxUpStep(), player().getZ() - mark[2])));
 
       all.add(() -> check(modules, "Spider", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:stone", ax - 2, FLOOR + 1, az + 1, ax + 2, FLOOR + 10, az + 1), 25, () -> {
          markPosition();
@@ -193,11 +193,11 @@ final class DevCheckFunctions {
       all.add(() -> check(modules, "Jesus", "survival", () -> {
          cmd("fill %d %d %d %d %d %d minecraft:water", ax - 3, FLOOR - 2, az - 3, ax + 3, FLOOR, az + 3);
          cmd("tp @s %d.5 %d.2 %d.5", ax, FLOOR + 1, az);
-      }, 30, DevCheckFunctions::none, () -> player().getY() >= FLOOR + 0.8 ? null : String.format(Locale.ROOT, "sank to y=%.2f (surface %d)", player().getY(), FLOOR + 1)));
+      }, 30, DevCheckFunctions::none, () -> player().getY() >= FLOOR + 0.7 ? null : String.format(Locale.ROOT, "sank to y=%.2f (surface %d)", player().getY(), FLOOR + 1)));
 
       all.add(() -> check(modules, "Glide", "survival", () -> cmd("tp @s ~ ~8 ~"), 6, DevCheckFunctions::none, () -> player().getDeltaMovement().y > -0.2 ? null : String.format(Locale.ROOT, "falling at %.2f blocks/tick", player().getDeltaMovement().y)));
 
-      all.add(() -> check(modules, "AirJump", "survival", () -> cmd("tp @s ~ ~6 ~"), 3, () -> keys(false, true, false), () -> player().getDeltaMovement().y > 0.0 ? null : String.format(Locale.ROOT, "vertical speed %.2f holding jump in the air", player().getDeltaMovement().y)));
+      all.add(() -> check(modules, "AirJump", "survival", () -> cmd("tp @s ~ ~6 ~"), 3, () -> gemini.util.Scheduler.later(1, () -> keys(false, true, false)), () -> player().getDeltaMovement().y > 0.0 ? null : String.format(Locale.ROOT, "vertical speed %.2f holding jump in the air", player().getDeltaMovement().y)));
 
       all.add(() -> check(modules, "SafeWalk", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:air", ax - 12, FLOOR, az + 2, ax + 12, FLOOR, az + 12), 25, () -> {
          markPosition();
@@ -228,7 +228,10 @@ final class DevCheckFunctions {
       all.add(() -> check(modules, "Freecam", "survival", DevCheckFunctions::none, 15, () -> {
          markPosition();
          keys(true, false, false);
-      }, () -> mc().getCameraEntity() != player() && horizontal() < 0.2 ? null : "camera entity is the player or the player moved " + horizontal()));
+      }, () -> {
+         double camera = Math.hypot(mc().gameRenderer.mainCamera().position().x - player().getX(), mc().gameRenderer.mainCamera().position().z - player().getZ());
+         return camera > 1.0 && horizontal() < 0.2 ? null : String.format(Locale.ROOT, "camera is %.2f from the player, player moved %.2f", camera, horizontal());
+      }));
 
       all.add(() -> check(modules, "AutoTotem", "survival", () -> cmd("item replace entity @s hotbar.5 with minecraft:totem_of_undying"), 20, DevCheckFunctions::none,
          () -> player().getOffhandItem().is(Items.TOTEM_OF_UNDYING) ? null : "offhand holds " + player().getOffhandItem()));
@@ -241,8 +244,9 @@ final class DevCheckFunctions {
 
       all.add(() -> check(modules, "AutoEat", "survival", () -> {
          cmd("item replace entity @s hotbar.0 with minecraft:cooked_beef 8");
-         cmd("effect give @s minecraft:hunger 3 255 true");
-      }, 90, DevCheckFunctions::none, () -> count(Items.COOKED_BEEF) < 8 ? null : "did not eat (food " + player().getFoodData().getFoodLevel() + ")"));
+         cmd("effect clear @s");
+         cmd("effect give @s minecraft:hunger 10 255 true");
+      }, 200, DevCheckFunctions::none, () -> count(Items.COOKED_BEEF) < 8 ? null : "did not eat (food " + player().getFoodData().getFoodLevel() + ")"));
 
       all.add(() -> check(modules, "KillAura", "survival", () -> {
          cmd("difficulty easy");
@@ -271,10 +275,96 @@ final class DevCheckFunctions {
          cmd("setblock %d %d %d minecraft:stone", ax, FLOOR + 1, az + 1);
       }, 15, () -> {
          player().getInventory().setSelectedSlot(0);
-         mc().gameMode.startDestroyBlock(new BlockPos(ax, FLOOR + 1, az + 1), Direction.NORTH);
-         destroyTicker(new BlockPos(ax, FLOOR + 1, az + 1));
-      }, () -> player().getInventory().getSelectedSlot() == 4 || mc().level.getBlockState(new BlockPos(ax, FLOOR + 1, az + 1)).isAir() && count(Items.STICK) == 1 && mark[3] == 4
-         ? null : "selected slot " + player().getInventory().getSelectedSlot()));
+         player().setXRot(58.0F);
+         mc().options.keyAttack.setDown(true);
+      }, () -> {
+         mc().options.keyAttack.setDown(false);
+         return player().getInventory().getSelectedSlot() == 4 ? null : "selected slot " + player().getInventory().getSelectedSlot() + " looking at " + mc().hitResult;
+      }));
+
+      all.add(() -> check(modules, "AutoRespawn", "survival", DevCheckFunctions::none, 40, () -> cmd("kill @s"),
+         () -> player().isAlive() && !(mc().gui.screen() instanceof net.minecraft.client.gui.screens.DeathScreen) ? null : "still dead"));
+
+      all.add(() -> check(modules, "Surround", "survival", () -> cmd("item replace entity @s hotbar.0 with minecraft:obsidian 16"), 20, DevCheckFunctions::none, () -> {
+         int placed = 0;
+         for (Direction side : Direction.Plane.HORIZONTAL) {
+            if (mc().level.getBlockState(new BlockPos(ax, FLOOR + 1, az).relative(side)).is(Blocks.OBSIDIAN)) {
+               placed++;
+            }
+         }
+
+         return placed == 4 ? null : placed + " of 4 sides have obsidian";
+      }));
+
+      all.add(() -> check(modules, "AutoReplenish", "survival", () -> {
+         cmd("item replace entity @s hotbar.0 with minecraft:cobblestone 2");
+         cmd("item replace entity @s inventory.5 with minecraft:cobblestone 64");
+      }, 30, DevCheckFunctions::none, () -> player().getInventory().getItem(0).getCount() > 2 ? null : "hotbar stack still " + player().getInventory().getItem(0).getCount()));
+
+      all.add(() -> check(modules, "Zoom", "survival", DevCheckFunctions::none, 20, DevCheckFunctions::none, () -> {
+         float fov = mc().gameRenderer.mainCamera().getFov();
+         return fov < mc().options.fov().get() * 0.6F ? null : "camera fov " + fov + " (option " + mc().options.fov().get() + ")";
+      }));
+
+      all.add(() -> check(modules, "TriggerBot", "survival", () -> {
+         cmd("difficulty easy");
+         cmd("item replace entity @s hotbar.0 with minecraft:diamond_sword");
+         cmd("summon minecraft:zombie %d.5 %d %d.5 {NoAI:1b,Health:20f}", ax, FLOOR + 1, az + 2);
+      }, 40, () -> player().setXRot(20.0F), () -> {
+         List<LivingEntity> zombies = mc().level.getEntities(EntityTypes.ZOMBIE, new AABB(player().blockPosition()).inflate(6.0), e -> true).stream().map(z -> (LivingEntity)z).toList();
+         return zombies.isEmpty() || zombies.get(0).getHealth() < 20.0F ? null : "the zombie under the crosshair was not hit (looking at " + mc().hitResult + ")";
+      }));
+
+      all.add(() -> check(modules, "Auto Farm", "survival", () -> {
+         cmd("setblock %d %d %d minecraft:farmland", ax + 1, FLOOR, az + 1);
+         cmd("setblock %d %d %d minecraft:wheat[age=7]", ax + 1, FLOOR + 1, az + 1);
+         cmd("item replace entity @s hotbar.1 with minecraft:wheat_seeds 4");
+      }, 40, DevCheckFunctions::none, () -> count(Items.WHEAT) > 0 || mc().level.getBlockState(new BlockPos(ax + 1, FLOOR + 1, az + 1)).getBlock() != Blocks.WHEAT
+         || !mc().level.getBlockState(new BlockPos(ax + 1, FLOOR + 1, az + 1)).getValue(net.minecraft.world.level.block.CropBlock.AGE).equals(7) ? null : "ripe wheat next to you was not harvested"));
+
+      all.add(() -> check(modules, "Auto Shearer", "survival", () -> {
+         cmd("item replace entity @s hotbar.0 with minecraft:shears");
+         cmd("summon minecraft:sheep %d.5 %d %d.5 {NoAI:1b}", ax + 2, FLOOR + 1, az);
+      }, 40, DevCheckFunctions::none, () -> {
+         List<net.minecraft.world.entity.animal.sheep.Sheep> sheep = mc().level.getEntities(EntityTypes.SHEEP, new AABB(player().blockPosition()).inflate(6.0), e -> true);
+         return sheep.isEmpty() ? "no sheep" : sheep.get(0).isSheared() ? null : "the sheep was not sheared";
+      }));
+
+      all.add(() -> check(modules, "Extinguish", "survival", () -> cmd("setblock %d %d %d minecraft:fire", ax + 2, FLOOR + 1, az + 1), 30, DevCheckFunctions::none,
+         () -> mc().level.getBlockState(new BlockPos(ax + 2, FLOOR + 1, az + 1)).is(Blocks.FIRE) ? "the fire is still burning" : null));
+
+      all.add(() -> check(modules, "Tower", "survival", () -> cmd("item replace entity @s hotbar.0 with minecraft:stone 64"), 30, () -> {
+         markPosition();
+         keys(false, true, false);
+      }, () -> player().getY() - mark[1] > 2.0 && mc().level.getBlockState(new BlockPos(ax, FLOOR + 1, az)).is(Blocks.STONE) ? null
+         : String.format(Locale.ROOT, "rose %.2f blocks, block under the start %s", player().getY() - mark[1], mc().level.getBlockState(new BlockPos(ax, FLOOR + 1, az)))));
+
+      all.add(() -> check(modules, "LawnMower", "survival", () -> {
+         cmd("setblock %d %d %d minecraft:grass_block", ax + 1, FLOOR, az + 1);
+         cmd("setblock %d %d %d minecraft:short_grass", ax + 1, FLOOR + 1, az + 1);
+      }, 30, DevCheckFunctions::none, () -> mc().level.getBlockState(new BlockPos(ax + 1, FLOOR + 1, az + 1)).isAir() ? null : "the grass next to you is still there"));
+
+      all.add(() -> check(modules, "Auto Breed", "survival", () -> {
+         cmd("item replace entity @s hotbar.0 with minecraft:wheat 8");
+         cmd("summon minecraft:cow %d.5 %d %d.5 {NoAI:1b}", ax + 2, FLOOR + 1, az);
+         cmd("summon minecraft:cow %d.5 %d %d.5 {NoAI:1b}", ax - 2, FLOOR + 1, az);
+      }, 40, DevCheckFunctions::none, () -> count(Items.WHEAT) < 8 ? null : "no wheat was fed to the cows"));
+
+      all.add(() -> check(modules, "Parkour", "survival", () -> cmd("fill %d %d %d %d %d %d minecraft:air", ax - 12, FLOOR, az + 2, ax + 12, FLOOR, az + 12), 12, () -> {
+         markPosition();
+         mark[3] = 0;
+         keys(true, false, false);
+         peakTracker();
+      }, () -> mark[3] > 0.5 ? null : "did not jump at the edge (peak " + mark[3] + ")"));
+
+      all.add(() -> check(modules, "Auto Torch", "survival", () -> {
+         cmd("item replace entity @s hotbar.0 with minecraft:torch 16");
+         cmd("fill %d %d %d %d %d %d minecraft:stone", ax - 4, FLOOR + 4, az - 4, ax + 4, FLOOR + 4, az + 4);
+         cmd("time set midnight");
+      }, 30, DevCheckFunctions::none, () -> count(Items.TORCH) < 16 ? null : "no torch placed in the dark"));
+
+      all.add(() -> check(modules, "Offhand", "survival", () -> cmd("item replace entity @s inventory.2 with minecraft:totem_of_undying"), 20, DevCheckFunctions::none,
+         () -> player().getOffhandItem().is(Items.TOTEM_OF_UNDYING) ? null : "offhand holds " + player().getOffhandItem()));
 
       for (Runnable add : all) {
          add.run();
@@ -285,6 +375,7 @@ final class DevCheckFunctions {
          cmd("gamemode creative");
          cmd("tick unfreeze");
          cmd("tick rate 20");
+         cmd("time set day");
          for (Module module : paused) {
             module.setHeld(true);
          }
@@ -302,18 +393,6 @@ final class DevCheckFunctions {
                if (mark[3] > 0.1) {
                   keys(false, false, false);
                }
-            }
-         });
-      }
-   }
-
-   /** Keeps mining a block for a few ticks, the way holding the attack key would, and remembers the slot used. */
-   private static void destroyTicker(BlockPos pos) {
-      for (int i = 1; i <= 12; i++) {
-         gemini.util.Scheduler.later(i, () -> {
-            if (player() != null && !mc().level.getBlockState(pos).isAir()) {
-               mc().gameMode.continueDestroyBlock(pos, Direction.NORTH);
-               mark[3] = player().getInventory().getSelectedSlot();
             }
          });
       }

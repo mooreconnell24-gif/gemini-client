@@ -29,7 +29,7 @@ public final class WorldRules extends Module {
 
    public WorldRules() {
       super("World Rules", "Changes game rules such as Keep Inventory and Mob Griefing without typing commands; they stay set after turning off unless Restore On Disable is on.", Category.WORLD);
-      this.rule("Keep Inventory", "Keep your items and XP when you die", false, true, "keep_inventory");
+      this.rule("Keep Inventory", "Keep your items and XP when you die", false, false, "keep_inventory");
       this.rule("Daylight Cycle", "Let the sun move; off freezes the time of day", true, true, "advance_time");
       this.rule("Weather Cycle", "Let the weather change by itself", true, true, "advance_weather");
       this.rule("Mob Spawning", "Let monsters and animals spawn naturally", true, true, "spawn_mobs");

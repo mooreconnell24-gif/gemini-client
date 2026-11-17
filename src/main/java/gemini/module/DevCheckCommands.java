@@ -141,13 +141,15 @@ final class DevCheckCommands {
       Module platform = module(modules, "Platform");
       step(10, () -> SpCommands.run("execute positioned over motion_blocking run tp @s ~ ~ ~"));
       step(10, () -> action(platform, "Place"));
+      BlockPos[] placed = new BlockPos[1];
       step(10, () -> {
          BlockPos below = player().blockPosition().below();
+         placed[0] = below;
          expect("Platform place", () -> level().getBlockState(below).is(Blocks.GLASS) ? null : "block below is " + level().getBlockState(below));
          action(platform, "Remove");
       });
       step(10, () -> {
-         BlockPos below = player().blockPosition().below();
+         BlockPos below = placed[0];
          expect("Platform remove", () -> level().getBlockState(below).isAir() ? null : "block below is " + level().getBlockState(below));
       });
 
